@@ -211,6 +211,13 @@ func (d *TotpAuthDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -224,6 +231,13 @@ func (d *TotpAuthDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -245,6 +259,13 @@ func (d *TotpAuthDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -262,6 +283,13 @@ func (d *TotpAuthDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := item["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -275,6 +303,13 @@ func (d *TotpAuthDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else if val, ok := obj["value"].(float64); ok {
             data.TwoFactorOtpUrl = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TwoFactorOtpUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.TwoFactorOtpUrl = types.StringNull()
+        }
+    } else if arr, ok := item["twoFactorOtpUrl"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.TwoFactorOtpUrl = types.StringValue(string(jsonBytes))
         } else {
             data.TwoFactorOtpUrl = types.StringNull()
@@ -297,6 +332,13 @@ func (d *TotpAuthDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else if val, ok := obj["value"].(float64); ok {
             data.UserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserId = types.StringNull()
+        }
+    } else if arr, ok := item["userId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.UserId = types.StringValue(string(jsonBytes))
         } else {
             data.UserId = types.StringNull()

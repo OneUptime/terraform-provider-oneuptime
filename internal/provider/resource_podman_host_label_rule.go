@@ -381,6 +381,13 @@ func (r *PodmanHostLabelRuleResource) Create(ctx context.Context, req resource.C
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -429,6 +436,13 @@ func (r *PodmanHostLabelRuleResource) Create(ctx context.Context, req resource.C
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -462,6 +476,13 @@ func (r *PodmanHostLabelRuleResource) Create(ctx context.Context, req resource.C
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -538,6 +559,13 @@ func (r *PodmanHostLabelRuleResource) Create(ctx context.Context, req resource.C
         } else {
             data.PodmanHostNamePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["podmanHostNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PodmanHostNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.PodmanHostNamePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["podmanHostNamePattern"].(string); ok {
         data.PodmanHostNamePattern = types.StringValue(val)
     } else {
@@ -571,6 +599,13 @@ func (r *PodmanHostLabelRuleResource) Create(ctx context.Context, req resource.C
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PodmanHostDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.PodmanHostDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["podmanHostDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PodmanHostDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.PodmanHostDescriptionPattern = types.StringNull()
@@ -662,6 +697,13 @@ func (r *PodmanHostLabelRuleResource) Create(ctx context.Context, req resource.C
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -781,6 +823,13 @@ func (r *PodmanHostLabelRuleResource) Read(ctx context.Context, req resource.Rea
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -829,6 +878,13 @@ func (r *PodmanHostLabelRuleResource) Read(ctx context.Context, req resource.Rea
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -862,6 +918,13 @@ func (r *PodmanHostLabelRuleResource) Read(ctx context.Context, req resource.Rea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -938,6 +1001,13 @@ func (r *PodmanHostLabelRuleResource) Read(ctx context.Context, req resource.Rea
         } else {
             data.PodmanHostNamePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["podmanHostNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PodmanHostNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.PodmanHostNamePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["podmanHostNamePattern"].(string); ok {
         data.PodmanHostNamePattern = types.StringValue(val)
     } else {
@@ -971,6 +1041,13 @@ func (r *PodmanHostLabelRuleResource) Read(ctx context.Context, req resource.Rea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PodmanHostDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.PodmanHostDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["podmanHostDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PodmanHostDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.PodmanHostDescriptionPattern = types.StringNull()
@@ -1062,6 +1139,13 @@ func (r *PodmanHostLabelRuleResource) Read(ctx context.Context, req resource.Rea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1242,6 +1326,13 @@ func (r *PodmanHostLabelRuleResource) Update(ctx context.Context, req resource.U
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -1290,6 +1381,13 @@ func (r *PodmanHostLabelRuleResource) Update(ctx context.Context, req resource.U
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1323,6 +1421,13 @@ func (r *PodmanHostLabelRuleResource) Update(ctx context.Context, req resource.U
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1399,6 +1504,13 @@ func (r *PodmanHostLabelRuleResource) Update(ctx context.Context, req resource.U
         } else {
             data.PodmanHostNamePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["podmanHostNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PodmanHostNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.PodmanHostNamePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["podmanHostNamePattern"].(string); ok {
         data.PodmanHostNamePattern = types.StringValue(val)
     } else {
@@ -1432,6 +1544,13 @@ func (r *PodmanHostLabelRuleResource) Update(ctx context.Context, req resource.U
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PodmanHostDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.PodmanHostDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["podmanHostDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PodmanHostDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.PodmanHostDescriptionPattern = types.StringNull()
@@ -1523,6 +1642,13 @@ func (r *PodmanHostLabelRuleResource) Update(ctx context.Context, req resource.U
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

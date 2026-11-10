@@ -389,6 +389,13 @@ func (r *OnCallScheduleLayerResource) Create(ctx context.Context, req resource.C
         } else {
             data.OnCallDutyPolicyScheduleId = types.StringNull()
         }
+    } else if arr, ok := dataMap["onCallDutyPolicyScheduleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OnCallDutyPolicyScheduleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OnCallDutyPolicyScheduleId = types.StringNull()
+        }
     } else if val, ok := dataMap["onCallDutyPolicyScheduleId"].(string); ok {
         data.OnCallDutyPolicyScheduleId = types.StringValue(val)
     } else {
@@ -426,6 +433,13 @@ func (r *OnCallScheduleLayerResource) Create(ctx context.Context, req resource.C
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -459,6 +473,13 @@ func (r *OnCallScheduleLayerResource) Create(ctx context.Context, req resource.C
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -512,6 +533,13 @@ func (r *OnCallScheduleLayerResource) Create(ctx context.Context, req resource.C
         } else {
             data.Rotation = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["rotation"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Rotation = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Rotation = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["rotation"].(string); ok {
         data.Rotation = NewJSONSubsetValue(val)
     } else {
@@ -556,6 +584,13 @@ func (r *OnCallScheduleLayerResource) Create(ctx context.Context, req resource.C
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.RestrictionTimes = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.RestrictionTimes = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["restrictionTimes"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.RestrictionTimes = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.RestrictionTimes = NewJSONSubsetNull()
@@ -615,6 +650,13 @@ func (r *OnCallScheduleLayerResource) Create(ctx context.Context, req resource.C
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -745,6 +787,13 @@ func (r *OnCallScheduleLayerResource) Read(ctx context.Context, req resource.Rea
         } else {
             data.OnCallDutyPolicyScheduleId = types.StringNull()
         }
+    } else if arr, ok := dataMap["onCallDutyPolicyScheduleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OnCallDutyPolicyScheduleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OnCallDutyPolicyScheduleId = types.StringNull()
+        }
     } else if val, ok := dataMap["onCallDutyPolicyScheduleId"].(string); ok {
         data.OnCallDutyPolicyScheduleId = types.StringValue(val)
     } else {
@@ -782,6 +831,13 @@ func (r *OnCallScheduleLayerResource) Read(ctx context.Context, req resource.Rea
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -815,6 +871,13 @@ func (r *OnCallScheduleLayerResource) Read(ctx context.Context, req resource.Rea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -868,6 +931,13 @@ func (r *OnCallScheduleLayerResource) Read(ctx context.Context, req resource.Rea
         } else {
             data.Rotation = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["rotation"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Rotation = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Rotation = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["rotation"].(string); ok {
         data.Rotation = NewJSONSubsetValue(val)
     } else {
@@ -912,6 +982,13 @@ func (r *OnCallScheduleLayerResource) Read(ctx context.Context, req resource.Rea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.RestrictionTimes = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.RestrictionTimes = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["restrictionTimes"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.RestrictionTimes = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.RestrictionTimes = NewJSONSubsetNull()
@@ -971,6 +1048,13 @@ func (r *OnCallScheduleLayerResource) Read(ctx context.Context, req resource.Rea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1165,6 +1249,13 @@ func (r *OnCallScheduleLayerResource) Update(ctx context.Context, req resource.U
         } else {
             data.OnCallDutyPolicyScheduleId = types.StringNull()
         }
+    } else if arr, ok := dataMap["onCallDutyPolicyScheduleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OnCallDutyPolicyScheduleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OnCallDutyPolicyScheduleId = types.StringNull()
+        }
     } else if val, ok := dataMap["onCallDutyPolicyScheduleId"].(string); ok {
         data.OnCallDutyPolicyScheduleId = types.StringValue(val)
     } else {
@@ -1202,6 +1293,13 @@ func (r *OnCallScheduleLayerResource) Update(ctx context.Context, req resource.U
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1235,6 +1333,13 @@ func (r *OnCallScheduleLayerResource) Update(ctx context.Context, req resource.U
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1288,6 +1393,13 @@ func (r *OnCallScheduleLayerResource) Update(ctx context.Context, req resource.U
         } else {
             data.Rotation = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["rotation"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Rotation = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Rotation = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["rotation"].(string); ok {
         data.Rotation = NewJSONSubsetValue(val)
     } else {
@@ -1332,6 +1444,13 @@ func (r *OnCallScheduleLayerResource) Update(ctx context.Context, req resource.U
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.RestrictionTimes = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.RestrictionTimes = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["restrictionTimes"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.RestrictionTimes = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.RestrictionTimes = NewJSONSubsetNull()
@@ -1391,6 +1510,13 @@ func (r *OnCallScheduleLayerResource) Update(ctx context.Context, req resource.U
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

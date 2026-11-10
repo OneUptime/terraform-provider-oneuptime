@@ -94,10 +94,11 @@ resource "oneuptime_monitor" "example" {
 - `docker_swarm_clusters` (Set of String) Docker Swarm clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_docker_swarm_cluster` resources.
 - `hosts` (Set of String) Hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_host` resources.
 - `incoming_email_custom_local_part` (String) This field is for Incoming Email Monitor only. A custom name for this monitor's inbound email address: the part before the @, on the server's inbound email domain. While set, it replaces the generated monitor-{secret key} address. Must be unique across all monitors. Set to null to go back to the generated address.
-- `incoming_monitor_request` (String) Incoming Monitor Request for Incoming Request Monitor. A JSON value: write it with `jsonencode()`.
+- `incoming_monitor_request` (String) The latest request this monitor received, as its logs keep it: secrets masked, and no headers or body when it keeps no request content. A JSON value: write it with `jsonencode()`.
 - `incoming_request_monitor_heartbeat_checked_at` (String) This field is for Incoming Request monitor only. When was the last time we checked the heartbeat?
 - `iot_fleets` (Set of String) IoT fleets this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_iot_fleet` resources.
 - `is_archived` (Boolean) Archived monitors are hidden from monitor lists and status pages, are not checked, and open no incidents or alerts. Unarchiving resumes monitoring. Defaults to `false`.
+- `keep_response_content` (Boolean) Keep the response part that matched, and the response body and headers, in this monitor's logs and on its incidents and alerts. Secrets are masked either way. Defaults to `true`.
 - `kubernetes_clusters` (Set of String) Kubernetes clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_kubernetes_cluster` resources.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `minimum_probe_agreement` (Number) Minimum number of probes that must agree on a status before the monitor status changes. If null, all enabled and connected probes must agree.

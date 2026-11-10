@@ -38,6 +38,7 @@ data "oneuptime_alert_on_call_rule" "by_id" {
 - `monitor_description_pattern` (String) Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.
 - `monitor_name_pattern` (String) Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.
 - `name` (String) Name of this alert on-call rule.
+- `page_as` (String) What the people this rule's on-call policies page are asked to do: Responders take the record on - acknowledging their page acknowledges it and stops every other page about it; Observers are kept informed while somebody else responds - acknowledging their page only says they have seen it, and the record is not acknowledged.
 - `when_to_page` (String) When the on-call policies of this rule page: Right Away, as soon as a record matches it; Working Hours, only during the working hours of this rule - a record that matches it outside them is paged about when they begin; or After OneUptime AI, for alert and incident rules - when OneUptime AI may fix what the record is about, it responds first, and the policies page only if it has not resolved the record within the hold time.
 - `working_hours_timezone` (String) The IANA time zone the working hours of this rule are in: Europe/London.
 

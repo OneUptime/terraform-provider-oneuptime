@@ -268,6 +268,13 @@ func (d *SubscriberNotificationTemplateDataSource) Read(ctx context.Context, req
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -281,6 +288,13 @@ func (d *SubscriberNotificationTemplateDataSource) Read(ctx context.Context, req
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -302,6 +316,13 @@ func (d *SubscriberNotificationTemplateDataSource) Read(ctx context.Context, req
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -315,6 +336,13 @@ func (d *SubscriberNotificationTemplateDataSource) Read(ctx context.Context, req
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -336,6 +364,13 @@ func (d *SubscriberNotificationTemplateDataSource) Read(ctx context.Context, req
         } else {
             data.TemplateName = types.StringNull()
         }
+    } else if arr, ok := item["templateName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TemplateName = types.StringValue(string(jsonBytes))
+        } else {
+            data.TemplateName = types.StringNull()
+        }
     } else if val, ok := item["templateName"].(string); ok {
         data.TemplateName = types.StringValue(val)
     } else {
@@ -349,6 +384,13 @@ func (d *SubscriberNotificationTemplateDataSource) Read(ctx context.Context, req
         } else if val, ok := obj["value"].(float64); ok {
             data.TemplateDescription = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TemplateDescription = types.StringValue(string(jsonBytes))
+        } else {
+            data.TemplateDescription = types.StringNull()
+        }
+    } else if arr, ok := item["templateDescription"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.TemplateDescription = types.StringValue(string(jsonBytes))
         } else {
             data.TemplateDescription = types.StringNull()
@@ -370,6 +412,13 @@ func (d *SubscriberNotificationTemplateDataSource) Read(ctx context.Context, req
         } else {
             data.EventType = types.StringNull()
         }
+    } else if arr, ok := item["eventType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.EventType = types.StringValue(string(jsonBytes))
+        } else {
+            data.EventType = types.StringNull()
+        }
     } else if val, ok := item["eventType"].(string); ok {
         data.EventType = types.StringValue(val)
     } else {
@@ -383,6 +432,13 @@ func (d *SubscriberNotificationTemplateDataSource) Read(ctx context.Context, req
         } else if val, ok := obj["value"].(float64); ok {
             data.NotificationMethod = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NotificationMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.NotificationMethod = types.StringNull()
+        }
+    } else if arr, ok := item["notificationMethod"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.NotificationMethod = types.StringValue(string(jsonBytes))
         } else {
             data.NotificationMethod = types.StringNull()
@@ -404,6 +460,13 @@ func (d *SubscriberNotificationTemplateDataSource) Read(ctx context.Context, req
         } else {
             data.EmailSubject = types.StringNull()
         }
+    } else if arr, ok := item["emailSubject"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.EmailSubject = types.StringValue(string(jsonBytes))
+        } else {
+            data.EmailSubject = types.StringNull()
+        }
     } else if val, ok := item["emailSubject"].(string); ok {
         data.EmailSubject = types.StringValue(val)
     } else {
@@ -421,6 +484,13 @@ func (d *SubscriberNotificationTemplateDataSource) Read(ctx context.Context, req
         } else {
             data.TemplateBody = types.StringNull()
         }
+    } else if arr, ok := item["templateBody"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TemplateBody = types.StringValue(string(jsonBytes))
+        } else {
+            data.TemplateBody = types.StringNull()
+        }
     } else if val, ok := item["templateBody"].(string); ok {
         data.TemplateBody = types.StringValue(val)
     } else {
@@ -434,6 +504,13 @@ func (d *SubscriberNotificationTemplateDataSource) Read(ctx context.Context, req
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

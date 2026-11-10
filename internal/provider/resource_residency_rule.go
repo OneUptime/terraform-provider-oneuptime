@@ -369,6 +369,13 @@ func (r *ResidencyRuleResource) Create(ctx context.Context, req resource.CreateR
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -402,6 +409,13 @@ func (r *ResidencyRuleResource) Create(ctx context.Context, req resource.CreateR
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -443,6 +457,13 @@ func (r *ResidencyRuleResource) Create(ctx context.Context, req resource.CreateR
         } else {
             data.DataCategories = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["dataCategories"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DataCategories = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DataCategories = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["dataCategories"].(string); ok {
         data.DataCategories = NewJSONSubsetValue(val)
     } else {
@@ -480,6 +501,13 @@ func (r *ResidencyRuleResource) Create(ctx context.Context, req resource.CreateR
         } else {
             data.SubjectCountries = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["subjectCountries"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SubjectCountries = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SubjectCountries = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["subjectCountries"].(string); ok {
         data.SubjectCountries = NewJSONSubsetValue(val)
     } else {
@@ -513,6 +541,13 @@ func (r *ResidencyRuleResource) Create(ctx context.Context, req resource.CreateR
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AllowedRegions = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AllowedRegions = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["allowedRegions"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AllowedRegions = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.AllowedRegions = NewJSONSubsetNull()
@@ -575,6 +610,13 @@ func (r *ResidencyRuleResource) Create(ctx context.Context, req resource.CreateR
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -703,6 +745,13 @@ func (r *ResidencyRuleResource) Read(ctx context.Context, req resource.ReadReque
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -736,6 +785,13 @@ func (r *ResidencyRuleResource) Read(ctx context.Context, req resource.ReadReque
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -777,6 +833,13 @@ func (r *ResidencyRuleResource) Read(ctx context.Context, req resource.ReadReque
         } else {
             data.DataCategories = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["dataCategories"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DataCategories = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DataCategories = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["dataCategories"].(string); ok {
         data.DataCategories = NewJSONSubsetValue(val)
     } else {
@@ -814,6 +877,13 @@ func (r *ResidencyRuleResource) Read(ctx context.Context, req resource.ReadReque
         } else {
             data.SubjectCountries = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["subjectCountries"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SubjectCountries = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SubjectCountries = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["subjectCountries"].(string); ok {
         data.SubjectCountries = NewJSONSubsetValue(val)
     } else {
@@ -847,6 +917,13 @@ func (r *ResidencyRuleResource) Read(ctx context.Context, req resource.ReadReque
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AllowedRegions = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AllowedRegions = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["allowedRegions"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AllowedRegions = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.AllowedRegions = NewJSONSubsetNull()
@@ -909,6 +986,13 @@ func (r *ResidencyRuleResource) Read(ctx context.Context, req resource.ReadReque
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1104,6 +1188,13 @@ func (r *ResidencyRuleResource) Update(ctx context.Context, req resource.UpdateR
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1137,6 +1228,13 @@ func (r *ResidencyRuleResource) Update(ctx context.Context, req resource.UpdateR
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1178,6 +1276,13 @@ func (r *ResidencyRuleResource) Update(ctx context.Context, req resource.UpdateR
         } else {
             data.DataCategories = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["dataCategories"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DataCategories = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DataCategories = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["dataCategories"].(string); ok {
         data.DataCategories = NewJSONSubsetValue(val)
     } else {
@@ -1215,6 +1320,13 @@ func (r *ResidencyRuleResource) Update(ctx context.Context, req resource.UpdateR
         } else {
             data.SubjectCountries = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["subjectCountries"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SubjectCountries = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SubjectCountries = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["subjectCountries"].(string); ok {
         data.SubjectCountries = NewJSONSubsetValue(val)
     } else {
@@ -1248,6 +1360,13 @@ func (r *ResidencyRuleResource) Update(ctx context.Context, req resource.UpdateR
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AllowedRegions = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AllowedRegions = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["allowedRegions"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AllowedRegions = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.AllowedRegions = NewJSONSubsetNull()
@@ -1310,6 +1429,13 @@ func (r *ResidencyRuleResource) Update(ctx context.Context, req resource.UpdateR
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

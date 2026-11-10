@@ -314,6 +314,13 @@ func (r *NetworkTopologySuppressionResource) Create(ctx context.Context, req res
         } else {
             data.NodeKey = types.StringNull()
         }
+    } else if arr, ok := dataMap["nodeKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.NodeKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.NodeKey = types.StringNull()
+        }
     } else if val, ok := dataMap["nodeKey"].(string); ok {
         data.NodeKey = types.StringValue(val)
     } else {
@@ -351,6 +358,13 @@ func (r *NetworkTopologySuppressionResource) Create(ctx context.Context, req res
         } else {
             data.NodeName = types.StringNull()
         }
+    } else if arr, ok := dataMap["nodeName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.NodeName = types.StringValue(string(jsonBytes))
+        } else {
+            data.NodeName = types.StringNull()
+        }
     } else if val, ok := dataMap["nodeName"].(string); ok {
         data.NodeName = types.StringValue(val)
     } else {
@@ -384,6 +398,13 @@ func (r *NetworkTopologySuppressionResource) Create(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Reason = types.StringValue(string(jsonBytes))
+        } else {
+            data.Reason = types.StringNull()
+        }
+    } else if arr, ok := dataMap["reason"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Reason = types.StringValue(string(jsonBytes))
         } else {
             data.Reason = types.StringNull()
@@ -443,6 +464,13 @@ func (r *NetworkTopologySuppressionResource) Create(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -566,6 +594,13 @@ func (r *NetworkTopologySuppressionResource) Read(ctx context.Context, req resou
         } else {
             data.NodeKey = types.StringNull()
         }
+    } else if arr, ok := dataMap["nodeKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.NodeKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.NodeKey = types.StringNull()
+        }
     } else if val, ok := dataMap["nodeKey"].(string); ok {
         data.NodeKey = types.StringValue(val)
     } else {
@@ -603,6 +638,13 @@ func (r *NetworkTopologySuppressionResource) Read(ctx context.Context, req resou
         } else {
             data.NodeName = types.StringNull()
         }
+    } else if arr, ok := dataMap["nodeName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.NodeName = types.StringValue(string(jsonBytes))
+        } else {
+            data.NodeName = types.StringNull()
+        }
     } else if val, ok := dataMap["nodeName"].(string); ok {
         data.NodeName = types.StringValue(val)
     } else {
@@ -636,6 +678,13 @@ func (r *NetworkTopologySuppressionResource) Read(ctx context.Context, req resou
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Reason = types.StringValue(string(jsonBytes))
+        } else {
+            data.Reason = types.StringNull()
+        }
+    } else if arr, ok := dataMap["reason"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Reason = types.StringValue(string(jsonBytes))
         } else {
             data.Reason = types.StringNull()
@@ -695,6 +744,13 @@ func (r *NetworkTopologySuppressionResource) Read(ctx context.Context, req resou
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -853,6 +909,13 @@ func (r *NetworkTopologySuppressionResource) Update(ctx context.Context, req res
         } else {
             data.NodeKey = types.StringNull()
         }
+    } else if arr, ok := dataMap["nodeKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.NodeKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.NodeKey = types.StringNull()
+        }
     } else if val, ok := dataMap["nodeKey"].(string); ok {
         data.NodeKey = types.StringValue(val)
     } else {
@@ -890,6 +953,13 @@ func (r *NetworkTopologySuppressionResource) Update(ctx context.Context, req res
         } else {
             data.NodeName = types.StringNull()
         }
+    } else if arr, ok := dataMap["nodeName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.NodeName = types.StringValue(string(jsonBytes))
+        } else {
+            data.NodeName = types.StringNull()
+        }
     } else if val, ok := dataMap["nodeName"].(string); ok {
         data.NodeName = types.StringValue(val)
     } else {
@@ -923,6 +993,13 @@ func (r *NetworkTopologySuppressionResource) Update(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Reason = types.StringValue(string(jsonBytes))
+        } else {
+            data.Reason = types.StringNull()
+        }
+    } else if arr, ok := dataMap["reason"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Reason = types.StringValue(string(jsonBytes))
         } else {
             data.Reason = types.StringNull()
@@ -982,6 +1059,13 @@ func (r *NetworkTopologySuppressionResource) Update(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

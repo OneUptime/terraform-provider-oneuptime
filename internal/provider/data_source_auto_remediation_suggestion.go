@@ -51,6 +51,9 @@ type AutoRemediationSuggestionDataSourceModel struct {
     ApprovedByUserId types.String `tfsdk:"approved_by_user_id"`
     ApprovedAt types.String `tfsdk:"approved_at"`
     ApprovedFrom types.String `tfsdk:"approved_from"`
+    FirstApprovedByUserId types.String `tfsdk:"first_approved_by_user_id"`
+    FirstApprovedAt types.String `tfsdk:"first_approved_at"`
+    FirstApprovedFrom types.String `tfsdk:"first_approved_from"`
     DismissedByUserId types.String `tfsdk:"dismissed_by_user_id"`
     DismissedAt types.String `tfsdk:"dismissed_at"`
     VerificationStatus types.String `tfsdk:"verification_status"`
@@ -191,6 +194,21 @@ func (d *AutoRemediationSuggestionDataSource) Schema(ctx context.Context, req da
             },
             "approved_from": schema.StringAttribute{
                 MarkdownDescription: "Where this suggestion was approved: Dashboard (the AI card), Slack or MicrosoftTeams. Empty until approved.",
+                Optional: true,
+                Computed: true,
+            },
+            "first_approved_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the user who gave the first of the two approvals a riskier fix needs. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
+                Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
+            },
+            "first_approved_at": schema.StringAttribute{
+                MarkdownDescription: "When the first of the two approvals a riskier fix needs was given.",
+                Computed: true,
+            },
+            "first_approved_from": schema.StringAttribute{
+                MarkdownDescription: "Where the first of two approvals was given: Dashboard (the AI card), Slack or MicrosoftTeams.",
                 Optional: true,
                 Computed: true,
             },
@@ -339,6 +357,14 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         filters["approvedFrom"] = data.ApprovedFrom.ValueString()
         filterNames = append(filterNames, "approved_from = "+fmt.Sprintf("%q", data.ApprovedFrom.ValueString()))
     }
+    if !data.FirstApprovedByUserId.IsNull() && !data.FirstApprovedByUserId.IsUnknown() {
+        filters["firstApprovedByUserId"] = data.FirstApprovedByUserId.ValueString()
+        filterNames = append(filterNames, "first_approved_by_user_id = "+fmt.Sprintf("%q", data.FirstApprovedByUserId.ValueString()))
+    }
+    if !data.FirstApprovedFrom.IsNull() && !data.FirstApprovedFrom.IsUnknown() {
+        filters["firstApprovedFrom"] = data.FirstApprovedFrom.ValueString()
+        filterNames = append(filterNames, "first_approved_from = "+fmt.Sprintf("%q", data.FirstApprovedFrom.ValueString()))
+    }
     if !data.DismissedByUserId.IsNull() && !data.DismissedByUserId.IsUnknown() {
         filters["dismissedByUserId"] = data.DismissedByUserId.ValueString()
         filterNames = append(filterNames, "dismissed_by_user_id = "+fmt.Sprintf("%q", data.DismissedByUserId.ValueString()))
@@ -400,6 +426,9 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         "approvedByUserId": true,
         "approvedAt": true,
         "approvedFrom": true,
+        "firstApprovedByUserId": true,
+        "firstApprovedAt": true,
+        "firstApprovedFrom": true,
         "dismissedByUserId": true,
         "dismissedAt": true,
         "verificationStatus": true,
@@ -481,6 +510,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -494,6 +530,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -515,6 +558,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -528,6 +578,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -549,6 +606,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else {
             data.AutoRemediationRuleId = types.StringNull()
         }
+    } else if arr, ok := item["autoRemediationRuleId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AutoRemediationRuleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AutoRemediationRuleId = types.StringNull()
+        }
     } else if val, ok := item["autoRemediationRuleId"].(string); ok {
         data.AutoRemediationRuleId = types.StringValue(val)
     } else {
@@ -562,6 +626,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.RuleNameSnapshot = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RuleNameSnapshot = types.StringValue(string(jsonBytes))
+        } else {
+            data.RuleNameSnapshot = types.StringNull()
+        }
+    } else if arr, ok := item["ruleNameSnapshot"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.RuleNameSnapshot = types.StringValue(string(jsonBytes))
         } else {
             data.RuleNameSnapshot = types.StringNull()
@@ -583,6 +654,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else {
             data.KubernetesClusterId = types.StringNull()
         }
+    } else if arr, ok := item["kubernetesClusterId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.KubernetesClusterId = types.StringValue(string(jsonBytes))
+        } else {
+            data.KubernetesClusterId = types.StringNull()
+        }
     } else if val, ok := item["kubernetesClusterId"].(string); ok {
         data.KubernetesClusterId = types.StringValue(val)
     } else {
@@ -596,6 +674,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.ResourceType = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ResourceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResourceType = types.StringNull()
+        }
+    } else if arr, ok := item["resourceType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ResourceType = types.StringValue(string(jsonBytes))
         } else {
             data.ResourceType = types.StringNull()
@@ -617,6 +702,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else {
             data.ResourceId = types.StringNull()
         }
+    } else if arr, ok := item["resourceId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ResourceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResourceId = types.StringNull()
+        }
     } else if val, ok := item["resourceId"].(string); ok {
         data.ResourceId = types.StringValue(val)
     } else {
@@ -630,6 +722,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.IncidentId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncidentId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentId = types.StringNull()
+        }
+    } else if arr, ok := item["incidentId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.IncidentId = types.StringValue(string(jsonBytes))
         } else {
             data.IncidentId = types.StringNull()
@@ -651,6 +750,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else {
             data.AlertId = types.StringNull()
         }
+    } else if arr, ok := item["alertId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AlertId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertId = types.StringNull()
+        }
     } else if val, ok := item["alertId"].(string); ok {
         data.AlertId = types.StringValue(val)
     } else {
@@ -664,6 +770,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.RunbookId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunbookId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunbookId = types.StringNull()
+        }
+    } else if arr, ok := item["runbookId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.RunbookId = types.StringValue(string(jsonBytes))
         } else {
             data.RunbookId = types.StringNull()
@@ -685,6 +798,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else {
             data.RunbookNameSnapshot = types.StringNull()
         }
+    } else if arr, ok := item["runbookNameSnapshot"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RunbookNameSnapshot = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunbookNameSnapshot = types.StringNull()
+        }
     } else if val, ok := item["runbookNameSnapshot"].(string); ok {
         data.RunbookNameSnapshot = types.StringValue(val)
     } else {
@@ -698,6 +818,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.RunbookTrackRecord = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunbookTrackRecord = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunbookTrackRecord = types.StringNull()
+        }
+    } else if arr, ok := item["runbookTrackRecord"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.RunbookTrackRecord = types.StringValue(string(jsonBytes))
         } else {
             data.RunbookTrackRecord = types.StringNull()
@@ -719,6 +846,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else {
             data.Status = types.StringNull()
         }
+    } else if arr, ok := item["status"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Status = types.StringValue(string(jsonBytes))
+        } else {
+            data.Status = types.StringNull()
+        }
     } else if val, ok := item["status"].(string); ok {
         data.Status = types.StringValue(val)
     } else {
@@ -732,6 +866,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.ExecutionMode = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ExecutionMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExecutionMode = types.StringNull()
+        }
+    } else if arr, ok := item["executionMode"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ExecutionMode = types.StringValue(string(jsonBytes))
         } else {
             data.ExecutionMode = types.StringNull()
@@ -753,6 +894,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else {
             data.SuggestionType = types.StringNull()
         }
+    } else if arr, ok := item["suggestionType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SuggestionType = types.StringValue(string(jsonBytes))
+        } else {
+            data.SuggestionType = types.StringNull()
+        }
     } else if val, ok := item["suggestionType"].(string); ok {
         data.SuggestionType = types.StringValue(val)
     } else {
@@ -766,6 +914,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.CommandPlan = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CommandPlan = types.StringValue(string(jsonBytes))
+        } else {
+            data.CommandPlan = types.StringNull()
+        }
+    } else if arr, ok := item["commandPlan"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CommandPlan = types.StringValue(string(jsonBytes))
         } else {
             data.CommandPlan = types.StringNull()
@@ -787,6 +942,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else {
             data.McpToolCallPlan = types.StringNull()
         }
+    } else if arr, ok := item["mcpToolCallPlan"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.McpToolCallPlan = types.StringValue(string(jsonBytes))
+        } else {
+            data.McpToolCallPlan = types.StringNull()
+        }
     } else if val, ok := item["mcpToolCallPlan"].(string); ok {
         data.McpToolCallPlan = types.StringValue(val)
     } else {
@@ -800,6 +962,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.RationaleMarkdown = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RationaleMarkdown = types.StringValue(string(jsonBytes))
+        } else {
+            data.RationaleMarkdown = types.StringNull()
+        }
+    } else if arr, ok := item["rationaleMarkdown"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.RationaleMarkdown = types.StringValue(string(jsonBytes))
         } else {
             data.RationaleMarkdown = types.StringNull()
@@ -821,6 +990,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else {
             data.AiRunId = types.StringNull()
         }
+    } else if arr, ok := item["aiRunId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiRunId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiRunId = types.StringNull()
+        }
     } else if val, ok := item["aiRunId"].(string); ok {
         data.AiRunId = types.StringValue(val)
     } else {
@@ -834,6 +1010,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.RunbookExecutionId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunbookExecutionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunbookExecutionId = types.StringNull()
+        }
+    } else if arr, ok := item["runbookExecutionId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.RunbookExecutionId = types.StringValue(string(jsonBytes))
         } else {
             data.RunbookExecutionId = types.StringNull()
@@ -855,6 +1038,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else {
             data.ApprovedByUserId = types.StringNull()
         }
+    } else if arr, ok := item["approvedByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ApprovedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApprovedByUserId = types.StringNull()
+        }
     } else if val, ok := item["approvedByUserId"].(string); ok {
         data.ApprovedByUserId = types.StringValue(val)
     } else {
@@ -868,6 +1058,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.ApprovedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ApprovedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApprovedAt = types.StringNull()
+        }
+    } else if arr, ok := item["approvedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ApprovedAt = types.StringValue(string(jsonBytes))
         } else {
             data.ApprovedAt = types.StringNull()
@@ -889,10 +1086,89 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else {
             data.ApprovedFrom = types.StringNull()
         }
+    } else if arr, ok := item["approvedFrom"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ApprovedFrom = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApprovedFrom = types.StringNull()
+        }
     } else if val, ok := item["approvedFrom"].(string); ok {
         data.ApprovedFrom = types.StringValue(val)
     } else {
         data.ApprovedFrom = types.StringNull()
+    }
+    if obj, ok := item["firstApprovedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FirstApprovedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.FirstApprovedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.FirstApprovedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FirstApprovedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.FirstApprovedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["firstApprovedByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FirstApprovedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.FirstApprovedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["firstApprovedByUserId"].(string); ok {
+        data.FirstApprovedByUserId = types.StringValue(val)
+    } else {
+        data.FirstApprovedByUserId = types.StringNull()
+    }
+    if obj, ok := item["firstApprovedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FirstApprovedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.FirstApprovedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.FirstApprovedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FirstApprovedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.FirstApprovedAt = types.StringNull()
+        }
+    } else if arr, ok := item["firstApprovedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FirstApprovedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.FirstApprovedAt = types.StringNull()
+        }
+    } else if val, ok := item["firstApprovedAt"].(string); ok {
+        data.FirstApprovedAt = types.StringValue(val)
+    } else {
+        data.FirstApprovedAt = types.StringNull()
+    }
+    if obj, ok := item["firstApprovedFrom"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FirstApprovedFrom = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.FirstApprovedFrom = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.FirstApprovedFrom = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FirstApprovedFrom = types.StringValue(string(jsonBytes))
+        } else {
+            data.FirstApprovedFrom = types.StringNull()
+        }
+    } else if arr, ok := item["firstApprovedFrom"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FirstApprovedFrom = types.StringValue(string(jsonBytes))
+        } else {
+            data.FirstApprovedFrom = types.StringNull()
+        }
+    } else if val, ok := item["firstApprovedFrom"].(string); ok {
+        data.FirstApprovedFrom = types.StringValue(val)
+    } else {
+        data.FirstApprovedFrom = types.StringNull()
     }
     if obj, ok := item["dismissedByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -902,6 +1178,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.DismissedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DismissedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DismissedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["dismissedByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.DismissedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.DismissedByUserId = types.StringNull()
@@ -923,6 +1206,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else {
             data.DismissedAt = types.StringNull()
         }
+    } else if arr, ok := item["dismissedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.DismissedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.DismissedAt = types.StringNull()
+        }
     } else if val, ok := item["dismissedAt"].(string); ok {
         data.DismissedAt = types.StringValue(val)
     } else {
@@ -936,6 +1226,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.VerificationStatus = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.VerificationStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.VerificationStatus = types.StringNull()
+        }
+    } else if arr, ok := item["verificationStatus"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.VerificationStatus = types.StringValue(string(jsonBytes))
         } else {
             data.VerificationStatus = types.StringNull()
@@ -957,6 +1254,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else {
             data.VerificationDeadlineAt = types.StringNull()
         }
+    } else if arr, ok := item["verificationDeadlineAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.VerificationDeadlineAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.VerificationDeadlineAt = types.StringNull()
+        }
     } else if val, ok := item["verificationDeadlineAt"].(string); ok {
         data.VerificationDeadlineAt = types.StringValue(val)
     } else {
@@ -974,6 +1278,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else {
             data.VerificationCompletedAt = types.StringNull()
         }
+    } else if arr, ok := item["verificationCompletedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.VerificationCompletedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.VerificationCompletedAt = types.StringNull()
+        }
     } else if val, ok := item["verificationCompletedAt"].(string); ok {
         data.VerificationCompletedAt = types.StringValue(val)
     } else {
@@ -987,6 +1298,13 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.VerificationNote = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.VerificationNote = types.StringValue(string(jsonBytes))
+        } else {
+            data.VerificationNote = types.StringNull()
+        }
+    } else if arr, ok := item["verificationNote"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.VerificationNote = types.StringValue(string(jsonBytes))
         } else {
             data.VerificationNote = types.StringNull()

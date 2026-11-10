@@ -31,6 +31,7 @@ data "oneuptime_workflow" "by_id" {
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Friendly description that will help you remember.
+- `graph_revision` (Number) How many times the workflow's graph has been saved. To save a graph only if nobody has saved one since you read the workflow, send this number as miscDataProps.graphRevision with the graph: a save made to an older graph is refused with 409 Conflict. Set by the server.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_archived` (Boolean) Archived workflows are hidden from the Workflows list and never run, from any trigger. Unarchiving restores them as they were.
 - `is_enabled` (Boolean) Is this workflow enabled?

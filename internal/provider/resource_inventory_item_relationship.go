@@ -405,6 +405,13 @@ func (r *InventoryItemRelationshipResource) Create(ctx context.Context, req reso
         } else {
             data.FromEntityKey = types.StringNull()
         }
+    } else if arr, ok := dataMap["fromEntityKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.FromEntityKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.FromEntityKey = types.StringNull()
+        }
     } else if val, ok := dataMap["fromEntityKey"].(string); ok {
         data.FromEntityKey = types.StringValue(val)
     } else {
@@ -438,6 +445,13 @@ func (r *InventoryItemRelationshipResource) Create(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ToEntityKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ToEntityKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["toEntityKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ToEntityKey = types.StringValue(string(jsonBytes))
         } else {
             data.ToEntityKey = types.StringNull()
@@ -479,6 +493,13 @@ func (r *InventoryItemRelationshipResource) Create(ctx context.Context, req reso
         } else {
             data.RelationshipType = types.StringNull()
         }
+    } else if arr, ok := dataMap["relationshipType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RelationshipType = types.StringValue(string(jsonBytes))
+        } else {
+            data.RelationshipType = types.StringNull()
+        }
     } else if val, ok := dataMap["relationshipType"].(string); ok {
         data.RelationshipType = types.StringValue(val)
     } else {
@@ -512,6 +533,13 @@ func (r *InventoryItemRelationshipResource) Create(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Source = types.StringValue(string(jsonBytes))
+        } else {
+            data.Source = types.StringNull()
+        }
+    } else if arr, ok := dataMap["source"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Source = types.StringValue(string(jsonBytes))
         } else {
             data.Source = types.StringNull()
@@ -596,6 +624,13 @@ func (r *InventoryItemRelationshipResource) Create(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -725,6 +760,13 @@ func (r *InventoryItemRelationshipResource) Read(ctx context.Context, req resour
         } else {
             data.FromEntityKey = types.StringNull()
         }
+    } else if arr, ok := dataMap["fromEntityKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.FromEntityKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.FromEntityKey = types.StringNull()
+        }
     } else if val, ok := dataMap["fromEntityKey"].(string); ok {
         data.FromEntityKey = types.StringValue(val)
     } else {
@@ -758,6 +800,13 @@ func (r *InventoryItemRelationshipResource) Read(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ToEntityKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ToEntityKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["toEntityKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ToEntityKey = types.StringValue(string(jsonBytes))
         } else {
             data.ToEntityKey = types.StringNull()
@@ -799,6 +848,13 @@ func (r *InventoryItemRelationshipResource) Read(ctx context.Context, req resour
         } else {
             data.RelationshipType = types.StringNull()
         }
+    } else if arr, ok := dataMap["relationshipType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RelationshipType = types.StringValue(string(jsonBytes))
+        } else {
+            data.RelationshipType = types.StringNull()
+        }
     } else if val, ok := dataMap["relationshipType"].(string); ok {
         data.RelationshipType = types.StringValue(val)
     } else {
@@ -832,6 +888,13 @@ func (r *InventoryItemRelationshipResource) Read(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Source = types.StringValue(string(jsonBytes))
+        } else {
+            data.Source = types.StringNull()
+        }
+    } else if arr, ok := dataMap["source"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Source = types.StringValue(string(jsonBytes))
         } else {
             data.Source = types.StringNull()
@@ -916,6 +979,13 @@ func (r *InventoryItemRelationshipResource) Read(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1089,6 +1159,13 @@ func (r *InventoryItemRelationshipResource) Update(ctx context.Context, req reso
         } else {
             data.FromEntityKey = types.StringNull()
         }
+    } else if arr, ok := dataMap["fromEntityKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.FromEntityKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.FromEntityKey = types.StringNull()
+        }
     } else if val, ok := dataMap["fromEntityKey"].(string); ok {
         data.FromEntityKey = types.StringValue(val)
     } else {
@@ -1122,6 +1199,13 @@ func (r *InventoryItemRelationshipResource) Update(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ToEntityKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ToEntityKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["toEntityKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ToEntityKey = types.StringValue(string(jsonBytes))
         } else {
             data.ToEntityKey = types.StringNull()
@@ -1163,6 +1247,13 @@ func (r *InventoryItemRelationshipResource) Update(ctx context.Context, req reso
         } else {
             data.RelationshipType = types.StringNull()
         }
+    } else if arr, ok := dataMap["relationshipType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RelationshipType = types.StringValue(string(jsonBytes))
+        } else {
+            data.RelationshipType = types.StringNull()
+        }
     } else if val, ok := dataMap["relationshipType"].(string); ok {
         data.RelationshipType = types.StringValue(val)
     } else {
@@ -1196,6 +1287,13 @@ func (r *InventoryItemRelationshipResource) Update(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Source = types.StringValue(string(jsonBytes))
+        } else {
+            data.Source = types.StringNull()
+        }
+    } else if arr, ok := dataMap["source"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Source = types.StringValue(string(jsonBytes))
         } else {
             data.Source = types.StringNull()
@@ -1280,6 +1378,13 @@ func (r *InventoryItemRelationshipResource) Update(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

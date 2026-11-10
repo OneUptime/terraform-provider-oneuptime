@@ -290,6 +290,13 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -303,6 +310,13 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -324,6 +338,13 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -337,6 +358,13 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -358,6 +386,13 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := item["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -371,6 +406,13 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         } else if val, ok := obj["value"].(float64); ok {
             data.Description = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -392,6 +434,13 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         } else {
             data.PatternType = types.StringNull()
         }
+    } else if arr, ok := item["patternType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PatternType = types.StringValue(string(jsonBytes))
+        } else {
+            data.PatternType = types.StringNull()
+        }
     } else if val, ok := item["patternType"].(string); ok {
         data.PatternType = types.StringValue(val)
     } else {
@@ -405,6 +454,13 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         } else if val, ok := obj["value"].(float64); ok {
             data.CustomRegex = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CustomRegex = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRegex = types.StringNull()
+        }
+    } else if arr, ok := item["customRegex"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CustomRegex = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRegex = types.StringNull()
@@ -426,6 +482,13 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         } else {
             data.ScrubAction = types.StringNull()
         }
+    } else if arr, ok := item["scrubAction"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ScrubAction = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScrubAction = types.StringNull()
+        }
     } else if val, ok := item["scrubAction"].(string); ok {
         data.ScrubAction = types.StringValue(val)
     } else {
@@ -439,6 +502,13 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         } else if val, ok := obj["value"].(float64); ok {
             data.FieldsToScrub = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FieldsToScrub = types.StringValue(string(jsonBytes))
+        } else {
+            data.FieldsToScrub = types.StringNull()
+        }
+    } else if arr, ok := item["fieldsToScrub"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.FieldsToScrub = types.StringValue(string(jsonBytes))
         } else {
             data.FieldsToScrub = types.StringNull()
@@ -462,6 +532,13 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

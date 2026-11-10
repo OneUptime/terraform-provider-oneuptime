@@ -228,6 +228,13 @@ func (d *SloHistoryDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -241,6 +248,13 @@ func (d *SloHistoryDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -262,6 +276,13 @@ func (d *SloHistoryDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else {
             data.SloId = types.StringNull()
         }
+    } else if arr, ok := item["sloId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SloId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SloId = types.StringNull()
+        }
     } else if val, ok := item["sloId"].(string); ok {
         data.SloId = types.StringValue(val)
     } else {
@@ -275,6 +296,13 @@ func (d *SloHistoryDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else if val, ok := obj["value"].(float64); ok {
             data.MetricName = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MetricName = types.StringValue(string(jsonBytes))
+        } else {
+            data.MetricName = types.StringNull()
+        }
+    } else if arr, ok := item["metricName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.MetricName = types.StringValue(string(jsonBytes))
         } else {
             data.MetricName = types.StringNull()
@@ -296,6 +324,13 @@ func (d *SloHistoryDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else {
             data.BucketStart = types.StringNull()
         }
+    } else if arr, ok := item["bucketStart"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.BucketStart = types.StringValue(string(jsonBytes))
+        } else {
+            data.BucketStart = types.StringNull()
+        }
     } else if val, ok := item["bucketStart"].(string); ok {
         data.BucketStart = types.StringValue(val)
     } else {
@@ -310,6 +345,13 @@ func (d *SloHistoryDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else if val, ok := obj["value"].(float64); ok {
             data.Version = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Version = types.StringValue(string(jsonBytes))
+        } else {
+            data.Version = types.StringNull()
+        }
+    } else if arr, ok := item["version"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Version = types.StringValue(string(jsonBytes))
         } else {
             data.Version = types.StringNull()

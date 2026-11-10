@@ -38,6 +38,7 @@ resource "oneuptime_network_endpoint" "example" {
 - `attachment_source` (String) The network controller that reported where this endpoint is attached, such as meraki. Empty when a walk of a switch or router found it. Managed by the server.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `edited_at` (String) When a person last added this endpoint or changed its vendor, IP address or site. Managed by the server.
 - `first_seen_at` (String) When this endpoint was first discovered on the network.
 - `hostname` (String) What a network controller calls this endpoint, such as the name in its Meraki client list. Managed by the server.
 - `id` (String) Unique identifier for the resource.

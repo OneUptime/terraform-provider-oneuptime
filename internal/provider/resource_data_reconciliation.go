@@ -511,6 +511,13 @@ func (r *DataReconciliationResource) Create(ctx context.Context, req resource.Cr
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -544,6 +551,13 @@ func (r *DataReconciliationResource) Create(ctx context.Context, req resource.Cr
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -586,6 +600,13 @@ func (r *DataReconciliationResource) Create(ctx context.Context, req resource.Cr
         } else {
             data.ToleranceType = types.StringNull()
         }
+    } else if arr, ok := dataMap["toleranceType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ToleranceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ToleranceType = types.StringNull()
+        }
     } else if val, ok := dataMap["toleranceType"].(string); ok {
         data.ToleranceType = types.StringValue(val)
     } else {
@@ -620,6 +641,13 @@ func (r *DataReconciliationResource) Create(ctx context.Context, req resource.Cr
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SourceDataAssetId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SourceDataAssetId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sourceDataAssetId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SourceDataAssetId = types.StringValue(string(jsonBytes))
         } else {
             data.SourceDataAssetId = types.StringNull()
@@ -661,6 +689,13 @@ func (r *DataReconciliationResource) Create(ctx context.Context, req resource.Cr
         } else {
             data.SourceMeasure = types.StringNull()
         }
+    } else if arr, ok := dataMap["sourceMeasure"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SourceMeasure = types.StringValue(string(jsonBytes))
+        } else {
+            data.SourceMeasure = types.StringNull()
+        }
     } else if val, ok := dataMap["sourceMeasure"].(string); ok {
         data.SourceMeasure = types.StringValue(val)
     } else {
@@ -694,6 +729,13 @@ func (r *DataReconciliationResource) Create(ctx context.Context, req resource.Cr
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SourceColumnName = types.StringValue(string(jsonBytes))
+        } else {
+            data.SourceColumnName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sourceColumnName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SourceColumnName = types.StringValue(string(jsonBytes))
         } else {
             data.SourceColumnName = types.StringNull()
@@ -735,6 +777,13 @@ func (r *DataReconciliationResource) Create(ctx context.Context, req resource.Cr
         } else {
             data.SourceCustomSql = types.StringNull()
         }
+    } else if arr, ok := dataMap["sourceCustomSql"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SourceCustomSql = types.StringValue(string(jsonBytes))
+        } else {
+            data.SourceCustomSql = types.StringNull()
+        }
     } else if val, ok := dataMap["sourceCustomSql"].(string); ok {
         data.SourceCustomSql = types.StringValue(val)
     } else {
@@ -768,6 +817,13 @@ func (r *DataReconciliationResource) Create(ctx context.Context, req resource.Cr
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TargetDataAssetId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetDataAssetId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["targetDataAssetId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TargetDataAssetId = types.StringValue(string(jsonBytes))
         } else {
             data.TargetDataAssetId = types.StringNull()
@@ -809,6 +865,13 @@ func (r *DataReconciliationResource) Create(ctx context.Context, req resource.Cr
         } else {
             data.TargetMeasure = types.StringNull()
         }
+    } else if arr, ok := dataMap["targetMeasure"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TargetMeasure = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetMeasure = types.StringNull()
+        }
     } else if val, ok := dataMap["targetMeasure"].(string); ok {
         data.TargetMeasure = types.StringValue(val)
     } else {
@@ -846,6 +909,13 @@ func (r *DataReconciliationResource) Create(ctx context.Context, req resource.Cr
         } else {
             data.TargetColumnName = types.StringNull()
         }
+    } else if arr, ok := dataMap["targetColumnName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TargetColumnName = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetColumnName = types.StringNull()
+        }
     } else if val, ok := dataMap["targetColumnName"].(string); ok {
         data.TargetColumnName = types.StringValue(val)
     } else {
@@ -879,6 +949,13 @@ func (r *DataReconciliationResource) Create(ctx context.Context, req resource.Cr
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TargetCustomSql = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetCustomSql = types.StringNull()
+        }
+    } else if arr, ok := dataMap["targetCustomSql"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TargetCustomSql = types.StringValue(string(jsonBytes))
         } else {
             data.TargetCustomSql = types.StringNull()
@@ -942,6 +1019,13 @@ func (r *DataReconciliationResource) Create(ctx context.Context, req resource.Cr
         } else {
             data.SourceDataCheckId = types.StringNull()
         }
+    } else if arr, ok := dataMap["sourceDataCheckId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SourceDataCheckId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SourceDataCheckId = types.StringNull()
+        }
     } else if val, ok := dataMap["sourceDataCheckId"].(string); ok {
         data.SourceDataCheckId = types.StringValue(val)
     } else {
@@ -976,6 +1060,13 @@ func (r *DataReconciliationResource) Create(ctx context.Context, req resource.Cr
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TargetDataCheckId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetDataCheckId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["targetDataCheckId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TargetDataCheckId = types.StringValue(string(jsonBytes))
         } else {
             data.TargetDataCheckId = types.StringNull()
@@ -1020,6 +1111,13 @@ func (r *DataReconciliationResource) Create(ctx context.Context, req resource.Cr
         } else {
             data.Status = types.StringNull()
         }
+    } else if arr, ok := dataMap["status"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Status = types.StringValue(string(jsonBytes))
+        } else {
+            data.Status = types.StringNull()
+        }
     } else if val, ok := dataMap["status"].(string); ok {
         data.Status = types.StringValue(val)
     } else {
@@ -1053,6 +1151,13 @@ func (r *DataReconciliationResource) Create(ctx context.Context, req resource.Cr
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.StatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusMessage = types.StringNull()
+        }
+    } else if arr, ok := dataMap["statusMessage"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.StatusMessage = types.StringValue(string(jsonBytes))
         } else {
             data.StatusMessage = types.StringNull()
@@ -1116,6 +1221,13 @@ func (r *DataReconciliationResource) Create(ctx context.Context, req resource.Cr
         } else {
             data.MonitorId = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitorId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorId = types.StringNull()
+        }
     } else if val, ok := dataMap["monitorId"].(string); ok {
         data.MonitorId = types.StringValue(val)
     } else {
@@ -1149,6 +1261,13 @@ func (r *DataReconciliationResource) Create(ctx context.Context, req resource.Cr
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1293,6 +1412,13 @@ func (r *DataReconciliationResource) Read(ctx context.Context, req resource.Read
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1326,6 +1452,13 @@ func (r *DataReconciliationResource) Read(ctx context.Context, req resource.Read
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1368,6 +1501,13 @@ func (r *DataReconciliationResource) Read(ctx context.Context, req resource.Read
         } else {
             data.ToleranceType = types.StringNull()
         }
+    } else if arr, ok := dataMap["toleranceType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ToleranceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ToleranceType = types.StringNull()
+        }
     } else if val, ok := dataMap["toleranceType"].(string); ok {
         data.ToleranceType = types.StringValue(val)
     } else {
@@ -1402,6 +1542,13 @@ func (r *DataReconciliationResource) Read(ctx context.Context, req resource.Read
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SourceDataAssetId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SourceDataAssetId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sourceDataAssetId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SourceDataAssetId = types.StringValue(string(jsonBytes))
         } else {
             data.SourceDataAssetId = types.StringNull()
@@ -1443,6 +1590,13 @@ func (r *DataReconciliationResource) Read(ctx context.Context, req resource.Read
         } else {
             data.SourceMeasure = types.StringNull()
         }
+    } else if arr, ok := dataMap["sourceMeasure"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SourceMeasure = types.StringValue(string(jsonBytes))
+        } else {
+            data.SourceMeasure = types.StringNull()
+        }
     } else if val, ok := dataMap["sourceMeasure"].(string); ok {
         data.SourceMeasure = types.StringValue(val)
     } else {
@@ -1476,6 +1630,13 @@ func (r *DataReconciliationResource) Read(ctx context.Context, req resource.Read
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SourceColumnName = types.StringValue(string(jsonBytes))
+        } else {
+            data.SourceColumnName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sourceColumnName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SourceColumnName = types.StringValue(string(jsonBytes))
         } else {
             data.SourceColumnName = types.StringNull()
@@ -1517,6 +1678,13 @@ func (r *DataReconciliationResource) Read(ctx context.Context, req resource.Read
         } else {
             data.SourceCustomSql = types.StringNull()
         }
+    } else if arr, ok := dataMap["sourceCustomSql"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SourceCustomSql = types.StringValue(string(jsonBytes))
+        } else {
+            data.SourceCustomSql = types.StringNull()
+        }
     } else if val, ok := dataMap["sourceCustomSql"].(string); ok {
         data.SourceCustomSql = types.StringValue(val)
     } else {
@@ -1550,6 +1718,13 @@ func (r *DataReconciliationResource) Read(ctx context.Context, req resource.Read
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TargetDataAssetId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetDataAssetId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["targetDataAssetId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TargetDataAssetId = types.StringValue(string(jsonBytes))
         } else {
             data.TargetDataAssetId = types.StringNull()
@@ -1591,6 +1766,13 @@ func (r *DataReconciliationResource) Read(ctx context.Context, req resource.Read
         } else {
             data.TargetMeasure = types.StringNull()
         }
+    } else if arr, ok := dataMap["targetMeasure"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TargetMeasure = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetMeasure = types.StringNull()
+        }
     } else if val, ok := dataMap["targetMeasure"].(string); ok {
         data.TargetMeasure = types.StringValue(val)
     } else {
@@ -1628,6 +1810,13 @@ func (r *DataReconciliationResource) Read(ctx context.Context, req resource.Read
         } else {
             data.TargetColumnName = types.StringNull()
         }
+    } else if arr, ok := dataMap["targetColumnName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TargetColumnName = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetColumnName = types.StringNull()
+        }
     } else if val, ok := dataMap["targetColumnName"].(string); ok {
         data.TargetColumnName = types.StringValue(val)
     } else {
@@ -1661,6 +1850,13 @@ func (r *DataReconciliationResource) Read(ctx context.Context, req resource.Read
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TargetCustomSql = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetCustomSql = types.StringNull()
+        }
+    } else if arr, ok := dataMap["targetCustomSql"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TargetCustomSql = types.StringValue(string(jsonBytes))
         } else {
             data.TargetCustomSql = types.StringNull()
@@ -1724,6 +1920,13 @@ func (r *DataReconciliationResource) Read(ctx context.Context, req resource.Read
         } else {
             data.SourceDataCheckId = types.StringNull()
         }
+    } else if arr, ok := dataMap["sourceDataCheckId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SourceDataCheckId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SourceDataCheckId = types.StringNull()
+        }
     } else if val, ok := dataMap["sourceDataCheckId"].(string); ok {
         data.SourceDataCheckId = types.StringValue(val)
     } else {
@@ -1758,6 +1961,13 @@ func (r *DataReconciliationResource) Read(ctx context.Context, req resource.Read
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TargetDataCheckId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetDataCheckId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["targetDataCheckId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TargetDataCheckId = types.StringValue(string(jsonBytes))
         } else {
             data.TargetDataCheckId = types.StringNull()
@@ -1802,6 +2012,13 @@ func (r *DataReconciliationResource) Read(ctx context.Context, req resource.Read
         } else {
             data.Status = types.StringNull()
         }
+    } else if arr, ok := dataMap["status"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Status = types.StringValue(string(jsonBytes))
+        } else {
+            data.Status = types.StringNull()
+        }
     } else if val, ok := dataMap["status"].(string); ok {
         data.Status = types.StringValue(val)
     } else {
@@ -1835,6 +2052,13 @@ func (r *DataReconciliationResource) Read(ctx context.Context, req resource.Read
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.StatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusMessage = types.StringNull()
+        }
+    } else if arr, ok := dataMap["statusMessage"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.StatusMessage = types.StringValue(string(jsonBytes))
         } else {
             data.StatusMessage = types.StringNull()
@@ -1898,6 +2122,13 @@ func (r *DataReconciliationResource) Read(ctx context.Context, req resource.Read
         } else {
             data.MonitorId = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitorId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorId = types.StringNull()
+        }
     } else if val, ok := dataMap["monitorId"].(string); ok {
         data.MonitorId = types.StringValue(val)
     } else {
@@ -1931,6 +2162,13 @@ func (r *DataReconciliationResource) Read(ctx context.Context, req resource.Read
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -2143,6 +2381,13 @@ func (r *DataReconciliationResource) Update(ctx context.Context, req resource.Up
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -2176,6 +2421,13 @@ func (r *DataReconciliationResource) Update(ctx context.Context, req resource.Up
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -2218,6 +2470,13 @@ func (r *DataReconciliationResource) Update(ctx context.Context, req resource.Up
         } else {
             data.ToleranceType = types.StringNull()
         }
+    } else if arr, ok := dataMap["toleranceType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ToleranceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ToleranceType = types.StringNull()
+        }
     } else if val, ok := dataMap["toleranceType"].(string); ok {
         data.ToleranceType = types.StringValue(val)
     } else {
@@ -2252,6 +2511,13 @@ func (r *DataReconciliationResource) Update(ctx context.Context, req resource.Up
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SourceDataAssetId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SourceDataAssetId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sourceDataAssetId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SourceDataAssetId = types.StringValue(string(jsonBytes))
         } else {
             data.SourceDataAssetId = types.StringNull()
@@ -2293,6 +2559,13 @@ func (r *DataReconciliationResource) Update(ctx context.Context, req resource.Up
         } else {
             data.SourceMeasure = types.StringNull()
         }
+    } else if arr, ok := dataMap["sourceMeasure"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SourceMeasure = types.StringValue(string(jsonBytes))
+        } else {
+            data.SourceMeasure = types.StringNull()
+        }
     } else if val, ok := dataMap["sourceMeasure"].(string); ok {
         data.SourceMeasure = types.StringValue(val)
     } else {
@@ -2326,6 +2599,13 @@ func (r *DataReconciliationResource) Update(ctx context.Context, req resource.Up
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SourceColumnName = types.StringValue(string(jsonBytes))
+        } else {
+            data.SourceColumnName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sourceColumnName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SourceColumnName = types.StringValue(string(jsonBytes))
         } else {
             data.SourceColumnName = types.StringNull()
@@ -2367,6 +2647,13 @@ func (r *DataReconciliationResource) Update(ctx context.Context, req resource.Up
         } else {
             data.SourceCustomSql = types.StringNull()
         }
+    } else if arr, ok := dataMap["sourceCustomSql"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SourceCustomSql = types.StringValue(string(jsonBytes))
+        } else {
+            data.SourceCustomSql = types.StringNull()
+        }
     } else if val, ok := dataMap["sourceCustomSql"].(string); ok {
         data.SourceCustomSql = types.StringValue(val)
     } else {
@@ -2400,6 +2687,13 @@ func (r *DataReconciliationResource) Update(ctx context.Context, req resource.Up
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TargetDataAssetId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetDataAssetId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["targetDataAssetId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TargetDataAssetId = types.StringValue(string(jsonBytes))
         } else {
             data.TargetDataAssetId = types.StringNull()
@@ -2441,6 +2735,13 @@ func (r *DataReconciliationResource) Update(ctx context.Context, req resource.Up
         } else {
             data.TargetMeasure = types.StringNull()
         }
+    } else if arr, ok := dataMap["targetMeasure"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TargetMeasure = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetMeasure = types.StringNull()
+        }
     } else if val, ok := dataMap["targetMeasure"].(string); ok {
         data.TargetMeasure = types.StringValue(val)
     } else {
@@ -2478,6 +2779,13 @@ func (r *DataReconciliationResource) Update(ctx context.Context, req resource.Up
         } else {
             data.TargetColumnName = types.StringNull()
         }
+    } else if arr, ok := dataMap["targetColumnName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TargetColumnName = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetColumnName = types.StringNull()
+        }
     } else if val, ok := dataMap["targetColumnName"].(string); ok {
         data.TargetColumnName = types.StringValue(val)
     } else {
@@ -2511,6 +2819,13 @@ func (r *DataReconciliationResource) Update(ctx context.Context, req resource.Up
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TargetCustomSql = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetCustomSql = types.StringNull()
+        }
+    } else if arr, ok := dataMap["targetCustomSql"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TargetCustomSql = types.StringValue(string(jsonBytes))
         } else {
             data.TargetCustomSql = types.StringNull()
@@ -2574,6 +2889,13 @@ func (r *DataReconciliationResource) Update(ctx context.Context, req resource.Up
         } else {
             data.SourceDataCheckId = types.StringNull()
         }
+    } else if arr, ok := dataMap["sourceDataCheckId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SourceDataCheckId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SourceDataCheckId = types.StringNull()
+        }
     } else if val, ok := dataMap["sourceDataCheckId"].(string); ok {
         data.SourceDataCheckId = types.StringValue(val)
     } else {
@@ -2608,6 +2930,13 @@ func (r *DataReconciliationResource) Update(ctx context.Context, req resource.Up
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TargetDataCheckId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetDataCheckId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["targetDataCheckId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TargetDataCheckId = types.StringValue(string(jsonBytes))
         } else {
             data.TargetDataCheckId = types.StringNull()
@@ -2652,6 +2981,13 @@ func (r *DataReconciliationResource) Update(ctx context.Context, req resource.Up
         } else {
             data.Status = types.StringNull()
         }
+    } else if arr, ok := dataMap["status"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Status = types.StringValue(string(jsonBytes))
+        } else {
+            data.Status = types.StringNull()
+        }
     } else if val, ok := dataMap["status"].(string); ok {
         data.Status = types.StringValue(val)
     } else {
@@ -2685,6 +3021,13 @@ func (r *DataReconciliationResource) Update(ctx context.Context, req resource.Up
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.StatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusMessage = types.StringNull()
+        }
+    } else if arr, ok := dataMap["statusMessage"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.StatusMessage = types.StringValue(string(jsonBytes))
         } else {
             data.StatusMessage = types.StringNull()
@@ -2748,6 +3091,13 @@ func (r *DataReconciliationResource) Update(ctx context.Context, req resource.Up
         } else {
             data.MonitorId = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitorId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorId = types.StringNull()
+        }
     } else if val, ok := dataMap["monitorId"].(string); ok {
         data.MonitorId = types.StringValue(val)
     } else {
@@ -2781,6 +3131,13 @@ func (r *DataReconciliationResource) Update(ctx context.Context, req resource.Up
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

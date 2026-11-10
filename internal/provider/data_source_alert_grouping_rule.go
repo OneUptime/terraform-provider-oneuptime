@@ -53,6 +53,8 @@ type AlertGroupingRuleDataSourceModel struct {
     GroupByMonitorLabels types.Bool `tfsdk:"group_by_monitor_labels"`
     EnableTimeWindow types.Bool `tfsdk:"enable_time_window"`
     TimeWindowMinutes types.Number `tfsdk:"time_window_minutes"`
+    EnableMinimumAlertCount types.Bool `tfsdk:"enable_minimum_alert_count"`
+    MinimumAlertCount types.Number `tfsdk:"minimum_alert_count"`
     GroupByFields types.String `tfsdk:"group_by_fields"`
     EpisodeTitleTemplate types.String `tfsdk:"episode_title_template"`
     EpisodeDescriptionTemplate types.String `tfsdk:"episode_description_template"`
@@ -198,6 +200,16 @@ func (d *AlertGroupingRuleDataSource) Schema(ctx context.Context, req datasource
             },
             "time_window_minutes": schema.NumberAttribute{
                 MarkdownDescription: "Rolling time window in minutes. Alerts are grouped if they arrive within this gap from the last alert.",
+                Optional: true,
+                Computed: true,
+            },
+            "enable_minimum_alert_count": schema.BoolAttribute{
+                MarkdownDescription: "Wait for more alerts before opening an episode. When enabled, a matching alert with no open episode to join stays on its own until Minimum Alert Count matching alerts of the same group are ongoing - and, with the time window enabled, arrived within it of each other. The episode then opens with all of them. Until then, each alert runs only its own on-call policies. When disabled, the first matching alert opens an episode.",
+                Optional: true,
+                Computed: true,
+            },
+            "minimum_alert_count": schema.NumberAttribute{
+                MarkdownDescription: "How many matching alerts of the same group must be ongoing before the rule opens an episode for them, while Enable Minimum Alert Count is on. A whole number from 1 to 100; 1 opens an episode for the first matching alert.",
                 Optional: true,
                 Computed: true,
             },
@@ -388,6 +400,14 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         filters["timeWindowMinutes"] = lookupNumber(data.TimeWindowMinutes)
         filterNames = append(filterNames, "time_window_minutes = "+data.TimeWindowMinutes.ValueBigFloat().String())
     }
+    if !data.EnableMinimumAlertCount.IsNull() && !data.EnableMinimumAlertCount.IsUnknown() {
+        filters["enableMinimumAlertCount"] = data.EnableMinimumAlertCount.ValueBool()
+        filterNames = append(filterNames, "enable_minimum_alert_count = "+fmt.Sprintf("%t", data.EnableMinimumAlertCount.ValueBool()))
+    }
+    if !data.MinimumAlertCount.IsNull() && !data.MinimumAlertCount.IsUnknown() {
+        filters["minimumAlertCount"] = lookupNumber(data.MinimumAlertCount)
+        filterNames = append(filterNames, "minimum_alert_count = "+data.MinimumAlertCount.ValueBigFloat().String())
+    }
     if !data.EpisodeTitleTemplate.IsNull() && !data.EpisodeTitleTemplate.IsUnknown() {
         filters["episodeTitleTemplate"] = data.EpisodeTitleTemplate.ValueString()
         filterNames = append(filterNames, "episode_title_template = "+fmt.Sprintf("%q", data.EpisodeTitleTemplate.ValueString()))
@@ -481,6 +501,8 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         "groupByMonitorLabels": true,
         "enableTimeWindow": true,
         "timeWindowMinutes": true,
+        "enableMinimumAlertCount": true,
+        "minimumAlertCount": true,
         "groupByFields": true,
         "episodeTitleTemplate": true,
         "episodeDescriptionTemplate": true,
@@ -570,6 +592,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -583,6 +612,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -604,6 +640,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -617,6 +660,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.Criteria = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Criteria = types.StringValue(string(jsonBytes))
+        } else {
+            data.Criteria = types.StringNull()
+        }
+    } else if arr, ok := item["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Criteria = types.StringValue(string(jsonBytes))
         } else {
             data.Criteria = types.StringNull()
@@ -638,6 +688,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.ProjectId = types.StringNull()
         }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
     } else if val, ok := item["projectId"].(string); ok {
         data.ProjectId = types.StringValue(val)
     } else {
@@ -655,6 +712,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := item["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -668,6 +732,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.Description = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -691,6 +762,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.MatchCriteria = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MatchCriteria = types.StringValue(string(jsonBytes))
+        } else {
+            data.MatchCriteria = types.StringNull()
+        }
+    } else if arr, ok := item["matchCriteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.MatchCriteria = types.StringValue(string(jsonBytes))
         } else {
             data.MatchCriteria = types.StringNull()
@@ -808,6 +886,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.AlertTitlePattern = types.StringNull()
         }
+    } else if arr, ok := item["alertTitlePattern"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AlertTitlePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertTitlePattern = types.StringNull()
+        }
     } else if val, ok := item["alertTitlePattern"].(string); ok {
         data.AlertTitlePattern = types.StringValue(val)
     } else {
@@ -821,6 +906,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.AlertDescriptionPattern = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AlertDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := item["alertDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.AlertDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.AlertDescriptionPattern = types.StringNull()
@@ -842,6 +934,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.MonitorNamePattern = types.StringNull()
         }
+    } else if arr, ok := item["monitorNamePattern"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.MonitorNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorNamePattern = types.StringNull()
+        }
     } else if val, ok := item["monitorNamePattern"].(string); ok {
         data.MonitorNamePattern = types.StringValue(val)
     } else {
@@ -855,6 +954,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.MonitorDescriptionPattern = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := item["monitorDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.MonitorDescriptionPattern = types.StringNull()
@@ -895,6 +1001,12 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         data.EnableTimeWindow = types.BoolNull()
     }
     data.TimeWindowMinutes = numberFromAPI(data.TimeWindowMinutes, item["timeWindowMinutes"])
+    if val, ok := item["enableMinimumAlertCount"].(bool); ok {
+        data.EnableMinimumAlertCount = types.BoolValue(val)
+    } else {
+        data.EnableMinimumAlertCount = types.BoolNull()
+    }
+    data.MinimumAlertCount = numberFromAPI(data.MinimumAlertCount, item["minimumAlertCount"])
     if obj, ok := item["groupByFields"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.GroupByFields = types.StringValue(val)
@@ -903,6 +1015,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.GroupByFields = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.GroupByFields = types.StringValue(string(jsonBytes))
+        } else {
+            data.GroupByFields = types.StringNull()
+        }
+    } else if arr, ok := item["groupByFields"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.GroupByFields = types.StringValue(string(jsonBytes))
         } else {
             data.GroupByFields = types.StringNull()
@@ -924,6 +1043,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.EpisodeTitleTemplate = types.StringNull()
         }
+    } else if arr, ok := item["episodeTitleTemplate"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.EpisodeTitleTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.EpisodeTitleTemplate = types.StringNull()
+        }
     } else if val, ok := item["episodeTitleTemplate"].(string); ok {
         data.EpisodeTitleTemplate = types.StringValue(val)
     } else {
@@ -937,6 +1063,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.EpisodeDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EpisodeDescriptionTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.EpisodeDescriptionTemplate = types.StringNull()
+        }
+    } else if arr, ok := item["episodeDescriptionTemplate"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.EpisodeDescriptionTemplate = types.StringValue(string(jsonBytes))
         } else {
             data.EpisodeDescriptionTemplate = types.StringNull()
@@ -1000,6 +1133,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.DefaultAssignToUserId = types.StringNull()
         }
+    } else if arr, ok := item["defaultAssignToUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.DefaultAssignToUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultAssignToUserId = types.StringNull()
+        }
     } else if val, ok := item["defaultAssignToUserId"].(string); ok {
         data.DefaultAssignToUserId = types.StringValue(val)
     } else {
@@ -1013,6 +1153,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.DefaultAssignToTeamId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DefaultAssignToTeamId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultAssignToTeamId = types.StringNull()
+        }
+    } else if arr, ok := item["defaultAssignToTeamId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.DefaultAssignToTeamId = types.StringValue(string(jsonBytes))
         } else {
             data.DefaultAssignToTeamId = types.StringNull()
@@ -1102,6 +1249,13 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

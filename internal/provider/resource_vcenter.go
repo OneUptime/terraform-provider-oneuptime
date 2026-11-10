@@ -94,6 +94,7 @@ type VcenterResourceModel struct {
     AiAccessLastVerifiedAt RFC3339Value `tfsdk:"ai_access_last_verified_at"`
     AiAccessLastError types.String `tfsdk:"ai_access_last_error"`
     AiAccessConfiguredAt RFC3339Value `tfsdk:"ai_access_configured_at"`
+    AiAgentResetAt RFC3339Value `tfsdk:"ai_agent_reset_at"`
     IsVCenterPasswordSet types.Bool `tfsdk:"is_v_center_password_set"`
     VcenterCredentialsUpdatedAt RFC3339Value `tfsdk:"vcenter_credentials_updated_at"`
     CollectionStatus types.String `tfsdk:"collection_status"`
@@ -445,6 +446,11 @@ func (r *VcenterResource) schemaDefinition() schema.Schema {
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
+            "ai_agent_reset_at": schema.StringAttribute{
+                MarkdownDescription: "When this vCenter's AI agent was last reset: its key stopped working at once, and it registers again by itself. Set by the server.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
             "is_v_center_password_set": schema.BoolAttribute{
                 MarkdownDescription: "Whether a vCenter password is saved. Set by the server from the password itself.",
                 Computed: true,
@@ -696,6 +702,7 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
+        "aiAgentResetAt": true,
         "isVCenterPasswordSet": true,
         "vcenterCredentialsUpdatedAt": true,
         "collectionStatus": true,
@@ -782,6 +789,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -815,6 +829,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -892,6 +913,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["telemetryRetentionConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
@@ -925,6 +953,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CollectionMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionMethod = types.StringNull()
+        }
+    } else if arr, ok := dataMap["collectionMethod"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CollectionMethod = types.StringValue(string(jsonBytes))
         } else {
             data.CollectionMethod = types.StringNull()
@@ -966,6 +1001,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.VcenterUrl = types.StringNull()
         }
+    } else if arr, ok := dataMap["vcenterUrl"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.VcenterUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.VcenterUrl = types.StringNull()
+        }
     } else if val, ok := dataMap["vcenterUrl"].(string); ok {
         data.VcenterUrl = types.StringValue(val)
     } else {
@@ -999,6 +1041,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.VcenterUsername = types.StringValue(string(jsonBytes))
+        } else {
+            data.VcenterUsername = types.StringNull()
+        }
+    } else if arr, ok := dataMap["vcenterUsername"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.VcenterUsername = types.StringValue(string(jsonBytes))
         } else {
             data.VcenterUsername = types.StringNull()
@@ -1040,6 +1089,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.CollectionProbeId = types.StringNull()
         }
+    } else if arr, ok := dataMap["collectionProbeId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CollectionProbeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionProbeId = types.StringNull()
+        }
     } else if val, ok := dataMap["collectionProbeId"].(string); ok {
         data.CollectionProbeId = types.StringValue(val)
     } else {
@@ -1073,6 +1129,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TrustedCertificateFingerprint = types.StringValue(string(jsonBytes))
+        } else {
+            data.TrustedCertificateFingerprint = types.StringNull()
+        }
+    } else if arr, ok := dataMap["trustedCertificateFingerprint"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TrustedCertificateFingerprint = types.StringValue(string(jsonBytes))
         } else {
             data.TrustedCertificateFingerprint = types.StringNull()
@@ -1115,6 +1178,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.OtelCollectorStatus = types.StringNull()
         }
+    } else if arr, ok := dataMap["otelCollectorStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OtelCollectorStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.OtelCollectorStatus = types.StringNull()
+        }
     } else if val, ok := dataMap["otelCollectorStatus"].(string); ok {
         data.OtelCollectorStatus = types.StringValue(val)
     } else {
@@ -1148,6 +1218,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AgentVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.AgentVersion = types.StringNull()
+        }
+    } else if arr, ok := dataMap["agentVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AgentVersion = types.StringValue(string(jsonBytes))
         } else {
             data.AgentVersion = types.StringNull()
@@ -1212,6 +1289,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.AiRemediationMode = types.StringNull()
         }
+    } else if arr, ok := dataMap["aiRemediationMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AiRemediationMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiRemediationMode = types.StringNull()
+        }
     } else if val, ok := dataMap["aiRemediationMode"].(string); ok {
         data.AiRemediationMode = types.StringValue(val)
     } else {
@@ -1245,6 +1329,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AiCommandAllowlist = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["aiCommandAllowlist"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.AiCommandAllowlist = NewJSONSubsetNull()
@@ -1308,6 +1399,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -1341,6 +1439,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1393,6 +1498,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.ArchivedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["archivedByUserId"].(string); ok {
         data.ArchivedByUserId = types.StringValue(val)
     } else {
@@ -1441,6 +1553,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.AiAccessLastError = types.StringNull()
         }
+    } else if arr, ok := dataMap["aiAccessLastError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AiAccessLastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessLastError = types.StringNull()
+        }
     } else if val, ok := dataMap["aiAccessLastError"].(string); ok {
         data.AiAccessLastError = types.StringValue(val)
     } else {
@@ -1456,6 +1575,17 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
         data.AiAccessConfiguredAt = NewRFC3339Value(val)
     } else {
         data.AiAccessConfiguredAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["aiAgentResetAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AiAgentResetAt = NewRFC3339Value(val)
+        } else {
+            data.AiAgentResetAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["aiAgentResetAt"].(string); ok && val != "" {
+        data.AiAgentResetAt = NewRFC3339Value(val)
+    } else {
+        data.AiAgentResetAt = NewRFC3339Null()
     }
     if val, ok := dataMap["isVCenterPasswordSet"].(bool); ok {
         data.IsVCenterPasswordSet = types.BoolValue(val)
@@ -1503,6 +1633,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.CollectionStatus = types.StringNull()
         }
+    } else if arr, ok := dataMap["collectionStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CollectionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionStatus = types.StringNull()
+        }
     } else if val, ok := dataMap["collectionStatus"].(string); ok {
         data.CollectionStatus = types.StringValue(val)
     } else {
@@ -1536,6 +1673,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CollectionErrorCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionErrorCode = types.StringNull()
+        }
+    } else if arr, ok := dataMap["collectionErrorCode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CollectionErrorCode = types.StringValue(string(jsonBytes))
         } else {
             data.CollectionErrorCode = types.StringNull()
@@ -1577,6 +1721,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.CollectionError = types.StringNull()
         }
+    } else if arr, ok := dataMap["collectionError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CollectionError = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionError = types.StringNull()
+        }
     } else if val, ok := dataMap["collectionError"].(string); ok {
         data.CollectionError = types.StringValue(val)
     } else {
@@ -1614,6 +1765,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.PresentedCertificate = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["presentedCertificate"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PresentedCertificate = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.PresentedCertificate = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["presentedCertificate"].(string); ok {
         data.PresentedCertificate = NewJSONSubsetValue(val)
     } else {
@@ -1647,6 +1805,13 @@ func (r *VcenterResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CollectionSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CollectionSummary = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["collectionSummary"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CollectionSummary = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.CollectionSummary = NewJSONSubsetNull()
@@ -1760,6 +1925,7 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
+        "aiAgentResetAt": true,
         "isVCenterPasswordSet": true,
         "vcenterCredentialsUpdatedAt": true,
         "collectionStatus": true,
@@ -1847,6 +2013,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1880,6 +2053,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1957,6 +2137,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["telemetryRetentionConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
@@ -1990,6 +2177,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CollectionMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionMethod = types.StringNull()
+        }
+    } else if arr, ok := dataMap["collectionMethod"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CollectionMethod = types.StringValue(string(jsonBytes))
         } else {
             data.CollectionMethod = types.StringNull()
@@ -2031,6 +2225,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.VcenterUrl = types.StringNull()
         }
+    } else if arr, ok := dataMap["vcenterUrl"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.VcenterUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.VcenterUrl = types.StringNull()
+        }
     } else if val, ok := dataMap["vcenterUrl"].(string); ok {
         data.VcenterUrl = types.StringValue(val)
     } else {
@@ -2064,6 +2265,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.VcenterUsername = types.StringValue(string(jsonBytes))
+        } else {
+            data.VcenterUsername = types.StringNull()
+        }
+    } else if arr, ok := dataMap["vcenterUsername"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.VcenterUsername = types.StringValue(string(jsonBytes))
         } else {
             data.VcenterUsername = types.StringNull()
@@ -2105,6 +2313,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.CollectionProbeId = types.StringNull()
         }
+    } else if arr, ok := dataMap["collectionProbeId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CollectionProbeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionProbeId = types.StringNull()
+        }
     } else if val, ok := dataMap["collectionProbeId"].(string); ok {
         data.CollectionProbeId = types.StringValue(val)
     } else {
@@ -2138,6 +2353,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TrustedCertificateFingerprint = types.StringValue(string(jsonBytes))
+        } else {
+            data.TrustedCertificateFingerprint = types.StringNull()
+        }
+    } else if arr, ok := dataMap["trustedCertificateFingerprint"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TrustedCertificateFingerprint = types.StringValue(string(jsonBytes))
         } else {
             data.TrustedCertificateFingerprint = types.StringNull()
@@ -2180,6 +2402,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.OtelCollectorStatus = types.StringNull()
         }
+    } else if arr, ok := dataMap["otelCollectorStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OtelCollectorStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.OtelCollectorStatus = types.StringNull()
+        }
     } else if val, ok := dataMap["otelCollectorStatus"].(string); ok {
         data.OtelCollectorStatus = types.StringValue(val)
     } else {
@@ -2213,6 +2442,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AgentVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.AgentVersion = types.StringNull()
+        }
+    } else if arr, ok := dataMap["agentVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AgentVersion = types.StringValue(string(jsonBytes))
         } else {
             data.AgentVersion = types.StringNull()
@@ -2277,6 +2513,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.AiRemediationMode = types.StringNull()
         }
+    } else if arr, ok := dataMap["aiRemediationMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AiRemediationMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiRemediationMode = types.StringNull()
+        }
     } else if val, ok := dataMap["aiRemediationMode"].(string); ok {
         data.AiRemediationMode = types.StringValue(val)
     } else {
@@ -2310,6 +2553,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AiCommandAllowlist = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["aiCommandAllowlist"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.AiCommandAllowlist = NewJSONSubsetNull()
@@ -2373,6 +2623,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -2406,6 +2663,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -2458,6 +2722,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.ArchivedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["archivedByUserId"].(string); ok {
         data.ArchivedByUserId = types.StringValue(val)
     } else {
@@ -2506,6 +2777,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.AiAccessLastError = types.StringNull()
         }
+    } else if arr, ok := dataMap["aiAccessLastError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AiAccessLastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessLastError = types.StringNull()
+        }
     } else if val, ok := dataMap["aiAccessLastError"].(string); ok {
         data.AiAccessLastError = types.StringValue(val)
     } else {
@@ -2521,6 +2799,17 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.AiAccessConfiguredAt = NewRFC3339Value(val)
     } else {
         data.AiAccessConfiguredAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["aiAgentResetAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AiAgentResetAt = NewRFC3339Value(val)
+        } else {
+            data.AiAgentResetAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["aiAgentResetAt"].(string); ok && val != "" {
+        data.AiAgentResetAt = NewRFC3339Value(val)
+    } else {
+        data.AiAgentResetAt = NewRFC3339Null()
     }
     if val, ok := dataMap["isVCenterPasswordSet"].(bool); ok {
         data.IsVCenterPasswordSet = types.BoolValue(val)
@@ -2568,6 +2857,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.CollectionStatus = types.StringNull()
         }
+    } else if arr, ok := dataMap["collectionStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CollectionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionStatus = types.StringNull()
+        }
     } else if val, ok := dataMap["collectionStatus"].(string); ok {
         data.CollectionStatus = types.StringValue(val)
     } else {
@@ -2601,6 +2897,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CollectionErrorCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionErrorCode = types.StringNull()
+        }
+    } else if arr, ok := dataMap["collectionErrorCode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CollectionErrorCode = types.StringValue(string(jsonBytes))
         } else {
             data.CollectionErrorCode = types.StringNull()
@@ -2642,6 +2945,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.CollectionError = types.StringNull()
         }
+    } else if arr, ok := dataMap["collectionError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CollectionError = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionError = types.StringNull()
+        }
     } else if val, ok := dataMap["collectionError"].(string); ok {
         data.CollectionError = types.StringValue(val)
     } else {
@@ -2679,6 +2989,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.PresentedCertificate = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["presentedCertificate"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PresentedCertificate = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.PresentedCertificate = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["presentedCertificate"].(string); ok {
         data.PresentedCertificate = NewJSONSubsetValue(val)
     } else {
@@ -2712,6 +3029,13 @@ func (r *VcenterResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CollectionSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CollectionSummary = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["collectionSummary"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CollectionSummary = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.CollectionSummary = NewJSONSubsetNull()
@@ -2958,6 +3282,7 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
+        "aiAgentResetAt": true,
         "isVCenterPasswordSet": true,
         "vcenterCredentialsUpdatedAt": true,
         "collectionStatus": true,
@@ -3039,6 +3364,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -3072,6 +3404,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -3149,6 +3488,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["telemetryRetentionConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
@@ -3182,6 +3528,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CollectionMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionMethod = types.StringNull()
+        }
+    } else if arr, ok := dataMap["collectionMethod"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CollectionMethod = types.StringValue(string(jsonBytes))
         } else {
             data.CollectionMethod = types.StringNull()
@@ -3223,6 +3576,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.VcenterUrl = types.StringNull()
         }
+    } else if arr, ok := dataMap["vcenterUrl"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.VcenterUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.VcenterUrl = types.StringNull()
+        }
     } else if val, ok := dataMap["vcenterUrl"].(string); ok {
         data.VcenterUrl = types.StringValue(val)
     } else {
@@ -3256,6 +3616,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.VcenterUsername = types.StringValue(string(jsonBytes))
+        } else {
+            data.VcenterUsername = types.StringNull()
+        }
+    } else if arr, ok := dataMap["vcenterUsername"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.VcenterUsername = types.StringValue(string(jsonBytes))
         } else {
             data.VcenterUsername = types.StringNull()
@@ -3297,6 +3664,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.CollectionProbeId = types.StringNull()
         }
+    } else if arr, ok := dataMap["collectionProbeId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CollectionProbeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionProbeId = types.StringNull()
+        }
     } else if val, ok := dataMap["collectionProbeId"].(string); ok {
         data.CollectionProbeId = types.StringValue(val)
     } else {
@@ -3330,6 +3704,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TrustedCertificateFingerprint = types.StringValue(string(jsonBytes))
+        } else {
+            data.TrustedCertificateFingerprint = types.StringNull()
+        }
+    } else if arr, ok := dataMap["trustedCertificateFingerprint"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TrustedCertificateFingerprint = types.StringValue(string(jsonBytes))
         } else {
             data.TrustedCertificateFingerprint = types.StringNull()
@@ -3372,6 +3753,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.OtelCollectorStatus = types.StringNull()
         }
+    } else if arr, ok := dataMap["otelCollectorStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OtelCollectorStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.OtelCollectorStatus = types.StringNull()
+        }
     } else if val, ok := dataMap["otelCollectorStatus"].(string); ok {
         data.OtelCollectorStatus = types.StringValue(val)
     } else {
@@ -3405,6 +3793,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AgentVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.AgentVersion = types.StringNull()
+        }
+    } else if arr, ok := dataMap["agentVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AgentVersion = types.StringValue(string(jsonBytes))
         } else {
             data.AgentVersion = types.StringNull()
@@ -3469,6 +3864,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.AiRemediationMode = types.StringNull()
         }
+    } else if arr, ok := dataMap["aiRemediationMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AiRemediationMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiRemediationMode = types.StringNull()
+        }
     } else if val, ok := dataMap["aiRemediationMode"].(string); ok {
         data.AiRemediationMode = types.StringValue(val)
     } else {
@@ -3502,6 +3904,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AiCommandAllowlist = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["aiCommandAllowlist"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.AiCommandAllowlist = NewJSONSubsetNull()
@@ -3565,6 +3974,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -3598,6 +4014,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -3650,6 +4073,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.ArchivedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["archivedByUserId"].(string); ok {
         data.ArchivedByUserId = types.StringValue(val)
     } else {
@@ -3698,6 +4128,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.AiAccessLastError = types.StringNull()
         }
+    } else if arr, ok := dataMap["aiAccessLastError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AiAccessLastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessLastError = types.StringNull()
+        }
     } else if val, ok := dataMap["aiAccessLastError"].(string); ok {
         data.AiAccessLastError = types.StringValue(val)
     } else {
@@ -3713,6 +4150,17 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
         data.AiAccessConfiguredAt = NewRFC3339Value(val)
     } else {
         data.AiAccessConfiguredAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["aiAgentResetAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AiAgentResetAt = NewRFC3339Value(val)
+        } else {
+            data.AiAgentResetAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["aiAgentResetAt"].(string); ok && val != "" {
+        data.AiAgentResetAt = NewRFC3339Value(val)
+    } else {
+        data.AiAgentResetAt = NewRFC3339Null()
     }
     if val, ok := dataMap["isVCenterPasswordSet"].(bool); ok {
         data.IsVCenterPasswordSet = types.BoolValue(val)
@@ -3760,6 +4208,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.CollectionStatus = types.StringNull()
         }
+    } else if arr, ok := dataMap["collectionStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CollectionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionStatus = types.StringNull()
+        }
     } else if val, ok := dataMap["collectionStatus"].(string); ok {
         data.CollectionStatus = types.StringValue(val)
     } else {
@@ -3793,6 +4248,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CollectionErrorCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionErrorCode = types.StringNull()
+        }
+    } else if arr, ok := dataMap["collectionErrorCode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CollectionErrorCode = types.StringValue(string(jsonBytes))
         } else {
             data.CollectionErrorCode = types.StringNull()
@@ -3834,6 +4296,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.CollectionError = types.StringNull()
         }
+    } else if arr, ok := dataMap["collectionError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CollectionError = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionError = types.StringNull()
+        }
     } else if val, ok := dataMap["collectionError"].(string); ok {
         data.CollectionError = types.StringValue(val)
     } else {
@@ -3871,6 +4340,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.PresentedCertificate = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["presentedCertificate"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PresentedCertificate = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.PresentedCertificate = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["presentedCertificate"].(string); ok {
         data.PresentedCertificate = NewJSONSubsetValue(val)
     } else {
@@ -3904,6 +4380,13 @@ func (r *VcenterResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CollectionSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CollectionSummary = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["collectionSummary"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CollectionSummary = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.CollectionSummary = NewJSONSubsetNull()

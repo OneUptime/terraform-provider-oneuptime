@@ -316,6 +316,13 @@ func (d *DashboardDomainDataSource) Read(ctx context.Context, req datasource.Rea
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -329,6 +336,13 @@ func (d *DashboardDomainDataSource) Read(ctx context.Context, req datasource.Rea
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -350,6 +364,13 @@ func (d *DashboardDomainDataSource) Read(ctx context.Context, req datasource.Rea
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -363,6 +384,13 @@ func (d *DashboardDomainDataSource) Read(ctx context.Context, req datasource.Rea
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -384,6 +412,13 @@ func (d *DashboardDomainDataSource) Read(ctx context.Context, req datasource.Rea
         } else {
             data.DomainId = types.StringNull()
         }
+    } else if arr, ok := item["domainId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.DomainId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DomainId = types.StringNull()
+        }
     } else if val, ok := item["domainId"].(string); ok {
         data.DomainId = types.StringValue(val)
     } else {
@@ -397,6 +432,13 @@ func (d *DashboardDomainDataSource) Read(ctx context.Context, req datasource.Rea
         } else if val, ok := obj["value"].(float64); ok {
             data.DashboardId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DashboardId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DashboardId = types.StringNull()
+        }
+    } else if arr, ok := item["dashboardId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.DashboardId = types.StringValue(string(jsonBytes))
         } else {
             data.DashboardId = types.StringNull()
@@ -418,6 +460,13 @@ func (d *DashboardDomainDataSource) Read(ctx context.Context, req datasource.Rea
         } else {
             data.Subdomain = types.StringNull()
         }
+    } else if arr, ok := item["subdomain"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Subdomain = types.StringValue(string(jsonBytes))
+        } else {
+            data.Subdomain = types.StringNull()
+        }
     } else if val, ok := item["subdomain"].(string); ok {
         data.Subdomain = types.StringValue(val)
     } else {
@@ -435,6 +484,13 @@ func (d *DashboardDomainDataSource) Read(ctx context.Context, req datasource.Rea
         } else {
             data.FullDomain = types.StringNull()
         }
+    } else if arr, ok := item["fullDomain"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FullDomain = types.StringValue(string(jsonBytes))
+        } else {
+            data.FullDomain = types.StringNull()
+        }
     } else if val, ok := item["fullDomain"].(string); ok {
         data.FullDomain = types.StringValue(val)
     } else {
@@ -448,6 +504,13 @@ func (d *DashboardDomainDataSource) Read(ctx context.Context, req datasource.Rea
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -484,6 +547,13 @@ func (d *DashboardDomainDataSource) Read(ctx context.Context, req datasource.Rea
         } else {
             data.CustomCertificate = types.StringNull()
         }
+    } else if arr, ok := item["customCertificate"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CustomCertificate = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomCertificate = types.StringNull()
+        }
     } else if val, ok := item["customCertificate"].(string); ok {
         data.CustomCertificate = types.StringValue(val)
     } else {
@@ -497,6 +567,13 @@ func (d *DashboardDomainDataSource) Read(ctx context.Context, req datasource.Rea
         } else if val, ok := obj["value"].(float64); ok {
             data.CustomCertificateKey = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CustomCertificateKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomCertificateKey = types.StringNull()
+        }
+    } else if arr, ok := item["customCertificateKey"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CustomCertificateKey = types.StringValue(string(jsonBytes))
         } else {
             data.CustomCertificateKey = types.StringNull()
@@ -519,6 +596,13 @@ func (d *DashboardDomainDataSource) Read(ctx context.Context, req datasource.Rea
         } else if val, ok := obj["value"].(float64); ok {
             data.CertificateReissueRequestedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CertificateReissueRequestedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CertificateReissueRequestedAt = types.StringNull()
+        }
+    } else if arr, ok := item["certificateReissueRequestedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CertificateReissueRequestedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CertificateReissueRequestedAt = types.StringNull()

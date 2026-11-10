@@ -50,6 +50,7 @@ type ScheduledMaintenanceEventDataSourceModel struct {
     CephClusters types.Set `tfsdk:"ceph_clusters"`
     StorageArrays types.Set `tfsdk:"storage_arrays"`
     DatabaseServers types.Set `tfsdk:"database_servers"`
+    CloudResources types.Set `tfsdk:"cloud_resources"`
     DataStoreIds types.String `tfsdk:"data_store_ids"`
     OpenStackParts types.String `tfsdk:"open_stack_parts"`
     Services types.Set `tfsdk:"services"`
@@ -191,6 +192,11 @@ func (d *ScheduledMaintenanceEventDataSource) Schema(ctx context.Context, req da
             },
             "database_servers": schema.SetAttribute{
                 MarkdownDescription: "List of databases affected by this event. IDs of `oneuptime_database` resources.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "cloud_resources": schema.SetAttribute{
+                MarkdownDescription: "List of cloud resources affected by this event. Their monitors open no incident or alert while it is in progress. IDs of `oneuptime_cloud_resource` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -457,6 +463,7 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         "cephClusters": true,
         "storageArrays": true,
         "databaseServers": true,
+        "cloudResources": true,
         "dataStoreIds": true,
         "openStackParts": true,
         "services": true,
@@ -555,6 +562,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -568,6 +582,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -589,6 +610,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -602,6 +630,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -623,6 +658,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else {
             data.Title = types.StringNull()
         }
+    } else if arr, ok := item["title"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Title = types.StringValue(string(jsonBytes))
+        } else {
+            data.Title = types.StringNull()
+        }
     } else if val, ok := item["title"].(string); ok {
         data.Title = types.StringValue(val)
     } else {
@@ -636,6 +678,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.Description = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -657,6 +706,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := item["slug"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := item["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -670,6 +726,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1015,6 +1078,30 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
     } else {
         data.DatabaseServers = types.SetNull(types.StringType)
     }
+    if val, ok := item["cloudResources"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.CloudResources = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.CloudResources = types.SetNull(types.StringType)
+    }
     if obj, ok := item["dataStoreIds"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.DataStoreIds = types.StringValue(val)
@@ -1023,6 +1110,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.DataStoreIds = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DataStoreIds = types.StringValue(string(jsonBytes))
+        } else {
+            data.DataStoreIds = types.StringNull()
+        }
+    } else if arr, ok := item["dataStoreIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.DataStoreIds = types.StringValue(string(jsonBytes))
         } else {
             data.DataStoreIds = types.StringNull()
@@ -1040,6 +1134,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.OpenStackParts = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OpenStackParts = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackParts = types.StringNull()
+        }
+    } else if arr, ok := item["openStackParts"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.OpenStackParts = types.StringValue(string(jsonBytes))
         } else {
             data.OpenStackParts = types.StringNull()
@@ -1133,6 +1234,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else {
             data.CurrentScheduledMaintenanceStateId = types.StringNull()
         }
+    } else if arr, ok := item["currentScheduledMaintenanceStateId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CurrentScheduledMaintenanceStateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentScheduledMaintenanceStateId = types.StringNull()
+        }
     } else if val, ok := item["currentScheduledMaintenanceStateId"].(string); ok {
         data.CurrentScheduledMaintenanceStateId = types.StringValue(val)
     } else {
@@ -1146,6 +1254,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.ChangeMonitorStatusToId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ChangeMonitorStatusToId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ChangeMonitorStatusToId = types.StringNull()
+        }
+    } else if arr, ok := item["changeMonitorStatusToId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ChangeMonitorStatusToId = types.StringValue(string(jsonBytes))
         } else {
             data.ChangeMonitorStatusToId = types.StringNull()
@@ -1167,6 +1282,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else {
             data.StartsAt = types.StringNull()
         }
+    } else if arr, ok := item["startsAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.StartsAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.StartsAt = types.StringNull()
+        }
     } else if val, ok := item["startsAt"].(string); ok {
         data.StartsAt = types.StringValue(val)
     } else {
@@ -1180,6 +1302,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.EndsAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EndsAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.EndsAt = types.StringNull()
+        }
+    } else if arr, ok := item["endsAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.EndsAt = types.StringValue(string(jsonBytes))
         } else {
             data.EndsAt = types.StringNull()
@@ -1201,6 +1330,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else {
             data.SubscriberNotificationStatusOnEventScheduled = types.StringNull()
         }
+    } else if arr, ok := item["subscriberNotificationStatusOnEventScheduled"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SubscriberNotificationStatusOnEventScheduled = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusOnEventScheduled = types.StringNull()
+        }
     } else if val, ok := item["subscriberNotificationStatusOnEventScheduled"].(string); ok {
         data.SubscriberNotificationStatusOnEventScheduled = types.StringValue(val)
     } else {
@@ -1214,6 +1350,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessage = types.StringNull()
+        }
+    } else if arr, ok := item["subscriberNotificationStatusMessage"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
         } else {
             data.SubscriberNotificationStatusMessage = types.StringNull()
@@ -1250,6 +1393,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else {
             data.CustomFields = types.StringNull()
         }
+    } else if arr, ok := item["customFields"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CustomFields = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomFields = types.StringNull()
+        }
     } else if val, ok := item["customFields"].(string); ok {
         data.CustomFields = types.StringValue(val)
     } else {
@@ -1272,6 +1422,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else {
             data.SendSubscriberNotificationsOnBeforeTheEvent = types.StringNull()
         }
+    } else if arr, ok := item["sendSubscriberNotificationsOnBeforeTheEvent"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SendSubscriberNotificationsOnBeforeTheEvent = types.StringValue(string(jsonBytes))
+        } else {
+            data.SendSubscriberNotificationsOnBeforeTheEvent = types.StringNull()
+        }
     } else if val, ok := item["sendSubscriberNotificationsOnBeforeTheEvent"].(string); ok {
         data.SendSubscriberNotificationsOnBeforeTheEvent = types.StringValue(val)
     } else {
@@ -1285,6 +1442,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.NextSubscriberNotificationBeforeTheEventAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NextSubscriberNotificationBeforeTheEventAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.NextSubscriberNotificationBeforeTheEventAt = types.StringNull()
+        }
+    } else if arr, ok := item["nextSubscriberNotificationBeforeTheEventAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.NextSubscriberNotificationBeforeTheEventAt = types.StringValue(string(jsonBytes))
         } else {
             data.NextSubscriberNotificationBeforeTheEventAt = types.StringNull()
@@ -1303,6 +1467,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
+        }
+    } else if arr, ok := item["scheduledMaintenanceNumberWithPrefix"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(string(jsonBytes))
         } else {
             data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
@@ -1329,6 +1500,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else {
             data.PublishOnStatusPageAt = types.StringNull()
         }
+    } else if arr, ok := item["publishOnStatusPageAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PublishOnStatusPageAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.PublishOnStatusPageAt = types.StringNull()
+        }
     } else if val, ok := item["publishOnStatusPageAt"].(string); ok {
         data.PublishOnStatusPageAt = types.StringValue(val)
     } else {
@@ -1347,6 +1525,13 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.NextReminderNotificationAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NextReminderNotificationAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.NextReminderNotificationAt = types.StringNull()
+        }
+    } else if arr, ok := item["nextReminderNotificationAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.NextReminderNotificationAt = types.StringValue(string(jsonBytes))
         } else {
             data.NextReminderNotificationAt = types.StringNull()

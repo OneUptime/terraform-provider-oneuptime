@@ -39,6 +39,7 @@ type CloudCostDataSourceModel struct {
     Cost types.Number `tfsdk:"cost"`
     Currency types.String `tfsdk:"currency"`
     ReadAt types.String `tfsdk:"read_at"`
+    Tags types.String `tfsdk:"tags"`
 }
 
 func (d *CloudCostDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -110,6 +111,11 @@ func (d *CloudCostDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "read_at": schema.StringAttribute{
                 MarkdownDescription: "Read At.",
+                Computed: true,
+            },
+            "tags": schema.StringAttribute{
+                MarkdownDescription: "Tags.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -187,6 +193,10 @@ func (d *CloudCostDataSource) Read(ctx context.Context, req datasource.ReadReque
         filters["currency"] = data.Currency.ValueString()
         filterNames = append(filterNames, "currency = "+fmt.Sprintf("%q", data.Currency.ValueString()))
     }
+    if !data.Tags.IsNull() && !data.Tags.IsUnknown() {
+        filters["tags"] = data.Tags.ValueString()
+        filterNames = append(filterNames, "tags = "+fmt.Sprintf("%q", data.Tags.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -216,6 +226,7 @@ func (d *CloudCostDataSource) Read(ctx context.Context, req datasource.ReadReque
         "cost": true,
         "currency": true,
         "readAt": true,
+        "tags": true,
         "_id": true,
     }
 
@@ -289,6 +300,13 @@ func (d *CloudCostDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -302,6 +320,13 @@ func (d *CloudCostDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -323,6 +348,13 @@ func (d *CloudCostDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             data.CloudAccountId = types.StringNull()
         }
+    } else if arr, ok := item["cloudAccountId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CloudAccountId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudAccountId = types.StringNull()
+        }
     } else if val, ok := item["cloudAccountId"].(string); ok {
         data.CloudAccountId = types.StringValue(val)
     } else {
@@ -336,6 +368,13 @@ func (d *CloudCostDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else if val, ok := obj["value"].(float64); ok {
             data.CloudConnectionId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CloudConnectionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudConnectionId = types.StringNull()
+        }
+    } else if arr, ok := item["cloudConnectionId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CloudConnectionId = types.StringValue(string(jsonBytes))
         } else {
             data.CloudConnectionId = types.StringNull()
@@ -357,6 +396,13 @@ func (d *CloudCostDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             data.ProviderValue = types.StringNull()
         }
+    } else if arr, ok := item["provider"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProviderValue = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProviderValue = types.StringNull()
+        }
     } else if val, ok := item["provider"].(string); ok {
         data.ProviderValue = types.StringValue(val)
     } else {
@@ -370,6 +416,13 @@ func (d *CloudCostDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else if val, ok := obj["value"].(float64); ok {
             data.AccountId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AccountId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AccountId = types.StringNull()
+        }
+    } else if arr, ok := item["accountId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.AccountId = types.StringValue(string(jsonBytes))
         } else {
             data.AccountId = types.StringNull()
@@ -391,6 +444,13 @@ func (d *CloudCostDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             data.Day = types.StringNull()
         }
+    } else if arr, ok := item["day"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Day = types.StringValue(string(jsonBytes))
+        } else {
+            data.Day = types.StringNull()
+        }
     } else if val, ok := item["day"].(string); ok {
         data.Day = types.StringValue(val)
     } else {
@@ -404,6 +464,13 @@ func (d *CloudCostDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else if val, ok := obj["value"].(float64); ok {
             data.Service = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Service = types.StringValue(string(jsonBytes))
+        } else {
+            data.Service = types.StringNull()
+        }
+    } else if arr, ok := item["service"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Service = types.StringValue(string(jsonBytes))
         } else {
             data.Service = types.StringNull()
@@ -425,6 +492,13 @@ func (d *CloudCostDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             data.Region = types.StringNull()
         }
+    } else if arr, ok := item["region"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Region = types.StringValue(string(jsonBytes))
+        } else {
+            data.Region = types.StringNull()
+        }
     } else if val, ok := item["region"].(string); ok {
         data.Region = types.StringValue(val)
     } else {
@@ -438,6 +512,13 @@ func (d *CloudCostDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else if val, ok := obj["value"].(float64); ok {
             data.ResourceId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ResourceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResourceId = types.StringNull()
+        }
+    } else if arr, ok := item["resourceId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ResourceId = types.StringValue(string(jsonBytes))
         } else {
             data.ResourceId = types.StringNull()
@@ -460,6 +541,13 @@ func (d *CloudCostDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             data.Currency = types.StringNull()
         }
+    } else if arr, ok := item["currency"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Currency = types.StringValue(string(jsonBytes))
+        } else {
+            data.Currency = types.StringNull()
+        }
     } else if val, ok := item["currency"].(string); ok {
         data.Currency = types.StringValue(val)
     } else {
@@ -477,10 +565,41 @@ func (d *CloudCostDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             data.ReadAt = types.StringNull()
         }
+    } else if arr, ok := item["readAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ReadAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ReadAt = types.StringNull()
+        }
     } else if val, ok := item["readAt"].(string); ok {
         data.ReadAt = types.StringValue(val)
     } else {
         data.ReadAt = types.StringNull()
+    }
+    if obj, ok := item["tags"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Tags = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Tags = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Tags = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Tags = types.StringValue(string(jsonBytes))
+        } else {
+            data.Tags = types.StringNull()
+        }
+    } else if arr, ok := item["tags"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Tags = types.StringValue(string(jsonBytes))
+        } else {
+            data.Tags = types.StringNull()
+        }
+    } else if val, ok := item["tags"].(string); ok {
+        data.Tags = types.StringValue(val)
+    } else {
+        data.Tags = types.StringNull()
     }
 
     // Write logs using the tflog package

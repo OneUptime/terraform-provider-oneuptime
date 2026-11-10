@@ -379,6 +379,13 @@ func (r *TraceDropFilterResource) Create(ctx context.Context, req resource.Creat
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -412,6 +419,13 @@ func (r *TraceDropFilterResource) Create(ctx context.Context, req resource.Creat
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -453,6 +467,13 @@ func (r *TraceDropFilterResource) Create(ctx context.Context, req resource.Creat
         } else {
             data.FilterQuery = types.StringNull()
         }
+    } else if arr, ok := dataMap["filterQuery"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.FilterQuery = types.StringValue(string(jsonBytes))
+        } else {
+            data.FilterQuery = types.StringNull()
+        }
     } else if val, ok := dataMap["filterQuery"].(string); ok {
         data.FilterQuery = types.StringValue(val)
     } else {
@@ -486,6 +507,13 @@ func (r *TraceDropFilterResource) Create(ctx context.Context, req resource.Creat
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Action = types.StringValue(string(jsonBytes))
+        } else {
+            data.Action = types.StringNull()
+        }
+    } else if arr, ok := dataMap["action"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Action = types.StringValue(string(jsonBytes))
         } else {
             data.Action = types.StringNull()
@@ -562,6 +590,13 @@ func (r *TraceDropFilterResource) Create(ctx context.Context, req resource.Creat
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -691,6 +726,13 @@ func (r *TraceDropFilterResource) Read(ctx context.Context, req resource.ReadReq
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -724,6 +766,13 @@ func (r *TraceDropFilterResource) Read(ctx context.Context, req resource.ReadReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -765,6 +814,13 @@ func (r *TraceDropFilterResource) Read(ctx context.Context, req resource.ReadReq
         } else {
             data.FilterQuery = types.StringNull()
         }
+    } else if arr, ok := dataMap["filterQuery"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.FilterQuery = types.StringValue(string(jsonBytes))
+        } else {
+            data.FilterQuery = types.StringNull()
+        }
     } else if val, ok := dataMap["filterQuery"].(string); ok {
         data.FilterQuery = types.StringValue(val)
     } else {
@@ -798,6 +854,13 @@ func (r *TraceDropFilterResource) Read(ctx context.Context, req resource.ReadReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Action = types.StringValue(string(jsonBytes))
+        } else {
+            data.Action = types.StringNull()
+        }
+    } else if arr, ok := dataMap["action"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Action = types.StringValue(string(jsonBytes))
         } else {
             data.Action = types.StringNull()
@@ -874,6 +937,13 @@ func (r *TraceDropFilterResource) Read(ctx context.Context, req resource.ReadReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1053,6 +1123,13 @@ func (r *TraceDropFilterResource) Update(ctx context.Context, req resource.Updat
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1086,6 +1163,13 @@ func (r *TraceDropFilterResource) Update(ctx context.Context, req resource.Updat
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1127,6 +1211,13 @@ func (r *TraceDropFilterResource) Update(ctx context.Context, req resource.Updat
         } else {
             data.FilterQuery = types.StringNull()
         }
+    } else if arr, ok := dataMap["filterQuery"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.FilterQuery = types.StringValue(string(jsonBytes))
+        } else {
+            data.FilterQuery = types.StringNull()
+        }
     } else if val, ok := dataMap["filterQuery"].(string); ok {
         data.FilterQuery = types.StringValue(val)
     } else {
@@ -1160,6 +1251,13 @@ func (r *TraceDropFilterResource) Update(ctx context.Context, req resource.Updat
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Action = types.StringValue(string(jsonBytes))
+        } else {
+            data.Action = types.StringNull()
+        }
+    } else if arr, ok := dataMap["action"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Action = types.StringValue(string(jsonBytes))
         } else {
             data.Action = types.StringNull()
@@ -1236,6 +1334,13 @@ func (r *TraceDropFilterResource) Update(ctx context.Context, req resource.Updat
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

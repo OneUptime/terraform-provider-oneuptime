@@ -331,6 +331,13 @@ func (r *DatabaseEndpointResource) Create(ctx context.Context, req resource.Crea
         } else {
             data.DatabaseServerId = types.StringNull()
         }
+    } else if arr, ok := dataMap["databaseServerId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DatabaseServerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DatabaseServerId = types.StringNull()
+        }
     } else if val, ok := dataMap["databaseServerId"].(string); ok {
         data.DatabaseServerId = types.StringValue(val)
     } else {
@@ -364,6 +371,13 @@ func (r *DatabaseEndpointResource) Create(ctx context.Context, req resource.Crea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Endpoint = types.StringValue(string(jsonBytes))
+        } else {
+            data.Endpoint = types.StringNull()
+        }
+    } else if arr, ok := dataMap["endpoint"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Endpoint = types.StringValue(string(jsonBytes))
         } else {
             data.Endpoint = types.StringNull()
@@ -404,6 +418,13 @@ func (r *DatabaseEndpointResource) Create(ctx context.Context, req resource.Crea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Source = types.StringValue(string(jsonBytes))
+        } else {
+            data.Source = types.StringNull()
+        }
+    } else if arr, ok := dataMap["source"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Source = types.StringValue(string(jsonBytes))
         } else {
             data.Source = types.StringNull()
@@ -474,6 +495,13 @@ func (r *DatabaseEndpointResource) Create(ctx context.Context, req resource.Crea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -599,6 +627,13 @@ func (r *DatabaseEndpointResource) Read(ctx context.Context, req resource.ReadRe
         } else {
             data.DatabaseServerId = types.StringNull()
         }
+    } else if arr, ok := dataMap["databaseServerId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DatabaseServerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DatabaseServerId = types.StringNull()
+        }
     } else if val, ok := dataMap["databaseServerId"].(string); ok {
         data.DatabaseServerId = types.StringValue(val)
     } else {
@@ -632,6 +667,13 @@ func (r *DatabaseEndpointResource) Read(ctx context.Context, req resource.ReadRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Endpoint = types.StringValue(string(jsonBytes))
+        } else {
+            data.Endpoint = types.StringNull()
+        }
+    } else if arr, ok := dataMap["endpoint"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Endpoint = types.StringValue(string(jsonBytes))
         } else {
             data.Endpoint = types.StringNull()
@@ -672,6 +714,13 @@ func (r *DatabaseEndpointResource) Read(ctx context.Context, req resource.ReadRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Source = types.StringValue(string(jsonBytes))
+        } else {
+            data.Source = types.StringNull()
+        }
+    } else if arr, ok := dataMap["source"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Source = types.StringValue(string(jsonBytes))
         } else {
             data.Source = types.StringNull()
@@ -742,6 +791,13 @@ func (r *DatabaseEndpointResource) Read(ctx context.Context, req resource.ReadRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

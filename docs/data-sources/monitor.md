@@ -42,6 +42,7 @@ data "oneuptime_monitor" "by_id" {
 - `is_archived` (Boolean) Archived monitors are hidden from monitor lists and status pages, are not checked, and open no incidents or alerts. Unarchiving resumes monitoring.
 - `is_no_probe_enabled_on_this_monitor` (Boolean) No Probe Enabled On This Monitor. Is this monitor not being monitored?
 - `is_owner_notified_of_resource_creation` (Boolean) Are owners notified of when this resource is created?
+- `keep_response_content` (Boolean) Keep the response part that matched, and the response body and headers, in this monitor's logs and on its incidents and alerts. Secrets are masked either way.
 - `minimum_probe_agreement` (Number) Minimum number of probes that must agree on a status before the monitor status changes. If null, all enabled and connected probes must agree.
 - `monitor_template_id` (String) ID of the Monitor Template this monitor was created from. Null for monitors not created from a template. The ID of a `oneuptime_monitor_template`.
 - `monitor_type` (String) What is the type of this monitor? Website? API? etc.
@@ -66,7 +67,7 @@ data "oneuptime_monitor" "by_id" {
 - `incoming_email_monitor_last_email_received_at` (String) This field is for Incoming Email Monitor only. When was the last email received?
 - `incoming_email_monitor_request` (String) This field is for Incoming Email Monitor only. Last email data received. A JSON value: read it with `jsondecode()`.
 - `incoming_email_secret_key` (String, Sensitive) This field is for Incoming Email Monitor only. Secret Key used to generate unique email address.
-- `incoming_monitor_request` (String) Incoming Monitor Request for Incoming Request Monitor. A JSON value: read it with `jsondecode()`.
+- `incoming_monitor_request` (String) The latest request this monitor received, as its logs keep it: secrets masked, and no headers or body when it keeps no request content. A JSON value: read it with `jsondecode()`.
 - `incoming_request_monitor_heartbeat_checked_at` (String) This field is for Incoming Request monitor only. When was the last time we checked the heartbeat?
 - `incoming_request_secret_key` (String, Sensitive) This field is for Incoming Request Monitor only. Secret Key to authenticate the request.
 - `iot_fleets` (Set of String) IoT fleets this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_iot_fleet` resources.

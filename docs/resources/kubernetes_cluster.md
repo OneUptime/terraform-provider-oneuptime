@@ -51,6 +51,7 @@ resource "oneuptime_kubernetes_cluster" "example" {
 - `ai_access_last_error` (String) The most recent failure OneUptime AI hit while running kubectl on this cluster, kept until the next successful command. Set by the server.
 - `ai_access_last_verified_at` (String) When a kubectl command from OneUptime AI last succeeded on this cluster. Set by the server.
 - `ai_access_runner_bound_at` (String) When a Runner was first bound to this cluster for OneUptime AI access. Set by the server; never cleared, so a cluster whose Runner was cleared or deleted is not silently re-bound when the in-cluster Runner registers again.
+- `ai_agent_reset_at` (String) When this cluster's AI agent was last reset: its key stopped working at once, and it registers again by itself. Set by the server.
 - `archived_at` (String) When was this Kubernetes cluster archived?
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_at` (String) Date and Time when the object was created.

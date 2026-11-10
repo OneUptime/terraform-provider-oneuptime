@@ -37,6 +37,7 @@ data "oneuptime_audit_log_export" "by_id" {
 - `is_enabled` (Boolean) Whether entries are exported. A paused export keeps its place.
 - `last_error` (String) Why the last delivery failed, with credentials redacted. Cleared by the next delivery that succeeds.
 - `name` (String) A name for this export, such as Compliance archive.
+- `schema_version` (Number) Which version of the record each entry is sent as: 2 also says what changed in a workflow's steps and in JSON, 1 is the record as it was first sent. A new export sends 2 unless it asks for 1; an export saved before version 2 keeps 1.
 
 ### Read-Only
 

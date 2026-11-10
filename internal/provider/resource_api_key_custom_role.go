@@ -294,6 +294,13 @@ func (r *ApiKeyCustomRoleResource) Create(ctx context.Context, req resource.Crea
         } else {
             data.ApiKeyId = types.StringNull()
         }
+    } else if arr, ok := dataMap["apiKeyId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKeyId = types.StringNull()
+        }
     } else if val, ok := dataMap["apiKeyId"].(string); ok {
         data.ApiKeyId = types.StringValue(val)
     } else {
@@ -327,6 +334,13 @@ func (r *ApiKeyCustomRoleResource) Create(ctx context.Context, req resource.Crea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRoleId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRoleId = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRoleId = types.StringNull()
@@ -386,6 +400,13 @@ func (r *ApiKeyCustomRoleResource) Create(ctx context.Context, req resource.Crea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -505,6 +526,13 @@ func (r *ApiKeyCustomRoleResource) Read(ctx context.Context, req resource.ReadRe
         } else {
             data.ApiKeyId = types.StringNull()
         }
+    } else if arr, ok := dataMap["apiKeyId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKeyId = types.StringNull()
+        }
     } else if val, ok := dataMap["apiKeyId"].(string); ok {
         data.ApiKeyId = types.StringValue(val)
     } else {
@@ -538,6 +566,13 @@ func (r *ApiKeyCustomRoleResource) Read(ctx context.Context, req resource.ReadRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRoleId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRoleId = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRoleId = types.StringNull()
@@ -597,6 +632,13 @@ func (r *ApiKeyCustomRoleResource) Read(ctx context.Context, req resource.ReadRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -739,6 +781,13 @@ func (r *ApiKeyCustomRoleResource) Update(ctx context.Context, req resource.Upda
         } else {
             data.ApiKeyId = types.StringNull()
         }
+    } else if arr, ok := dataMap["apiKeyId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKeyId = types.StringNull()
+        }
     } else if val, ok := dataMap["apiKeyId"].(string); ok {
         data.ApiKeyId = types.StringValue(val)
     } else {
@@ -772,6 +821,13 @@ func (r *ApiKeyCustomRoleResource) Update(ctx context.Context, req resource.Upda
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRoleId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRoleId = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRoleId = types.StringNull()
@@ -831,6 +887,13 @@ func (r *ApiKeyCustomRoleResource) Update(ctx context.Context, req resource.Upda
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

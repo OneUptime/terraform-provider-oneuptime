@@ -38,6 +38,7 @@ data "oneuptime_llm_provider" "by_id" {
 - `llm_type` (String) The type of LLM provider (OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama, OpenAICompatible, etc.).
 - `model_name` (String) The model to use (e.g., gpt-5.1, claude-sonnet-5-5, llama3.1). For Azure OpenAI / Microsoft Foundry, the deployment's name. Optional: left empty, the provider's default model is used, and an OpenAI-compatible server is asked for the first model it lists.
 - `name` (String) A friendly name for this LLM configuration.
+- `request_timeout_in_seconds` (Number) How long to wait for the provider to answer one request, in seconds (10 to 3600). Leave empty for the default: 120 seconds, or 300 for Ollama. Raise it for a slow or self-hosted model.
 - `slug` (String) Friendly globally unique name for your object.
 
 ### Read-Only

@@ -271,6 +271,13 @@ func (d *SecurityEventConnectionRunDataSource) Read(ctx context.Context, req dat
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -284,6 +291,13 @@ func (d *SecurityEventConnectionRunDataSource) Read(ctx context.Context, req dat
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -305,6 +319,13 @@ func (d *SecurityEventConnectionRunDataSource) Read(ctx context.Context, req dat
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -318,6 +339,13 @@ func (d *SecurityEventConnectionRunDataSource) Read(ctx context.Context, req dat
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -339,6 +367,13 @@ func (d *SecurityEventConnectionRunDataSource) Read(ctx context.Context, req dat
         } else {
             data.SecurityEventConnectionId = types.StringNull()
         }
+    } else if arr, ok := item["securityEventConnectionId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SecurityEventConnectionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityEventConnectionId = types.StringNull()
+        }
     } else if val, ok := item["securityEventConnectionId"].(string); ok {
         data.SecurityEventConnectionId = types.StringValue(val)
     } else {
@@ -352,6 +387,13 @@ func (d *SecurityEventConnectionRunDataSource) Read(ctx context.Context, req dat
         } else if val, ok := obj["value"].(float64); ok {
             data.RequestedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RequestedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequestedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["requestedByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.RequestedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.RequestedByUserId = types.StringNull()
@@ -373,6 +415,13 @@ func (d *SecurityEventConnectionRunDataSource) Read(ctx context.Context, req dat
         } else {
             data.Type = types.StringNull()
         }
+    } else if arr, ok := item["type"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Type = types.StringValue(string(jsonBytes))
+        } else {
+            data.Type = types.StringNull()
+        }
     } else if val, ok := item["type"].(string); ok {
         data.Type = types.StringValue(val)
     } else {
@@ -386,6 +435,13 @@ func (d *SecurityEventConnectionRunDataSource) Read(ctx context.Context, req dat
         } else if val, ok := obj["value"].(float64); ok {
             data.Status = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Status = types.StringValue(string(jsonBytes))
+        } else {
+            data.Status = types.StringNull()
+        }
+    } else if arr, ok := item["status"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Status = types.StringValue(string(jsonBytes))
         } else {
             data.Status = types.StringNull()
@@ -407,6 +463,13 @@ func (d *SecurityEventConnectionRunDataSource) Read(ctx context.Context, req dat
         } else {
             data.StartedAt = types.StringNull()
         }
+    } else if arr, ok := item["startedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.StartedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.StartedAt = types.StringNull()
+        }
     } else if val, ok := item["startedAt"].(string); ok {
         data.StartedAt = types.StringValue(val)
     } else {
@@ -420,6 +483,13 @@ func (d *SecurityEventConnectionRunDataSource) Read(ctx context.Context, req dat
         } else if val, ok := obj["value"].(float64); ok {
             data.CompletedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CompletedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CompletedAt = types.StringNull()
+        }
+    } else if arr, ok := item["completedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CompletedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CompletedAt = types.StringNull()
@@ -441,6 +511,13 @@ func (d *SecurityEventConnectionRunDataSource) Read(ctx context.Context, req dat
         } else {
             data.Request = types.StringNull()
         }
+    } else if arr, ok := item["request"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Request = types.StringValue(string(jsonBytes))
+        } else {
+            data.Request = types.StringNull()
+        }
     } else if val, ok := item["request"].(string); ok {
         data.Request = types.StringValue(val)
     } else {
@@ -458,6 +535,13 @@ func (d *SecurityEventConnectionRunDataSource) Read(ctx context.Context, req dat
         } else {
             data.Result = types.StringNull()
         }
+    } else if arr, ok := item["result"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Result = types.StringValue(string(jsonBytes))
+        } else {
+            data.Result = types.StringNull()
+        }
     } else if val, ok := item["result"].(string); ok {
         data.Result = types.StringValue(val)
     } else {
@@ -471,6 +555,13 @@ func (d *SecurityEventConnectionRunDataSource) Read(ctx context.Context, req dat
         } else if val, ok := obj["value"].(float64); ok {
             data.Error = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Error = types.StringValue(string(jsonBytes))
+        } else {
+            data.Error = types.StringNull()
+        }
+    } else if arr, ok := item["error"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Error = types.StringValue(string(jsonBytes))
         } else {
             data.Error = types.StringNull()

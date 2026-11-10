@@ -32,6 +32,7 @@ resource "oneuptime_incident_grouping_rule" "example" {
 - `default_assign_to_user_id` (String) ID of defaultAssignToUser. Kept for API compatibility: OneUptime does not show it anywhere. To make someone responsible for the episodes this rule opens, use episodeOwnerUsers. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `default_assign_to_user_email`.
 - `description` (String) Description of this incident grouping rule.
 - `enable_inactivity_timeout` (Boolean) Enable auto-resolving episodes after a period of inactivity. Helps automatically close episodes when no new incidents arrive. Defaults to `false`.
+- `enable_minimum_incident_count` (Boolean) Wait for more incidents before opening an episode. When enabled, a matching incident with no open episode to join stays on its own until Minimum Incident Count matching incidents of the same group are ongoing - and, with the time window enabled, arrived within it of each other. The episode then opens with all of them. Until then, each incident runs only its own on-call policies. When disabled, the first matching incident opens an episode. Defaults to `false`.
 - `enable_reopen_window` (Boolean) Enable reopening recently resolved episodes instead of creating new ones. Useful when related issues recur shortly after resolution. Defaults to `false`.
 - `enable_resolve_delay` (Boolean) Enable grace period before auto-resolving episode after all incidents resolve. Helps prevent rapid state changes during incident flapping. Defaults to `false`.
 - `enable_time_window` (Boolean) Enable time-based grouping. When enabled, incidents are grouped within the specified time window. When disabled, all matching incidents are grouped into a single ongoing episode regardless of time. Defaults to `false`.
@@ -56,6 +57,7 @@ resource "oneuptime_incident_grouping_rule" "example" {
 - `incident_title_pattern` (String) Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.
 - `is_enabled` (Boolean) Whether this rule is enabled. Defaults to `true`.
 - `match_criteria` (String) JSON object defining the criteria for matching incidents to this rule. A JSON value: write it with `jsonencode()`.
+- `minimum_incident_count` (Number) How many matching incidents of the same group must be ongoing before the rule opens an episode for them, while Enable Minimum Incident Count is on. A whole number from 1 to 100; 1 opens an episode for the first matching incident. Defaults to `3`.
 - `monitor_description_pattern` (String) Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.
 - `monitor_labels` (Set of String) Only group incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels. IDs of `oneuptime_label` resources.
 - `monitor_name_pattern` (String) Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.

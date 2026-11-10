@@ -258,6 +258,13 @@ func (d *IncomingCallPolicyPhoneNumberDataSource) Read(ctx context.Context, req 
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -271,6 +278,13 @@ func (d *IncomingCallPolicyPhoneNumberDataSource) Read(ctx context.Context, req 
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -292,6 +306,13 @@ func (d *IncomingCallPolicyPhoneNumberDataSource) Read(ctx context.Context, req 
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -305,6 +326,13 @@ func (d *IncomingCallPolicyPhoneNumberDataSource) Read(ctx context.Context, req 
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -326,6 +354,13 @@ func (d *IncomingCallPolicyPhoneNumberDataSource) Read(ctx context.Context, req 
         } else {
             data.IncomingCallPolicyId = types.StringNull()
         }
+    } else if arr, ok := item["incomingCallPolicyId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.IncomingCallPolicyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingCallPolicyId = types.StringNull()
+        }
     } else if val, ok := item["incomingCallPolicyId"].(string); ok {
         data.IncomingCallPolicyId = types.StringValue(val)
     } else {
@@ -339,6 +374,13 @@ func (d *IncomingCallPolicyPhoneNumberDataSource) Read(ctx context.Context, req 
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectCallSmsConfigId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectCallSmsConfigId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectCallSmsConfigId = types.StringNull()
+        }
+    } else if arr, ok := item["projectCallSMSConfigId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectCallSmsConfigId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectCallSmsConfigId = types.StringNull()
@@ -360,6 +402,13 @@ func (d *IncomingCallPolicyPhoneNumberDataSource) Read(ctx context.Context, req 
         } else {
             data.PhoneNumber = types.StringNull()
         }
+    } else if arr, ok := item["phoneNumber"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PhoneNumber = types.StringValue(string(jsonBytes))
+        } else {
+            data.PhoneNumber = types.StringNull()
+        }
     } else if val, ok := item["phoneNumber"].(string); ok {
         data.PhoneNumber = types.StringValue(val)
     } else {
@@ -373,6 +422,13 @@ func (d *IncomingCallPolicyPhoneNumberDataSource) Read(ctx context.Context, req 
         } else if val, ok := obj["value"].(float64); ok {
             data.CallProviderPhoneNumberId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CallProviderPhoneNumberId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CallProviderPhoneNumberId = types.StringNull()
+        }
+    } else if arr, ok := item["callProviderPhoneNumberId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CallProviderPhoneNumberId = types.StringValue(string(jsonBytes))
         } else {
             data.CallProviderPhoneNumberId = types.StringNull()
@@ -394,6 +450,13 @@ func (d *IncomingCallPolicyPhoneNumberDataSource) Read(ctx context.Context, req 
         } else {
             data.CountryCode = types.StringNull()
         }
+    } else if arr, ok := item["countryCode"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CountryCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.CountryCode = types.StringNull()
+        }
     } else if val, ok := item["countryCode"].(string); ok {
         data.CountryCode = types.StringValue(val)
     } else {
@@ -411,6 +474,13 @@ func (d *IncomingCallPolicyPhoneNumberDataSource) Read(ctx context.Context, req 
         } else {
             data.AreaCode = types.StringNull()
         }
+    } else if arr, ok := item["areaCode"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AreaCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.AreaCode = types.StringNull()
+        }
     } else if val, ok := item["areaCode"].(string); ok {
         data.AreaCode = types.StringValue(val)
     } else {
@@ -424,6 +494,13 @@ func (d *IncomingCallPolicyPhoneNumberDataSource) Read(ctx context.Context, req 
         } else if val, ok := obj["value"].(float64); ok {
             data.PhoneNumberPurchasedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PhoneNumberPurchasedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.PhoneNumberPurchasedAt = types.StringNull()
+        }
+    } else if arr, ok := item["phoneNumberPurchasedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.PhoneNumberPurchasedAt = types.StringValue(string(jsonBytes))
         } else {
             data.PhoneNumberPurchasedAt = types.StringNull()

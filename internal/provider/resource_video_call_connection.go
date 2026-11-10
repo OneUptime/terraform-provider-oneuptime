@@ -391,6 +391,13 @@ func (r *VideoCallConnectionResource) Create(ctx context.Context, req resource.C
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -424,6 +431,13 @@ func (r *VideoCallConnectionResource) Create(ctx context.Context, req resource.C
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -465,6 +479,13 @@ func (r *VideoCallConnectionResource) Create(ctx context.Context, req resource.C
         } else {
             data.ProviderValue = types.StringNull()
         }
+    } else if arr, ok := dataMap["provider"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ProviderValue = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProviderValue = types.StringNull()
+        }
     } else if val, ok := dataMap["provider"].(string); ok {
         data.ProviderValue = types.StringValue(val)
     } else {
@@ -502,6 +523,13 @@ func (r *VideoCallConnectionResource) Create(ctx context.Context, req resource.C
         } else {
             data.AuthMethod = types.StringNull()
         }
+    } else if arr, ok := dataMap["authMethod"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AuthMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.AuthMethod = types.StringNull()
+        }
     } else if val, ok := dataMap["authMethod"].(string); ok {
         data.AuthMethod = types.StringValue(val)
     } else {
@@ -535,6 +563,13 @@ func (r *VideoCallConnectionResource) Create(ctx context.Context, req resource.C
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Config = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Config = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["config"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Config = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Config = NewJSONSubsetNull()
@@ -598,6 +633,13 @@ func (r *VideoCallConnectionResource) Create(ctx context.Context, req resource.C
         } else {
             data.ConnectedAccount = types.StringNull()
         }
+    } else if arr, ok := dataMap["connectedAccount"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ConnectedAccount = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectedAccount = types.StringNull()
+        }
     } else if val, ok := dataMap["connectedAccount"].(string); ok {
         data.ConnectedAccount = types.StringValue(val)
     } else {
@@ -631,6 +673,13 @@ func (r *VideoCallConnectionResource) Create(ctx context.Context, req resource.C
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ConnectedAccountId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectedAccountId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["connectedAccountId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ConnectedAccountId = types.StringValue(string(jsonBytes))
         } else {
             data.ConnectedAccountId = types.StringNull()
@@ -683,6 +732,13 @@ func (r *VideoCallConnectionResource) Create(ctx context.Context, req resource.C
         } else {
             data.LastError = types.StringNull()
         }
+    } else if arr, ok := dataMap["lastError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastError = types.StringNull()
+        }
     } else if val, ok := dataMap["lastError"].(string); ok {
         data.LastError = types.StringValue(val)
     } else {
@@ -727,6 +783,13 @@ func (r *VideoCallConnectionResource) Create(ctx context.Context, req resource.C
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -859,6 +922,13 @@ func (r *VideoCallConnectionResource) Read(ctx context.Context, req resource.Rea
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -892,6 +962,13 @@ func (r *VideoCallConnectionResource) Read(ctx context.Context, req resource.Rea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -933,6 +1010,13 @@ func (r *VideoCallConnectionResource) Read(ctx context.Context, req resource.Rea
         } else {
             data.ProviderValue = types.StringNull()
         }
+    } else if arr, ok := dataMap["provider"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ProviderValue = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProviderValue = types.StringNull()
+        }
     } else if val, ok := dataMap["provider"].(string); ok {
         data.ProviderValue = types.StringValue(val)
     } else {
@@ -970,6 +1054,13 @@ func (r *VideoCallConnectionResource) Read(ctx context.Context, req resource.Rea
         } else {
             data.AuthMethod = types.StringNull()
         }
+    } else if arr, ok := dataMap["authMethod"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AuthMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.AuthMethod = types.StringNull()
+        }
     } else if val, ok := dataMap["authMethod"].(string); ok {
         data.AuthMethod = types.StringValue(val)
     } else {
@@ -1003,6 +1094,13 @@ func (r *VideoCallConnectionResource) Read(ctx context.Context, req resource.Rea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Config = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Config = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["config"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Config = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Config = NewJSONSubsetNull()
@@ -1066,6 +1164,13 @@ func (r *VideoCallConnectionResource) Read(ctx context.Context, req resource.Rea
         } else {
             data.ConnectedAccount = types.StringNull()
         }
+    } else if arr, ok := dataMap["connectedAccount"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ConnectedAccount = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectedAccount = types.StringNull()
+        }
     } else if val, ok := dataMap["connectedAccount"].(string); ok {
         data.ConnectedAccount = types.StringValue(val)
     } else {
@@ -1099,6 +1204,13 @@ func (r *VideoCallConnectionResource) Read(ctx context.Context, req resource.Rea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ConnectedAccountId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectedAccountId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["connectedAccountId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ConnectedAccountId = types.StringValue(string(jsonBytes))
         } else {
             data.ConnectedAccountId = types.StringNull()
@@ -1151,6 +1263,13 @@ func (r *VideoCallConnectionResource) Read(ctx context.Context, req resource.Rea
         } else {
             data.LastError = types.StringNull()
         }
+    } else if arr, ok := dataMap["lastError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastError = types.StringNull()
+        }
     } else if val, ok := dataMap["lastError"].(string); ok {
         data.LastError = types.StringValue(val)
     } else {
@@ -1195,6 +1314,13 @@ func (r *VideoCallConnectionResource) Read(ctx context.Context, req resource.Rea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1376,6 +1502,13 @@ func (r *VideoCallConnectionResource) Update(ctx context.Context, req resource.U
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1409,6 +1542,13 @@ func (r *VideoCallConnectionResource) Update(ctx context.Context, req resource.U
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1450,6 +1590,13 @@ func (r *VideoCallConnectionResource) Update(ctx context.Context, req resource.U
         } else {
             data.ProviderValue = types.StringNull()
         }
+    } else if arr, ok := dataMap["provider"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ProviderValue = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProviderValue = types.StringNull()
+        }
     } else if val, ok := dataMap["provider"].(string); ok {
         data.ProviderValue = types.StringValue(val)
     } else {
@@ -1487,6 +1634,13 @@ func (r *VideoCallConnectionResource) Update(ctx context.Context, req resource.U
         } else {
             data.AuthMethod = types.StringNull()
         }
+    } else if arr, ok := dataMap["authMethod"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AuthMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.AuthMethod = types.StringNull()
+        }
     } else if val, ok := dataMap["authMethod"].(string); ok {
         data.AuthMethod = types.StringValue(val)
     } else {
@@ -1520,6 +1674,13 @@ func (r *VideoCallConnectionResource) Update(ctx context.Context, req resource.U
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Config = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Config = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["config"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Config = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Config = NewJSONSubsetNull()
@@ -1583,6 +1744,13 @@ func (r *VideoCallConnectionResource) Update(ctx context.Context, req resource.U
         } else {
             data.ConnectedAccount = types.StringNull()
         }
+    } else if arr, ok := dataMap["connectedAccount"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ConnectedAccount = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectedAccount = types.StringNull()
+        }
     } else if val, ok := dataMap["connectedAccount"].(string); ok {
         data.ConnectedAccount = types.StringValue(val)
     } else {
@@ -1616,6 +1784,13 @@ func (r *VideoCallConnectionResource) Update(ctx context.Context, req resource.U
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ConnectedAccountId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectedAccountId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["connectedAccountId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ConnectedAccountId = types.StringValue(string(jsonBytes))
         } else {
             data.ConnectedAccountId = types.StringNull()
@@ -1668,6 +1843,13 @@ func (r *VideoCallConnectionResource) Update(ctx context.Context, req resource.U
         } else {
             data.LastError = types.StringNull()
         }
+    } else if arr, ok := dataMap["lastError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastError = types.StringNull()
+        }
     } else if val, ok := dataMap["lastError"].(string); ok {
         data.LastError = types.StringValue(val)
     } else {
@@ -1712,6 +1894,13 @@ func (r *VideoCallConnectionResource) Update(ctx context.Context, req resource.U
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

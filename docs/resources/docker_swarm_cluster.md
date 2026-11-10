@@ -53,6 +53,7 @@ resource "oneuptime_docker_swarm_cluster" "example" {
 - `ai_access_configured_at` (String) When OneUptime AI access to this Docker Swarm cluster was first configured by anyone saving an AI access setting. Set by the server; never cleared, so a Docker Swarm AI agent that registers later never overwrites a setting an operator chose.
 - `ai_access_last_error` (String) The most recent failure OneUptime AI hit while running a command on this Docker Swarm cluster, kept until the next successful command. Set by the server.
 - `ai_access_last_verified_at` (String) When a command from OneUptime AI last succeeded on this Docker Swarm cluster through its Docker Swarm AI agent. Set by the server.
+- `ai_agent_reset_at` (String) When this Docker Swarm cluster's AI agent was last reset: its key stopped working at once, and it registers again by itself. Set by the server.
 - `archived_at` (String) When was this Docker Swarm cluster archived?
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_at` (String) Date and Time when the object was created.

@@ -385,6 +385,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -398,6 +405,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -419,6 +433,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -432,6 +453,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -453,6 +481,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := item["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -466,6 +501,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.Description = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -487,6 +529,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.Url = types.StringNull()
         }
+    } else if arr, ok := item["url"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Url = types.StringValue(string(jsonBytes))
+        } else {
+            data.Url = types.StringNull()
+        }
     } else if val, ok := item["url"].(string); ok {
         data.Url = types.StringValue(val)
     } else {
@@ -500,6 +549,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.AuthType = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AuthType = types.StringValue(string(jsonBytes))
+        } else {
+            data.AuthType = types.StringNull()
+        }
+    } else if arr, ok := item["authType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.AuthType = types.StringValue(string(jsonBytes))
         } else {
             data.AuthType = types.StringNull()
@@ -521,6 +577,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.HeaderNames = types.StringNull()
         }
+    } else if arr, ok := item["headerNames"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.HeaderNames = types.StringValue(string(jsonBytes))
+        } else {
+            data.HeaderNames = types.StringNull()
+        }
     } else if val, ok := item["headerNames"].(string); ok {
         data.HeaderNames = types.StringValue(val)
     } else {
@@ -534,6 +597,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.OauthTokenUrl = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OauthTokenUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthTokenUrl = types.StringNull()
+        }
+    } else if arr, ok := item["oauthTokenUrl"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.OauthTokenUrl = types.StringValue(string(jsonBytes))
         } else {
             data.OauthTokenUrl = types.StringNull()
@@ -555,6 +625,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.OauthClientId = types.StringNull()
         }
+    } else if arr, ok := item["oauthClientId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.OauthClientId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthClientId = types.StringNull()
+        }
     } else if val, ok := item["oauthClientId"].(string); ok {
         data.OauthClientId = types.StringValue(val)
     } else {
@@ -572,6 +649,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.OauthScope = types.StringNull()
         }
+    } else if arr, ok := item["oauthScope"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.OauthScope = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthScope = types.StringNull()
+        }
     } else if val, ok := item["oauthScope"].(string); ok {
         data.OauthScope = types.StringValue(val)
     } else {
@@ -585,6 +669,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.OauthAudience = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OauthAudience = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthAudience = types.StringNull()
+        }
+    } else if arr, ok := item["oauthAudience"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.OauthAudience = types.StringValue(string(jsonBytes))
         } else {
             data.OauthAudience = types.StringNull()
@@ -611,6 +702,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.Transport = types.StringNull()
         }
+    } else if arr, ok := item["transport"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Transport = types.StringValue(string(jsonBytes))
+        } else {
+            data.Transport = types.StringNull()
+        }
     } else if val, ok := item["transport"].(string); ok {
         data.Transport = types.StringValue(val)
     } else {
@@ -624,6 +722,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.ServerName = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ServerName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServerName = types.StringNull()
+        }
+    } else if arr, ok := item["serverName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ServerName = types.StringValue(string(jsonBytes))
         } else {
             data.ServerName = types.StringNull()
@@ -645,6 +750,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.ServerVersion = types.StringNull()
         }
+    } else if arr, ok := item["serverVersion"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ServerVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServerVersion = types.StringNull()
+        }
     } else if val, ok := item["serverVersion"].(string); ok {
         data.ServerVersion = types.StringValue(val)
     } else {
@@ -658,6 +770,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.ProtocolVersion = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProtocolVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProtocolVersion = types.StringNull()
+        }
+    } else if arr, ok := item["protocolVersion"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProtocolVersion = types.StringValue(string(jsonBytes))
         } else {
             data.ProtocolVersion = types.StringNull()
@@ -679,6 +798,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.Tools = types.StringNull()
         }
+    } else if arr, ok := item["tools"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Tools = types.StringValue(string(jsonBytes))
+        } else {
+            data.Tools = types.StringNull()
+        }
     } else if val, ok := item["tools"].(string); ok {
         data.Tools = types.StringValue(val)
     } else {
@@ -692,6 +818,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.LastCheckedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastCheckedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastCheckedAt = types.StringNull()
+        }
+    } else if arr, ok := item["lastCheckedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.LastCheckedAt = types.StringValue(string(jsonBytes))
         } else {
             data.LastCheckedAt = types.StringNull()
@@ -713,6 +846,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.LastConnectedAt = types.StringNull()
         }
+    } else if arr, ok := item["lastConnectedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastConnectedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastConnectedAt = types.StringNull()
+        }
     } else if val, ok := item["lastConnectedAt"].(string); ok {
         data.LastConnectedAt = types.StringValue(val)
     } else {
@@ -730,6 +870,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else {
             data.LastError = types.StringNull()
         }
+    } else if arr, ok := item["lastError"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastError = types.StringNull()
+        }
     } else if val, ok := item["lastError"].(string); ok {
         data.LastError = types.StringValue(val)
     } else {
@@ -743,6 +890,13 @@ func (d *ExternalMcpServerDataSource) Read(ctx context.Context, req datasource.R
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

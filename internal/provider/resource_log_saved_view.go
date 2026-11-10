@@ -417,6 +417,13 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -450,6 +457,13 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scope"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Scope = types.StringValue(string(jsonBytes))
         } else {
             data.Scope = types.StringNull()
@@ -491,6 +505,13 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
         } else {
             data.Query = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["query"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Query = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Query = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["query"].(string); ok {
         data.Query = NewJSONSubsetValue(val)
     } else {
@@ -524,6 +545,13 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Columns = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Columns = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["columns"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Columns = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Columns = NewJSONSubsetNull()
@@ -565,6 +593,13 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
         } else {
             data.SortField = types.StringNull()
         }
+    } else if arr, ok := dataMap["sortField"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SortField = types.StringValue(string(jsonBytes))
+        } else {
+            data.SortField = types.StringNull()
+        }
     } else if val, ok := dataMap["sortField"].(string); ok {
         data.SortField = types.StringValue(val)
     } else {
@@ -598,6 +633,13 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SortOrder = types.StringValue(string(jsonBytes))
+        } else {
+            data.SortOrder = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sortOrder"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SortOrder = types.StringValue(string(jsonBytes))
         } else {
             data.SortOrder = types.StringNull()
@@ -636,6 +678,13 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TimeRange = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TimeRange = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["timeRange"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TimeRange = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.TimeRange = NewJSONSubsetNull()
@@ -698,6 +747,13 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -829,6 +885,13 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -862,6 +925,13 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scope"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Scope = types.StringValue(string(jsonBytes))
         } else {
             data.Scope = types.StringNull()
@@ -903,6 +973,13 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
         } else {
             data.Query = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["query"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Query = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Query = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["query"].(string); ok {
         data.Query = NewJSONSubsetValue(val)
     } else {
@@ -936,6 +1013,13 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Columns = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Columns = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["columns"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Columns = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Columns = NewJSONSubsetNull()
@@ -977,6 +1061,13 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
         } else {
             data.SortField = types.StringNull()
         }
+    } else if arr, ok := dataMap["sortField"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SortField = types.StringValue(string(jsonBytes))
+        } else {
+            data.SortField = types.StringNull()
+        }
     } else if val, ok := dataMap["sortField"].(string); ok {
         data.SortField = types.StringValue(val)
     } else {
@@ -1010,6 +1101,13 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SortOrder = types.StringValue(string(jsonBytes))
+        } else {
+            data.SortOrder = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sortOrder"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SortOrder = types.StringValue(string(jsonBytes))
         } else {
             data.SortOrder = types.StringNull()
@@ -1048,6 +1146,13 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TimeRange = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TimeRange = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["timeRange"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TimeRange = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.TimeRange = NewJSONSubsetNull()
@@ -1110,6 +1215,13 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1314,6 +1426,13 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1347,6 +1466,13 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scope"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Scope = types.StringValue(string(jsonBytes))
         } else {
             data.Scope = types.StringNull()
@@ -1388,6 +1514,13 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
         } else {
             data.Query = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["query"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Query = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Query = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["query"].(string); ok {
         data.Query = NewJSONSubsetValue(val)
     } else {
@@ -1421,6 +1554,13 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Columns = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Columns = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["columns"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Columns = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Columns = NewJSONSubsetNull()
@@ -1462,6 +1602,13 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
         } else {
             data.SortField = types.StringNull()
         }
+    } else if arr, ok := dataMap["sortField"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SortField = types.StringValue(string(jsonBytes))
+        } else {
+            data.SortField = types.StringNull()
+        }
     } else if val, ok := dataMap["sortField"].(string); ok {
         data.SortField = types.StringValue(val)
     } else {
@@ -1495,6 +1642,13 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SortOrder = types.StringValue(string(jsonBytes))
+        } else {
+            data.SortOrder = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sortOrder"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SortOrder = types.StringValue(string(jsonBytes))
         } else {
             data.SortOrder = types.StringNull()
@@ -1533,6 +1687,13 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TimeRange = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TimeRange = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["timeRange"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TimeRange = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.TimeRange = NewJSONSubsetNull()
@@ -1595,6 +1756,13 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

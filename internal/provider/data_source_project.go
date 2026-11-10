@@ -76,6 +76,10 @@ type ProjectDataSourceModel struct {
     AiContext types.String `tfsdk:"ai_context"`
     AiDailyTokenLimit types.Number `tfsdk:"ai_daily_token_limit"`
     AiDailySpendLimitInUsd types.Number `tfsdk:"ai_daily_spend_limit_in_usd"`
+    AiRunMaxModelCalls types.Number `tfsdk:"ai_run_max_model_calls"`
+    AiRunMaxToolCalls types.Number `tfsdk:"ai_run_max_tool_calls"`
+    AiRunMaxTokens types.Number `tfsdk:"ai_run_max_tokens"`
+    AiRunTimeLimitInMinutes types.Number `tfsdk:"ai_run_time_limit_in_minutes"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
     EnableAutomaticSecurityCaseTriage types.Bool `tfsdk:"enable_automatic_security_case_triage"`
@@ -83,12 +87,15 @@ type ProjectDataSourceModel struct {
     SecurityRiskCaseThreshold types.Number `tfsdk:"security_risk_case_threshold"`
     EnableAutomaticIncidentRemediation types.Bool `tfsdk:"enable_automatic_incident_remediation"`
     EnableAutomaticAlertRemediation types.Bool `tfsdk:"enable_automatic_alert_remediation"`
+    RequireTwoApprovalsForRiskierFixes types.Bool `tfsdk:"require_two_approvals_for_riskier_fixes"`
     EnableAutomaticPostmortemDraft types.Bool `tfsdk:"enable_automatic_postmortem_draft"`
     AcknowledgeLinkedAlertsWhenIncidentAcknowledged types.Bool `tfsdk:"acknowledge_linked_alerts_when_incident_acknowledged"`
     ResolveLinkedAlertsWhenIncidentResolved types.Bool `tfsdk:"resolve_linked_alerts_when_incident_resolved"`
     LimitIncidentsToOneEpisode types.Bool `tfsdk:"limit_incidents_to_one_episode"`
     LimitAlertsToOneEpisode types.Bool `tfsdk:"limit_alerts_to_one_episode"`
     DefaultNetworkTopologyLayout types.String `tfsdk:"default_network_topology_layout"`
+    DiscoveredDeviceRetentionInDays types.Number `tfsdk:"discovered_device_retention_in_days"`
+    DefaultTableColumns types.String `tfsdk:"default_table_columns"`
     EnableAiInsights types.Bool `tfsdk:"enable_ai_insights"`
     EnableInsightFixTasks types.Bool `tfsdk:"enable_insight_fix_tasks"`
     EnableAutomaticProfileRemediation types.Bool `tfsdk:"enable_automatic_profile_remediation"`
@@ -132,6 +139,18 @@ type ProjectDataSourceModel struct {
     AuditLogsRetentionInDays types.Number `tfsdk:"audit_logs_retention_in_days"`
     StoreSystemEventsInAuditLogs types.Bool `tfsdk:"store_system_events_in_audit_logs"`
     RecordAndTranscribeIncidentCalls types.Bool `tfsdk:"record_and_transcribe_incident_calls"`
+    RequireApprovalForIncidentPublicNotes types.Bool `tfsdk:"require_approval_for_incident_public_notes"`
+    RequireApprovalForScheduledMaintenancePublicNotes types.Bool `tfsdk:"require_approval_for_scheduled_maintenance_public_notes"`
+    LogsDailyIngestionBudgetInGb types.Number `tfsdk:"logs_daily_ingestion_budget_in_gb"`
+    TracesDailyIngestionBudgetInGb types.Number `tfsdk:"traces_daily_ingestion_budget_in_gb"`
+    MetricsDailyIngestionBudgetInGb types.Number `tfsdk:"metrics_daily_ingestion_budget_in_gb"`
+    ProfilesDailyIngestionBudgetInGb types.Number `tfsdk:"profiles_daily_ingestion_budget_in_gb"`
+    SecurityEventsDailyIngestionBudgetInGb types.Number `tfsdk:"security_events_daily_ingestion_budget_in_gb"`
+    LogsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"logs_ingestion_rate_limit_in_mb_per_second"`
+    TracesIngestionRateLimitInMbPerSecond types.Number `tfsdk:"traces_ingestion_rate_limit_in_mb_per_second"`
+    MetricsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"metrics_ingestion_rate_limit_in_mb_per_second"`
+    ProfilesIngestionRateLimitInMbPerSecond types.Number `tfsdk:"profiles_ingestion_rate_limit_in_mb_per_second"`
+    SecurityEventsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"security_events_ingestion_rate_limit_in_mb_per_second"`
 }
 
 func (d *ProjectDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -391,6 +410,26 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Optional: true,
                 Computed: true,
             },
+            "ai_run_max_model_calls": schema.NumberAttribute{
+                MarkdownDescription: "The most model (LLM) calls one OneUptime AI run may make: an investigation, an Ask AI answer, a Slack or Microsoft Teams answer, a triage, a remediation or a code task. The run answers with what it found when it gets there. Unset means no limit.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_run_max_tool_calls": schema.NumberAttribute{
+                MarkdownDescription: "The most tool calls (queries, commands, file reads and edits) one OneUptime AI run may make. The run answers with what it found when it gets there. Unset means no limit.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_run_max_tokens": schema.NumberAttribute{
+                MarkdownDescription: "The most tokens one OneUptime AI run may use, counted as the AI Logs count them. The run stops when it gets there and says so. Unset means no limit.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_run_time_limit_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "How long one OneUptime AI run may take before it answers with what it found. An incident or alert investigation uses its own lane's time limit when that is set. Unset means the default, 120 minutes.",
+                Optional: true,
+                Computed: true,
+            },
             "enable_automatic_incident_investigation": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new incident and posts a cited root cause analysis to the incident timeline; any auto-remediation for the incident waits until that investigation settles. On for new projects created in OneUptime; projects that existed before keep their setting. Drafting a postmortem when an incident resolves is a separate setting (Enable Automatic Postmortem Draft). Requires AI to be enabled and an LLM provider to be configured.",
                 Optional: true,
@@ -426,6 +465,11 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Optional: true,
                 Computed: true,
             },
+            "require_two_approvals_for_riskier_fixes": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, a fix OneUptime AI proposes that holds a riskier change runs only once two different people approve it. Off by default.",
+                Optional: true,
+                Computed: true,
+            },
             "enable_automatic_postmortem_draft": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, OneUptime's AI SRE drafts a postmortem from the incident's timeline and telemetry when an incident is resolved, for a human to review and edit. It never overwrites a postmortem that already exists. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured.",
                 Optional: true,
@@ -454,6 +498,15 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             "default_network_topology_layout": schema.StringAttribute{
                 MarkdownDescription: "The layout network topology maps open on: force, tiered, radial, star or parentChild. Empty: Automatic for all devices, By network layer for a site.",
                 Optional: true,
+                Computed: true,
+            },
+            "discovered_device_retention_in_days": schema.NumberAttribute{
+                MarkdownDescription: "Days a discovered device stays once no longer seen: 7, 14, 30, 60, 90, 180 or 365, or 0 to keep all. Monitored and classified devices always stay.",
+                Optional: true,
+                Computed: true,
+            },
+            "default_table_columns": schema.StringAttribute{
+                MarkdownDescription: "The columns each list shows, and their order, for everyone in the project who has not chosen their own: a list's key to its column ids in order and the ones hidden. Empty: every list shows its own columns. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "enable_ai_insights": schema.BoolAttribute{
@@ -668,6 +721,66 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "record_and_transcribe_incident_calls": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, OneUptime asks Zoom, Google Meet and Microsoft Teams to record and transcribe every incident call it starts, and adds each call's transcript to its incident once the call is over. Slack huddles and meeting links are not recorded; their transcripts can be added by hand. Off by default.",
+                Optional: true,
+                Computed: true,
+            },
+            "require_approval_for_incident_public_notes": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, a public note on an incident or an incident episode is published - shown on status pages, sent to subscribers and posted to chat channels - only once the project's incident approvers approve it (PublicNoteApprovalStep). Edits of published notes wait for approval too. Off by default. Turning it on needs at least one approval step.",
+                Optional: true,
+                Computed: true,
+            },
+            "require_approval_for_scheduled_maintenance_public_notes": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, a public note on a scheduled maintenance event is published - shown on status pages, sent to subscribers and posted to chat channels - only once the project's scheduled maintenance approvers approve it (PublicNoteApprovalStep). Edits of published notes wait for approval too. Off by default. Turning it on needs at least one approval step.",
+                Optional: true,
+                Computed: true,
+            },
+            "logs_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The most logs this project may send in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. Empty: the instance default. 0: no limit for this project.",
+                Optional: true,
+                Computed: true,
+            },
+            "traces_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The most traces this project may send in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. Empty: the instance default. 0: no limit for this project.",
+                Optional: true,
+                Computed: true,
+            },
+            "metrics_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The most metrics this project may send in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. Empty: the instance default. 0: no limit for this project.",
+                Optional: true,
+                Computed: true,
+            },
+            "profiles_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The most profiles this project may send in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. Empty: the instance default. 0: no limit for this project.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_events_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The most security events this project may send in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. Empty: the instance default. 0: no limit for this project.",
+                Optional: true,
+                Computed: true,
+            },
+            "logs_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The fastest this project may send logs, in MB per second; faster requests are answered 429 with Retry-After. Empty: the instance default. 0: no limit for this project.",
+                Optional: true,
+                Computed: true,
+            },
+            "traces_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The fastest this project may send traces, in MB per second; faster requests are answered 429 with Retry-After. Empty: the instance default. 0: no limit for this project.",
+                Optional: true,
+                Computed: true,
+            },
+            "metrics_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The fastest this project may send metrics, in MB per second; faster requests are answered 429 with Retry-After. Empty: the instance default. 0: no limit for this project.",
+                Optional: true,
+                Computed: true,
+            },
+            "profiles_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The fastest this project may send profiles, in MB per second; faster requests are answered 429 with Retry-After. Empty: the instance default. 0: no limit for this project.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_events_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The fastest this project may send security events, in MB per second; faster requests are answered 429 with Retry-After. Empty: the instance default. 0: no limit for this project.",
                 Optional: true,
                 Computed: true,
             },
@@ -894,6 +1007,22 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["aiDailySpendLimitInUSD"] = lookupNumber(data.AiDailySpendLimitInUsd)
         filterNames = append(filterNames, "ai_daily_spend_limit_in_usd = "+data.AiDailySpendLimitInUsd.ValueBigFloat().String())
     }
+    if !data.AiRunMaxModelCalls.IsNull() && !data.AiRunMaxModelCalls.IsUnknown() {
+        filters["aiRunMaxModelCalls"] = lookupNumber(data.AiRunMaxModelCalls)
+        filterNames = append(filterNames, "ai_run_max_model_calls = "+data.AiRunMaxModelCalls.ValueBigFloat().String())
+    }
+    if !data.AiRunMaxToolCalls.IsNull() && !data.AiRunMaxToolCalls.IsUnknown() {
+        filters["aiRunMaxToolCalls"] = lookupNumber(data.AiRunMaxToolCalls)
+        filterNames = append(filterNames, "ai_run_max_tool_calls = "+data.AiRunMaxToolCalls.ValueBigFloat().String())
+    }
+    if !data.AiRunMaxTokens.IsNull() && !data.AiRunMaxTokens.IsUnknown() {
+        filters["aiRunMaxTokens"] = lookupNumber(data.AiRunMaxTokens)
+        filterNames = append(filterNames, "ai_run_max_tokens = "+data.AiRunMaxTokens.ValueBigFloat().String())
+    }
+    if !data.AiRunTimeLimitInMinutes.IsNull() && !data.AiRunTimeLimitInMinutes.IsUnknown() {
+        filters["aiRunTimeLimitInMinutes"] = lookupNumber(data.AiRunTimeLimitInMinutes)
+        filterNames = append(filterNames, "ai_run_time_limit_in_minutes = "+data.AiRunTimeLimitInMinutes.ValueBigFloat().String())
+    }
     if !data.EnableAutomaticIncidentInvestigation.IsNull() && !data.EnableAutomaticIncidentInvestigation.IsUnknown() {
         filters["enableAutomaticIncidentInvestigation"] = data.EnableAutomaticIncidentInvestigation.ValueBool()
         filterNames = append(filterNames, "enable_automatic_incident_investigation = "+fmt.Sprintf("%t", data.EnableAutomaticIncidentInvestigation.ValueBool()))
@@ -922,6 +1051,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["enableAutomaticAlertRemediation"] = data.EnableAutomaticAlertRemediation.ValueBool()
         filterNames = append(filterNames, "enable_automatic_alert_remediation = "+fmt.Sprintf("%t", data.EnableAutomaticAlertRemediation.ValueBool()))
     }
+    if !data.RequireTwoApprovalsForRiskierFixes.IsNull() && !data.RequireTwoApprovalsForRiskierFixes.IsUnknown() {
+        filters["requireTwoApprovalsForRiskierFixes"] = data.RequireTwoApprovalsForRiskierFixes.ValueBool()
+        filterNames = append(filterNames, "require_two_approvals_for_riskier_fixes = "+fmt.Sprintf("%t", data.RequireTwoApprovalsForRiskierFixes.ValueBool()))
+    }
     if !data.EnableAutomaticPostmortemDraft.IsNull() && !data.EnableAutomaticPostmortemDraft.IsUnknown() {
         filters["enableAutomaticPostmortemDraft"] = data.EnableAutomaticPostmortemDraft.ValueBool()
         filterNames = append(filterNames, "enable_automatic_postmortem_draft = "+fmt.Sprintf("%t", data.EnableAutomaticPostmortemDraft.ValueBool()))
@@ -945,6 +1078,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     if !data.DefaultNetworkTopologyLayout.IsNull() && !data.DefaultNetworkTopologyLayout.IsUnknown() {
         filters["defaultNetworkTopologyLayout"] = data.DefaultNetworkTopologyLayout.ValueString()
         filterNames = append(filterNames, "default_network_topology_layout = "+fmt.Sprintf("%q", data.DefaultNetworkTopologyLayout.ValueString()))
+    }
+    if !data.DiscoveredDeviceRetentionInDays.IsNull() && !data.DiscoveredDeviceRetentionInDays.IsUnknown() {
+        filters["discoveredDeviceRetentionInDays"] = lookupNumber(data.DiscoveredDeviceRetentionInDays)
+        filterNames = append(filterNames, "discovered_device_retention_in_days = "+data.DiscoveredDeviceRetentionInDays.ValueBigFloat().String())
     }
     if !data.EnableAiInsights.IsNull() && !data.EnableAiInsights.IsUnknown() {
         filters["enableAiInsights"] = data.EnableAiInsights.ValueBool()
@@ -1110,6 +1247,54 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["recordAndTranscribeIncidentCalls"] = data.RecordAndTranscribeIncidentCalls.ValueBool()
         filterNames = append(filterNames, "record_and_transcribe_incident_calls = "+fmt.Sprintf("%t", data.RecordAndTranscribeIncidentCalls.ValueBool()))
     }
+    if !data.RequireApprovalForIncidentPublicNotes.IsNull() && !data.RequireApprovalForIncidentPublicNotes.IsUnknown() {
+        filters["requireApprovalForIncidentPublicNotes"] = data.RequireApprovalForIncidentPublicNotes.ValueBool()
+        filterNames = append(filterNames, "require_approval_for_incident_public_notes = "+fmt.Sprintf("%t", data.RequireApprovalForIncidentPublicNotes.ValueBool()))
+    }
+    if !data.RequireApprovalForScheduledMaintenancePublicNotes.IsNull() && !data.RequireApprovalForScheduledMaintenancePublicNotes.IsUnknown() {
+        filters["requireApprovalForScheduledMaintenancePublicNotes"] = data.RequireApprovalForScheduledMaintenancePublicNotes.ValueBool()
+        filterNames = append(filterNames, "require_approval_for_scheduled_maintenance_public_notes = "+fmt.Sprintf("%t", data.RequireApprovalForScheduledMaintenancePublicNotes.ValueBool()))
+    }
+    if !data.LogsDailyIngestionBudgetInGb.IsNull() && !data.LogsDailyIngestionBudgetInGb.IsUnknown() {
+        filters["logsDailyIngestionBudgetInGB"] = lookupNumber(data.LogsDailyIngestionBudgetInGb)
+        filterNames = append(filterNames, "logs_daily_ingestion_budget_in_gb = "+data.LogsDailyIngestionBudgetInGb.ValueBigFloat().String())
+    }
+    if !data.TracesDailyIngestionBudgetInGb.IsNull() && !data.TracesDailyIngestionBudgetInGb.IsUnknown() {
+        filters["tracesDailyIngestionBudgetInGB"] = lookupNumber(data.TracesDailyIngestionBudgetInGb)
+        filterNames = append(filterNames, "traces_daily_ingestion_budget_in_gb = "+data.TracesDailyIngestionBudgetInGb.ValueBigFloat().String())
+    }
+    if !data.MetricsDailyIngestionBudgetInGb.IsNull() && !data.MetricsDailyIngestionBudgetInGb.IsUnknown() {
+        filters["metricsDailyIngestionBudgetInGB"] = lookupNumber(data.MetricsDailyIngestionBudgetInGb)
+        filterNames = append(filterNames, "metrics_daily_ingestion_budget_in_gb = "+data.MetricsDailyIngestionBudgetInGb.ValueBigFloat().String())
+    }
+    if !data.ProfilesDailyIngestionBudgetInGb.IsNull() && !data.ProfilesDailyIngestionBudgetInGb.IsUnknown() {
+        filters["profilesDailyIngestionBudgetInGB"] = lookupNumber(data.ProfilesDailyIngestionBudgetInGb)
+        filterNames = append(filterNames, "profiles_daily_ingestion_budget_in_gb = "+data.ProfilesDailyIngestionBudgetInGb.ValueBigFloat().String())
+    }
+    if !data.SecurityEventsDailyIngestionBudgetInGb.IsNull() && !data.SecurityEventsDailyIngestionBudgetInGb.IsUnknown() {
+        filters["securityEventsDailyIngestionBudgetInGB"] = lookupNumber(data.SecurityEventsDailyIngestionBudgetInGb)
+        filterNames = append(filterNames, "security_events_daily_ingestion_budget_in_gb = "+data.SecurityEventsDailyIngestionBudgetInGb.ValueBigFloat().String())
+    }
+    if !data.LogsIngestionRateLimitInMbPerSecond.IsNull() && !data.LogsIngestionRateLimitInMbPerSecond.IsUnknown() {
+        filters["logsIngestionRateLimitInMBPerSecond"] = lookupNumber(data.LogsIngestionRateLimitInMbPerSecond)
+        filterNames = append(filterNames, "logs_ingestion_rate_limit_in_mb_per_second = "+data.LogsIngestionRateLimitInMbPerSecond.ValueBigFloat().String())
+    }
+    if !data.TracesIngestionRateLimitInMbPerSecond.IsNull() && !data.TracesIngestionRateLimitInMbPerSecond.IsUnknown() {
+        filters["tracesIngestionRateLimitInMBPerSecond"] = lookupNumber(data.TracesIngestionRateLimitInMbPerSecond)
+        filterNames = append(filterNames, "traces_ingestion_rate_limit_in_mb_per_second = "+data.TracesIngestionRateLimitInMbPerSecond.ValueBigFloat().String())
+    }
+    if !data.MetricsIngestionRateLimitInMbPerSecond.IsNull() && !data.MetricsIngestionRateLimitInMbPerSecond.IsUnknown() {
+        filters["metricsIngestionRateLimitInMBPerSecond"] = lookupNumber(data.MetricsIngestionRateLimitInMbPerSecond)
+        filterNames = append(filterNames, "metrics_ingestion_rate_limit_in_mb_per_second = "+data.MetricsIngestionRateLimitInMbPerSecond.ValueBigFloat().String())
+    }
+    if !data.ProfilesIngestionRateLimitInMbPerSecond.IsNull() && !data.ProfilesIngestionRateLimitInMbPerSecond.IsUnknown() {
+        filters["profilesIngestionRateLimitInMBPerSecond"] = lookupNumber(data.ProfilesIngestionRateLimitInMbPerSecond)
+        filterNames = append(filterNames, "profiles_ingestion_rate_limit_in_mb_per_second = "+data.ProfilesIngestionRateLimitInMbPerSecond.ValueBigFloat().String())
+    }
+    if !data.SecurityEventsIngestionRateLimitInMbPerSecond.IsNull() && !data.SecurityEventsIngestionRateLimitInMbPerSecond.IsUnknown() {
+        filters["securityEventsIngestionRateLimitInMBPerSecond"] = lookupNumber(data.SecurityEventsIngestionRateLimitInMbPerSecond)
+        filterNames = append(filterNames, "security_events_ingestion_rate_limit_in_mb_per_second = "+data.SecurityEventsIngestionRateLimitInMbPerSecond.ValueBigFloat().String())
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -1176,6 +1361,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "aiContext": true,
         "aiDailyTokenLimit": true,
         "aiDailySpendLimitInUSD": true,
+        "aiRunMaxModelCalls": true,
+        "aiRunMaxToolCalls": true,
+        "aiRunMaxTokens": true,
+        "aiRunTimeLimitInMinutes": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
         "enableAutomaticSecurityCaseTriage": true,
@@ -1183,12 +1372,15 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "securityRiskCaseThreshold": true,
         "enableAutomaticIncidentRemediation": true,
         "enableAutomaticAlertRemediation": true,
+        "requireTwoApprovalsForRiskierFixes": true,
         "enableAutomaticPostmortemDraft": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "limitIncidentsToOneEpisode": true,
         "limitAlertsToOneEpisode": true,
         "defaultNetworkTopologyLayout": true,
+        "discoveredDeviceRetentionInDays": true,
+        "defaultTableColumns": true,
         "enableAiInsights": true,
         "enableInsightFixTasks": true,
         "enableAutomaticProfileRemediation": true,
@@ -1232,6 +1424,18 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "auditLogsRetentionInDays": true,
         "storeSystemEventsInAuditLogs": true,
         "recordAndTranscribeIncidentCalls": true,
+        "requireApprovalForIncidentPublicNotes": true,
+        "requireApprovalForScheduledMaintenancePublicNotes": true,
+        "logsDailyIngestionBudgetInGB": true,
+        "tracesDailyIngestionBudgetInGB": true,
+        "metricsDailyIngestionBudgetInGB": true,
+        "profilesDailyIngestionBudgetInGB": true,
+        "securityEventsDailyIngestionBudgetInGB": true,
+        "logsIngestionRateLimitInMBPerSecond": true,
+        "tracesIngestionRateLimitInMBPerSecond": true,
+        "metricsIngestionRateLimitInMBPerSecond": true,
+        "profilesIngestionRateLimitInMBPerSecond": true,
+        "securityEventsIngestionRateLimitInMBPerSecond": true,
         "_id": true,
     }
 
@@ -1305,6 +1509,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1318,6 +1529,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -1339,6 +1557,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -1352,6 +1577,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.Name = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Name = types.StringValue(string(jsonBytes))
         } else {
             data.Name = types.StringNull()
@@ -1373,6 +1605,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := item["slug"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := item["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -1386,6 +1625,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.PaymentProviderPlanId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PaymentProviderPlanId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderPlanId = types.StringNull()
+        }
+    } else if arr, ok := item["paymentProviderPlanId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.PaymentProviderPlanId = types.StringValue(string(jsonBytes))
         } else {
             data.PaymentProviderPlanId = types.StringNull()
@@ -1407,6 +1653,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.PaymentProviderSubscriptionId = types.StringNull()
         }
+    } else if arr, ok := item["paymentProviderSubscriptionId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PaymentProviderSubscriptionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderSubscriptionId = types.StringNull()
+        }
     } else if val, ok := item["paymentProviderSubscriptionId"].(string); ok {
         data.PaymentProviderSubscriptionId = types.StringValue(val)
     } else {
@@ -1420,6 +1673,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.PaymentProviderMeteredSubscriptionId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PaymentProviderMeteredSubscriptionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderMeteredSubscriptionId = types.StringNull()
+        }
+    } else if arr, ok := item["paymentProviderMeteredSubscriptionId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.PaymentProviderMeteredSubscriptionId = types.StringValue(string(jsonBytes))
         } else {
             data.PaymentProviderMeteredSubscriptionId = types.StringNull()
@@ -1442,6 +1702,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.TrialEndsAt = types.StringNull()
         }
+    } else if arr, ok := item["trialEndsAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TrialEndsAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.TrialEndsAt = types.StringNull()
+        }
     } else if val, ok := item["trialEndsAt"].(string); ok {
         data.TrialEndsAt = types.StringValue(val)
     } else {
@@ -1455,6 +1722,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.PaymentProviderCustomerId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PaymentProviderCustomerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderCustomerId = types.StringNull()
+        }
+    } else if arr, ok := item["paymentProviderCustomerId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.PaymentProviderCustomerId = types.StringValue(string(jsonBytes))
         } else {
             data.PaymentProviderCustomerId = types.StringNull()
@@ -1476,6 +1750,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.BusinessDetails = types.StringNull()
         }
+    } else if arr, ok := item["businessDetails"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.BusinessDetails = types.StringValue(string(jsonBytes))
+        } else {
+            data.BusinessDetails = types.StringNull()
+        }
     } else if val, ok := item["businessDetails"].(string); ok {
         data.BusinessDetails = types.StringValue(val)
     } else {
@@ -1489,6 +1770,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.BusinessDetailsCountry = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.BusinessDetailsCountry = types.StringValue(string(jsonBytes))
+        } else {
+            data.BusinessDetailsCountry = types.StringNull()
+        }
+    } else if arr, ok := item["businessDetailsCountry"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.BusinessDetailsCountry = types.StringValue(string(jsonBytes))
         } else {
             data.BusinessDetailsCountry = types.StringNull()
@@ -1510,6 +1798,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.FinanceAccountingEmail = types.StringNull()
         }
+    } else if arr, ok := item["financeAccountingEmail"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FinanceAccountingEmail = types.StringValue(string(jsonBytes))
+        } else {
+            data.FinanceAccountingEmail = types.StringNull()
+        }
     } else if val, ok := item["financeAccountingEmail"].(string); ok {
         data.FinanceAccountingEmail = types.StringValue(val)
     } else {
@@ -1523,6 +1818,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.PaymentProviderSubscriptionStatus = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PaymentProviderSubscriptionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderSubscriptionStatus = types.StringNull()
+        }
+    } else if arr, ok := item["paymentProviderSubscriptionStatus"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.PaymentProviderSubscriptionStatus = types.StringValue(string(jsonBytes))
         } else {
             data.PaymentProviderSubscriptionStatus = types.StringNull()
@@ -1544,6 +1846,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.PaymentProviderMeteredSubscriptionStatus = types.StringNull()
         }
+    } else if arr, ok := item["paymentProviderMeteredSubscriptionStatus"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PaymentProviderMeteredSubscriptionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderMeteredSubscriptionStatus = types.StringNull()
+        }
     } else if val, ok := item["paymentProviderMeteredSubscriptionStatus"].(string); ok {
         data.PaymentProviderMeteredSubscriptionStatus = types.StringValue(val)
     } else {
@@ -1561,6 +1870,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.PaymentProviderPromoCode = types.StringNull()
         }
+    } else if arr, ok := item["paymentProviderPromoCode"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PaymentProviderPromoCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderPromoCode = types.StringNull()
+        }
     } else if val, ok := item["paymentProviderPromoCode"].(string); ok {
         data.PaymentProviderPromoCode = types.StringValue(val)
     } else {
@@ -1574,6 +1890,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1606,6 +1929,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.RequireSsoWithSsoProviderId = types.StringNull()
         }
+    } else if arr, ok := item["requireSsoWithSsoProviderId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RequireSsoWithSsoProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequireSsoWithSsoProviderId = types.StringNull()
+        }
     } else if val, ok := item["requireSsoWithSsoProviderId"].(string); ok {
         data.RequireSsoWithSsoProviderId = types.StringValue(val)
     } else {
@@ -1619,6 +1949,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.IncidentNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncidentNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentNumberPrefix = types.StringNull()
+        }
+    } else if arr, ok := item["incidentNumberPrefix"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.IncidentNumberPrefix = types.StringValue(string(jsonBytes))
         } else {
             data.IncidentNumberPrefix = types.StringNull()
@@ -1640,6 +1977,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.AlertNumberPrefix = types.StringNull()
         }
+    } else if arr, ok := item["alertNumberPrefix"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AlertNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertNumberPrefix = types.StringNull()
+        }
     } else if val, ok := item["alertNumberPrefix"].(string); ok {
         data.AlertNumberPrefix = types.StringValue(val)
     } else {
@@ -1653,6 +1997,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.ScheduledMaintenanceNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ScheduledMaintenanceNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduledMaintenanceNumberPrefix = types.StringNull()
+        }
+    } else if arr, ok := item["scheduledMaintenanceNumberPrefix"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ScheduledMaintenanceNumberPrefix = types.StringValue(string(jsonBytes))
         } else {
             data.ScheduledMaintenanceNumberPrefix = types.StringNull()
@@ -1674,6 +2025,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.SecurityCaseNumberPrefix = types.StringNull()
         }
+    } else if arr, ok := item["securityCaseNumberPrefix"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SecurityCaseNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseNumberPrefix = types.StringNull()
+        }
     } else if val, ok := item["securityCaseNumberPrefix"].(string); ok {
         data.SecurityCaseNumberPrefix = types.StringValue(val)
     } else {
@@ -1691,6 +2049,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.IncidentEpisodeNumberPrefix = types.StringNull()
         }
+    } else if arr, ok := item["incidentEpisodeNumberPrefix"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.IncidentEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentEpisodeNumberPrefix = types.StringNull()
+        }
     } else if val, ok := item["incidentEpisodeNumberPrefix"].(string); ok {
         data.IncidentEpisodeNumberPrefix = types.StringValue(val)
     } else {
@@ -1704,6 +2069,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.AlertEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AlertEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertEpisodeNumberPrefix = types.StringNull()
+        }
+    } else if arr, ok := item["alertEpisodeNumberPrefix"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.AlertEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
         } else {
             data.AlertEpisodeNumberPrefix = types.StringNull()
@@ -1772,6 +2144,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.AiContext = types.StringNull()
         }
+    } else if arr, ok := item["aiContext"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiContext = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiContext = types.StringNull()
+        }
     } else if val, ok := item["aiContext"].(string); ok {
         data.AiContext = types.StringValue(val)
     } else {
@@ -1779,6 +2158,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     }
     data.AiDailyTokenLimit = numberFromAPI(data.AiDailyTokenLimit, item["aiDailyTokenLimit"])
     data.AiDailySpendLimitInUsd = numberFromAPI(data.AiDailySpendLimitInUsd, item["aiDailySpendLimitInUSD"])
+    data.AiRunMaxModelCalls = numberFromAPI(data.AiRunMaxModelCalls, item["aiRunMaxModelCalls"])
+    data.AiRunMaxToolCalls = numberFromAPI(data.AiRunMaxToolCalls, item["aiRunMaxToolCalls"])
+    data.AiRunMaxTokens = numberFromAPI(data.AiRunMaxTokens, item["aiRunMaxTokens"])
+    data.AiRunTimeLimitInMinutes = numberFromAPI(data.AiRunTimeLimitInMinutes, item["aiRunTimeLimitInMinutes"])
     if val, ok := item["enableAutomaticIncidentInvestigation"].(bool); ok {
         data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
     } else {
@@ -1809,6 +2192,11 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.EnableAutomaticAlertRemediation = types.BoolValue(val)
     } else {
         data.EnableAutomaticAlertRemediation = types.BoolNull()
+    }
+    if val, ok := item["requireTwoApprovalsForRiskierFixes"].(bool); ok {
+        data.RequireTwoApprovalsForRiskierFixes = types.BoolValue(val)
+    } else {
+        data.RequireTwoApprovalsForRiskierFixes = types.BoolNull()
     }
     if val, ok := item["enableAutomaticPostmortemDraft"].(bool); ok {
         data.EnableAutomaticPostmortemDraft = types.BoolValue(val)
@@ -1847,10 +2235,42 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.DefaultNetworkTopologyLayout = types.StringNull()
         }
+    } else if arr, ok := item["defaultNetworkTopologyLayout"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.DefaultNetworkTopologyLayout = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultNetworkTopologyLayout = types.StringNull()
+        }
     } else if val, ok := item["defaultNetworkTopologyLayout"].(string); ok {
         data.DefaultNetworkTopologyLayout = types.StringValue(val)
     } else {
         data.DefaultNetworkTopologyLayout = types.StringNull()
+    }
+    data.DiscoveredDeviceRetentionInDays = numberFromAPI(data.DiscoveredDeviceRetentionInDays, item["discoveredDeviceRetentionInDays"])
+    if obj, ok := item["defaultTableColumns"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultTableColumns = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DefaultTableColumns = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DefaultTableColumns = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DefaultTableColumns = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultTableColumns = types.StringNull()
+        }
+    } else if arr, ok := item["defaultTableColumns"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.DefaultTableColumns = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultTableColumns = types.StringNull()
+        }
+    } else if val, ok := item["defaultTableColumns"].(string); ok {
+        data.DefaultTableColumns = types.StringValue(val)
+    } else {
+        data.DefaultTableColumns = types.StringNull()
     }
     if val, ok := item["enableAiInsights"].(bool); ok {
         data.EnableAiInsights = types.BoolValue(val)
@@ -1904,6 +2324,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.AlertInvestigationMinimumSeverityId = types.StringNull()
         }
+    } else if arr, ok := item["alertInvestigationMinimumSeverityId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AlertInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertInvestigationMinimumSeverityId = types.StringNull()
+        }
     } else if val, ok := item["alertInvestigationMinimumSeverityId"].(string); ok {
         data.AlertInvestigationMinimumSeverityId = types.StringValue(val)
     } else {
@@ -1924,6 +2351,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.IncidentInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncidentInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentInvestigationMinimumSeverityId = types.StringNull()
+        }
+    } else if arr, ok := item["incidentInvestigationMinimumSeverityId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.IncidentInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
         } else {
             data.IncidentInvestigationMinimumSeverityId = types.StringNull()
@@ -1961,6 +2395,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.PlanName = types.StringNull()
         }
+    } else if arr, ok := item["planName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PlanName = types.StringValue(string(jsonBytes))
+        } else {
+            data.PlanName = types.StringNull()
+        }
     } else if val, ok := item["planName"].(string); ok {
         data.PlanName = types.StringValue(val)
     } else {
@@ -1974,6 +2415,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.DataResidency = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DataResidency = types.StringValue(string(jsonBytes))
+        } else {
+            data.DataResidency = types.StringNull()
+        }
+    } else if arr, ok := item["dataResidency"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.DataResidency = types.StringValue(string(jsonBytes))
         } else {
             data.DataResidency = types.StringNull()
@@ -1995,6 +2443,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.ResellerId = types.StringNull()
         }
+    } else if arr, ok := item["resellerId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ResellerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResellerId = types.StringNull()
+        }
     } else if val, ok := item["resellerId"].(string); ok {
         data.ResellerId = types.StringValue(val)
     } else {
@@ -2012,6 +2467,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.ResellerPlanId = types.StringNull()
         }
+    } else if arr, ok := item["resellerPlanId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ResellerPlanId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResellerPlanId = types.StringNull()
+        }
     } else if val, ok := item["resellerPlanId"].(string); ok {
         data.ResellerPlanId = types.StringValue(val)
     } else {
@@ -2025,6 +2487,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.BillingMarketplace = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.BillingMarketplace = types.StringValue(string(jsonBytes))
+        } else {
+            data.BillingMarketplace = types.StringNull()
+        }
+    } else if arr, ok := item["billingMarketplace"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.BillingMarketplace = types.StringValue(string(jsonBytes))
         } else {
             data.BillingMarketplace = types.StringNull()
@@ -2061,6 +2530,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.GitHubAppInstallationId = types.StringNull()
         }
+    } else if arr, ok := item["gitHubAppInstallationId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitHubAppInstallationId = types.StringNull()
+        }
     } else if val, ok := item["gitHubAppInstallationId"].(string); ok {
         data.GitHubAppInstallationId = types.StringValue(val)
     } else {
@@ -2080,6 +2556,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.TelemetryRetentionConfig = types.StringNull()
         }
+    } else if arr, ok := item["telemetryRetentionConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TelemetryRetentionConfig = types.StringValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = types.StringNull()
+        }
     } else if val, ok := item["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = types.StringValue(val)
     } else {
@@ -2093,6 +2576,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.DefaultMetricDownsamplingRetentionDays = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DefaultMetricDownsamplingRetentionDays = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultMetricDownsamplingRetentionDays = types.StringNull()
+        }
+    } else if arr, ok := item["defaultMetricDownsamplingRetentionDays"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.DefaultMetricDownsamplingRetentionDays = types.StringValue(string(jsonBytes))
         } else {
             data.DefaultMetricDownsamplingRetentionDays = types.StringNull()
@@ -2123,6 +2613,26 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.RecordAndTranscribeIncidentCalls = types.BoolNull()
     }
+    if val, ok := item["requireApprovalForIncidentPublicNotes"].(bool); ok {
+        data.RequireApprovalForIncidentPublicNotes = types.BoolValue(val)
+    } else {
+        data.RequireApprovalForIncidentPublicNotes = types.BoolNull()
+    }
+    if val, ok := item["requireApprovalForScheduledMaintenancePublicNotes"].(bool); ok {
+        data.RequireApprovalForScheduledMaintenancePublicNotes = types.BoolValue(val)
+    } else {
+        data.RequireApprovalForScheduledMaintenancePublicNotes = types.BoolNull()
+    }
+    data.LogsDailyIngestionBudgetInGb = numberFromAPI(data.LogsDailyIngestionBudgetInGb, item["logsDailyIngestionBudgetInGB"])
+    data.TracesDailyIngestionBudgetInGb = numberFromAPI(data.TracesDailyIngestionBudgetInGb, item["tracesDailyIngestionBudgetInGB"])
+    data.MetricsDailyIngestionBudgetInGb = numberFromAPI(data.MetricsDailyIngestionBudgetInGb, item["metricsDailyIngestionBudgetInGB"])
+    data.ProfilesDailyIngestionBudgetInGb = numberFromAPI(data.ProfilesDailyIngestionBudgetInGb, item["profilesDailyIngestionBudgetInGB"])
+    data.SecurityEventsDailyIngestionBudgetInGb = numberFromAPI(data.SecurityEventsDailyIngestionBudgetInGb, item["securityEventsDailyIngestionBudgetInGB"])
+    data.LogsIngestionRateLimitInMbPerSecond = numberFromAPI(data.LogsIngestionRateLimitInMbPerSecond, item["logsIngestionRateLimitInMBPerSecond"])
+    data.TracesIngestionRateLimitInMbPerSecond = numberFromAPI(data.TracesIngestionRateLimitInMbPerSecond, item["tracesIngestionRateLimitInMBPerSecond"])
+    data.MetricsIngestionRateLimitInMbPerSecond = numberFromAPI(data.MetricsIngestionRateLimitInMbPerSecond, item["metricsIngestionRateLimitInMBPerSecond"])
+    data.ProfilesIngestionRateLimitInMbPerSecond = numberFromAPI(data.ProfilesIngestionRateLimitInMbPerSecond, item["profilesIngestionRateLimitInMBPerSecond"])
+    data.SecurityEventsIngestionRateLimitInMbPerSecond = numberFromAPI(data.SecurityEventsIngestionRateLimitInMbPerSecond, item["securityEventsIngestionRateLimitInMBPerSecond"])
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

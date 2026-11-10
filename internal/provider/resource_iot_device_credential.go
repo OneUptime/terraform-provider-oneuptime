@@ -378,6 +378,13 @@ func (r *IotDeviceCredentialResource) Create(ctx context.Context, req resource.C
         } else {
             data.IotFleetId = types.StringNull()
         }
+    } else if arr, ok := dataMap["iotFleetId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IotFleetId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IotFleetId = types.StringNull()
+        }
     } else if val, ok := dataMap["iotFleetId"].(string); ok {
         data.IotFleetId = types.StringValue(val)
     } else {
@@ -415,6 +422,13 @@ func (r *IotDeviceCredentialResource) Create(ctx context.Context, req resource.C
         } else {
             data.ExternalId = types.StringNull()
         }
+    } else if arr, ok := dataMap["externalId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ExternalId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExternalId = types.StringNull()
+        }
     } else if val, ok := dataMap["externalId"].(string); ok {
         data.ExternalId = types.StringValue(val)
     } else {
@@ -448,6 +462,13 @@ func (r *IotDeviceCredentialResource) Create(ctx context.Context, req resource.C
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Name = types.StringValue(string(jsonBytes))
         } else {
             data.Name = types.StringNull()
@@ -525,6 +546,13 @@ func (r *IotDeviceCredentialResource) Create(ctx context.Context, req resource.C
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -558,6 +586,13 @@ func (r *IotDeviceCredentialResource) Create(ctx context.Context, req resource.C
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecretKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["secretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SecretKey = types.StringValue(string(jsonBytes))
         } else {
             data.SecretKey = types.StringNull()
@@ -684,6 +719,13 @@ func (r *IotDeviceCredentialResource) Read(ctx context.Context, req resource.Rea
         } else {
             data.IotFleetId = types.StringNull()
         }
+    } else if arr, ok := dataMap["iotFleetId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IotFleetId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IotFleetId = types.StringNull()
+        }
     } else if val, ok := dataMap["iotFleetId"].(string); ok {
         data.IotFleetId = types.StringValue(val)
     } else {
@@ -721,6 +763,13 @@ func (r *IotDeviceCredentialResource) Read(ctx context.Context, req resource.Rea
         } else {
             data.ExternalId = types.StringNull()
         }
+    } else if arr, ok := dataMap["externalId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ExternalId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExternalId = types.StringNull()
+        }
     } else if val, ok := dataMap["externalId"].(string); ok {
         data.ExternalId = types.StringValue(val)
     } else {
@@ -754,6 +803,13 @@ func (r *IotDeviceCredentialResource) Read(ctx context.Context, req resource.Rea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Name = types.StringValue(string(jsonBytes))
         } else {
             data.Name = types.StringNull()
@@ -831,6 +887,13 @@ func (r *IotDeviceCredentialResource) Read(ctx context.Context, req resource.Rea
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -864,6 +927,13 @@ func (r *IotDeviceCredentialResource) Read(ctx context.Context, req resource.Rea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecretKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["secretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SecretKey = types.StringValue(string(jsonBytes))
         } else {
             data.SecretKey = types.StringNull()
@@ -1025,6 +1095,13 @@ func (r *IotDeviceCredentialResource) Update(ctx context.Context, req resource.U
         } else {
             data.IotFleetId = types.StringNull()
         }
+    } else if arr, ok := dataMap["iotFleetId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IotFleetId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IotFleetId = types.StringNull()
+        }
     } else if val, ok := dataMap["iotFleetId"].(string); ok {
         data.IotFleetId = types.StringValue(val)
     } else {
@@ -1062,6 +1139,13 @@ func (r *IotDeviceCredentialResource) Update(ctx context.Context, req resource.U
         } else {
             data.ExternalId = types.StringNull()
         }
+    } else if arr, ok := dataMap["externalId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ExternalId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExternalId = types.StringNull()
+        }
     } else if val, ok := dataMap["externalId"].(string); ok {
         data.ExternalId = types.StringValue(val)
     } else {
@@ -1095,6 +1179,13 @@ func (r *IotDeviceCredentialResource) Update(ctx context.Context, req resource.U
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Name = types.StringValue(string(jsonBytes))
         } else {
             data.Name = types.StringNull()
@@ -1172,6 +1263,13 @@ func (r *IotDeviceCredentialResource) Update(ctx context.Context, req resource.U
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -1205,6 +1303,13 @@ func (r *IotDeviceCredentialResource) Update(ctx context.Context, req resource.U
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecretKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["secretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SecretKey = types.StringValue(string(jsonBytes))
         } else {
             data.SecretKey = types.StringNull()

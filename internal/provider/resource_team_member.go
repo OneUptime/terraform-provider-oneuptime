@@ -329,6 +329,13 @@ func (r *TeamMemberResource) Create(ctx context.Context, req resource.CreateRequ
         } else {
             data.TeamId = types.StringNull()
         }
+    } else if arr, ok := dataMap["teamId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TeamId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TeamId = types.StringNull()
+        }
     } else if val, ok := dataMap["teamId"].(string); ok {
         data.TeamId = types.StringValue(val)
     } else {
@@ -373,6 +380,13 @@ func (r *TeamMemberResource) Create(ctx context.Context, req resource.CreateRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.UserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["userId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.UserId = types.StringValue(string(jsonBytes))
         } else {
             data.UserId = types.StringNull()
@@ -527,6 +541,13 @@ func (r *TeamMemberResource) Read(ctx context.Context, req resource.ReadRequest,
         } else {
             data.TeamId = types.StringNull()
         }
+    } else if arr, ok := dataMap["teamId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TeamId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TeamId = types.StringNull()
+        }
     } else if val, ok := dataMap["teamId"].(string); ok {
         data.TeamId = types.StringValue(val)
     } else {
@@ -571,6 +592,13 @@ func (r *TeamMemberResource) Read(ctx context.Context, req resource.ReadRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.UserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["userId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.UserId = types.StringValue(string(jsonBytes))
         } else {
             data.UserId = types.StringNull()
@@ -754,6 +782,13 @@ func (r *TeamMemberResource) Update(ctx context.Context, req resource.UpdateRequ
         } else {
             data.TeamId = types.StringNull()
         }
+    } else if arr, ok := dataMap["teamId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TeamId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TeamId = types.StringNull()
+        }
     } else if val, ok := dataMap["teamId"].(string); ok {
         data.TeamId = types.StringValue(val)
     } else {
@@ -798,6 +833,13 @@ func (r *TeamMemberResource) Update(ctx context.Context, req resource.UpdateRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.UserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["userId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.UserId = types.StringValue(string(jsonBytes))
         } else {
             data.UserId = types.StringNull()

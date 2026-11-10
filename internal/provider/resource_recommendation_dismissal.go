@@ -341,6 +341,13 @@ func (r *RecommendationDismissalResource) Create(ctx context.Context, req resour
         } else {
             data.RecommendationType = types.StringNull()
         }
+    } else if arr, ok := dataMap["recommendationType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RecommendationType = types.StringValue(string(jsonBytes))
+        } else {
+            data.RecommendationType = types.StringNull()
+        }
     } else if val, ok := dataMap["recommendationType"].(string); ok {
         data.RecommendationType = types.StringValue(val)
     } else {
@@ -374,6 +381,13 @@ func (r *RecommendationDismissalResource) Create(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.RecommendationId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RecommendationId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["recommendationId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.RecommendationId = types.StringValue(string(jsonBytes))
         } else {
             data.RecommendationId = types.StringNull()
@@ -415,6 +429,13 @@ func (r *RecommendationDismissalResource) Create(ctx context.Context, req resour
         } else {
             data.ResourceType = types.StringNull()
         }
+    } else if arr, ok := dataMap["resourceType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResourceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResourceType = types.StringNull()
+        }
     } else if val, ok := dataMap["resourceType"].(string); ok {
         data.ResourceType = types.StringValue(val)
     } else {
@@ -452,6 +473,13 @@ func (r *RecommendationDismissalResource) Create(ctx context.Context, req resour
         } else {
             data.ResourceId = types.StringNull()
         }
+    } else if arr, ok := dataMap["resourceId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResourceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResourceId = types.StringNull()
+        }
     } else if val, ok := dataMap["resourceId"].(string); ok {
         data.ResourceId = types.StringValue(val)
     } else {
@@ -485,6 +513,13 @@ func (r *RecommendationDismissalResource) Create(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DismissalReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.DismissalReason = types.StringNull()
+        }
+    } else if arr, ok := dataMap["dismissalReason"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DismissalReason = types.StringValue(string(jsonBytes))
         } else {
             data.DismissalReason = types.StringNull()
@@ -544,6 +579,13 @@ func (r *RecommendationDismissalResource) Create(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -669,6 +711,13 @@ func (r *RecommendationDismissalResource) Read(ctx context.Context, req resource
         } else {
             data.RecommendationType = types.StringNull()
         }
+    } else if arr, ok := dataMap["recommendationType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RecommendationType = types.StringValue(string(jsonBytes))
+        } else {
+            data.RecommendationType = types.StringNull()
+        }
     } else if val, ok := dataMap["recommendationType"].(string); ok {
         data.RecommendationType = types.StringValue(val)
     } else {
@@ -702,6 +751,13 @@ func (r *RecommendationDismissalResource) Read(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.RecommendationId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RecommendationId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["recommendationId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.RecommendationId = types.StringValue(string(jsonBytes))
         } else {
             data.RecommendationId = types.StringNull()
@@ -743,6 +799,13 @@ func (r *RecommendationDismissalResource) Read(ctx context.Context, req resource
         } else {
             data.ResourceType = types.StringNull()
         }
+    } else if arr, ok := dataMap["resourceType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResourceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResourceType = types.StringNull()
+        }
     } else if val, ok := dataMap["resourceType"].(string); ok {
         data.ResourceType = types.StringValue(val)
     } else {
@@ -780,6 +843,13 @@ func (r *RecommendationDismissalResource) Read(ctx context.Context, req resource
         } else {
             data.ResourceId = types.StringNull()
         }
+    } else if arr, ok := dataMap["resourceId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResourceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResourceId = types.StringNull()
+        }
     } else if val, ok := dataMap["resourceId"].(string); ok {
         data.ResourceId = types.StringValue(val)
     } else {
@@ -813,6 +883,13 @@ func (r *RecommendationDismissalResource) Read(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DismissalReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.DismissalReason = types.StringNull()
+        }
+    } else if arr, ok := dataMap["dismissalReason"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DismissalReason = types.StringValue(string(jsonBytes))
         } else {
             data.DismissalReason = types.StringNull()
@@ -872,6 +949,13 @@ func (r *RecommendationDismissalResource) Read(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1029,6 +1113,13 @@ func (r *RecommendationDismissalResource) Update(ctx context.Context, req resour
         } else {
             data.RecommendationType = types.StringNull()
         }
+    } else if arr, ok := dataMap["recommendationType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RecommendationType = types.StringValue(string(jsonBytes))
+        } else {
+            data.RecommendationType = types.StringNull()
+        }
     } else if val, ok := dataMap["recommendationType"].(string); ok {
         data.RecommendationType = types.StringValue(val)
     } else {
@@ -1062,6 +1153,13 @@ func (r *RecommendationDismissalResource) Update(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.RecommendationId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RecommendationId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["recommendationId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.RecommendationId = types.StringValue(string(jsonBytes))
         } else {
             data.RecommendationId = types.StringNull()
@@ -1103,6 +1201,13 @@ func (r *RecommendationDismissalResource) Update(ctx context.Context, req resour
         } else {
             data.ResourceType = types.StringNull()
         }
+    } else if arr, ok := dataMap["resourceType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResourceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResourceType = types.StringNull()
+        }
     } else if val, ok := dataMap["resourceType"].(string); ok {
         data.ResourceType = types.StringValue(val)
     } else {
@@ -1140,6 +1245,13 @@ func (r *RecommendationDismissalResource) Update(ctx context.Context, req resour
         } else {
             data.ResourceId = types.StringNull()
         }
+    } else if arr, ok := dataMap["resourceId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResourceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResourceId = types.StringNull()
+        }
     } else if val, ok := dataMap["resourceId"].(string); ok {
         data.ResourceId = types.StringValue(val)
     } else {
@@ -1173,6 +1285,13 @@ func (r *RecommendationDismissalResource) Update(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DismissalReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.DismissalReason = types.StringNull()
+        }
+    } else if arr, ok := dataMap["dismissalReason"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DismissalReason = types.StringValue(string(jsonBytes))
         } else {
             data.DismissalReason = types.StringNull()
@@ -1232,6 +1351,13 @@ func (r *RecommendationDismissalResource) Update(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

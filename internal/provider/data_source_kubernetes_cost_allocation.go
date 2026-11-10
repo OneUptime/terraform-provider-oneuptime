@@ -616,6 +616,13 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -629,6 +636,13 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -650,6 +664,13 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else {
             data.KubernetesClusterId = types.StringNull()
         }
+    } else if arr, ok := item["kubernetesClusterId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.KubernetesClusterId = types.StringValue(string(jsonBytes))
+        } else {
+            data.KubernetesClusterId = types.StringNull()
+        }
     } else if val, ok := item["kubernetesClusterId"].(string); ok {
         data.KubernetesClusterId = types.StringValue(val)
     } else {
@@ -663,6 +684,13 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else if val, ok := obj["value"].(float64); ok {
             data.ClusterName = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ClusterName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ClusterName = types.StringNull()
+        }
+    } else if arr, ok := item["clusterName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ClusterName = types.StringValue(string(jsonBytes))
         } else {
             data.ClusterName = types.StringNull()
@@ -684,6 +712,13 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else {
             data.K8sClusterEntityKey = types.StringNull()
         }
+    } else if arr, ok := item["k8sClusterEntityKey"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.K8sClusterEntityKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.K8sClusterEntityKey = types.StringNull()
+        }
     } else if val, ok := item["k8sClusterEntityKey"].(string); ok {
         data.K8sClusterEntityKey = types.StringValue(val)
     } else {
@@ -697,6 +732,13 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else if val, ok := obj["value"].(float64); ok {
             data.WindowStart = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.WindowStart = types.StringValue(string(jsonBytes))
+        } else {
+            data.WindowStart = types.StringNull()
+        }
+    } else if arr, ok := item["windowStart"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.WindowStart = types.StringValue(string(jsonBytes))
         } else {
             data.WindowStart = types.StringNull()
@@ -718,6 +760,13 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else {
             data.WindowEnd = types.StringNull()
         }
+    } else if arr, ok := item["windowEnd"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.WindowEnd = types.StringValue(string(jsonBytes))
+        } else {
+            data.WindowEnd = types.StringNull()
+        }
     } else if val, ok := item["windowEnd"].(string); ok {
         data.WindowEnd = types.StringValue(val)
     } else {
@@ -731,6 +780,13 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else if val, ok := obj["value"].(float64); ok {
             data.Namespace = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Namespace = types.StringValue(string(jsonBytes))
+        } else {
+            data.Namespace = types.StringNull()
+        }
+    } else if arr, ok := item["namespace"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Namespace = types.StringValue(string(jsonBytes))
         } else {
             data.Namespace = types.StringNull()
@@ -752,6 +808,13 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else {
             data.ControllerKind = types.StringNull()
         }
+    } else if arr, ok := item["controllerKind"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ControllerKind = types.StringValue(string(jsonBytes))
+        } else {
+            data.ControllerKind = types.StringNull()
+        }
     } else if val, ok := item["controllerKind"].(string); ok {
         data.ControllerKind = types.StringValue(val)
     } else {
@@ -765,6 +828,13 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else if val, ok := obj["value"].(float64); ok {
             data.ControllerName = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ControllerName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ControllerName = types.StringNull()
+        }
+    } else if arr, ok := item["controllerName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ControllerName = types.StringValue(string(jsonBytes))
         } else {
             data.ControllerName = types.StringNull()
@@ -786,6 +856,13 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else {
             data.PodName = types.StringNull()
         }
+    } else if arr, ok := item["podName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PodName = types.StringValue(string(jsonBytes))
+        } else {
+            data.PodName = types.StringNull()
+        }
     } else if val, ok := item["podName"].(string); ok {
         data.PodName = types.StringValue(val)
     } else {
@@ -799,6 +876,13 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else if val, ok := obj["value"].(float64); ok {
             data.ContainerName = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ContainerName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ContainerName = types.StringNull()
+        }
+    } else if arr, ok := item["containerName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ContainerName = types.StringValue(string(jsonBytes))
         } else {
             data.ContainerName = types.StringNull()
@@ -820,6 +904,13 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else {
             data.NodeName = types.StringNull()
         }
+    } else if arr, ok := item["nodeName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.NodeName = types.StringValue(string(jsonBytes))
+        } else {
+            data.NodeName = types.StringNull()
+        }
     } else if val, ok := item["nodeName"].(string); ok {
         data.NodeName = types.StringValue(val)
     } else {
@@ -837,6 +928,13 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else {
             data.ProviderId = types.StringNull()
         }
+    } else if arr, ok := item["providerId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProviderId = types.StringNull()
+        }
     } else if val, ok := item["providerId"].(string); ok {
         data.ProviderId = types.StringValue(val)
     } else {
@@ -850,6 +948,13 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else if val, ok := obj["value"].(float64); ok {
             data.Labels = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Labels = types.StringValue(string(jsonBytes))
+        } else {
+            data.Labels = types.StringNull()
+        }
+    } else if arr, ok := item["labels"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Labels = types.StringValue(string(jsonBytes))
         } else {
             data.Labels = types.StringNull()
@@ -918,6 +1023,13 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else {
             data.Currency = types.StringNull()
         }
+    } else if arr, ok := item["currency"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Currency = types.StringValue(string(jsonBytes))
+        } else {
+            data.Currency = types.StringNull()
+        }
     } else if val, ok := item["currency"].(string); ok {
         data.Currency = types.StringValue(val)
     } else {
@@ -931,6 +1043,13 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         } else if val, ok := obj["value"].(float64); ok {
             data.ShipmentId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ShipmentId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ShipmentId = types.StringNull()
+        }
+    } else if arr, ok := item["shipmentId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ShipmentId = types.StringValue(string(jsonBytes))
         } else {
             data.ShipmentId = types.StringNull()

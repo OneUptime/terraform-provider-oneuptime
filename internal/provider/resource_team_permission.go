@@ -381,6 +381,13 @@ func (r *TeamPermissionResource) Create(ctx context.Context, req resource.Create
         } else {
             data.TeamId = types.StringNull()
         }
+    } else if arr, ok := dataMap["teamId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TeamId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TeamId = types.StringNull()
+        }
     } else if val, ok := dataMap["teamId"].(string); ok {
         data.TeamId = types.StringValue(val)
     } else {
@@ -414,6 +421,13 @@ func (r *TeamPermissionResource) Create(ctx context.Context, req resource.Create
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Permission = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Permission = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["permission"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Permission = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Permission = NewJSONSubsetNull()
@@ -490,6 +504,13 @@ func (r *TeamPermissionResource) Create(ctx context.Context, req resource.Create
         } else {
             data.Scope = types.StringNull()
         }
+    } else if arr, ok := dataMap["scope"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
     } else if val, ok := dataMap["scope"].(string); ok {
         data.Scope = types.StringValue(val)
     } else {
@@ -549,6 +570,13 @@ func (r *TeamPermissionResource) Create(ctx context.Context, req resource.Create
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -582,6 +610,13 @@ func (r *TeamPermissionResource) Create(ctx context.Context, req resource.Create
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRoleId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRoleId = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRoleId = types.StringNull()
@@ -623,6 +658,13 @@ func (r *TeamPermissionResource) Create(ctx context.Context, req resource.Create
         } else {
             data.TeamCustomRoleId = types.StringNull()
         }
+    } else if arr, ok := dataMap["teamCustomRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TeamCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TeamCustomRoleId = types.StringNull()
+        }
     } else if val, ok := dataMap["teamCustomRoleId"].(string); ok {
         data.TeamCustomRoleId = types.StringValue(val)
     } else {
@@ -656,6 +698,13 @@ func (r *TeamPermissionResource) Create(ctx context.Context, req resource.Create
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRolePermissionId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRolePermissionId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRolePermissionId = types.StringNull()
@@ -786,6 +835,13 @@ func (r *TeamPermissionResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.TeamId = types.StringNull()
         }
+    } else if arr, ok := dataMap["teamId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TeamId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TeamId = types.StringNull()
+        }
     } else if val, ok := dataMap["teamId"].(string); ok {
         data.TeamId = types.StringValue(val)
     } else {
@@ -819,6 +875,13 @@ func (r *TeamPermissionResource) Read(ctx context.Context, req resource.ReadRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Permission = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Permission = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["permission"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Permission = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Permission = NewJSONSubsetNull()
@@ -895,6 +958,13 @@ func (r *TeamPermissionResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.Scope = types.StringNull()
         }
+    } else if arr, ok := dataMap["scope"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
     } else if val, ok := dataMap["scope"].(string); ok {
         data.Scope = types.StringValue(val)
     } else {
@@ -954,6 +1024,13 @@ func (r *TeamPermissionResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -987,6 +1064,13 @@ func (r *TeamPermissionResource) Read(ctx context.Context, req resource.ReadRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRoleId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRoleId = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRoleId = types.StringNull()
@@ -1028,6 +1112,13 @@ func (r *TeamPermissionResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.TeamCustomRoleId = types.StringNull()
         }
+    } else if arr, ok := dataMap["teamCustomRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TeamCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TeamCustomRoleId = types.StringNull()
+        }
     } else if val, ok := dataMap["teamCustomRoleId"].(string); ok {
         data.TeamCustomRoleId = types.StringValue(val)
     } else {
@@ -1061,6 +1152,13 @@ func (r *TeamPermissionResource) Read(ctx context.Context, req resource.ReadRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRolePermissionId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRolePermissionId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRolePermissionId = types.StringNull()
@@ -1240,6 +1338,13 @@ func (r *TeamPermissionResource) Update(ctx context.Context, req resource.Update
         } else {
             data.TeamId = types.StringNull()
         }
+    } else if arr, ok := dataMap["teamId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TeamId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TeamId = types.StringNull()
+        }
     } else if val, ok := dataMap["teamId"].(string); ok {
         data.TeamId = types.StringValue(val)
     } else {
@@ -1273,6 +1378,13 @@ func (r *TeamPermissionResource) Update(ctx context.Context, req resource.Update
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Permission = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Permission = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["permission"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Permission = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Permission = NewJSONSubsetNull()
@@ -1349,6 +1461,13 @@ func (r *TeamPermissionResource) Update(ctx context.Context, req resource.Update
         } else {
             data.Scope = types.StringNull()
         }
+    } else if arr, ok := dataMap["scope"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
     } else if val, ok := dataMap["scope"].(string); ok {
         data.Scope = types.StringValue(val)
     } else {
@@ -1408,6 +1527,13 @@ func (r *TeamPermissionResource) Update(ctx context.Context, req resource.Update
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -1441,6 +1567,13 @@ func (r *TeamPermissionResource) Update(ctx context.Context, req resource.Update
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRoleId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRoleId = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRoleId = types.StringNull()
@@ -1482,6 +1615,13 @@ func (r *TeamPermissionResource) Update(ctx context.Context, req resource.Update
         } else {
             data.TeamCustomRoleId = types.StringNull()
         }
+    } else if arr, ok := dataMap["teamCustomRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TeamCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TeamCustomRoleId = types.StringNull()
+        }
     } else if val, ok := dataMap["teamCustomRoleId"].(string); ok {
         data.TeamCustomRoleId = types.StringValue(val)
     } else {
@@ -1515,6 +1655,13 @@ func (r *TeamPermissionResource) Update(ctx context.Context, req resource.Update
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRolePermissionId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRolePermissionId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRolePermissionId = types.StringNull()

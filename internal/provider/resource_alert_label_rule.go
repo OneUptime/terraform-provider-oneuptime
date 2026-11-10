@@ -536,6 +536,13 @@ func (r *AlertLabelRuleResource) Create(ctx context.Context, req resource.Create
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -584,6 +591,13 @@ func (r *AlertLabelRuleResource) Create(ctx context.Context, req resource.Create
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -617,6 +631,13 @@ func (r *AlertLabelRuleResource) Create(ctx context.Context, req resource.Create
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -789,6 +810,13 @@ func (r *AlertLabelRuleResource) Create(ctx context.Context, req resource.Create
         } else {
             data.AlertTitlePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["alertTitlePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AlertTitlePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertTitlePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["alertTitlePattern"].(string); ok {
         data.AlertTitlePattern = types.StringValue(val)
     } else {
@@ -822,6 +850,13 @@ func (r *AlertLabelRuleResource) Create(ctx context.Context, req resource.Create
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.AlertDescriptionPattern = types.StringNull()
@@ -863,6 +898,13 @@ func (r *AlertLabelRuleResource) Create(ctx context.Context, req resource.Create
         } else {
             data.MonitorNamePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitorNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitorNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorNamePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["monitorNamePattern"].(string); ok {
         data.MonitorNamePattern = types.StringValue(val)
     } else {
@@ -896,6 +938,13 @@ func (r *AlertLabelRuleResource) Create(ctx context.Context, req resource.Create
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["monitorDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.MonitorDescriptionPattern = types.StringNull()
@@ -1005,6 +1054,13 @@ func (r *AlertLabelRuleResource) Create(ctx context.Context, req resource.Create
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1135,6 +1191,13 @@ func (r *AlertLabelRuleResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -1183,6 +1246,13 @@ func (r *AlertLabelRuleResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1216,6 +1286,13 @@ func (r *AlertLabelRuleResource) Read(ctx context.Context, req resource.ReadRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1388,6 +1465,13 @@ func (r *AlertLabelRuleResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.AlertTitlePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["alertTitlePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AlertTitlePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertTitlePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["alertTitlePattern"].(string); ok {
         data.AlertTitlePattern = types.StringValue(val)
     } else {
@@ -1421,6 +1505,13 @@ func (r *AlertLabelRuleResource) Read(ctx context.Context, req resource.ReadRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.AlertDescriptionPattern = types.StringNull()
@@ -1462,6 +1553,13 @@ func (r *AlertLabelRuleResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.MonitorNamePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitorNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitorNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorNamePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["monitorNamePattern"].(string); ok {
         data.MonitorNamePattern = types.StringValue(val)
     } else {
@@ -1495,6 +1593,13 @@ func (r *AlertLabelRuleResource) Read(ctx context.Context, req resource.ReadRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["monitorDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.MonitorDescriptionPattern = types.StringNull()
@@ -1604,6 +1709,13 @@ func (r *AlertLabelRuleResource) Read(ctx context.Context, req resource.ReadRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1828,6 +1940,13 @@ func (r *AlertLabelRuleResource) Update(ctx context.Context, req resource.Update
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -1876,6 +1995,13 @@ func (r *AlertLabelRuleResource) Update(ctx context.Context, req resource.Update
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1909,6 +2035,13 @@ func (r *AlertLabelRuleResource) Update(ctx context.Context, req resource.Update
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -2081,6 +2214,13 @@ func (r *AlertLabelRuleResource) Update(ctx context.Context, req resource.Update
         } else {
             data.AlertTitlePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["alertTitlePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AlertTitlePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertTitlePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["alertTitlePattern"].(string); ok {
         data.AlertTitlePattern = types.StringValue(val)
     } else {
@@ -2114,6 +2254,13 @@ func (r *AlertLabelRuleResource) Update(ctx context.Context, req resource.Update
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.AlertDescriptionPattern = types.StringNull()
@@ -2155,6 +2302,13 @@ func (r *AlertLabelRuleResource) Update(ctx context.Context, req resource.Update
         } else {
             data.MonitorNamePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitorNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitorNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorNamePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["monitorNamePattern"].(string); ok {
         data.MonitorNamePattern = types.StringValue(val)
     } else {
@@ -2188,6 +2342,13 @@ func (r *AlertLabelRuleResource) Update(ctx context.Context, req resource.Update
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["monitorDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.MonitorDescriptionPattern = types.StringNull()
@@ -2297,6 +2458,13 @@ func (r *AlertLabelRuleResource) Update(ctx context.Context, req resource.Update
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

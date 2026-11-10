@@ -524,6 +524,13 @@ func (r *IncidentSlaRuleResource) Create(ctx context.Context, req resource.Creat
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -572,6 +579,13 @@ func (r *IncidentSlaRuleResource) Create(ctx context.Context, req resource.Creat
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -605,6 +619,13 @@ func (r *IncidentSlaRuleResource) Create(ctx context.Context, req resource.Creat
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -655,6 +676,13 @@ func (r *IncidentSlaRuleResource) Create(ctx context.Context, req resource.Creat
         } else {
             data.InternalNoteReminderTemplate = types.StringNull()
         }
+    } else if arr, ok := dataMap["internalNoteReminderTemplate"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.InternalNoteReminderTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.InternalNoteReminderTemplate = types.StringNull()
+        }
     } else if val, ok := dataMap["internalNoteReminderTemplate"].(string); ok {
         data.InternalNoteReminderTemplate = types.StringValue(val)
     } else {
@@ -688,6 +716,13 @@ func (r *IncidentSlaRuleResource) Create(ctx context.Context, req resource.Creat
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PublicNoteReminderTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.PublicNoteReminderTemplate = types.StringNull()
+        }
+    } else if arr, ok := dataMap["publicNoteReminderTemplate"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PublicNoteReminderTemplate = types.StringValue(string(jsonBytes))
         } else {
             data.PublicNoteReminderTemplate = types.StringNull()
@@ -857,6 +892,13 @@ func (r *IncidentSlaRuleResource) Create(ctx context.Context, req resource.Creat
         } else {
             data.IncidentTitlePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["incidentTitlePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncidentTitlePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentTitlePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["incidentTitlePattern"].(string); ok {
         data.IncidentTitlePattern = types.StringValue(val)
     } else {
@@ -890,6 +932,13 @@ func (r *IncidentSlaRuleResource) Create(ctx context.Context, req resource.Creat
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncidentDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incidentDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncidentDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.IncidentDescriptionPattern = types.StringNull()
@@ -949,6 +998,13 @@ func (r *IncidentSlaRuleResource) Create(ctx context.Context, req resource.Creat
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1078,6 +1134,13 @@ func (r *IncidentSlaRuleResource) Read(ctx context.Context, req resource.ReadReq
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -1126,6 +1189,13 @@ func (r *IncidentSlaRuleResource) Read(ctx context.Context, req resource.ReadReq
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1159,6 +1229,13 @@ func (r *IncidentSlaRuleResource) Read(ctx context.Context, req resource.ReadReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1209,6 +1286,13 @@ func (r *IncidentSlaRuleResource) Read(ctx context.Context, req resource.ReadReq
         } else {
             data.InternalNoteReminderTemplate = types.StringNull()
         }
+    } else if arr, ok := dataMap["internalNoteReminderTemplate"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.InternalNoteReminderTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.InternalNoteReminderTemplate = types.StringNull()
+        }
     } else if val, ok := dataMap["internalNoteReminderTemplate"].(string); ok {
         data.InternalNoteReminderTemplate = types.StringValue(val)
     } else {
@@ -1242,6 +1326,13 @@ func (r *IncidentSlaRuleResource) Read(ctx context.Context, req resource.ReadReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PublicNoteReminderTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.PublicNoteReminderTemplate = types.StringNull()
+        }
+    } else if arr, ok := dataMap["publicNoteReminderTemplate"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PublicNoteReminderTemplate = types.StringValue(string(jsonBytes))
         } else {
             data.PublicNoteReminderTemplate = types.StringNull()
@@ -1411,6 +1502,13 @@ func (r *IncidentSlaRuleResource) Read(ctx context.Context, req resource.ReadReq
         } else {
             data.IncidentTitlePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["incidentTitlePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncidentTitlePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentTitlePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["incidentTitlePattern"].(string); ok {
         data.IncidentTitlePattern = types.StringValue(val)
     } else {
@@ -1444,6 +1542,13 @@ func (r *IncidentSlaRuleResource) Read(ctx context.Context, req resource.ReadReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncidentDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incidentDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncidentDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.IncidentDescriptionPattern = types.StringNull()
@@ -1503,6 +1608,13 @@ func (r *IncidentSlaRuleResource) Read(ctx context.Context, req resource.ReadReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1723,6 +1835,13 @@ func (r *IncidentSlaRuleResource) Update(ctx context.Context, req resource.Updat
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -1771,6 +1890,13 @@ func (r *IncidentSlaRuleResource) Update(ctx context.Context, req resource.Updat
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1804,6 +1930,13 @@ func (r *IncidentSlaRuleResource) Update(ctx context.Context, req resource.Updat
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1854,6 +1987,13 @@ func (r *IncidentSlaRuleResource) Update(ctx context.Context, req resource.Updat
         } else {
             data.InternalNoteReminderTemplate = types.StringNull()
         }
+    } else if arr, ok := dataMap["internalNoteReminderTemplate"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.InternalNoteReminderTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.InternalNoteReminderTemplate = types.StringNull()
+        }
     } else if val, ok := dataMap["internalNoteReminderTemplate"].(string); ok {
         data.InternalNoteReminderTemplate = types.StringValue(val)
     } else {
@@ -1887,6 +2027,13 @@ func (r *IncidentSlaRuleResource) Update(ctx context.Context, req resource.Updat
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PublicNoteReminderTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.PublicNoteReminderTemplate = types.StringNull()
+        }
+    } else if arr, ok := dataMap["publicNoteReminderTemplate"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PublicNoteReminderTemplate = types.StringValue(string(jsonBytes))
         } else {
             data.PublicNoteReminderTemplate = types.StringNull()
@@ -2056,6 +2203,13 @@ func (r *IncidentSlaRuleResource) Update(ctx context.Context, req resource.Updat
         } else {
             data.IncidentTitlePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["incidentTitlePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncidentTitlePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentTitlePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["incidentTitlePattern"].(string); ok {
         data.IncidentTitlePattern = types.StringValue(val)
     } else {
@@ -2089,6 +2243,13 @@ func (r *IncidentSlaRuleResource) Update(ctx context.Context, req resource.Updat
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncidentDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incidentDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncidentDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.IncidentDescriptionPattern = types.StringNull()
@@ -2148,6 +2309,13 @@ func (r *IncidentSlaRuleResource) Update(ctx context.Context, req resource.Updat
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

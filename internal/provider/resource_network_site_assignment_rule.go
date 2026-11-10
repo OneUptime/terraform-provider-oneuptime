@@ -335,6 +335,13 @@ func (r *NetworkSiteAssignmentRuleResource) Create(ctx context.Context, req reso
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -383,6 +390,13 @@ func (r *NetworkSiteAssignmentRuleResource) Create(ctx context.Context, req reso
         } else {
             data.SiteId = types.StringNull()
         }
+    } else if arr, ok := dataMap["siteId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SiteId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SiteId = types.StringNull()
+        }
     } else if val, ok := dataMap["siteId"].(string); ok {
         data.SiteId = types.StringValue(val)
     } else {
@@ -420,6 +434,13 @@ func (r *NetworkSiteAssignmentRuleResource) Create(ctx context.Context, req reso
         } else {
             data.SubnetCidr = types.StringNull()
         }
+    } else if arr, ok := dataMap["subnetCidr"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SubnetCidr = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubnetCidr = types.StringNull()
+        }
     } else if val, ok := dataMap["subnetCidr"].(string); ok {
         data.SubnetCidr = types.StringValue(val)
     } else {
@@ -453,6 +474,13 @@ func (r *NetworkSiteAssignmentRuleResource) Create(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.HostnamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.HostnamePattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["hostnamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.HostnamePattern = types.StringValue(string(jsonBytes))
         } else {
             data.HostnamePattern = types.StringNull()
@@ -513,6 +541,13 @@ func (r *NetworkSiteAssignmentRuleResource) Create(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -629,6 +664,13 @@ func (r *NetworkSiteAssignmentRuleResource) Read(ctx context.Context, req resour
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -677,6 +719,13 @@ func (r *NetworkSiteAssignmentRuleResource) Read(ctx context.Context, req resour
         } else {
             data.SiteId = types.StringNull()
         }
+    } else if arr, ok := dataMap["siteId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SiteId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SiteId = types.StringNull()
+        }
     } else if val, ok := dataMap["siteId"].(string); ok {
         data.SiteId = types.StringValue(val)
     } else {
@@ -714,6 +763,13 @@ func (r *NetworkSiteAssignmentRuleResource) Read(ctx context.Context, req resour
         } else {
             data.SubnetCidr = types.StringNull()
         }
+    } else if arr, ok := dataMap["subnetCidr"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SubnetCidr = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubnetCidr = types.StringNull()
+        }
     } else if val, ok := dataMap["subnetCidr"].(string); ok {
         data.SubnetCidr = types.StringValue(val)
     } else {
@@ -747,6 +803,13 @@ func (r *NetworkSiteAssignmentRuleResource) Read(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.HostnamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.HostnamePattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["hostnamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.HostnamePattern = types.StringValue(string(jsonBytes))
         } else {
             data.HostnamePattern = types.StringNull()
@@ -807,6 +870,13 @@ func (r *NetworkSiteAssignmentRuleResource) Read(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -975,6 +1045,13 @@ func (r *NetworkSiteAssignmentRuleResource) Update(ctx context.Context, req reso
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -1023,6 +1100,13 @@ func (r *NetworkSiteAssignmentRuleResource) Update(ctx context.Context, req reso
         } else {
             data.SiteId = types.StringNull()
         }
+    } else if arr, ok := dataMap["siteId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SiteId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SiteId = types.StringNull()
+        }
     } else if val, ok := dataMap["siteId"].(string); ok {
         data.SiteId = types.StringValue(val)
     } else {
@@ -1060,6 +1144,13 @@ func (r *NetworkSiteAssignmentRuleResource) Update(ctx context.Context, req reso
         } else {
             data.SubnetCidr = types.StringNull()
         }
+    } else if arr, ok := dataMap["subnetCidr"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SubnetCidr = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubnetCidr = types.StringNull()
+        }
     } else if val, ok := dataMap["subnetCidr"].(string); ok {
         data.SubnetCidr = types.StringValue(val)
     } else {
@@ -1093,6 +1184,13 @@ func (r *NetworkSiteAssignmentRuleResource) Update(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.HostnamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.HostnamePattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["hostnamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.HostnamePattern = types.StringValue(string(jsonBytes))
         } else {
             data.HostnamePattern = types.StringNull()
@@ -1153,6 +1251,13 @@ func (r *NetworkSiteAssignmentRuleResource) Update(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

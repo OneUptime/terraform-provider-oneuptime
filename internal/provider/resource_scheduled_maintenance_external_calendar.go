@@ -396,6 +396,13 @@ func (r *ScheduledMaintenanceExternalCalendarResource) Create(ctx context.Contex
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -429,6 +436,13 @@ func (r *ScheduledMaintenanceExternalCalendarResource) Create(ctx context.Contex
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Color = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Color = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["color"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Color = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Color = NewJSONSubsetNull()
@@ -496,6 +510,13 @@ func (r *ScheduledMaintenanceExternalCalendarResource) Create(ctx context.Contex
         } else {
             data.CalendarHost = types.StringNull()
         }
+    } else if arr, ok := dataMap["calendarHost"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CalendarHost = types.StringValue(string(jsonBytes))
+        } else {
+            data.CalendarHost = types.StringNull()
+        }
     } else if val, ok := dataMap["calendarHost"].(string); ok {
         data.CalendarHost = types.StringValue(val)
     } else {
@@ -555,6 +576,13 @@ func (r *ScheduledMaintenanceExternalCalendarResource) Create(ctx context.Contex
         } else {
             data.LastReadError = types.StringNull()
         }
+    } else if arr, ok := dataMap["lastReadError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LastReadError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastReadError = types.StringNull()
+        }
     } else if val, ok := dataMap["lastReadError"].(string); ok {
         data.LastReadError = types.StringValue(val)
     } else {
@@ -604,6 +632,13 @@ func (r *ScheduledMaintenanceExternalCalendarResource) Create(ctx context.Contex
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -736,6 +771,13 @@ func (r *ScheduledMaintenanceExternalCalendarResource) Read(ctx context.Context,
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -769,6 +811,13 @@ func (r *ScheduledMaintenanceExternalCalendarResource) Read(ctx context.Context,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Color = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Color = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["color"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Color = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Color = NewJSONSubsetNull()
@@ -836,6 +885,13 @@ func (r *ScheduledMaintenanceExternalCalendarResource) Read(ctx context.Context,
         } else {
             data.CalendarHost = types.StringNull()
         }
+    } else if arr, ok := dataMap["calendarHost"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CalendarHost = types.StringValue(string(jsonBytes))
+        } else {
+            data.CalendarHost = types.StringNull()
+        }
     } else if val, ok := dataMap["calendarHost"].(string); ok {
         data.CalendarHost = types.StringValue(val)
     } else {
@@ -895,6 +951,13 @@ func (r *ScheduledMaintenanceExternalCalendarResource) Read(ctx context.Context,
         } else {
             data.LastReadError = types.StringNull()
         }
+    } else if arr, ok := dataMap["lastReadError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LastReadError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastReadError = types.StringNull()
+        }
     } else if val, ok := dataMap["lastReadError"].(string); ok {
         data.LastReadError = types.StringValue(val)
     } else {
@@ -944,6 +1007,13 @@ func (r *ScheduledMaintenanceExternalCalendarResource) Read(ctx context.Context,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1125,6 +1195,13 @@ func (r *ScheduledMaintenanceExternalCalendarResource) Update(ctx context.Contex
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1158,6 +1235,13 @@ func (r *ScheduledMaintenanceExternalCalendarResource) Update(ctx context.Contex
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Color = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Color = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["color"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Color = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Color = NewJSONSubsetNull()
@@ -1225,6 +1309,13 @@ func (r *ScheduledMaintenanceExternalCalendarResource) Update(ctx context.Contex
         } else {
             data.CalendarHost = types.StringNull()
         }
+    } else if arr, ok := dataMap["calendarHost"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CalendarHost = types.StringValue(string(jsonBytes))
+        } else {
+            data.CalendarHost = types.StringNull()
+        }
     } else if val, ok := dataMap["calendarHost"].(string); ok {
         data.CalendarHost = types.StringValue(val)
     } else {
@@ -1284,6 +1375,13 @@ func (r *ScheduledMaintenanceExternalCalendarResource) Update(ctx context.Contex
         } else {
             data.LastReadError = types.StringNull()
         }
+    } else if arr, ok := dataMap["lastReadError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LastReadError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastReadError = types.StringNull()
+        }
     } else if val, ok := dataMap["lastReadError"].(string); ok {
         data.LastReadError = types.StringValue(val)
     } else {
@@ -1333,6 +1431,13 @@ func (r *ScheduledMaintenanceExternalCalendarResource) Update(ctx context.Contex
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

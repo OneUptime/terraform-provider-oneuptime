@@ -304,6 +304,13 @@ func (r *StatusPageSubscriberNotificationTemplateResource) Create(ctx context.Co
         } else {
             data.StatusPageId = types.StringNull()
         }
+    } else if arr, ok := dataMap["statusPageId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.StatusPageId = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusPageId = types.StringNull()
+        }
     } else if val, ok := dataMap["statusPageId"].(string); ok {
         data.StatusPageId = types.StringValue(val)
     } else {
@@ -337,6 +344,13 @@ func (r *StatusPageSubscriberNotificationTemplateResource) Create(ctx context.Co
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["statusPageSubscriberNotificationTemplateId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
         } else {
             data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
@@ -396,6 +410,13 @@ func (r *StatusPageSubscriberNotificationTemplateResource) Create(ctx context.Co
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -515,6 +536,13 @@ func (r *StatusPageSubscriberNotificationTemplateResource) Read(ctx context.Cont
         } else {
             data.StatusPageId = types.StringNull()
         }
+    } else if arr, ok := dataMap["statusPageId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.StatusPageId = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusPageId = types.StringNull()
+        }
     } else if val, ok := dataMap["statusPageId"].(string); ok {
         data.StatusPageId = types.StringValue(val)
     } else {
@@ -548,6 +576,13 @@ func (r *StatusPageSubscriberNotificationTemplateResource) Read(ctx context.Cont
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["statusPageSubscriberNotificationTemplateId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
         } else {
             data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
@@ -607,6 +642,13 @@ func (r *StatusPageSubscriberNotificationTemplateResource) Read(ctx context.Cont
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -753,6 +795,13 @@ func (r *StatusPageSubscriberNotificationTemplateResource) Update(ctx context.Co
         } else {
             data.StatusPageId = types.StringNull()
         }
+    } else if arr, ok := dataMap["statusPageId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.StatusPageId = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusPageId = types.StringNull()
+        }
     } else if val, ok := dataMap["statusPageId"].(string); ok {
         data.StatusPageId = types.StringValue(val)
     } else {
@@ -786,6 +835,13 @@ func (r *StatusPageSubscriberNotificationTemplateResource) Update(ctx context.Co
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["statusPageSubscriberNotificationTemplateId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.StatusPageSubscriberNotificationTemplateId = types.StringValue(string(jsonBytes))
         } else {
             data.StatusPageSubscriberNotificationTemplateId = types.StringNull()
@@ -845,6 +901,13 @@ func (r *StatusPageSubscriberNotificationTemplateResource) Update(ctx context.Co
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

@@ -35,6 +35,7 @@ type AuditLogExportDataSourceModel struct {
     Config types.String `tfsdk:"config"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     StartsAt types.String `tfsdk:"starts_at"`
+    SchemaVersion types.Number `tfsdk:"schema_version"`
     CursorCreatedAt types.String `tfsdk:"cursor_created_at"`
     CursorEntryId types.String `tfsdk:"cursor_entry_id"`
     ExportedEntryCount types.Number `tfsdk:"exported_entry_count"`
@@ -94,6 +95,11 @@ func (d *AuditLogExportDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "starts_at": schema.StringAttribute{
                 MarkdownDescription: "Entries recorded from this time on are exported. Empty on create means from now; an earlier date also sends the entries kept since then.",
+                Computed: true,
+            },
+            "schema_version": schema.NumberAttribute{
+                MarkdownDescription: "Which version of the record each entry is sent as: 2 also says what changed in a workflow's steps and in JSON, 1 is the record as it was first sent. A new export sends 2 unless it asks for 1; an export saved before version 2 keeps 1.",
+                Optional: true,
                 Computed: true,
             },
             "cursor_created_at": schema.StringAttribute{
@@ -193,6 +199,10 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         filters["isEnabled"] = data.IsEnabled.ValueBool()
         filterNames = append(filterNames, "is_enabled = "+fmt.Sprintf("%t", data.IsEnabled.ValueBool()))
     }
+    if !data.SchemaVersion.IsNull() && !data.SchemaVersion.IsUnknown() {
+        filters["schemaVersion"] = lookupNumber(data.SchemaVersion)
+        filterNames = append(filterNames, "schema_version = "+data.SchemaVersion.ValueBigFloat().String())
+    }
     if !data.CursorEntryId.IsNull() && !data.CursorEntryId.IsUnknown() {
         filters["cursorEntryId"] = data.CursorEntryId.ValueString()
         filterNames = append(filterNames, "cursor_entry_id = "+fmt.Sprintf("%q", data.CursorEntryId.ValueString()))
@@ -238,6 +248,7 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         "config": true,
         "isEnabled": true,
         "startsAt": true,
+        "schemaVersion": true,
         "cursorCreatedAt": true,
         "cursorEntryId": true,
         "exportedEntryCount": true,
@@ -321,6 +332,13 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -334,6 +352,13 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -355,6 +380,13 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -368,6 +400,13 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -389,6 +428,13 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := item["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -406,6 +452,13 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.DestinationType = types.StringNull()
         }
+    } else if arr, ok := item["destinationType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.DestinationType = types.StringValue(string(jsonBytes))
+        } else {
+            data.DestinationType = types.StringNull()
+        }
     } else if val, ok := item["destinationType"].(string); ok {
         data.DestinationType = types.StringValue(val)
     } else {
@@ -419,6 +472,13 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.Config = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Config = types.StringValue(string(jsonBytes))
+        } else {
+            data.Config = types.StringNull()
+        }
+    } else if arr, ok := item["config"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Config = types.StringValue(string(jsonBytes))
         } else {
             data.Config = types.StringNull()
@@ -445,11 +505,19 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.StartsAt = types.StringNull()
         }
+    } else if arr, ok := item["startsAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.StartsAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.StartsAt = types.StringNull()
+        }
     } else if val, ok := item["startsAt"].(string); ok {
         data.StartsAt = types.StringValue(val)
     } else {
         data.StartsAt = types.StringNull()
     }
+    data.SchemaVersion = numberFromAPI(data.SchemaVersion, item["schemaVersion"])
     if obj, ok := item["cursorCreatedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CursorCreatedAt = types.StringValue(val)
@@ -458,6 +526,13 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.CursorCreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CursorCreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CursorCreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["cursorCreatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CursorCreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CursorCreatedAt = types.StringNull()
@@ -475,6 +550,13 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.CursorEntryId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CursorEntryId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CursorEntryId = types.StringNull()
+        }
+    } else if arr, ok := item["cursorEntryId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CursorEntryId = types.StringValue(string(jsonBytes))
         } else {
             data.CursorEntryId = types.StringNull()
@@ -497,6 +579,13 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.LastExportedAt = types.StringNull()
         }
+    } else if arr, ok := item["lastExportedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastExportedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastExportedAt = types.StringNull()
+        }
     } else if val, ok := item["lastExportedAt"].(string); ok {
         data.LastExportedAt = types.StringValue(val)
     } else {
@@ -510,6 +599,13 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.LastAttemptAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastAttemptAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastAttemptAt = types.StringNull()
+        }
+    } else if arr, ok := item["lastAttemptAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.LastAttemptAt = types.StringValue(string(jsonBytes))
         } else {
             data.LastAttemptAt = types.StringNull()
@@ -531,6 +627,13 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.LastError = types.StringNull()
         }
+    } else if arr, ok := item["lastError"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastError = types.StringNull()
+        }
     } else if val, ok := item["lastError"].(string); ok {
         data.LastError = types.StringValue(val)
     } else {
@@ -544,6 +647,13 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.FailingSince = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FailingSince = types.StringValue(string(jsonBytes))
+        } else {
+            data.FailingSince = types.StringNull()
+        }
+    } else if arr, ok := item["failingSince"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.FailingSince = types.StringValue(string(jsonBytes))
         } else {
             data.FailingSince = types.StringNull()
@@ -566,6 +676,13 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.NextAttemptAt = types.StringNull()
         }
+    } else if arr, ok := item["nextAttemptAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.NextAttemptAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.NextAttemptAt = types.StringNull()
+        }
     } else if val, ok := item["nextAttemptAt"].(string); ok {
         data.NextAttemptAt = types.StringValue(val)
     } else {
@@ -579,6 +696,13 @@ func (d *AuditLogExportDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

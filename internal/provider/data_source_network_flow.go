@@ -398,6 +398,13 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -411,6 +418,13 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -432,6 +446,13 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else {
             data.NetworkDeviceId = types.StringNull()
         }
+    } else if arr, ok := item["networkDeviceId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.NetworkDeviceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.NetworkDeviceId = types.StringNull()
+        }
     } else if val, ok := item["networkDeviceId"].(string); ok {
         data.NetworkDeviceId = types.StringValue(val)
     } else {
@@ -445,6 +466,13 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else if val, ok := obj["value"].(float64); ok {
             data.ExporterIp = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ExporterIp = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExporterIp = types.StringNull()
+        }
+    } else if arr, ok := item["exporterIp"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ExporterIp = types.StringValue(string(jsonBytes))
         } else {
             data.ExporterIp = types.StringNull()
@@ -466,6 +494,13 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else {
             data.SrcIp = types.StringNull()
         }
+    } else if arr, ok := item["srcIp"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SrcIp = types.StringValue(string(jsonBytes))
+        } else {
+            data.SrcIp = types.StringNull()
+        }
     } else if val, ok := item["srcIp"].(string); ok {
         data.SrcIp = types.StringValue(val)
     } else {
@@ -479,6 +514,13 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else if val, ok := obj["value"].(float64); ok {
             data.DstIp = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DstIp = types.StringValue(string(jsonBytes))
+        } else {
+            data.DstIp = types.StringNull()
+        }
+    } else if arr, ok := item["dstIp"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.DstIp = types.StringValue(string(jsonBytes))
         } else {
             data.DstIp = types.StringNull()
@@ -505,6 +547,13 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else {
             data.Octets = types.StringNull()
         }
+    } else if arr, ok := item["octets"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Octets = types.StringValue(string(jsonBytes))
+        } else {
+            data.Octets = types.StringNull()
+        }
     } else if val, ok := item["octets"].(string); ok {
         data.Octets = types.StringValue(val)
     } else {
@@ -518,6 +567,13 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else if val, ok := obj["value"].(float64); ok {
             data.Packets = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Packets = types.StringValue(string(jsonBytes))
+        } else {
+            data.Packets = types.StringNull()
+        }
+    } else if arr, ok := item["packets"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Packets = types.StringValue(string(jsonBytes))
         } else {
             data.Packets = types.StringNull()
@@ -539,6 +595,13 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else {
             data.FlowStartAt = types.StringNull()
         }
+    } else if arr, ok := item["flowStartAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FlowStartAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.FlowStartAt = types.StringNull()
+        }
     } else if val, ok := item["flowStartAt"].(string); ok {
         data.FlowStartAt = types.StringValue(val)
     } else {
@@ -552,6 +615,13 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else if val, ok := obj["value"].(float64); ok {
             data.FlowEndAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FlowEndAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.FlowEndAt = types.StringNull()
+        }
+    } else if arr, ok := item["flowEndAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.FlowEndAt = types.StringValue(string(jsonBytes))
         } else {
             data.FlowEndAt = types.StringNull()
@@ -573,6 +643,13 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else {
             data.IngestedAt = types.StringNull()
         }
+    } else if arr, ok := item["ingestedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.IngestedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.IngestedAt = types.StringNull()
+        }
     } else if val, ok := item["ingestedAt"].(string); ok {
         data.IngestedAt = types.StringValue(val)
     } else {
@@ -586,6 +663,13 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else if val, ok := obj["value"].(float64); ok {
             data.FlowFormat = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FlowFormat = types.StringValue(string(jsonBytes))
+        } else {
+            data.FlowFormat = types.StringNull()
+        }
+    } else if arr, ok := item["flowFormat"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.FlowFormat = types.StringValue(string(jsonBytes))
         } else {
             data.FlowFormat = types.StringNull()
@@ -609,6 +693,13 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else {
             data.ProbeId = types.StringNull()
         }
+    } else if arr, ok := item["probeId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProbeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProbeId = types.StringNull()
+        }
     } else if val, ok := item["probeId"].(string); ok {
         data.ProbeId = types.StringValue(val)
     } else {
@@ -626,6 +717,13 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else {
             data.SrcName = types.StringNull()
         }
+    } else if arr, ok := item["srcName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SrcName = types.StringValue(string(jsonBytes))
+        } else {
+            data.SrcName = types.StringNull()
+        }
     } else if val, ok := item["srcName"].(string); ok {
         data.SrcName = types.StringValue(val)
     } else {
@@ -639,6 +737,13 @@ func (d *NetworkFlowDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else if val, ok := obj["value"].(float64); ok {
             data.DstName = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DstName = types.StringValue(string(jsonBytes))
+        } else {
+            data.DstName = types.StringNull()
+        }
+    } else if arr, ok := item["dstName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.DstName = types.StringValue(string(jsonBytes))
         } else {
             data.DstName = types.StringNull()

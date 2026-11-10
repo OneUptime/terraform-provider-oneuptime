@@ -337,6 +337,13 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -350,6 +357,13 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -371,6 +385,13 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -384,6 +405,13 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -405,6 +433,13 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         } else {
             data.SecurityCaseId = types.StringNull()
         }
+    } else if arr, ok := item["securityCaseId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SecurityCaseId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseId = types.StringNull()
+        }
     } else if val, ok := item["securityCaseId"].(string); ok {
         data.SecurityCaseId = types.StringValue(val)
     } else {
@@ -418,6 +453,13 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         } else if val, ok := obj["value"].(float64); ok {
             data.Kind = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Kind = types.StringValue(string(jsonBytes))
+        } else {
+            data.Kind = types.StringNull()
+        }
+    } else if arr, ok := item["kind"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Kind = types.StringValue(string(jsonBytes))
         } else {
             data.Kind = types.StringNull()
@@ -439,6 +481,13 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := item["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -452,6 +501,13 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         } else if val, ok := obj["value"].(float64); ok {
             data.Description = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -473,6 +529,13 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         } else {
             data.FileId = types.StringNull()
         }
+    } else if arr, ok := item["fileId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.FileId = types.StringNull()
+        }
     } else if val, ok := item["fileId"].(string); ok {
         data.FileId = types.StringValue(val)
     } else {
@@ -486,6 +549,13 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         } else if val, ok := obj["value"].(float64); ok {
             data.Url = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Url = types.StringValue(string(jsonBytes))
+        } else {
+            data.Url = types.StringNull()
+        }
+    } else if arr, ok := item["url"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Url = types.StringValue(string(jsonBytes))
         } else {
             data.Url = types.StringNull()
@@ -507,6 +577,13 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         } else {
             data.FileName = types.StringNull()
         }
+    } else if arr, ok := item["fileName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FileName = types.StringValue(string(jsonBytes))
+        } else {
+            data.FileName = types.StringNull()
+        }
     } else if val, ok := item["fileName"].(string); ok {
         data.FileName = types.StringValue(val)
     } else {
@@ -520,6 +597,13 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         } else if val, ok := obj["value"].(float64); ok {
             data.FileType = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FileType = types.StringValue(string(jsonBytes))
+        } else {
+            data.FileType = types.StringNull()
+        }
+    } else if arr, ok := item["fileType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.FileType = types.StringValue(string(jsonBytes))
         } else {
             data.FileType = types.StringNull()
@@ -542,6 +626,13 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         } else {
             data.Sha256 = types.StringNull()
         }
+    } else if arr, ok := item["sha256"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Sha256 = types.StringValue(string(jsonBytes))
+        } else {
+            data.Sha256 = types.StringNull()
+        }
     } else if val, ok := item["sha256"].(string); ok {
         data.Sha256 = types.StringValue(val)
     } else {
@@ -555,6 +646,13 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         } else if val, ok := obj["value"].(float64); ok {
             data.EventUid = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EventUid = types.StringValue(string(jsonBytes))
+        } else {
+            data.EventUid = types.StringNull()
+        }
+    } else if arr, ok := item["eventUid"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.EventUid = types.StringValue(string(jsonBytes))
         } else {
             data.EventUid = types.StringNull()
@@ -576,6 +674,13 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         } else {
             data.EventTime = types.StringNull()
         }
+    } else if arr, ok := item["eventTime"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.EventTime = types.StringValue(string(jsonBytes))
+        } else {
+            data.EventTime = types.StringNull()
+        }
     } else if val, ok := item["eventTime"].(string); ok {
         data.EventTime = types.StringValue(val)
     } else {
@@ -593,6 +698,13 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         } else {
             data.EventSnapshot = types.StringNull()
         }
+    } else if arr, ok := item["eventSnapshot"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.EventSnapshot = types.StringValue(string(jsonBytes))
+        } else {
+            data.EventSnapshot = types.StringNull()
+        }
     } else if val, ok := item["eventSnapshot"].(string); ok {
         data.EventSnapshot = types.StringValue(val)
     } else {
@@ -606,6 +718,13 @@ func (d *SecurityCaseEvidenceDataSource) Read(ctx context.Context, req datasourc
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

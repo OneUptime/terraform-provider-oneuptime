@@ -41,6 +41,7 @@ resource "oneuptime_workflow" "example" {
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `graph_revision` (Number) How many times the workflow's graph has been saved. To save a graph only if nobody has saved one since you read the workflow, send this number as miscDataProps.graphRevision with the graph: a save made to an older graph is refused with 409 Conflict. Set by the server.
 - `id` (String) Unique identifier for the resource.
 - `is_webhook_signing_secret_set` (Boolean) Whether a webhook signing secret is saved. A trigger that checks signatures refuses every request until it is. Set by the server from the signing secret itself.
 - `last_webhook_error` (String) Why the last request to a trigger that checks signatures was refused, if it was. Cleared by the next request that is accepted, and by saving a new signing secret.

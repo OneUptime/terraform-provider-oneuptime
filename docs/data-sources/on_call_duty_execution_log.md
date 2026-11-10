@@ -33,6 +33,7 @@ data "oneuptime_on_call_duty_execution_log" "by_id" {
 - `ai_hold_outcome` (String) For a run OneUptime AI held while it investigated and fixed: Holding while it waits, then how the hold ended - Resolved by AI, Recovered on its own, Handled by a person, Handed off, Hold time ran out or Page now pressed. Empty for every other run.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_observer_page` (Boolean) Whether this run pages its people as observers: they are kept informed, and acknowledging their page only says they have seen it - the incident or alert is not acknowledged, and nobody else's page stops.
 - `last_executed_escalation_rule_id` (String) ID of your On-Call Policy Last Executed Escalation Rule. The ID of a `oneuptime_escalation_rule`.
 - `last_executed_escalation_rule_order` (Number) Which escalation rule was executed?
 - `on_call_duty_policy_id` (String) ID of the On-Call Policy this execution log is a run of. Required when you create one. Empty for a direct page: people, a team or an on-call schedule paged without an on-call policy. The ID of a `oneuptime_on_call_policy`.

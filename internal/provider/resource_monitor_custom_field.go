@@ -359,6 +359,13 @@ func (r *MonitorCustomFieldResource) Create(ctx context.Context, req resource.Cr
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -392,6 +399,13 @@ func (r *MonitorCustomFieldResource) Create(ctx context.Context, req resource.Cr
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -433,6 +447,13 @@ func (r *MonitorCustomFieldResource) Create(ctx context.Context, req resource.Cr
         } else {
             data.CustomFieldType = types.StringNull()
         }
+    } else if arr, ok := dataMap["customFieldType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CustomFieldType = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomFieldType = types.StringNull()
+        }
     } else if val, ok := dataMap["customFieldType"].(string); ok {
         data.CustomFieldType = types.StringValue(val)
     } else {
@@ -466,6 +487,13 @@ func (r *MonitorCustomFieldResource) Create(ctx context.Context, req resource.Cr
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DropdownOptions = types.StringValue(string(jsonBytes))
+        } else {
+            data.DropdownOptions = types.StringNull()
+        }
+    } else if arr, ok := dataMap["dropdownOptions"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DropdownOptions = types.StringValue(string(jsonBytes))
         } else {
             data.DropdownOptions = types.StringNull()
@@ -507,6 +535,13 @@ func (r *MonitorCustomFieldResource) Create(ctx context.Context, req resource.Cr
         } else {
             data.MapFromResourceType = types.StringNull()
         }
+    } else if arr, ok := dataMap["mapFromResourceType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MapFromResourceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.MapFromResourceType = types.StringNull()
+        }
     } else if val, ok := dataMap["mapFromResourceType"].(string); ok {
         data.MapFromResourceType = types.StringValue(val)
     } else {
@@ -540,6 +575,13 @@ func (r *MonitorCustomFieldResource) Create(ctx context.Context, req resource.Cr
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.MapFromCustomFieldName = types.StringValue(string(jsonBytes))
+        } else {
+            data.MapFromCustomFieldName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["mapFromCustomFieldName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.MapFromCustomFieldName = types.StringValue(string(jsonBytes))
         } else {
             data.MapFromCustomFieldName = types.StringNull()
@@ -599,6 +641,13 @@ func (r *MonitorCustomFieldResource) Create(ctx context.Context, req resource.Cr
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -725,6 +774,13 @@ func (r *MonitorCustomFieldResource) Read(ctx context.Context, req resource.Read
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -758,6 +814,13 @@ func (r *MonitorCustomFieldResource) Read(ctx context.Context, req resource.Read
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -799,6 +862,13 @@ func (r *MonitorCustomFieldResource) Read(ctx context.Context, req resource.Read
         } else {
             data.CustomFieldType = types.StringNull()
         }
+    } else if arr, ok := dataMap["customFieldType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CustomFieldType = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomFieldType = types.StringNull()
+        }
     } else if val, ok := dataMap["customFieldType"].(string); ok {
         data.CustomFieldType = types.StringValue(val)
     } else {
@@ -832,6 +902,13 @@ func (r *MonitorCustomFieldResource) Read(ctx context.Context, req resource.Read
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DropdownOptions = types.StringValue(string(jsonBytes))
+        } else {
+            data.DropdownOptions = types.StringNull()
+        }
+    } else if arr, ok := dataMap["dropdownOptions"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DropdownOptions = types.StringValue(string(jsonBytes))
         } else {
             data.DropdownOptions = types.StringNull()
@@ -873,6 +950,13 @@ func (r *MonitorCustomFieldResource) Read(ctx context.Context, req resource.Read
         } else {
             data.MapFromResourceType = types.StringNull()
         }
+    } else if arr, ok := dataMap["mapFromResourceType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MapFromResourceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.MapFromResourceType = types.StringNull()
+        }
     } else if val, ok := dataMap["mapFromResourceType"].(string); ok {
         data.MapFromResourceType = types.StringValue(val)
     } else {
@@ -906,6 +990,13 @@ func (r *MonitorCustomFieldResource) Read(ctx context.Context, req resource.Read
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.MapFromCustomFieldName = types.StringValue(string(jsonBytes))
+        } else {
+            data.MapFromCustomFieldName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["mapFromCustomFieldName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.MapFromCustomFieldName = types.StringValue(string(jsonBytes))
         } else {
             data.MapFromCustomFieldName = types.StringNull()
@@ -965,6 +1056,13 @@ func (r *MonitorCustomFieldResource) Read(ctx context.Context, req resource.Read
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1135,6 +1233,13 @@ func (r *MonitorCustomFieldResource) Update(ctx context.Context, req resource.Up
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1168,6 +1273,13 @@ func (r *MonitorCustomFieldResource) Update(ctx context.Context, req resource.Up
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1209,6 +1321,13 @@ func (r *MonitorCustomFieldResource) Update(ctx context.Context, req resource.Up
         } else {
             data.CustomFieldType = types.StringNull()
         }
+    } else if arr, ok := dataMap["customFieldType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CustomFieldType = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomFieldType = types.StringNull()
+        }
     } else if val, ok := dataMap["customFieldType"].(string); ok {
         data.CustomFieldType = types.StringValue(val)
     } else {
@@ -1242,6 +1361,13 @@ func (r *MonitorCustomFieldResource) Update(ctx context.Context, req resource.Up
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DropdownOptions = types.StringValue(string(jsonBytes))
+        } else {
+            data.DropdownOptions = types.StringNull()
+        }
+    } else if arr, ok := dataMap["dropdownOptions"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DropdownOptions = types.StringValue(string(jsonBytes))
         } else {
             data.DropdownOptions = types.StringNull()
@@ -1283,6 +1409,13 @@ func (r *MonitorCustomFieldResource) Update(ctx context.Context, req resource.Up
         } else {
             data.MapFromResourceType = types.StringNull()
         }
+    } else if arr, ok := dataMap["mapFromResourceType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MapFromResourceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.MapFromResourceType = types.StringNull()
+        }
     } else if val, ok := dataMap["mapFromResourceType"].(string); ok {
         data.MapFromResourceType = types.StringValue(val)
     } else {
@@ -1316,6 +1449,13 @@ func (r *MonitorCustomFieldResource) Update(ctx context.Context, req resource.Up
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.MapFromCustomFieldName = types.StringValue(string(jsonBytes))
+        } else {
+            data.MapFromCustomFieldName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["mapFromCustomFieldName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.MapFromCustomFieldName = types.StringValue(string(jsonBytes))
         } else {
             data.MapFromCustomFieldName = types.StringNull()
@@ -1375,6 +1515,13 @@ func (r *MonitorCustomFieldResource) Update(ctx context.Context, req resource.Up
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

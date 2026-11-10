@@ -580,6 +580,13 @@ func (r *DataSecuritySettingResource) Create(ctx context.Context, req resource.C
         } else {
             data.AlertSeverityId = types.StringNull()
         }
+    } else if arr, ok := dataMap["alertSeverityId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AlertSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertSeverityId = types.StringNull()
+        }
     } else if val, ok := dataMap["alertSeverityId"].(string); ok {
         data.AlertSeverityId = types.StringValue(val)
     } else {
@@ -616,6 +623,13 @@ func (r *DataSecuritySettingResource) Create(ctx context.Context, req resource.C
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentSeverityId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incidentSeverityId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncidentSeverityId = types.StringValue(string(jsonBytes))
         } else {
             data.IncidentSeverityId = types.StringNull()
@@ -667,6 +681,13 @@ func (r *DataSecuritySettingResource) Create(ctx context.Context, req resource.C
         } else {
             data.AllowedValues = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["allowedValues"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AllowedValues = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AllowedValues = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["allowedValues"].(string); ok {
         data.AllowedValues = NewJSONSubsetValue(val)
     } else {
@@ -700,6 +721,13 @@ func (r *DataSecuritySettingResource) Create(ctx context.Context, req resource.C
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DisabledDataTypeIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DisabledDataTypeIds = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["disabledDataTypeIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DisabledDataTypeIds = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.DisabledDataTypeIds = NewJSONSubsetNull()
@@ -759,6 +787,13 @@ func (r *DataSecuritySettingResource) Create(ctx context.Context, req resource.C
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -918,6 +953,13 @@ func (r *DataSecuritySettingResource) Read(ctx context.Context, req resource.Rea
         } else {
             data.AlertSeverityId = types.StringNull()
         }
+    } else if arr, ok := dataMap["alertSeverityId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AlertSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertSeverityId = types.StringNull()
+        }
     } else if val, ok := dataMap["alertSeverityId"].(string); ok {
         data.AlertSeverityId = types.StringValue(val)
     } else {
@@ -954,6 +996,13 @@ func (r *DataSecuritySettingResource) Read(ctx context.Context, req resource.Rea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentSeverityId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incidentSeverityId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncidentSeverityId = types.StringValue(string(jsonBytes))
         } else {
             data.IncidentSeverityId = types.StringNull()
@@ -1005,6 +1054,13 @@ func (r *DataSecuritySettingResource) Read(ctx context.Context, req resource.Rea
         } else {
             data.AllowedValues = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["allowedValues"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AllowedValues = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AllowedValues = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["allowedValues"].(string); ok {
         data.AllowedValues = NewJSONSubsetValue(val)
     } else {
@@ -1038,6 +1094,13 @@ func (r *DataSecuritySettingResource) Read(ctx context.Context, req resource.Rea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DisabledDataTypeIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DisabledDataTypeIds = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["disabledDataTypeIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DisabledDataTypeIds = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.DisabledDataTypeIds = NewJSONSubsetNull()
@@ -1097,6 +1160,13 @@ func (r *DataSecuritySettingResource) Read(ctx context.Context, req resource.Rea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1356,6 +1426,13 @@ func (r *DataSecuritySettingResource) Update(ctx context.Context, req resource.U
         } else {
             data.AlertSeverityId = types.StringNull()
         }
+    } else if arr, ok := dataMap["alertSeverityId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AlertSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertSeverityId = types.StringNull()
+        }
     } else if val, ok := dataMap["alertSeverityId"].(string); ok {
         data.AlertSeverityId = types.StringValue(val)
     } else {
@@ -1392,6 +1469,13 @@ func (r *DataSecuritySettingResource) Update(ctx context.Context, req resource.U
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentSeverityId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incidentSeverityId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncidentSeverityId = types.StringValue(string(jsonBytes))
         } else {
             data.IncidentSeverityId = types.StringNull()
@@ -1443,6 +1527,13 @@ func (r *DataSecuritySettingResource) Update(ctx context.Context, req resource.U
         } else {
             data.AllowedValues = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["allowedValues"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AllowedValues = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AllowedValues = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["allowedValues"].(string); ok {
         data.AllowedValues = NewJSONSubsetValue(val)
     } else {
@@ -1476,6 +1567,13 @@ func (r *DataSecuritySettingResource) Update(ctx context.Context, req resource.U
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DisabledDataTypeIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DisabledDataTypeIds = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["disabledDataTypeIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DisabledDataTypeIds = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.DisabledDataTypeIds = NewJSONSubsetNull()
@@ -1535,6 +1633,13 @@ func (r *DataSecuritySettingResource) Update(ctx context.Context, req resource.U
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

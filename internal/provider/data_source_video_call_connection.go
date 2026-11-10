@@ -297,6 +297,13 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -310,6 +317,13 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -331,6 +345,13 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -344,6 +365,13 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -365,6 +393,13 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := item["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -378,6 +413,13 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         } else if val, ok := obj["value"].(float64); ok {
             data.Description = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -399,6 +441,13 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         } else {
             data.ProviderValue = types.StringNull()
         }
+    } else if arr, ok := item["provider"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProviderValue = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProviderValue = types.StringNull()
+        }
     } else if val, ok := item["provider"].(string); ok {
         data.ProviderValue = types.StringValue(val)
     } else {
@@ -412,6 +461,13 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         } else if val, ok := obj["value"].(float64); ok {
             data.AuthMethod = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AuthMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.AuthMethod = types.StringNull()
+        }
+    } else if arr, ok := item["authMethod"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.AuthMethod = types.StringValue(string(jsonBytes))
         } else {
             data.AuthMethod = types.StringNull()
@@ -433,6 +489,13 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         } else {
             data.ConnectedAccount = types.StringNull()
         }
+    } else if arr, ok := item["connectedAccount"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ConnectedAccount = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectedAccount = types.StringNull()
+        }
     } else if val, ok := item["connectedAccount"].(string); ok {
         data.ConnectedAccount = types.StringValue(val)
     } else {
@@ -446,6 +509,13 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         } else if val, ok := obj["value"].(float64); ok {
             data.ConnectedAccountId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ConnectedAccountId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectedAccountId = types.StringNull()
+        }
+    } else if arr, ok := item["connectedAccountId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ConnectedAccountId = types.StringValue(string(jsonBytes))
         } else {
             data.ConnectedAccountId = types.StringNull()
@@ -467,6 +537,13 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         } else {
             data.Config = types.StringNull()
         }
+    } else if arr, ok := item["config"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Config = types.StringValue(string(jsonBytes))
+        } else {
+            data.Config = types.StringNull()
+        }
     } else if val, ok := item["config"].(string); ok {
         data.Config = types.StringValue(val)
     } else {
@@ -480,6 +557,13 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         } else if val, ok := obj["value"].(float64); ok {
             data.LastCallStartedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastCallStartedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastCallStartedAt = types.StringNull()
+        }
+    } else if arr, ok := item["lastCallStartedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.LastCallStartedAt = types.StringValue(string(jsonBytes))
         } else {
             data.LastCallStartedAt = types.StringNull()
@@ -501,6 +585,13 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         } else {
             data.LastError = types.StringNull()
         }
+    } else if arr, ok := item["lastError"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastError = types.StringNull()
+        }
     } else if val, ok := item["lastError"].(string); ok {
         data.LastError = types.StringValue(val)
     } else {
@@ -518,6 +609,13 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         } else {
             data.LastErrorAt = types.StringNull()
         }
+    } else if arr, ok := item["lastErrorAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastErrorAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastErrorAt = types.StringNull()
+        }
     } else if val, ok := item["lastErrorAt"].(string); ok {
         data.LastErrorAt = types.StringValue(val)
     } else {
@@ -531,6 +629,13 @@ func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

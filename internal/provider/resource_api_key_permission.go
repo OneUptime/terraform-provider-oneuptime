@@ -349,6 +349,13 @@ func (r *ApiKeyPermissionResource) Create(ctx context.Context, req resource.Crea
         } else {
             data.ApiKeyId = types.StringNull()
         }
+    } else if arr, ok := dataMap["apiKeyId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKeyId = types.StringNull()
+        }
     } else if val, ok := dataMap["apiKeyId"].(string); ok {
         data.ApiKeyId = types.StringValue(val)
     } else {
@@ -393,6 +400,13 @@ func (r *ApiKeyPermissionResource) Create(ctx context.Context, req resource.Crea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Permission = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Permission = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["permission"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Permission = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Permission = NewJSONSubsetNull()
@@ -491,6 +505,13 @@ func (r *ApiKeyPermissionResource) Create(ctx context.Context, req resource.Crea
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -524,6 +545,13 @@ func (r *ApiKeyPermissionResource) Create(ctx context.Context, req resource.Crea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRoleId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRoleId = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRoleId = types.StringNull()
@@ -565,6 +593,13 @@ func (r *ApiKeyPermissionResource) Create(ctx context.Context, req resource.Crea
         } else {
             data.ApiKeyCustomRoleId = types.StringNull()
         }
+    } else if arr, ok := dataMap["apiKeyCustomRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ApiKeyCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKeyCustomRoleId = types.StringNull()
+        }
     } else if val, ok := dataMap["apiKeyCustomRoleId"].(string); ok {
         data.ApiKeyCustomRoleId = types.StringValue(val)
     } else {
@@ -598,6 +633,13 @@ func (r *ApiKeyPermissionResource) Create(ctx context.Context, req resource.Crea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRolePermissionId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRolePermissionId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRolePermissionId = types.StringNull()
@@ -716,6 +758,13 @@ func (r *ApiKeyPermissionResource) Read(ctx context.Context, req resource.ReadRe
         } else {
             data.ApiKeyId = types.StringNull()
         }
+    } else if arr, ok := dataMap["apiKeyId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKeyId = types.StringNull()
+        }
     } else if val, ok := dataMap["apiKeyId"].(string); ok {
         data.ApiKeyId = types.StringValue(val)
     } else {
@@ -760,6 +809,13 @@ func (r *ApiKeyPermissionResource) Read(ctx context.Context, req resource.ReadRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Permission = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Permission = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["permission"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Permission = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Permission = NewJSONSubsetNull()
@@ -858,6 +914,13 @@ func (r *ApiKeyPermissionResource) Read(ctx context.Context, req resource.ReadRe
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -891,6 +954,13 @@ func (r *ApiKeyPermissionResource) Read(ctx context.Context, req resource.ReadRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRoleId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRoleId = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRoleId = types.StringNull()
@@ -932,6 +1002,13 @@ func (r *ApiKeyPermissionResource) Read(ctx context.Context, req resource.ReadRe
         } else {
             data.ApiKeyCustomRoleId = types.StringNull()
         }
+    } else if arr, ok := dataMap["apiKeyCustomRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ApiKeyCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKeyCustomRoleId = types.StringNull()
+        }
     } else if val, ok := dataMap["apiKeyCustomRoleId"].(string); ok {
         data.ApiKeyCustomRoleId = types.StringValue(val)
     } else {
@@ -965,6 +1042,13 @@ func (r *ApiKeyPermissionResource) Read(ctx context.Context, req resource.ReadRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRolePermissionId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRolePermissionId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRolePermissionId = types.StringNull()
@@ -1129,6 +1213,13 @@ func (r *ApiKeyPermissionResource) Update(ctx context.Context, req resource.Upda
         } else {
             data.ApiKeyId = types.StringNull()
         }
+    } else if arr, ok := dataMap["apiKeyId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKeyId = types.StringNull()
+        }
     } else if val, ok := dataMap["apiKeyId"].(string); ok {
         data.ApiKeyId = types.StringValue(val)
     } else {
@@ -1173,6 +1264,13 @@ func (r *ApiKeyPermissionResource) Update(ctx context.Context, req resource.Upda
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Permission = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Permission = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["permission"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Permission = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Permission = NewJSONSubsetNull()
@@ -1271,6 +1369,13 @@ func (r *ApiKeyPermissionResource) Update(ctx context.Context, req resource.Upda
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -1304,6 +1409,13 @@ func (r *ApiKeyPermissionResource) Update(ctx context.Context, req resource.Upda
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRoleId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRoleId = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRoleId = types.StringNull()
@@ -1345,6 +1457,13 @@ func (r *ApiKeyPermissionResource) Update(ctx context.Context, req resource.Upda
         } else {
             data.ApiKeyCustomRoleId = types.StringNull()
         }
+    } else if arr, ok := dataMap["apiKeyCustomRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ApiKeyCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKeyCustomRoleId = types.StringNull()
+        }
     } else if val, ok := dataMap["apiKeyCustomRoleId"].(string); ok {
         data.ApiKeyCustomRoleId = types.StringValue(val)
     } else {
@@ -1378,6 +1497,13 @@ func (r *ApiKeyPermissionResource) Update(ctx context.Context, req resource.Upda
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRolePermissionId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRolePermissionId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRolePermissionId = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRolePermissionId = types.StringNull()

@@ -72,6 +72,7 @@ type DockerHostResourceModel struct {
     AiAccessLastVerifiedAt RFC3339Value `tfsdk:"ai_access_last_verified_at"`
     AiAccessLastError types.String `tfsdk:"ai_access_last_error"`
     AiAccessConfiguredAt RFC3339Value `tfsdk:"ai_access_configured_at"`
+    AiAgentResetAt RFC3339Value `tfsdk:"ai_agent_reset_at"`
 }
 
 func (r *DockerHostResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -311,6 +312,11 @@ func (r *DockerHostResource) schemaDefinition() schema.Schema {
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
+            "ai_agent_reset_at": schema.StringAttribute{
+                MarkdownDescription: "When this Docker host's AI agent was last reset: its key stopped working at once, and it registers again by itself. Set by the server.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
         },
     }
 }
@@ -469,6 +475,7 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
+        "aiAgentResetAt": true,
         "_id": true,
     }
 
@@ -544,6 +551,13 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -581,6 +595,13 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
         } else {
             data.Description = types.StringNull()
         }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
     } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
@@ -614,6 +635,13 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.HostIdentifier = types.StringValue(string(jsonBytes))
+        } else {
+            data.HostIdentifier = types.StringNull()
+        }
+    } else if arr, ok := dataMap["hostIdentifier"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.HostIdentifier = types.StringValue(string(jsonBytes))
         } else {
             data.HostIdentifier = types.StringNull()
@@ -691,6 +719,13 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["telemetryRetentionConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
@@ -728,6 +763,13 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
         } else {
             data.OtelCollectorStatus = types.StringNull()
         }
+    } else if arr, ok := dataMap["otelCollectorStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OtelCollectorStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.OtelCollectorStatus = types.StringNull()
+        }
     } else if val, ok := dataMap["otelCollectorStatus"].(string); ok {
         data.OtelCollectorStatus = types.StringValue(val)
     } else {
@@ -761,6 +803,13 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AgentVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.AgentVersion = types.StringNull()
+        }
+    } else if arr, ok := dataMap["agentVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AgentVersion = types.StringValue(string(jsonBytes))
         } else {
             data.AgentVersion = types.StringNull()
@@ -816,6 +865,13 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
         } else {
             data.OsType = types.StringNull()
         }
+    } else if arr, ok := dataMap["osType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OsType = types.StringValue(string(jsonBytes))
+        } else {
+            data.OsType = types.StringNull()
+        }
     } else if val, ok := dataMap["osType"].(string); ok {
         data.OsType = types.StringValue(val)
     } else {
@@ -849,6 +905,13 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OsVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.OsVersion = types.StringNull()
+        }
+    } else if arr, ok := dataMap["osVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OsVersion = types.StringValue(string(jsonBytes))
         } else {
             data.OsVersion = types.StringNull()
@@ -893,6 +956,13 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
         } else {
             data.AiRemediationMode = types.StringNull()
         }
+    } else if arr, ok := dataMap["aiRemediationMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AiRemediationMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiRemediationMode = types.StringNull()
+        }
     } else if val, ok := dataMap["aiRemediationMode"].(string); ok {
         data.AiRemediationMode = types.StringValue(val)
     } else {
@@ -926,6 +996,13 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AiCommandAllowlist = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["aiCommandAllowlist"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.AiCommandAllowlist = NewJSONSubsetNull()
@@ -989,6 +1066,13 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -1022,6 +1106,13 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1074,6 +1165,13 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
         } else {
             data.ArchivedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["archivedByUserId"].(string); ok {
         data.ArchivedByUserId = types.StringValue(val)
     } else {
@@ -1122,6 +1220,13 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
         } else {
             data.AiAccessLastError = types.StringNull()
         }
+    } else if arr, ok := dataMap["aiAccessLastError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AiAccessLastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessLastError = types.StringNull()
+        }
     } else if val, ok := dataMap["aiAccessLastError"].(string); ok {
         data.AiAccessLastError = types.StringValue(val)
     } else {
@@ -1137,6 +1242,17 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
         data.AiAccessConfiguredAt = NewRFC3339Value(val)
     } else {
         data.AiAccessConfiguredAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["aiAgentResetAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AiAgentResetAt = NewRFC3339Value(val)
+        } else {
+            data.AiAgentResetAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["aiAgentResetAt"].(string); ok && val != "" {
+        data.AiAgentResetAt = NewRFC3339Value(val)
+    } else {
+        data.AiAgentResetAt = NewRFC3339Null()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -1199,6 +1315,7 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
+        "aiAgentResetAt": true,
         "_id": true,
     }
 
@@ -1275,6 +1392,13 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1312,6 +1436,13 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
         } else {
             data.Description = types.StringNull()
         }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
     } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
@@ -1345,6 +1476,13 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.HostIdentifier = types.StringValue(string(jsonBytes))
+        } else {
+            data.HostIdentifier = types.StringNull()
+        }
+    } else if arr, ok := dataMap["hostIdentifier"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.HostIdentifier = types.StringValue(string(jsonBytes))
         } else {
             data.HostIdentifier = types.StringNull()
@@ -1422,6 +1560,13 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["telemetryRetentionConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
@@ -1459,6 +1604,13 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
         } else {
             data.OtelCollectorStatus = types.StringNull()
         }
+    } else if arr, ok := dataMap["otelCollectorStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OtelCollectorStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.OtelCollectorStatus = types.StringNull()
+        }
     } else if val, ok := dataMap["otelCollectorStatus"].(string); ok {
         data.OtelCollectorStatus = types.StringValue(val)
     } else {
@@ -1492,6 +1644,13 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AgentVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.AgentVersion = types.StringNull()
+        }
+    } else if arr, ok := dataMap["agentVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AgentVersion = types.StringValue(string(jsonBytes))
         } else {
             data.AgentVersion = types.StringNull()
@@ -1547,6 +1706,13 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
         } else {
             data.OsType = types.StringNull()
         }
+    } else if arr, ok := dataMap["osType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OsType = types.StringValue(string(jsonBytes))
+        } else {
+            data.OsType = types.StringNull()
+        }
     } else if val, ok := dataMap["osType"].(string); ok {
         data.OsType = types.StringValue(val)
     } else {
@@ -1580,6 +1746,13 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OsVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.OsVersion = types.StringNull()
+        }
+    } else if arr, ok := dataMap["osVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OsVersion = types.StringValue(string(jsonBytes))
         } else {
             data.OsVersion = types.StringNull()
@@ -1624,6 +1797,13 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
         } else {
             data.AiRemediationMode = types.StringNull()
         }
+    } else if arr, ok := dataMap["aiRemediationMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AiRemediationMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiRemediationMode = types.StringNull()
+        }
     } else if val, ok := dataMap["aiRemediationMode"].(string); ok {
         data.AiRemediationMode = types.StringValue(val)
     } else {
@@ -1657,6 +1837,13 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AiCommandAllowlist = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["aiCommandAllowlist"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.AiCommandAllowlist = NewJSONSubsetNull()
@@ -1720,6 +1907,13 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -1753,6 +1947,13 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1805,6 +2006,13 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
         } else {
             data.ArchivedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["archivedByUserId"].(string); ok {
         data.ArchivedByUserId = types.StringValue(val)
     } else {
@@ -1853,6 +2061,13 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
         } else {
             data.AiAccessLastError = types.StringNull()
         }
+    } else if arr, ok := dataMap["aiAccessLastError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AiAccessLastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessLastError = types.StringNull()
+        }
     } else if val, ok := dataMap["aiAccessLastError"].(string); ok {
         data.AiAccessLastError = types.StringValue(val)
     } else {
@@ -1868,6 +2083,17 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
         data.AiAccessConfiguredAt = NewRFC3339Value(val)
     } else {
         data.AiAccessConfiguredAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["aiAgentResetAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AiAgentResetAt = NewRFC3339Value(val)
+        } else {
+            data.AiAgentResetAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["aiAgentResetAt"].(string); ok && val != "" {
+        data.AiAgentResetAt = NewRFC3339Value(val)
+    } else {
+        data.AiAgentResetAt = NewRFC3339Null()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -2033,6 +2259,7 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
+        "aiAgentResetAt": true,
         "_id": true,
     }
 
@@ -2103,6 +2330,13 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -2140,6 +2374,13 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
         } else {
             data.Description = types.StringNull()
         }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
     } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
@@ -2173,6 +2414,13 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.HostIdentifier = types.StringValue(string(jsonBytes))
+        } else {
+            data.HostIdentifier = types.StringNull()
+        }
+    } else if arr, ok := dataMap["hostIdentifier"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.HostIdentifier = types.StringValue(string(jsonBytes))
         } else {
             data.HostIdentifier = types.StringNull()
@@ -2250,6 +2498,13 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["telemetryRetentionConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
@@ -2287,6 +2542,13 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
         } else {
             data.OtelCollectorStatus = types.StringNull()
         }
+    } else if arr, ok := dataMap["otelCollectorStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OtelCollectorStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.OtelCollectorStatus = types.StringNull()
+        }
     } else if val, ok := dataMap["otelCollectorStatus"].(string); ok {
         data.OtelCollectorStatus = types.StringValue(val)
     } else {
@@ -2320,6 +2582,13 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AgentVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.AgentVersion = types.StringNull()
+        }
+    } else if arr, ok := dataMap["agentVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AgentVersion = types.StringValue(string(jsonBytes))
         } else {
             data.AgentVersion = types.StringNull()
@@ -2375,6 +2644,13 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
         } else {
             data.OsType = types.StringNull()
         }
+    } else if arr, ok := dataMap["osType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OsType = types.StringValue(string(jsonBytes))
+        } else {
+            data.OsType = types.StringNull()
+        }
     } else if val, ok := dataMap["osType"].(string); ok {
         data.OsType = types.StringValue(val)
     } else {
@@ -2408,6 +2684,13 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OsVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.OsVersion = types.StringNull()
+        }
+    } else if arr, ok := dataMap["osVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OsVersion = types.StringValue(string(jsonBytes))
         } else {
             data.OsVersion = types.StringNull()
@@ -2452,6 +2735,13 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
         } else {
             data.AiRemediationMode = types.StringNull()
         }
+    } else if arr, ok := dataMap["aiRemediationMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AiRemediationMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiRemediationMode = types.StringNull()
+        }
     } else if val, ok := dataMap["aiRemediationMode"].(string); ok {
         data.AiRemediationMode = types.StringValue(val)
     } else {
@@ -2485,6 +2775,13 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AiCommandAllowlist = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["aiCommandAllowlist"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AiCommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.AiCommandAllowlist = NewJSONSubsetNull()
@@ -2548,6 +2845,13 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -2581,6 +2885,13 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -2633,6 +2944,13 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
         } else {
             data.ArchivedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["archivedByUserId"].(string); ok {
         data.ArchivedByUserId = types.StringValue(val)
     } else {
@@ -2681,6 +2999,13 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
         } else {
             data.AiAccessLastError = types.StringNull()
         }
+    } else if arr, ok := dataMap["aiAccessLastError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AiAccessLastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessLastError = types.StringNull()
+        }
     } else if val, ok := dataMap["aiAccessLastError"].(string); ok {
         data.AiAccessLastError = types.StringValue(val)
     } else {
@@ -2696,6 +3021,17 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
         data.AiAccessConfiguredAt = NewRFC3339Value(val)
     } else {
         data.AiAccessConfiguredAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["aiAgentResetAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AiAgentResetAt = NewRFC3339Value(val)
+        } else {
+            data.AiAgentResetAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["aiAgentResetAt"].(string); ok && val != "" {
+        data.AiAgentResetAt = NewRFC3339Value(val)
+    } else {
+        data.AiAgentResetAt = NewRFC3339Null()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

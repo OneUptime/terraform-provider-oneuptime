@@ -36,6 +36,7 @@ resource "oneuptime_alert_grouping_rule" "example" {
 - `default_assign_to_user_id` (String) ID of defaultAssignToUser. Kept for API compatibility: OneUptime does not show it anywhere. To make someone responsible for the episodes this rule opens, use episodeOwnerUsers. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `default_assign_to_user_email`.
 - `description` (String) Description of this alert grouping rule.
 - `enable_inactivity_timeout` (Boolean) Enable auto-resolving episodes after a period of inactivity. Helps automatically close episodes when no new alerts arrive. Defaults to `false`.
+- `enable_minimum_alert_count` (Boolean) Wait for more alerts before opening an episode. When enabled, a matching alert with no open episode to join stays on its own until Minimum Alert Count matching alerts of the same group are ongoing - and, with the time window enabled, arrived within it of each other. The episode then opens with all of them. Until then, each alert runs only its own on-call policies. When disabled, the first matching alert opens an episode. Defaults to `false`.
 - `enable_reopen_window` (Boolean) Enable reopening recently resolved episodes instead of creating new ones. Useful when related issues recur shortly after resolution. Defaults to `false`.
 - `enable_resolve_delay` (Boolean) Enable grace period before auto-resolving episode after all alerts resolve. Helps prevent rapid state changes during alert flapping. Defaults to `false`.
 - `enable_time_window` (Boolean) Enable time-based grouping. When enabled, alerts are grouped within the specified time window. When disabled, all matching alerts are grouped into a single ongoing episode regardless of time. Defaults to `false`.
@@ -54,6 +55,7 @@ resource "oneuptime_alert_grouping_rule" "example" {
 - `inactivity_timeout_minutes` (Number) Time in minutes after which an inactive episode will be auto-resolved. Defaults to `60`.
 - `is_enabled` (Boolean) Whether this rule is enabled. Defaults to `true`.
 - `match_criteria` (String) JSON object defining the criteria for matching alerts to this rule. A JSON value: write it with `jsonencode()`.
+- `minimum_alert_count` (Number) How many matching alerts of the same group must be ongoing before the rule opens an episode for them, while Enable Minimum Alert Count is on. A whole number from 1 to 100; 1 opens an episode for the first matching alert. Defaults to `3`.
 - `monitor_description_pattern` (String) Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.
 - `monitor_labels` (Set of String) Only group alerts from monitors that have at least one of these labels. Leave empty to match alerts regardless of monitor labels. IDs of `oneuptime_label` resources.
 - `monitor_name_pattern` (String) Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.

@@ -50,6 +50,16 @@ type TelemetryIngestionKeyResourceModel struct {
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     ExpiresAt RFC3339Value `tfsdk:"expires_at"`
     RequestsPerMinuteLimit types.Number `tfsdk:"requests_per_minute_limit"`
+    LogsDailyIngestionBudgetInGb types.Number `tfsdk:"logs_daily_ingestion_budget_in_gb"`
+    TracesDailyIngestionBudgetInGb types.Number `tfsdk:"traces_daily_ingestion_budget_in_gb"`
+    MetricsDailyIngestionBudgetInGb types.Number `tfsdk:"metrics_daily_ingestion_budget_in_gb"`
+    ProfilesDailyIngestionBudgetInGb types.Number `tfsdk:"profiles_daily_ingestion_budget_in_gb"`
+    SecurityEventsDailyIngestionBudgetInGb types.Number `tfsdk:"security_events_daily_ingestion_budget_in_gb"`
+    LogsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"logs_ingestion_rate_limit_in_mb_per_second"`
+    TracesIngestionRateLimitInMbPerSecond types.Number `tfsdk:"traces_ingestion_rate_limit_in_mb_per_second"`
+    MetricsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"metrics_ingestion_rate_limit_in_mb_per_second"`
+    ProfilesIngestionRateLimitInMbPerSecond types.Number `tfsdk:"profiles_ingestion_rate_limit_in_mb_per_second"`
+    SecurityEventsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"security_events_ingestion_rate_limit_in_mb_per_second"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -151,6 +161,96 @@ func (r *TelemetryIngestionKeyResource) schemaDefinition() schema.Schema {
             },
             "requests_per_minute_limit": schema.NumberAttribute{
                 MarkdownDescription: "Maximum ingest requests per minute accepted with this key. Leave empty to use the shipped default for a Browser key, and to leave a Server key unlimited. The limit is per key, across every client using it, so it has to clear your whole fleet - see DEFAULT_BROWSER_KEY_REQUESTS_PER_MINUTE for the default and the reasoning behind its size.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "logs_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "The most logs accepted with this key in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. At most the project's own budget. Empty: no budget of the key's own (the project's still applies).",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "traces_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "The most traces accepted with this key in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. At most the project's own budget. Empty: no budget of the key's own (the project's still applies).",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "metrics_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "The most metrics accepted with this key in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. At most the project's own budget. Empty: no budget of the key's own (the project's still applies).",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "profiles_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "The most profiles accepted with this key in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. At most the project's own budget. Empty: no budget of the key's own (the project's still applies).",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "security_events_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "The most security events accepted with this key in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. At most the project's own budget. Empty: no budget of the key's own (the project's still applies).",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "logs_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "The fastest logs may be sent with this key, in MB per second; faster requests are answered 429 with Retry-After. At most the project's own limit. Empty: no limit of the key's own.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "traces_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "The fastest traces may be sent with this key, in MB per second; faster requests are answered 429 with Retry-After. At most the project's own limit. Empty: no limit of the key's own.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "metrics_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "The fastest metrics may be sent with this key, in MB per second; faster requests are answered 429 with Retry-After. At most the project's own limit. Empty: no limit of the key's own.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "profiles_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "The fastest profiles may be sent with this key, in MB per second; faster requests are answered 429 with Retry-After. At most the project's own limit. Empty: no limit of the key's own.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "security_events_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "The fastest security events may be sent with this key, in MB per second; faster requests are answered 429 with Retry-After. At most the project's own limit. Empty: no limit of the key's own.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -276,6 +376,36 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
     if !data.RequestsPerMinuteLimit.IsNull() && !data.RequestsPerMinuteLimit.IsUnknown() {
         requestDataMap["requestsPerMinuteLimit"] = r.bigFloatToFloat64(data.RequestsPerMinuteLimit.ValueBigFloat())
     }
+    if !data.LogsDailyIngestionBudgetInGb.IsNull() && !data.LogsDailyIngestionBudgetInGb.IsUnknown() {
+        requestDataMap["logsDailyIngestionBudgetInGB"] = r.bigFloatToFloat64(data.LogsDailyIngestionBudgetInGb.ValueBigFloat())
+    }
+    if !data.TracesDailyIngestionBudgetInGb.IsNull() && !data.TracesDailyIngestionBudgetInGb.IsUnknown() {
+        requestDataMap["tracesDailyIngestionBudgetInGB"] = r.bigFloatToFloat64(data.TracesDailyIngestionBudgetInGb.ValueBigFloat())
+    }
+    if !data.MetricsDailyIngestionBudgetInGb.IsNull() && !data.MetricsDailyIngestionBudgetInGb.IsUnknown() {
+        requestDataMap["metricsDailyIngestionBudgetInGB"] = r.bigFloatToFloat64(data.MetricsDailyIngestionBudgetInGb.ValueBigFloat())
+    }
+    if !data.ProfilesDailyIngestionBudgetInGb.IsNull() && !data.ProfilesDailyIngestionBudgetInGb.IsUnknown() {
+        requestDataMap["profilesDailyIngestionBudgetInGB"] = r.bigFloatToFloat64(data.ProfilesDailyIngestionBudgetInGb.ValueBigFloat())
+    }
+    if !data.SecurityEventsDailyIngestionBudgetInGb.IsNull() && !data.SecurityEventsDailyIngestionBudgetInGb.IsUnknown() {
+        requestDataMap["securityEventsDailyIngestionBudgetInGB"] = r.bigFloatToFloat64(data.SecurityEventsDailyIngestionBudgetInGb.ValueBigFloat())
+    }
+    if !data.LogsIngestionRateLimitInMbPerSecond.IsNull() && !data.LogsIngestionRateLimitInMbPerSecond.IsUnknown() {
+        requestDataMap["logsIngestionRateLimitInMBPerSecond"] = r.bigFloatToFloat64(data.LogsIngestionRateLimitInMbPerSecond.ValueBigFloat())
+    }
+    if !data.TracesIngestionRateLimitInMbPerSecond.IsNull() && !data.TracesIngestionRateLimitInMbPerSecond.IsUnknown() {
+        requestDataMap["tracesIngestionRateLimitInMBPerSecond"] = r.bigFloatToFloat64(data.TracesIngestionRateLimitInMbPerSecond.ValueBigFloat())
+    }
+    if !data.MetricsIngestionRateLimitInMbPerSecond.IsNull() && !data.MetricsIngestionRateLimitInMbPerSecond.IsUnknown() {
+        requestDataMap["metricsIngestionRateLimitInMBPerSecond"] = r.bigFloatToFloat64(data.MetricsIngestionRateLimitInMbPerSecond.ValueBigFloat())
+    }
+    if !data.ProfilesIngestionRateLimitInMbPerSecond.IsNull() && !data.ProfilesIngestionRateLimitInMbPerSecond.IsUnknown() {
+        requestDataMap["profilesIngestionRateLimitInMBPerSecond"] = r.bigFloatToFloat64(data.ProfilesIngestionRateLimitInMbPerSecond.ValueBigFloat())
+    }
+    if !data.SecurityEventsIngestionRateLimitInMbPerSecond.IsNull() && !data.SecurityEventsIngestionRateLimitInMbPerSecond.IsUnknown() {
+        requestDataMap["securityEventsIngestionRateLimitInMBPerSecond"] = r.bigFloatToFloat64(data.SecurityEventsIngestionRateLimitInMbPerSecond.ValueBigFloat())
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/telemetry-ingestion-key", telemetryIngestionKeyRequest)
@@ -330,6 +460,16 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
         "isEnabled": true,
         "expiresAt": true,
         "requestsPerMinuteLimit": true,
+        "logsDailyIngestionBudgetInGB": true,
+        "tracesDailyIngestionBudgetInGB": true,
+        "metricsDailyIngestionBudgetInGB": true,
+        "profilesDailyIngestionBudgetInGB": true,
+        "securityEventsDailyIngestionBudgetInGB": true,
+        "logsIngestionRateLimitInMBPerSecond": true,
+        "tracesIngestionRateLimitInMBPerSecond": true,
+        "metricsIngestionRateLimitInMBPerSecond": true,
+        "profilesIngestionRateLimitInMBPerSecond": true,
+        "securityEventsIngestionRateLimitInMBPerSecond": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -410,6 +550,13 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -443,6 +590,13 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -484,6 +638,13 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
         } else {
             data.KeyType = types.StringNull()
         }
+    } else if arr, ok := dataMap["keyType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.KeyType = types.StringValue(string(jsonBytes))
+        } else {
+            data.KeyType = types.StringNull()
+        }
     } else if val, ok := dataMap["keyType"].(string); ok {
         data.KeyType = types.StringValue(val)
     } else {
@@ -517,6 +678,13 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AllowedOrigins = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["allowedOrigins"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.AllowedOrigins = NewJSONSubsetNull()
@@ -558,6 +726,13 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
         } else {
             data.PinnedServiceName = types.StringNull()
         }
+    } else if arr, ok := dataMap["pinnedServiceName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PinnedServiceName = types.StringValue(string(jsonBytes))
+        } else {
+            data.PinnedServiceName = types.StringNull()
+        }
     } else if val, ok := dataMap["pinnedServiceName"].(string); ok {
         data.PinnedServiceName = types.StringValue(val)
     } else {
@@ -578,6 +753,16 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
         data.ExpiresAt = NewRFC3339Null()
     }
     data.RequestsPerMinuteLimit = numberFromAPI(data.RequestsPerMinuteLimit, dataMap["requestsPerMinuteLimit"])
+    data.LogsDailyIngestionBudgetInGb = numberFromAPI(data.LogsDailyIngestionBudgetInGb, dataMap["logsDailyIngestionBudgetInGB"])
+    data.TracesDailyIngestionBudgetInGb = numberFromAPI(data.TracesDailyIngestionBudgetInGb, dataMap["tracesDailyIngestionBudgetInGB"])
+    data.MetricsDailyIngestionBudgetInGb = numberFromAPI(data.MetricsDailyIngestionBudgetInGb, dataMap["metricsDailyIngestionBudgetInGB"])
+    data.ProfilesDailyIngestionBudgetInGb = numberFromAPI(data.ProfilesDailyIngestionBudgetInGb, dataMap["profilesDailyIngestionBudgetInGB"])
+    data.SecurityEventsDailyIngestionBudgetInGb = numberFromAPI(data.SecurityEventsDailyIngestionBudgetInGb, dataMap["securityEventsDailyIngestionBudgetInGB"])
+    data.LogsIngestionRateLimitInMbPerSecond = numberFromAPI(data.LogsIngestionRateLimitInMbPerSecond, dataMap["logsIngestionRateLimitInMBPerSecond"])
+    data.TracesIngestionRateLimitInMbPerSecond = numberFromAPI(data.TracesIngestionRateLimitInMbPerSecond, dataMap["tracesIngestionRateLimitInMBPerSecond"])
+    data.MetricsIngestionRateLimitInMbPerSecond = numberFromAPI(data.MetricsIngestionRateLimitInMbPerSecond, dataMap["metricsIngestionRateLimitInMBPerSecond"])
+    data.ProfilesIngestionRateLimitInMbPerSecond = numberFromAPI(data.ProfilesIngestionRateLimitInMbPerSecond, dataMap["profilesIngestionRateLimitInMBPerSecond"])
+    data.SecurityEventsIngestionRateLimitInMbPerSecond = numberFromAPI(data.SecurityEventsIngestionRateLimitInMbPerSecond, dataMap["securityEventsIngestionRateLimitInMBPerSecond"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -632,6 +817,13 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -665,6 +857,13 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecretKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["secretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SecretKey = types.StringValue(string(jsonBytes))
         } else {
             data.SecretKey = types.StringNull()
@@ -727,6 +926,16 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
         "isEnabled": true,
         "expiresAt": true,
         "requestsPerMinuteLimit": true,
+        "logsDailyIngestionBudgetInGB": true,
+        "tracesDailyIngestionBudgetInGB": true,
+        "metricsDailyIngestionBudgetInGB": true,
+        "profilesDailyIngestionBudgetInGB": true,
+        "securityEventsDailyIngestionBudgetInGB": true,
+        "logsIngestionRateLimitInMBPerSecond": true,
+        "tracesIngestionRateLimitInMBPerSecond": true,
+        "metricsIngestionRateLimitInMBPerSecond": true,
+        "profilesIngestionRateLimitInMBPerSecond": true,
+        "securityEventsIngestionRateLimitInMBPerSecond": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -808,6 +1017,13 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -841,6 +1057,13 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -882,6 +1105,13 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
         } else {
             data.KeyType = types.StringNull()
         }
+    } else if arr, ok := dataMap["keyType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.KeyType = types.StringValue(string(jsonBytes))
+        } else {
+            data.KeyType = types.StringNull()
+        }
     } else if val, ok := dataMap["keyType"].(string); ok {
         data.KeyType = types.StringValue(val)
     } else {
@@ -915,6 +1145,13 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AllowedOrigins = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["allowedOrigins"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.AllowedOrigins = NewJSONSubsetNull()
@@ -956,6 +1193,13 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
         } else {
             data.PinnedServiceName = types.StringNull()
         }
+    } else if arr, ok := dataMap["pinnedServiceName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PinnedServiceName = types.StringValue(string(jsonBytes))
+        } else {
+            data.PinnedServiceName = types.StringNull()
+        }
     } else if val, ok := dataMap["pinnedServiceName"].(string); ok {
         data.PinnedServiceName = types.StringValue(val)
     } else {
@@ -976,6 +1220,16 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
         data.ExpiresAt = NewRFC3339Null()
     }
     data.RequestsPerMinuteLimit = numberFromAPI(data.RequestsPerMinuteLimit, dataMap["requestsPerMinuteLimit"])
+    data.LogsDailyIngestionBudgetInGb = numberFromAPI(data.LogsDailyIngestionBudgetInGb, dataMap["logsDailyIngestionBudgetInGB"])
+    data.TracesDailyIngestionBudgetInGb = numberFromAPI(data.TracesDailyIngestionBudgetInGb, dataMap["tracesDailyIngestionBudgetInGB"])
+    data.MetricsDailyIngestionBudgetInGb = numberFromAPI(data.MetricsDailyIngestionBudgetInGb, dataMap["metricsDailyIngestionBudgetInGB"])
+    data.ProfilesDailyIngestionBudgetInGb = numberFromAPI(data.ProfilesDailyIngestionBudgetInGb, dataMap["profilesDailyIngestionBudgetInGB"])
+    data.SecurityEventsDailyIngestionBudgetInGb = numberFromAPI(data.SecurityEventsDailyIngestionBudgetInGb, dataMap["securityEventsDailyIngestionBudgetInGB"])
+    data.LogsIngestionRateLimitInMbPerSecond = numberFromAPI(data.LogsIngestionRateLimitInMbPerSecond, dataMap["logsIngestionRateLimitInMBPerSecond"])
+    data.TracesIngestionRateLimitInMbPerSecond = numberFromAPI(data.TracesIngestionRateLimitInMbPerSecond, dataMap["tracesIngestionRateLimitInMBPerSecond"])
+    data.MetricsIngestionRateLimitInMbPerSecond = numberFromAPI(data.MetricsIngestionRateLimitInMbPerSecond, dataMap["metricsIngestionRateLimitInMBPerSecond"])
+    data.ProfilesIngestionRateLimitInMbPerSecond = numberFromAPI(data.ProfilesIngestionRateLimitInMbPerSecond, dataMap["profilesIngestionRateLimitInMBPerSecond"])
+    data.SecurityEventsIngestionRateLimitInMbPerSecond = numberFromAPI(data.SecurityEventsIngestionRateLimitInMbPerSecond, dataMap["securityEventsIngestionRateLimitInMBPerSecond"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1030,6 +1284,13 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -1063,6 +1324,13 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecretKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["secretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SecretKey = types.StringValue(string(jsonBytes))
         } else {
             data.SecretKey = types.StringNull()
@@ -1157,6 +1425,36 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
     if !data.RequestsPerMinuteLimit.IsUnknown() && !state.RequestsPerMinuteLimit.IsUnknown() && !data.RequestsPerMinuteLimit.Equal(state.RequestsPerMinuteLimit) {
         requestDataMap["requestsPerMinuteLimit"] = r.bigFloatToFloat64(data.RequestsPerMinuteLimit.ValueBigFloat())
     }
+    if !data.LogsDailyIngestionBudgetInGb.IsUnknown() && !state.LogsDailyIngestionBudgetInGb.IsUnknown() && !data.LogsDailyIngestionBudgetInGb.Equal(state.LogsDailyIngestionBudgetInGb) {
+        requestDataMap["logsDailyIngestionBudgetInGB"] = r.bigFloatToFloat64(data.LogsDailyIngestionBudgetInGb.ValueBigFloat())
+    }
+    if !data.TracesDailyIngestionBudgetInGb.IsUnknown() && !state.TracesDailyIngestionBudgetInGb.IsUnknown() && !data.TracesDailyIngestionBudgetInGb.Equal(state.TracesDailyIngestionBudgetInGb) {
+        requestDataMap["tracesDailyIngestionBudgetInGB"] = r.bigFloatToFloat64(data.TracesDailyIngestionBudgetInGb.ValueBigFloat())
+    }
+    if !data.MetricsDailyIngestionBudgetInGb.IsUnknown() && !state.MetricsDailyIngestionBudgetInGb.IsUnknown() && !data.MetricsDailyIngestionBudgetInGb.Equal(state.MetricsDailyIngestionBudgetInGb) {
+        requestDataMap["metricsDailyIngestionBudgetInGB"] = r.bigFloatToFloat64(data.MetricsDailyIngestionBudgetInGb.ValueBigFloat())
+    }
+    if !data.ProfilesDailyIngestionBudgetInGb.IsUnknown() && !state.ProfilesDailyIngestionBudgetInGb.IsUnknown() && !data.ProfilesDailyIngestionBudgetInGb.Equal(state.ProfilesDailyIngestionBudgetInGb) {
+        requestDataMap["profilesDailyIngestionBudgetInGB"] = r.bigFloatToFloat64(data.ProfilesDailyIngestionBudgetInGb.ValueBigFloat())
+    }
+    if !data.SecurityEventsDailyIngestionBudgetInGb.IsUnknown() && !state.SecurityEventsDailyIngestionBudgetInGb.IsUnknown() && !data.SecurityEventsDailyIngestionBudgetInGb.Equal(state.SecurityEventsDailyIngestionBudgetInGb) {
+        requestDataMap["securityEventsDailyIngestionBudgetInGB"] = r.bigFloatToFloat64(data.SecurityEventsDailyIngestionBudgetInGb.ValueBigFloat())
+    }
+    if !data.LogsIngestionRateLimitInMbPerSecond.IsUnknown() && !state.LogsIngestionRateLimitInMbPerSecond.IsUnknown() && !data.LogsIngestionRateLimitInMbPerSecond.Equal(state.LogsIngestionRateLimitInMbPerSecond) {
+        requestDataMap["logsIngestionRateLimitInMBPerSecond"] = r.bigFloatToFloat64(data.LogsIngestionRateLimitInMbPerSecond.ValueBigFloat())
+    }
+    if !data.TracesIngestionRateLimitInMbPerSecond.IsUnknown() && !state.TracesIngestionRateLimitInMbPerSecond.IsUnknown() && !data.TracesIngestionRateLimitInMbPerSecond.Equal(state.TracesIngestionRateLimitInMbPerSecond) {
+        requestDataMap["tracesIngestionRateLimitInMBPerSecond"] = r.bigFloatToFloat64(data.TracesIngestionRateLimitInMbPerSecond.ValueBigFloat())
+    }
+    if !data.MetricsIngestionRateLimitInMbPerSecond.IsUnknown() && !state.MetricsIngestionRateLimitInMbPerSecond.IsUnknown() && !data.MetricsIngestionRateLimitInMbPerSecond.Equal(state.MetricsIngestionRateLimitInMbPerSecond) {
+        requestDataMap["metricsIngestionRateLimitInMBPerSecond"] = r.bigFloatToFloat64(data.MetricsIngestionRateLimitInMbPerSecond.ValueBigFloat())
+    }
+    if !data.ProfilesIngestionRateLimitInMbPerSecond.IsUnknown() && !state.ProfilesIngestionRateLimitInMbPerSecond.IsUnknown() && !data.ProfilesIngestionRateLimitInMbPerSecond.Equal(state.ProfilesIngestionRateLimitInMbPerSecond) {
+        requestDataMap["profilesIngestionRateLimitInMBPerSecond"] = r.bigFloatToFloat64(data.ProfilesIngestionRateLimitInMbPerSecond.ValueBigFloat())
+    }
+    if !data.SecurityEventsIngestionRateLimitInMbPerSecond.IsUnknown() && !state.SecurityEventsIngestionRateLimitInMbPerSecond.IsUnknown() && !data.SecurityEventsIngestionRateLimitInMbPerSecond.Equal(state.SecurityEventsIngestionRateLimitInMbPerSecond) {
+        requestDataMap["securityEventsIngestionRateLimitInMBPerSecond"] = r.bigFloatToFloat64(data.SecurityEventsIngestionRateLimitInMbPerSecond.ValueBigFloat())
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -1189,6 +1487,16 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
         "isEnabled": true,
         "expiresAt": true,
         "requestsPerMinuteLimit": true,
+        "logsDailyIngestionBudgetInGB": true,
+        "tracesDailyIngestionBudgetInGB": true,
+        "metricsDailyIngestionBudgetInGB": true,
+        "profilesDailyIngestionBudgetInGB": true,
+        "securityEventsDailyIngestionBudgetInGB": true,
+        "logsIngestionRateLimitInMBPerSecond": true,
+        "tracesIngestionRateLimitInMBPerSecond": true,
+        "metricsIngestionRateLimitInMBPerSecond": true,
+        "profilesIngestionRateLimitInMBPerSecond": true,
+        "securityEventsIngestionRateLimitInMBPerSecond": true,
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
@@ -1264,6 +1572,13 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1297,6 +1612,13 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1338,6 +1660,13 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
         } else {
             data.KeyType = types.StringNull()
         }
+    } else if arr, ok := dataMap["keyType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.KeyType = types.StringValue(string(jsonBytes))
+        } else {
+            data.KeyType = types.StringNull()
+        }
     } else if val, ok := dataMap["keyType"].(string); ok {
         data.KeyType = types.StringValue(val)
     } else {
@@ -1371,6 +1700,13 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AllowedOrigins = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["allowedOrigins"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.AllowedOrigins = NewJSONSubsetNull()
@@ -1412,6 +1748,13 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
         } else {
             data.PinnedServiceName = types.StringNull()
         }
+    } else if arr, ok := dataMap["pinnedServiceName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PinnedServiceName = types.StringValue(string(jsonBytes))
+        } else {
+            data.PinnedServiceName = types.StringNull()
+        }
     } else if val, ok := dataMap["pinnedServiceName"].(string); ok {
         data.PinnedServiceName = types.StringValue(val)
     } else {
@@ -1432,6 +1775,16 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
         data.ExpiresAt = NewRFC3339Null()
     }
     data.RequestsPerMinuteLimit = numberFromAPI(data.RequestsPerMinuteLimit, dataMap["requestsPerMinuteLimit"])
+    data.LogsDailyIngestionBudgetInGb = numberFromAPI(data.LogsDailyIngestionBudgetInGb, dataMap["logsDailyIngestionBudgetInGB"])
+    data.TracesDailyIngestionBudgetInGb = numberFromAPI(data.TracesDailyIngestionBudgetInGb, dataMap["tracesDailyIngestionBudgetInGB"])
+    data.MetricsDailyIngestionBudgetInGb = numberFromAPI(data.MetricsDailyIngestionBudgetInGb, dataMap["metricsDailyIngestionBudgetInGB"])
+    data.ProfilesDailyIngestionBudgetInGb = numberFromAPI(data.ProfilesDailyIngestionBudgetInGb, dataMap["profilesDailyIngestionBudgetInGB"])
+    data.SecurityEventsDailyIngestionBudgetInGb = numberFromAPI(data.SecurityEventsDailyIngestionBudgetInGb, dataMap["securityEventsDailyIngestionBudgetInGB"])
+    data.LogsIngestionRateLimitInMbPerSecond = numberFromAPI(data.LogsIngestionRateLimitInMbPerSecond, dataMap["logsIngestionRateLimitInMBPerSecond"])
+    data.TracesIngestionRateLimitInMbPerSecond = numberFromAPI(data.TracesIngestionRateLimitInMbPerSecond, dataMap["tracesIngestionRateLimitInMBPerSecond"])
+    data.MetricsIngestionRateLimitInMbPerSecond = numberFromAPI(data.MetricsIngestionRateLimitInMbPerSecond, dataMap["metricsIngestionRateLimitInMBPerSecond"])
+    data.ProfilesIngestionRateLimitInMbPerSecond = numberFromAPI(data.ProfilesIngestionRateLimitInMbPerSecond, dataMap["profilesIngestionRateLimitInMBPerSecond"])
+    data.SecurityEventsIngestionRateLimitInMbPerSecond = numberFromAPI(data.SecurityEventsIngestionRateLimitInMbPerSecond, dataMap["securityEventsIngestionRateLimitInMBPerSecond"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1486,6 +1839,13 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -1519,6 +1879,13 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecretKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["secretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SecretKey = types.StringValue(string(jsonBytes))
         } else {
             data.SecretKey = types.StringNull()
@@ -1622,6 +1989,36 @@ func (r *TelemetryIngestionKeyResource) keepPlannedValues(data *TelemetryIngesti
     }
     if config.RequestsPerMinuteLimit.IsNull() && !plan.RequestsPerMinuteLimit.IsUnknown() {
         data.RequestsPerMinuteLimit = plan.RequestsPerMinuteLimit
+    }
+    if config.LogsDailyIngestionBudgetInGb.IsNull() && !plan.LogsDailyIngestionBudgetInGb.IsUnknown() {
+        data.LogsDailyIngestionBudgetInGb = plan.LogsDailyIngestionBudgetInGb
+    }
+    if config.TracesDailyIngestionBudgetInGb.IsNull() && !plan.TracesDailyIngestionBudgetInGb.IsUnknown() {
+        data.TracesDailyIngestionBudgetInGb = plan.TracesDailyIngestionBudgetInGb
+    }
+    if config.MetricsDailyIngestionBudgetInGb.IsNull() && !plan.MetricsDailyIngestionBudgetInGb.IsUnknown() {
+        data.MetricsDailyIngestionBudgetInGb = plan.MetricsDailyIngestionBudgetInGb
+    }
+    if config.ProfilesDailyIngestionBudgetInGb.IsNull() && !plan.ProfilesDailyIngestionBudgetInGb.IsUnknown() {
+        data.ProfilesDailyIngestionBudgetInGb = plan.ProfilesDailyIngestionBudgetInGb
+    }
+    if config.SecurityEventsDailyIngestionBudgetInGb.IsNull() && !plan.SecurityEventsDailyIngestionBudgetInGb.IsUnknown() {
+        data.SecurityEventsDailyIngestionBudgetInGb = plan.SecurityEventsDailyIngestionBudgetInGb
+    }
+    if config.LogsIngestionRateLimitInMbPerSecond.IsNull() && !plan.LogsIngestionRateLimitInMbPerSecond.IsUnknown() {
+        data.LogsIngestionRateLimitInMbPerSecond = plan.LogsIngestionRateLimitInMbPerSecond
+    }
+    if config.TracesIngestionRateLimitInMbPerSecond.IsNull() && !plan.TracesIngestionRateLimitInMbPerSecond.IsUnknown() {
+        data.TracesIngestionRateLimitInMbPerSecond = plan.TracesIngestionRateLimitInMbPerSecond
+    }
+    if config.MetricsIngestionRateLimitInMbPerSecond.IsNull() && !plan.MetricsIngestionRateLimitInMbPerSecond.IsUnknown() {
+        data.MetricsIngestionRateLimitInMbPerSecond = plan.MetricsIngestionRateLimitInMbPerSecond
+    }
+    if config.ProfilesIngestionRateLimitInMbPerSecond.IsNull() && !plan.ProfilesIngestionRateLimitInMbPerSecond.IsUnknown() {
+        data.ProfilesIngestionRateLimitInMbPerSecond = plan.ProfilesIngestionRateLimitInMbPerSecond
+    }
+    if config.SecurityEventsIngestionRateLimitInMbPerSecond.IsNull() && !plan.SecurityEventsIngestionRateLimitInMbPerSecond.IsUnknown() {
+        data.SecurityEventsIngestionRateLimitInMbPerSecond = plan.SecurityEventsIngestionRateLimitInMbPerSecond
     }
 }
 

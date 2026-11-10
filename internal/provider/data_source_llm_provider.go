@@ -42,6 +42,7 @@ type LlmProviderDataSourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsDefault types.Bool `tfsdk:"is_default"`
     CostPerMillionTokensInUsdCents types.Number `tfsdk:"cost_per_million_tokens_in_usd_cents"`
+    RequestTimeoutInSeconds types.Number `tfsdk:"request_timeout_in_seconds"`
 }
 
 func (d *LlmProviderDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -129,6 +130,11 @@ func (d *LlmProviderDataSource) Schema(ctx context.Context, req datasource.Schem
                 Optional: true,
                 Computed: true,
             },
+            "request_timeout_in_seconds": schema.NumberAttribute{
+                MarkdownDescription: "How long to wait for the provider to answer one request, in seconds (10 to 3600). Leave empty for the default: 120 seconds, or 300 for Ollama. Raise it for a slow or self-hosted model.",
+                Optional: true,
+                Computed: true,
+            },
         },
     }
 }
@@ -208,6 +214,10 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         filters["costPerMillionTokensInUSDCents"] = lookupNumber(data.CostPerMillionTokensInUsdCents)
         filterNames = append(filterNames, "cost_per_million_tokens_in_usd_cents = "+data.CostPerMillionTokensInUsdCents.ValueBigFloat().String())
     }
+    if !data.RequestTimeoutInSeconds.IsNull() && !data.RequestTimeoutInSeconds.IsUnknown() {
+        filters["requestTimeoutInSeconds"] = lookupNumber(data.RequestTimeoutInSeconds)
+        filterNames = append(filterNames, "request_timeout_in_seconds = "+data.RequestTimeoutInSeconds.ValueBigFloat().String())
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -240,6 +250,7 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         "createdByUserId": true,
         "isDefault": true,
         "costPerMillionTokensInUSDCents": true,
+        "requestTimeoutInSeconds": true,
         "_id": true,
     }
 
@@ -313,6 +324,13 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -326,6 +344,13 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -347,6 +372,13 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -360,6 +392,13 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else if val, ok := obj["value"].(float64); ok {
             data.Name = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Name = types.StringValue(string(jsonBytes))
         } else {
             data.Name = types.StringNull()
@@ -381,6 +420,13 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else {
             data.Description = types.StringNull()
         }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
     } else if val, ok := item["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
@@ -394,6 +440,13 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else if val, ok := obj["value"].(float64); ok {
             data.Slug = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
+    } else if arr, ok := item["slug"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Slug = types.StringValue(string(jsonBytes))
         } else {
             data.Slug = types.StringNull()
@@ -415,6 +468,13 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else {
             data.LlmType = types.StringNull()
         }
+    } else if arr, ok := item["llmType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LlmType = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmType = types.StringNull()
+        }
     } else if val, ok := item["llmType"].(string); ok {
         data.LlmType = types.StringValue(val)
     } else {
@@ -428,6 +488,13 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else if val, ok := obj["value"].(float64); ok {
             data.ApiKey = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ApiKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKey = types.StringNull()
+        }
+    } else if arr, ok := item["apiKey"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ApiKey = types.StringValue(string(jsonBytes))
         } else {
             data.ApiKey = types.StringNull()
@@ -449,6 +516,13 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else {
             data.ModelName = types.StringNull()
         }
+    } else if arr, ok := item["modelName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ModelName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ModelName = types.StringNull()
+        }
     } else if val, ok := item["modelName"].(string); ok {
         data.ModelName = types.StringValue(val)
     } else {
@@ -466,6 +540,13 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else {
             data.BaseUrl = types.StringNull()
         }
+    } else if arr, ok := item["baseUrl"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.BaseUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.BaseUrl = types.StringNull()
+        }
     } else if val, ok := item["baseUrl"].(string); ok {
         data.BaseUrl = types.StringValue(val)
     } else {
@@ -479,6 +560,13 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else if val, ok := obj["value"].(float64); ok {
             data.AdditionalParams = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AdditionalParams = types.StringValue(string(jsonBytes))
+        } else {
+            data.AdditionalParams = types.StringNull()
+        }
+    } else if arr, ok := item["additionalParams"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.AdditionalParams = types.StringValue(string(jsonBytes))
         } else {
             data.AdditionalParams = types.StringNull()
@@ -505,6 +593,13 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else {
             data.ProjectId = types.StringNull()
         }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
     } else if val, ok := item["projectId"].(string); ok {
         data.ProjectId = types.StringValue(val)
     } else {
@@ -522,6 +617,13 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := item["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -533,6 +635,7 @@ func (d *LlmProviderDataSource) Read(ctx context.Context, req datasource.ReadReq
         data.IsDefault = types.BoolNull()
     }
     data.CostPerMillionTokensInUsdCents = numberFromAPI(data.CostPerMillionTokensInUsdCents, item["costPerMillionTokensInUSDCents"])
+    data.RequestTimeoutInSeconds = numberFromAPI(data.RequestTimeoutInSeconds, item["requestTimeoutInSeconds"])
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

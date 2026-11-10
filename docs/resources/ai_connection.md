@@ -24,7 +24,7 @@ resource "oneuptime_ai_connection" "example" {
 ### Required
 
 - `name` (String) Friendly name for this connection.
-- `provider_value` (String) What this connection reads, such as 'openai', 'anthropic' or 'claude-enterprise'. Fixed once created. Allowed values: `openai`, `anthropic`, `azure-openai`, `aws-bedrock`, `google-vertex-ai`, `claude-enterprise`, `microsoft-365-copilot`.
+- `provider_value` (String) What this connection reads, such as 'openai', 'anthropic' or 'claude-enterprise'. Fixed once created. Allowed values: `openai`, `anthropic`, `azure-openai`, `aws-bedrock`, `google-vertex-ai`, `cursor`, `claude-enterprise`, `microsoft-365-copilot`.
 - `secrets` (String, Sensitive) The provider's secrets (an admin key, a client secret, a service account key) as a JSON object. Encrypted at rest and never returned by the API.
 
 ### Optional

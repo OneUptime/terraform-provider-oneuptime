@@ -41,6 +41,16 @@ type TelemetryIngestionKeyDataSourceModel struct {
     ExpiresAt types.String `tfsdk:"expires_at"`
     LastUsedAt types.String `tfsdk:"last_used_at"`
     RequestsPerMinuteLimit types.Number `tfsdk:"requests_per_minute_limit"`
+    LogsDailyIngestionBudgetInGb types.Number `tfsdk:"logs_daily_ingestion_budget_in_gb"`
+    TracesDailyIngestionBudgetInGb types.Number `tfsdk:"traces_daily_ingestion_budget_in_gb"`
+    MetricsDailyIngestionBudgetInGb types.Number `tfsdk:"metrics_daily_ingestion_budget_in_gb"`
+    ProfilesDailyIngestionBudgetInGb types.Number `tfsdk:"profiles_daily_ingestion_budget_in_gb"`
+    SecurityEventsDailyIngestionBudgetInGb types.Number `tfsdk:"security_events_daily_ingestion_budget_in_gb"`
+    LogsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"logs_ingestion_rate_limit_in_mb_per_second"`
+    TracesIngestionRateLimitInMbPerSecond types.Number `tfsdk:"traces_ingestion_rate_limit_in_mb_per_second"`
+    MetricsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"metrics_ingestion_rate_limit_in_mb_per_second"`
+    ProfilesIngestionRateLimitInMbPerSecond types.Number `tfsdk:"profiles_ingestion_rate_limit_in_mb_per_second"`
+    SecurityEventsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"security_events_ingestion_rate_limit_in_mb_per_second"`
 }
 
 func (d *TelemetryIngestionKeyDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -122,6 +132,56 @@ func (d *TelemetryIngestionKeyDataSource) Schema(ctx context.Context, req dataso
                 Optional: true,
                 Computed: true,
             },
+            "logs_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "The most logs accepted with this key in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. At most the project's own budget. Empty: no budget of the key's own (the project's still applies).",
+                Optional: true,
+                Computed: true,
+            },
+            "traces_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "The most traces accepted with this key in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. At most the project's own budget. Empty: no budget of the key's own (the project's still applies).",
+                Optional: true,
+                Computed: true,
+            },
+            "metrics_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "The most metrics accepted with this key in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. At most the project's own budget. Empty: no budget of the key's own (the project's still applies).",
+                Optional: true,
+                Computed: true,
+            },
+            "profiles_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "The most profiles accepted with this key in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. At most the project's own budget. Empty: no budget of the key's own (the project's still applies).",
+                Optional: true,
+                Computed: true,
+            },
+            "security_events_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "The most security events accepted with this key in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. At most the project's own budget. Empty: no budget of the key's own (the project's still applies).",
+                Optional: true,
+                Computed: true,
+            },
+            "logs_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "The fastest logs may be sent with this key, in MB per second; faster requests are answered 429 with Retry-After. At most the project's own limit. Empty: no limit of the key's own.",
+                Optional: true,
+                Computed: true,
+            },
+            "traces_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "The fastest traces may be sent with this key, in MB per second; faster requests are answered 429 with Retry-After. At most the project's own limit. Empty: no limit of the key's own.",
+                Optional: true,
+                Computed: true,
+            },
+            "metrics_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "The fastest metrics may be sent with this key, in MB per second; faster requests are answered 429 with Retry-After. At most the project's own limit. Empty: no limit of the key's own.",
+                Optional: true,
+                Computed: true,
+            },
+            "profiles_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "The fastest profiles may be sent with this key, in MB per second; faster requests are answered 429 with Retry-After. At most the project's own limit. Empty: no limit of the key's own.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_events_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "The fastest security events may be sent with this key, in MB per second; faster requests are answered 429 with Retry-After. At most the project's own limit. Empty: no limit of the key's own.",
+                Optional: true,
+                Computed: true,
+            },
         },
     }
 }
@@ -189,6 +249,46 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         filters["requestsPerMinuteLimit"] = lookupNumber(data.RequestsPerMinuteLimit)
         filterNames = append(filterNames, "requests_per_minute_limit = "+data.RequestsPerMinuteLimit.ValueBigFloat().String())
     }
+    if !data.LogsDailyIngestionBudgetInGb.IsNull() && !data.LogsDailyIngestionBudgetInGb.IsUnknown() {
+        filters["logsDailyIngestionBudgetInGB"] = lookupNumber(data.LogsDailyIngestionBudgetInGb)
+        filterNames = append(filterNames, "logs_daily_ingestion_budget_in_gb = "+data.LogsDailyIngestionBudgetInGb.ValueBigFloat().String())
+    }
+    if !data.TracesDailyIngestionBudgetInGb.IsNull() && !data.TracesDailyIngestionBudgetInGb.IsUnknown() {
+        filters["tracesDailyIngestionBudgetInGB"] = lookupNumber(data.TracesDailyIngestionBudgetInGb)
+        filterNames = append(filterNames, "traces_daily_ingestion_budget_in_gb = "+data.TracesDailyIngestionBudgetInGb.ValueBigFloat().String())
+    }
+    if !data.MetricsDailyIngestionBudgetInGb.IsNull() && !data.MetricsDailyIngestionBudgetInGb.IsUnknown() {
+        filters["metricsDailyIngestionBudgetInGB"] = lookupNumber(data.MetricsDailyIngestionBudgetInGb)
+        filterNames = append(filterNames, "metrics_daily_ingestion_budget_in_gb = "+data.MetricsDailyIngestionBudgetInGb.ValueBigFloat().String())
+    }
+    if !data.ProfilesDailyIngestionBudgetInGb.IsNull() && !data.ProfilesDailyIngestionBudgetInGb.IsUnknown() {
+        filters["profilesDailyIngestionBudgetInGB"] = lookupNumber(data.ProfilesDailyIngestionBudgetInGb)
+        filterNames = append(filterNames, "profiles_daily_ingestion_budget_in_gb = "+data.ProfilesDailyIngestionBudgetInGb.ValueBigFloat().String())
+    }
+    if !data.SecurityEventsDailyIngestionBudgetInGb.IsNull() && !data.SecurityEventsDailyIngestionBudgetInGb.IsUnknown() {
+        filters["securityEventsDailyIngestionBudgetInGB"] = lookupNumber(data.SecurityEventsDailyIngestionBudgetInGb)
+        filterNames = append(filterNames, "security_events_daily_ingestion_budget_in_gb = "+data.SecurityEventsDailyIngestionBudgetInGb.ValueBigFloat().String())
+    }
+    if !data.LogsIngestionRateLimitInMbPerSecond.IsNull() && !data.LogsIngestionRateLimitInMbPerSecond.IsUnknown() {
+        filters["logsIngestionRateLimitInMBPerSecond"] = lookupNumber(data.LogsIngestionRateLimitInMbPerSecond)
+        filterNames = append(filterNames, "logs_ingestion_rate_limit_in_mb_per_second = "+data.LogsIngestionRateLimitInMbPerSecond.ValueBigFloat().String())
+    }
+    if !data.TracesIngestionRateLimitInMbPerSecond.IsNull() && !data.TracesIngestionRateLimitInMbPerSecond.IsUnknown() {
+        filters["tracesIngestionRateLimitInMBPerSecond"] = lookupNumber(data.TracesIngestionRateLimitInMbPerSecond)
+        filterNames = append(filterNames, "traces_ingestion_rate_limit_in_mb_per_second = "+data.TracesIngestionRateLimitInMbPerSecond.ValueBigFloat().String())
+    }
+    if !data.MetricsIngestionRateLimitInMbPerSecond.IsNull() && !data.MetricsIngestionRateLimitInMbPerSecond.IsUnknown() {
+        filters["metricsIngestionRateLimitInMBPerSecond"] = lookupNumber(data.MetricsIngestionRateLimitInMbPerSecond)
+        filterNames = append(filterNames, "metrics_ingestion_rate_limit_in_mb_per_second = "+data.MetricsIngestionRateLimitInMbPerSecond.ValueBigFloat().String())
+    }
+    if !data.ProfilesIngestionRateLimitInMbPerSecond.IsNull() && !data.ProfilesIngestionRateLimitInMbPerSecond.IsUnknown() {
+        filters["profilesIngestionRateLimitInMBPerSecond"] = lookupNumber(data.ProfilesIngestionRateLimitInMbPerSecond)
+        filterNames = append(filterNames, "profiles_ingestion_rate_limit_in_mb_per_second = "+data.ProfilesIngestionRateLimitInMbPerSecond.ValueBigFloat().String())
+    }
+    if !data.SecurityEventsIngestionRateLimitInMbPerSecond.IsNull() && !data.SecurityEventsIngestionRateLimitInMbPerSecond.IsUnknown() {
+        filters["securityEventsIngestionRateLimitInMBPerSecond"] = lookupNumber(data.SecurityEventsIngestionRateLimitInMbPerSecond)
+        filterNames = append(filterNames, "security_events_ingestion_rate_limit_in_mb_per_second = "+data.SecurityEventsIngestionRateLimitInMbPerSecond.ValueBigFloat().String())
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -220,6 +320,16 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         "expiresAt": true,
         "lastUsedAt": true,
         "requestsPerMinuteLimit": true,
+        "logsDailyIngestionBudgetInGB": true,
+        "tracesDailyIngestionBudgetInGB": true,
+        "metricsDailyIngestionBudgetInGB": true,
+        "profilesDailyIngestionBudgetInGB": true,
+        "securityEventsDailyIngestionBudgetInGB": true,
+        "logsIngestionRateLimitInMBPerSecond": true,
+        "tracesIngestionRateLimitInMBPerSecond": true,
+        "metricsIngestionRateLimitInMBPerSecond": true,
+        "profilesIngestionRateLimitInMBPerSecond": true,
+        "securityEventsIngestionRateLimitInMBPerSecond": true,
         "_id": true,
     }
 
@@ -293,6 +403,13 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -306,6 +423,13 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -327,6 +451,13 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -340,6 +471,13 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -361,6 +499,13 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := item["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -374,6 +519,13 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         } else if val, ok := obj["value"].(float64); ok {
             data.Description = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -395,6 +547,13 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := item["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -408,6 +567,13 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         } else if val, ok := obj["value"].(float64); ok {
             data.SecretKey = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecretKey = types.StringNull()
+        }
+    } else if arr, ok := item["secretKey"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.SecretKey = types.StringValue(string(jsonBytes))
         } else {
             data.SecretKey = types.StringNull()
@@ -429,6 +595,13 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         } else {
             data.KeyType = types.StringNull()
         }
+    } else if arr, ok := item["keyType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.KeyType = types.StringValue(string(jsonBytes))
+        } else {
+            data.KeyType = types.StringNull()
+        }
     } else if val, ok := item["keyType"].(string); ok {
         data.KeyType = types.StringValue(val)
     } else {
@@ -446,6 +619,13 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         } else {
             data.AllowedOrigins = types.StringNull()
         }
+    } else if arr, ok := item["allowedOrigins"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AllowedOrigins = types.StringValue(string(jsonBytes))
+        } else {
+            data.AllowedOrigins = types.StringNull()
+        }
     } else if val, ok := item["allowedOrigins"].(string); ok {
         data.AllowedOrigins = types.StringValue(val)
     } else {
@@ -459,6 +639,13 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         } else if val, ok := obj["value"].(float64); ok {
             data.PinnedServiceName = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PinnedServiceName = types.StringValue(string(jsonBytes))
+        } else {
+            data.PinnedServiceName = types.StringNull()
+        }
+    } else if arr, ok := item["pinnedServiceName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.PinnedServiceName = types.StringValue(string(jsonBytes))
         } else {
             data.PinnedServiceName = types.StringNull()
@@ -485,6 +672,13 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         } else {
             data.ExpiresAt = types.StringNull()
         }
+    } else if arr, ok := item["expiresAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ExpiresAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExpiresAt = types.StringNull()
+        }
     } else if val, ok := item["expiresAt"].(string); ok {
         data.ExpiresAt = types.StringValue(val)
     } else {
@@ -502,12 +696,29 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         } else {
             data.LastUsedAt = types.StringNull()
         }
+    } else if arr, ok := item["lastUsedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastUsedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastUsedAt = types.StringNull()
+        }
     } else if val, ok := item["lastUsedAt"].(string); ok {
         data.LastUsedAt = types.StringValue(val)
     } else {
         data.LastUsedAt = types.StringNull()
     }
     data.RequestsPerMinuteLimit = numberFromAPI(data.RequestsPerMinuteLimit, item["requestsPerMinuteLimit"])
+    data.LogsDailyIngestionBudgetInGb = numberFromAPI(data.LogsDailyIngestionBudgetInGb, item["logsDailyIngestionBudgetInGB"])
+    data.TracesDailyIngestionBudgetInGb = numberFromAPI(data.TracesDailyIngestionBudgetInGb, item["tracesDailyIngestionBudgetInGB"])
+    data.MetricsDailyIngestionBudgetInGb = numberFromAPI(data.MetricsDailyIngestionBudgetInGb, item["metricsDailyIngestionBudgetInGB"])
+    data.ProfilesDailyIngestionBudgetInGb = numberFromAPI(data.ProfilesDailyIngestionBudgetInGb, item["profilesDailyIngestionBudgetInGB"])
+    data.SecurityEventsDailyIngestionBudgetInGb = numberFromAPI(data.SecurityEventsDailyIngestionBudgetInGb, item["securityEventsDailyIngestionBudgetInGB"])
+    data.LogsIngestionRateLimitInMbPerSecond = numberFromAPI(data.LogsIngestionRateLimitInMbPerSecond, item["logsIngestionRateLimitInMBPerSecond"])
+    data.TracesIngestionRateLimitInMbPerSecond = numberFromAPI(data.TracesIngestionRateLimitInMbPerSecond, item["tracesIngestionRateLimitInMBPerSecond"])
+    data.MetricsIngestionRateLimitInMbPerSecond = numberFromAPI(data.MetricsIngestionRateLimitInMbPerSecond, item["metricsIngestionRateLimitInMBPerSecond"])
+    data.ProfilesIngestionRateLimitInMbPerSecond = numberFromAPI(data.ProfilesIngestionRateLimitInMbPerSecond, item["profilesIngestionRateLimitInMBPerSecond"])
+    data.SecurityEventsIngestionRateLimitInMbPerSecond = numberFromAPI(data.SecurityEventsIngestionRateLimitInMbPerSecond, item["securityEventsIngestionRateLimitInMBPerSecond"])
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

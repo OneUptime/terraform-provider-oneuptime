@@ -365,6 +365,13 @@ func (r *BiToolResource) Create(ctx context.Context, req resource.CreateRequest,
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -402,6 +409,13 @@ func (r *BiToolResource) Create(ctx context.Context, req resource.CreateRequest,
         } else {
             data.Tool = types.StringNull()
         }
+    } else if arr, ok := dataMap["tool"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Tool = types.StringValue(string(jsonBytes))
+        } else {
+            data.Tool = types.StringNull()
+        }
     } else if val, ok := dataMap["tool"].(string); ok {
         data.Tool = types.StringValue(val)
     } else {
@@ -435,6 +449,13 @@ func (r *BiToolResource) Create(ctx context.Context, req resource.CreateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.BaseUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.BaseUrl = types.StringNull()
+        }
+    } else if arr, ok := dataMap["baseUrl"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.BaseUrl = types.StringValue(string(jsonBytes))
         } else {
             data.BaseUrl = types.StringNull()
@@ -512,6 +533,13 @@ func (r *BiToolResource) Create(ctx context.Context, req resource.CreateRequest,
         } else {
             data.LastSyncError = types.StringNull()
         }
+    } else if arr, ok := dataMap["lastSyncError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LastSyncError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSyncError = types.StringNull()
+        }
     } else if val, ok := dataMap["lastSyncError"].(string); ok {
         data.LastSyncError = types.StringValue(val)
     } else {
@@ -547,6 +575,13 @@ func (r *BiToolResource) Create(ctx context.Context, req resource.CreateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -675,6 +710,13 @@ func (r *BiToolResource) Read(ctx context.Context, req resource.ReadRequest, res
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -712,6 +754,13 @@ func (r *BiToolResource) Read(ctx context.Context, req resource.ReadRequest, res
         } else {
             data.Tool = types.StringNull()
         }
+    } else if arr, ok := dataMap["tool"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Tool = types.StringValue(string(jsonBytes))
+        } else {
+            data.Tool = types.StringNull()
+        }
     } else if val, ok := dataMap["tool"].(string); ok {
         data.Tool = types.StringValue(val)
     } else {
@@ -745,6 +794,13 @@ func (r *BiToolResource) Read(ctx context.Context, req resource.ReadRequest, res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.BaseUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.BaseUrl = types.StringNull()
+        }
+    } else if arr, ok := dataMap["baseUrl"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.BaseUrl = types.StringValue(string(jsonBytes))
         } else {
             data.BaseUrl = types.StringNull()
@@ -822,6 +878,13 @@ func (r *BiToolResource) Read(ctx context.Context, req resource.ReadRequest, res
         } else {
             data.LastSyncError = types.StringNull()
         }
+    } else if arr, ok := dataMap["lastSyncError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LastSyncError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSyncError = types.StringNull()
+        }
     } else if val, ok := dataMap["lastSyncError"].(string); ok {
         data.LastSyncError = types.StringValue(val)
     } else {
@@ -857,6 +920,13 @@ func (r *BiToolResource) Read(ctx context.Context, req resource.ReadRequest, res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1026,6 +1096,13 @@ func (r *BiToolResource) Update(ctx context.Context, req resource.UpdateRequest,
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1063,6 +1140,13 @@ func (r *BiToolResource) Update(ctx context.Context, req resource.UpdateRequest,
         } else {
             data.Tool = types.StringNull()
         }
+    } else if arr, ok := dataMap["tool"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Tool = types.StringValue(string(jsonBytes))
+        } else {
+            data.Tool = types.StringNull()
+        }
     } else if val, ok := dataMap["tool"].(string); ok {
         data.Tool = types.StringValue(val)
     } else {
@@ -1096,6 +1180,13 @@ func (r *BiToolResource) Update(ctx context.Context, req resource.UpdateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.BaseUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.BaseUrl = types.StringNull()
+        }
+    } else if arr, ok := dataMap["baseUrl"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.BaseUrl = types.StringValue(string(jsonBytes))
         } else {
             data.BaseUrl = types.StringNull()
@@ -1173,6 +1264,13 @@ func (r *BiToolResource) Update(ctx context.Context, req resource.UpdateRequest,
         } else {
             data.LastSyncError = types.StringNull()
         }
+    } else if arr, ok := dataMap["lastSyncError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LastSyncError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSyncError = types.StringNull()
+        }
     } else if val, ok := dataMap["lastSyncError"].(string); ok {
         data.LastSyncError = types.StringValue(val)
     } else {
@@ -1208,6 +1306,13 @@ func (r *BiToolResource) Update(ctx context.Context, req resource.UpdateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

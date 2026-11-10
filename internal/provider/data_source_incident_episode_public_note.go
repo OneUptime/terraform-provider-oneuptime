@@ -45,6 +45,10 @@ type IncidentEpisodePublicNoteDataSourceModel struct {
     PostedAt types.String `tfsdk:"posted_at"`
     PostedFromSlackMessageId types.String `tfsdk:"posted_from_slack_message_id"`
     SavedFromChatMessage types.String `tfsdk:"saved_from_chat_message"`
+    IsPublished types.Bool `tfsdk:"is_published"`
+    ApprovalStatus types.String `tfsdk:"approval_status"`
+    Approval types.String `tfsdk:"approval"`
+    PendingNote types.String `tfsdk:"pending_note"`
 }
 
 func (d *IncidentEpisodePublicNoteDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -53,7 +57,7 @@ func (d *IncidentEpisodePublicNoteDataSource) Metadata(ctx context.Context, req 
 
 func (d *IncidentEpisodePublicNoteDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage public notes for your incident episode Look up an existing incident episode public note by `id`, or by any of its other arguments (`created_by_user_id`, `incident_episode_id`, `is_owner_notified`, ...): each one set must match, and exactly one incident episode public note may match them all.",
+        MarkdownDescription: "Manage public notes for your incident episode Look up an existing incident episode public note by `id`, or by any of its other arguments (`approval_status`, `created_by_user_id`, `incident_episode_id`, ...): each one set must match, and exactly one incident episode public note may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -138,6 +142,25 @@ func (d *IncidentEpisodePublicNoteDataSource) Schema(ctx context.Context, req da
                 MarkdownDescription: "When this note was saved from a Slack or Microsoft Teams message - pinned, or given a note emoji - the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). Written by OneUptime; the note's creator is whoever saved it. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
+            "is_published": schema.BoolAttribute{
+                MarkdownDescription: "Whether this note is published: shown on status pages and sent to subscribers. False while it waits for approval, or after it was rejected, when the project asks for public notes to be approved.",
+                Optional: true,
+                Computed: true,
+            },
+            "approval_status": schema.StringAttribute{
+                MarkdownDescription: "Where this note stands in the project's public note approval: WaitingForApproval, Approved or Rejected. Empty for a note that needed no approval. On a published note, WaitingForApproval or Rejected is about an edit of it (pendingNote).",
+                Optional: true,
+                Computed: true,
+            },
+            "approval": schema.StringAttribute{
+                MarkdownDescription: "This note's approval so far: when it was sent for approval and by whom (submittedAt, submittedByUserId), whether it is an edit of the published note (isEdit), each step's approval (approvals: stepId, userId, at, comment) and a rejection (rejection: userId, at, reason). A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "pending_note": schema.StringAttribute{
+                MarkdownDescription: "An edit of this published note that waits for approval, in markdown. Status pages show the note as it was approved until the edit is approved. Empty when no edit waits.",
+                Optional: true,
+                Computed: true,
+            },
         },
     }
 }
@@ -217,6 +240,18 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         filters["postedFromSlackMessageId"] = data.PostedFromSlackMessageId.ValueString()
         filterNames = append(filterNames, "posted_from_slack_message_id = "+fmt.Sprintf("%q", data.PostedFromSlackMessageId.ValueString()))
     }
+    if !data.IsPublished.IsNull() && !data.IsPublished.IsUnknown() {
+        filters["isPublished"] = data.IsPublished.ValueBool()
+        filterNames = append(filterNames, "is_published = "+fmt.Sprintf("%t", data.IsPublished.ValueBool()))
+    }
+    if !data.ApprovalStatus.IsNull() && !data.ApprovalStatus.IsUnknown() {
+        filters["approvalStatus"] = data.ApprovalStatus.ValueString()
+        filterNames = append(filterNames, "approval_status = "+fmt.Sprintf("%q", data.ApprovalStatus.ValueString()))
+    }
+    if !data.PendingNote.IsNull() && !data.PendingNote.IsUnknown() {
+        filters["pendingNote"] = data.PendingNote.ValueString()
+        filterNames = append(filterNames, "pending_note = "+fmt.Sprintf("%q", data.PendingNote.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -250,6 +285,10 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         "postedAt": true,
         "postedFromSlackMessageId": true,
         "savedFromChatMessage": true,
+        "isPublished": true,
+        "approvalStatus": true,
+        "approval": true,
+        "pendingNote": true,
         "_id": true,
     }
 
@@ -323,6 +362,13 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -336,6 +382,13 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -357,6 +410,13 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -370,6 +430,13 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -391,6 +458,13 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         } else {
             data.IncidentEpisodeId = types.StringNull()
         }
+    } else if arr, ok := item["incidentEpisodeId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentEpisodeId = types.StringNull()
+        }
     } else if val, ok := item["incidentEpisodeId"].(string); ok {
         data.IncidentEpisodeId = types.StringValue(val)
     } else {
@@ -408,6 +482,13 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := item["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -421,6 +502,13 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.Note = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Note = types.StringValue(string(jsonBytes))
+        } else {
+            data.Note = types.StringNull()
+        }
+    } else if arr, ok := item["note"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Note = types.StringValue(string(jsonBytes))
         } else {
             data.Note = types.StringNull()
@@ -466,6 +554,13 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         } else {
             data.SubscriberNotificationStatusOnNoteCreated = types.StringNull()
         }
+    } else if arr, ok := item["subscriberNotificationStatusOnNoteCreated"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SubscriberNotificationStatusOnNoteCreated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusOnNoteCreated = types.StringNull()
+        }
     } else if val, ok := item["subscriberNotificationStatusOnNoteCreated"].(string); ok {
         data.SubscriberNotificationStatusOnNoteCreated = types.StringValue(val)
     } else {
@@ -479,6 +574,13 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessage = types.StringNull()
+        }
+    } else if arr, ok := item["subscriberNotificationStatusMessage"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
         } else {
             data.SubscriberNotificationStatusMessage = types.StringNull()
@@ -500,6 +602,13 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         } else {
             data.SubscriberNotificationStatusOnNoteUpdated = types.StringNull()
         }
+    } else if arr, ok := item["subscriberNotificationStatusOnNoteUpdated"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SubscriberNotificationStatusOnNoteUpdated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusOnNoteUpdated = types.StringNull()
+        }
     } else if val, ok := item["subscriberNotificationStatusOnNoteUpdated"].(string); ok {
         data.SubscriberNotificationStatusOnNoteUpdated = types.StringValue(val)
     } else {
@@ -513,6 +622,13 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringNull()
+        }
+    } else if arr, ok := item["subscriberNotificationStatusMessageOnNoteUpdated"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringValue(string(jsonBytes))
         } else {
             data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringNull()
@@ -544,6 +660,13 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         } else {
             data.PostedAt = types.StringNull()
         }
+    } else if arr, ok := item["postedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PostedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.PostedAt = types.StringNull()
+        }
     } else if val, ok := item["postedAt"].(string); ok {
         data.PostedAt = types.StringValue(val)
     } else {
@@ -557,6 +680,13 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         } else if val, ok := obj["value"].(float64); ok {
             data.PostedFromSlackMessageId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PostedFromSlackMessageId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PostedFromSlackMessageId = types.StringNull()
+        }
+    } else if arr, ok := item["postedFromSlackMessageId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.PostedFromSlackMessageId = types.StringValue(string(jsonBytes))
         } else {
             data.PostedFromSlackMessageId = types.StringNull()
@@ -578,10 +708,94 @@ func (d *IncidentEpisodePublicNoteDataSource) Read(ctx context.Context, req data
         } else {
             data.SavedFromChatMessage = types.StringNull()
         }
+    } else if arr, ok := item["savedFromChatMessage"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SavedFromChatMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SavedFromChatMessage = types.StringNull()
+        }
     } else if val, ok := item["savedFromChatMessage"].(string); ok {
         data.SavedFromChatMessage = types.StringValue(val)
     } else {
         data.SavedFromChatMessage = types.StringNull()
+    }
+    if val, ok := item["isPublished"].(bool); ok {
+        data.IsPublished = types.BoolValue(val)
+    } else {
+        data.IsPublished = types.BoolNull()
+    }
+    if obj, ok := item["approvalStatus"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ApprovalStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ApprovalStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ApprovalStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ApprovalStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApprovalStatus = types.StringNull()
+        }
+    } else if arr, ok := item["approvalStatus"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ApprovalStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApprovalStatus = types.StringNull()
+        }
+    } else if val, ok := item["approvalStatus"].(string); ok {
+        data.ApprovalStatus = types.StringValue(val)
+    } else {
+        data.ApprovalStatus = types.StringNull()
+    }
+    if obj, ok := item["approval"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Approval = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Approval = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Approval = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Approval = types.StringValue(string(jsonBytes))
+        } else {
+            data.Approval = types.StringNull()
+        }
+    } else if arr, ok := item["approval"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Approval = types.StringValue(string(jsonBytes))
+        } else {
+            data.Approval = types.StringNull()
+        }
+    } else if val, ok := item["approval"].(string); ok {
+        data.Approval = types.StringValue(val)
+    } else {
+        data.Approval = types.StringNull()
+    }
+    if obj, ok := item["pendingNote"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PendingNote = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PendingNote = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PendingNote = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PendingNote = types.StringValue(string(jsonBytes))
+        } else {
+            data.PendingNote = types.StringNull()
+        }
+    } else if arr, ok := item["pendingNote"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PendingNote = types.StringValue(string(jsonBytes))
+        } else {
+            data.PendingNote = types.StringNull()
+        }
+    } else if val, ok := item["pendingNote"].(string); ok {
+        data.PendingNote = types.StringValue(val)
+    } else {
+        data.PendingNote = types.StringNull()
     }
 
     // Write logs using the tflog package

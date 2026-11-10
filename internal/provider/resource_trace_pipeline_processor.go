@@ -361,6 +361,13 @@ func (r *TracePipelineProcessorResource) Create(ctx context.Context, req resourc
         } else {
             data.TracePipelineId = types.StringNull()
         }
+    } else if arr, ok := dataMap["tracePipelineId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TracePipelineId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TracePipelineId = types.StringNull()
+        }
     } else if val, ok := dataMap["tracePipelineId"].(string); ok {
         data.TracePipelineId = types.StringValue(val)
     } else {
@@ -394,6 +401,13 @@ func (r *TracePipelineProcessorResource) Create(ctx context.Context, req resourc
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Name = types.StringValue(string(jsonBytes))
         } else {
             data.Name = types.StringNull()
@@ -435,6 +449,13 @@ func (r *TracePipelineProcessorResource) Create(ctx context.Context, req resourc
         } else {
             data.ProcessorType = types.StringNull()
         }
+    } else if arr, ok := dataMap["processorType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ProcessorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProcessorType = types.StringNull()
+        }
     } else if val, ok := dataMap["processorType"].(string); ok {
         data.ProcessorType = types.StringValue(val)
     } else {
@@ -468,6 +489,13 @@ func (r *TracePipelineProcessorResource) Create(ctx context.Context, req resourc
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Configuration = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Configuration = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["configuration"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Configuration = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Configuration = NewJSONSubsetNull()
@@ -531,6 +559,13 @@ func (r *TracePipelineProcessorResource) Create(ctx context.Context, req resourc
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -659,6 +694,13 @@ func (r *TracePipelineProcessorResource) Read(ctx context.Context, req resource.
         } else {
             data.TracePipelineId = types.StringNull()
         }
+    } else if arr, ok := dataMap["tracePipelineId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TracePipelineId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TracePipelineId = types.StringNull()
+        }
     } else if val, ok := dataMap["tracePipelineId"].(string); ok {
         data.TracePipelineId = types.StringValue(val)
     } else {
@@ -692,6 +734,13 @@ func (r *TracePipelineProcessorResource) Read(ctx context.Context, req resource.
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Name = types.StringValue(string(jsonBytes))
         } else {
             data.Name = types.StringNull()
@@ -733,6 +782,13 @@ func (r *TracePipelineProcessorResource) Read(ctx context.Context, req resource.
         } else {
             data.ProcessorType = types.StringNull()
         }
+    } else if arr, ok := dataMap["processorType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ProcessorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProcessorType = types.StringNull()
+        }
     } else if val, ok := dataMap["processorType"].(string); ok {
         data.ProcessorType = types.StringValue(val)
     } else {
@@ -766,6 +822,13 @@ func (r *TracePipelineProcessorResource) Read(ctx context.Context, req resource.
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Configuration = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Configuration = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["configuration"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Configuration = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Configuration = NewJSONSubsetNull()
@@ -829,6 +892,13 @@ func (r *TracePipelineProcessorResource) Read(ctx context.Context, req resource.
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1009,6 +1079,13 @@ func (r *TracePipelineProcessorResource) Update(ctx context.Context, req resourc
         } else {
             data.TracePipelineId = types.StringNull()
         }
+    } else if arr, ok := dataMap["tracePipelineId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TracePipelineId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TracePipelineId = types.StringNull()
+        }
     } else if val, ok := dataMap["tracePipelineId"].(string); ok {
         data.TracePipelineId = types.StringValue(val)
     } else {
@@ -1042,6 +1119,13 @@ func (r *TracePipelineProcessorResource) Update(ctx context.Context, req resourc
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Name = types.StringValue(string(jsonBytes))
         } else {
             data.Name = types.StringNull()
@@ -1083,6 +1167,13 @@ func (r *TracePipelineProcessorResource) Update(ctx context.Context, req resourc
         } else {
             data.ProcessorType = types.StringNull()
         }
+    } else if arr, ok := dataMap["processorType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ProcessorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProcessorType = types.StringNull()
+        }
     } else if val, ok := dataMap["processorType"].(string); ok {
         data.ProcessorType = types.StringValue(val)
     } else {
@@ -1116,6 +1207,13 @@ func (r *TracePipelineProcessorResource) Update(ctx context.Context, req resourc
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Configuration = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Configuration = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["configuration"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Configuration = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Configuration = NewJSONSubsetNull()
@@ -1179,6 +1277,13 @@ func (r *TracePipelineProcessorResource) Update(ctx context.Context, req resourc
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

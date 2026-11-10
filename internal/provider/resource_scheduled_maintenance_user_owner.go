@@ -340,6 +340,13 @@ func (r *ScheduledMaintenanceUserOwnerResource) Create(ctx context.Context, req 
         } else {
             data.UserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["userId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.UserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserId = types.StringNull()
+        }
     } else if val, ok := dataMap["userId"].(string); ok {
         data.UserId = types.StringValue(val)
     } else {
@@ -373,6 +380,13 @@ func (r *ScheduledMaintenanceUserOwnerResource) Create(ctx context.Context, req 
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ScheduledMaintenanceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduledMaintenanceId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduledMaintenanceId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ScheduledMaintenanceId = types.StringValue(string(jsonBytes))
         } else {
             data.ScheduledMaintenanceId = types.StringNull()
@@ -432,6 +446,13 @@ func (r *ScheduledMaintenanceUserOwnerResource) Create(ctx context.Context, req 
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -564,6 +585,13 @@ func (r *ScheduledMaintenanceUserOwnerResource) Read(ctx context.Context, req re
         } else {
             data.UserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["userId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.UserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserId = types.StringNull()
+        }
     } else if val, ok := dataMap["userId"].(string); ok {
         data.UserId = types.StringValue(val)
     } else {
@@ -597,6 +625,13 @@ func (r *ScheduledMaintenanceUserOwnerResource) Read(ctx context.Context, req re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ScheduledMaintenanceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduledMaintenanceId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduledMaintenanceId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ScheduledMaintenanceId = types.StringValue(string(jsonBytes))
         } else {
             data.ScheduledMaintenanceId = types.StringNull()
@@ -656,6 +691,13 @@ func (r *ScheduledMaintenanceUserOwnerResource) Read(ctx context.Context, req re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -817,6 +859,13 @@ func (r *ScheduledMaintenanceUserOwnerResource) Update(ctx context.Context, req 
         } else {
             data.UserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["userId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.UserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserId = types.StringNull()
+        }
     } else if val, ok := dataMap["userId"].(string); ok {
         data.UserId = types.StringValue(val)
     } else {
@@ -850,6 +899,13 @@ func (r *ScheduledMaintenanceUserOwnerResource) Update(ctx context.Context, req 
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ScheduledMaintenanceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduledMaintenanceId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduledMaintenanceId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ScheduledMaintenanceId = types.StringValue(string(jsonBytes))
         } else {
             data.ScheduledMaintenanceId = types.StringNull()
@@ -909,6 +965,13 @@ func (r *ScheduledMaintenanceUserOwnerResource) Update(ctx context.Context, req 
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

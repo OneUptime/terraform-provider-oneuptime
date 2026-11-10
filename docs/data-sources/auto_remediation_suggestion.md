@@ -36,6 +36,8 @@ data "oneuptime_auto_remediation_suggestion" "by_id" {
 - `auto_resolve_on_recovery` (Boolean) Snapshot of the rule's auto-resolve-on-verified-recovery setting when this suggestion was created.
 - `dismissed_by_user_id` (String) ID of the user who dismissed this suggestion. The ID of a `oneuptime_user` (see the data source).
 - `execution_mode` (String) The rule's execution mode when this suggestion was created (Suggest or FullAuto).
+- `first_approved_by_user_id` (String) ID of the user who gave the first of the two approvals a riskier fix needs. The ID of a `oneuptime_user` (see the data source).
+- `first_approved_from` (String) Where the first of two approvals was given: Dashboard (the AI card), Slack or MicrosoftTeams.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `incident_id` (String) ID of the incident this suggestion remediates. The ID of a `oneuptime_incident`.
 - `kubernetes_cluster_id` (String) ID of the cluster whose AI remediation mode produced this suggestion. The ID of a `oneuptime_kubernetes_cluster`.
@@ -58,6 +60,7 @@ data "oneuptime_auto_remediation_suggestion" "by_id" {
 - `command_plan` (String) The AI-composed command plan for CommandPlan suggestions, including per-command execution results once run. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `dismissed_at` (String) When this suggestion was dismissed.
+- `first_approved_at` (String) When the first of the two approvals a riskier fix needs was given.
 - `mcp_tool_call_plan` (String) For McpToolCalls suggestions: the tool calls OneUptime AI made, or proposes, through the project's external MCP servers, with what each server answered once called. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `runbook_track_record` (String) How the proposed runbook went the last times OneUptime AI ran it for other incidents and alerts, when it was proposed. A JSON value: read it with `jsondecode()`.

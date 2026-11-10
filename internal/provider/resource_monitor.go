@@ -71,6 +71,7 @@ type MonitorResourceModel struct {
     MonitoringInterval types.String `tfsdk:"monitoring_interval"`
     CustomFields JSONSubsetValue `tfsdk:"custom_fields"`
     DisableActiveMonitoring types.Bool `tfsdk:"disable_active_monitoring"`
+    KeepResponseContent types.Bool `tfsdk:"keep_response_content"`
     IncomingRequestMonitorHeartbeatCheckedAt RFC3339Value `tfsdk:"incoming_request_monitor_heartbeat_checked_at"`
     TelemetryMonitorNextMonitorAt RFC3339Value `tfsdk:"telemetry_monitor_next_monitor_at"`
     TelemetryMonitorLastMonitorAt RFC3339Value `tfsdk:"telemetry_monitor_last_monitor_at"`
@@ -377,6 +378,15 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "keep_response_content": schema.BoolAttribute{
+                MarkdownDescription: "Keep the response part that matched, and the response body and headers, in this monitor's logs and on its incidents and alerts. Secrets are masked either way.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "incoming_request_monitor_heartbeat_checked_at": schema.StringAttribute{
                 MarkdownDescription: "This field is for Incoming Request monitor only. When was the last time we checked the heartbeat?",
                 CustomType: RFC3339Type{},
@@ -422,7 +432,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 },
             },
             "incoming_monitor_request": schema.StringAttribute{
-                MarkdownDescription: "Incoming Monitor Request for Incoming Request Monitor. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The latest request this monitor received, as its logs keep it: secrets masked, and no headers or body when it keeps no request content. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -710,6 +720,9 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
     if !data.DisableActiveMonitoring.IsNull() && !data.DisableActiveMonitoring.IsUnknown() {
         requestDataMap["disableActiveMonitoring"] = data.DisableActiveMonitoring.ValueBool()
     }
+    if !data.KeepResponseContent.IsNull() && !data.KeepResponseContent.IsUnknown() {
+        requestDataMap["keepResponseContent"] = data.KeepResponseContent.ValueBool()
+    }
     if !data.IncomingRequestMonitorHeartbeatCheckedAt.IsNull() && !data.IncomingRequestMonitorHeartbeatCheckedAt.IsUnknown() {
         requestDataMap["incomingRequestMonitorHeartbeatCheckedAt"] = data.IncomingRequestMonitorHeartbeatCheckedAt.ValueString()
     }
@@ -804,6 +817,7 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         "monitoringInterval": true,
         "customFields": true,
         "disableActiveMonitoring": true,
+        "keepResponseContent": true,
         "incomingRequestMonitorHeartbeatCheckedAt": true,
         "telemetryMonitorNextMonitorAt": true,
         "telemetryMonitorLastMonitorAt": true,
@@ -906,6 +920,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -939,6 +960,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1527,6 +1555,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.MonitorTemplateId = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitorTemplateId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorTemplateId = types.StringNull()
+        }
     } else if val, ok := dataMap["monitorTemplateId"].(string); ok {
         data.MonitorTemplateId = types.StringValue(val)
     } else {
@@ -1564,6 +1599,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.MonitorType = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitorType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorType = types.StringNull()
+        }
     } else if val, ok := dataMap["monitorType"].(string); ok {
         data.MonitorType = types.StringValue(val)
     } else {
@@ -1597,6 +1639,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CurrentMonitorStatusId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentMonitorStatusId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["currentMonitorStatusId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CurrentMonitorStatusId = types.StringValue(string(jsonBytes))
         } else {
             data.CurrentMonitorStatusId = types.StringNull()
@@ -1643,6 +1692,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.MonitoringInterval = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitoringInterval"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitoringInterval = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitoringInterval = types.StringNull()
+        }
     } else if val, ok := dataMap["monitoringInterval"].(string); ok {
         data.MonitoringInterval = types.StringValue(val)
     } else {
@@ -1680,6 +1736,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.CustomFields = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["customFields"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CustomFields = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["customFields"].(string); ok {
         data.CustomFields = NewJSONSubsetValue(val)
     } else {
@@ -1687,6 +1750,9 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if val, ok := dataMap["disableActiveMonitoring"].(bool); ok {
         data.DisableActiveMonitoring = types.BoolValue(val)
+    }
+    if val, ok := dataMap["keepResponseContent"].(bool); ok {
+        data.KeepResponseContent = types.BoolValue(val)
     }
     if obj, ok := dataMap["incomingRequestMonitorHeartbeatCheckedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1764,6 +1830,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.IncomingMonitorRequest = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["incomingMonitorRequest"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.IncomingMonitorRequest = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["incomingMonitorRequest"].(string); ok {
         data.IncomingMonitorRequest = NewJSONSubsetValue(val)
     } else {
@@ -1797,6 +1870,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ServerMonitorResponse = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ServerMonitorResponse = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["serverMonitorResponse"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ServerMonitorResponse = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.ServerMonitorResponse = NewJSONSubsetNull()
@@ -1835,6 +1915,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncomingEmailCustomLocalPart = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailCustomLocalPart = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incomingEmailCustomLocalPart"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncomingEmailCustomLocalPart = types.StringValue(string(jsonBytes))
         } else {
             data.IncomingEmailCustomLocalPart = types.StringNull()
@@ -1898,6 +1985,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -1931,6 +2025,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1983,6 +2084,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.ArchivedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["archivedByUserId"].(string); ok {
         data.ArchivedByUserId = types.StringValue(val)
     } else {
@@ -2020,6 +2128,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.AutoProvisionedNetworkDeviceId = types.StringNull()
         }
+    } else if arr, ok := dataMap["autoProvisionedNetworkDeviceId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AutoProvisionedNetworkDeviceId = types.StringNull()
+        }
     } else if val, ok := dataMap["autoProvisionedNetworkDeviceId"].(string); ok {
         data.AutoProvisionedNetworkDeviceId = types.StringValue(val)
     } else {
@@ -2053,6 +2168,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.NetworkAlertPolicyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.NetworkAlertPolicyId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["networkAlertPolicyId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.NetworkAlertPolicyId = types.StringValue(string(jsonBytes))
         } else {
             data.NetworkAlertPolicyId = types.StringNull()
@@ -2103,6 +2225,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.ServerMonitorSecretKey = types.StringNull()
         }
+    } else if arr, ok := dataMap["serverMonitorSecretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ServerMonitorSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServerMonitorSecretKey = types.StringNull()
+        }
     } else if val, ok := dataMap["serverMonitorSecretKey"].(string); ok {
         data.ServerMonitorSecretKey = types.StringValue(val)
     } else {
@@ -2140,6 +2269,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.IncomingRequestSecretKey = types.StringNull()
         }
+    } else if arr, ok := dataMap["incomingRequestSecretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncomingRequestSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingRequestSecretKey = types.StringNull()
+        }
     } else if val, ok := dataMap["incomingRequestSecretKey"].(string); ok {
         data.IncomingRequestSecretKey = types.StringValue(val)
     } else {
@@ -2173,6 +2309,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncomingEmailSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailSecretKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incomingEmailSecretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncomingEmailSecretKey = types.StringValue(string(jsonBytes))
         } else {
             data.IncomingEmailSecretKey = types.StringNull()
@@ -2221,6 +2364,13 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncomingEmailMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailMonitorRequest = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["incomingEmailMonitorRequest"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncomingEmailMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.IncomingEmailMonitorRequest = NewJSONSubsetNull()
@@ -2308,6 +2458,7 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         "monitoringInterval": true,
         "customFields": true,
         "disableActiveMonitoring": true,
+        "keepResponseContent": true,
         "incomingRequestMonitorHeartbeatCheckedAt": true,
         "telemetryMonitorNextMonitorAt": true,
         "telemetryMonitorLastMonitorAt": true,
@@ -2411,6 +2562,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -2444,6 +2602,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -3032,6 +3197,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.MonitorTemplateId = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitorTemplateId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorTemplateId = types.StringNull()
+        }
     } else if val, ok := dataMap["monitorTemplateId"].(string); ok {
         data.MonitorTemplateId = types.StringValue(val)
     } else {
@@ -3069,6 +3241,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.MonitorType = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitorType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorType = types.StringNull()
+        }
     } else if val, ok := dataMap["monitorType"].(string); ok {
         data.MonitorType = types.StringValue(val)
     } else {
@@ -3102,6 +3281,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CurrentMonitorStatusId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentMonitorStatusId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["currentMonitorStatusId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CurrentMonitorStatusId = types.StringValue(string(jsonBytes))
         } else {
             data.CurrentMonitorStatusId = types.StringNull()
@@ -3148,6 +3334,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.MonitoringInterval = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitoringInterval"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitoringInterval = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitoringInterval = types.StringNull()
+        }
     } else if val, ok := dataMap["monitoringInterval"].(string); ok {
         data.MonitoringInterval = types.StringValue(val)
     } else {
@@ -3185,6 +3378,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.CustomFields = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["customFields"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CustomFields = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["customFields"].(string); ok {
         data.CustomFields = NewJSONSubsetValue(val)
     } else {
@@ -3192,6 +3392,9 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     if val, ok := dataMap["disableActiveMonitoring"].(bool); ok {
         data.DisableActiveMonitoring = types.BoolValue(val)
+    }
+    if val, ok := dataMap["keepResponseContent"].(bool); ok {
+        data.KeepResponseContent = types.BoolValue(val)
     }
     if obj, ok := dataMap["incomingRequestMonitorHeartbeatCheckedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -3269,6 +3472,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.IncomingMonitorRequest = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["incomingMonitorRequest"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.IncomingMonitorRequest = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["incomingMonitorRequest"].(string); ok {
         data.IncomingMonitorRequest = NewJSONSubsetValue(val)
     } else {
@@ -3302,6 +3512,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ServerMonitorResponse = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ServerMonitorResponse = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["serverMonitorResponse"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ServerMonitorResponse = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.ServerMonitorResponse = NewJSONSubsetNull()
@@ -3340,6 +3557,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncomingEmailCustomLocalPart = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailCustomLocalPart = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incomingEmailCustomLocalPart"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncomingEmailCustomLocalPart = types.StringValue(string(jsonBytes))
         } else {
             data.IncomingEmailCustomLocalPart = types.StringNull()
@@ -3403,6 +3627,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -3436,6 +3667,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -3488,6 +3726,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.ArchivedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["archivedByUserId"].(string); ok {
         data.ArchivedByUserId = types.StringValue(val)
     } else {
@@ -3525,6 +3770,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.AutoProvisionedNetworkDeviceId = types.StringNull()
         }
+    } else if arr, ok := dataMap["autoProvisionedNetworkDeviceId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AutoProvisionedNetworkDeviceId = types.StringNull()
+        }
     } else if val, ok := dataMap["autoProvisionedNetworkDeviceId"].(string); ok {
         data.AutoProvisionedNetworkDeviceId = types.StringValue(val)
     } else {
@@ -3558,6 +3810,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.NetworkAlertPolicyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.NetworkAlertPolicyId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["networkAlertPolicyId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.NetworkAlertPolicyId = types.StringValue(string(jsonBytes))
         } else {
             data.NetworkAlertPolicyId = types.StringNull()
@@ -3608,6 +3867,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.ServerMonitorSecretKey = types.StringNull()
         }
+    } else if arr, ok := dataMap["serverMonitorSecretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ServerMonitorSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServerMonitorSecretKey = types.StringNull()
+        }
     } else if val, ok := dataMap["serverMonitorSecretKey"].(string); ok {
         data.ServerMonitorSecretKey = types.StringValue(val)
     } else {
@@ -3645,6 +3911,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.IncomingRequestSecretKey = types.StringNull()
         }
+    } else if arr, ok := dataMap["incomingRequestSecretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncomingRequestSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingRequestSecretKey = types.StringNull()
+        }
     } else if val, ok := dataMap["incomingRequestSecretKey"].(string); ok {
         data.IncomingRequestSecretKey = types.StringValue(val)
     } else {
@@ -3678,6 +3951,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncomingEmailSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailSecretKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incomingEmailSecretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncomingEmailSecretKey = types.StringValue(string(jsonBytes))
         } else {
             data.IncomingEmailSecretKey = types.StringNull()
@@ -3726,6 +4006,13 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncomingEmailMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailMonitorRequest = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["incomingEmailMonitorRequest"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncomingEmailMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.IncomingEmailMonitorRequest = NewJSONSubsetNull()
@@ -3891,6 +4178,9 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.DisableActiveMonitoring.IsUnknown() && !state.DisableActiveMonitoring.IsUnknown() && !data.DisableActiveMonitoring.Equal(state.DisableActiveMonitoring) {
         requestDataMap["disableActiveMonitoring"] = data.DisableActiveMonitoring.ValueBool()
     }
+    if !data.KeepResponseContent.IsUnknown() && !state.KeepResponseContent.IsUnknown() && !data.KeepResponseContent.Equal(state.KeepResponseContent) {
+        requestDataMap["keepResponseContent"] = data.KeepResponseContent.ValueBool()
+    }
     if !data.IncomingEmailCustomLocalPart.IsUnknown() && !state.IncomingEmailCustomLocalPart.IsUnknown() && !data.IncomingEmailCustomLocalPart.Equal(state.IncomingEmailCustomLocalPart) {
         requestDataMap["incomingEmailCustomLocalPart"] = data.IncomingEmailCustomLocalPart.ValueString()
     }
@@ -3948,6 +4238,7 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         "monitoringInterval": true,
         "customFields": true,
         "disableActiveMonitoring": true,
+        "keepResponseContent": true,
         "incomingRequestMonitorHeartbeatCheckedAt": true,
         "telemetryMonitorNextMonitorAt": true,
         "telemetryMonitorLastMonitorAt": true,
@@ -4045,6 +4336,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -4078,6 +4376,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -4666,6 +4971,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.MonitorTemplateId = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitorTemplateId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorTemplateId = types.StringNull()
+        }
     } else if val, ok := dataMap["monitorTemplateId"].(string); ok {
         data.MonitorTemplateId = types.StringValue(val)
     } else {
@@ -4703,6 +5015,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.MonitorType = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitorType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorType = types.StringNull()
+        }
     } else if val, ok := dataMap["monitorType"].(string); ok {
         data.MonitorType = types.StringValue(val)
     } else {
@@ -4736,6 +5055,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CurrentMonitorStatusId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentMonitorStatusId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["currentMonitorStatusId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CurrentMonitorStatusId = types.StringValue(string(jsonBytes))
         } else {
             data.CurrentMonitorStatusId = types.StringNull()
@@ -4782,6 +5108,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.MonitoringInterval = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitoringInterval"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitoringInterval = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitoringInterval = types.StringNull()
+        }
     } else if val, ok := dataMap["monitoringInterval"].(string); ok {
         data.MonitoringInterval = types.StringValue(val)
     } else {
@@ -4819,6 +5152,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.CustomFields = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["customFields"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CustomFields = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["customFields"].(string); ok {
         data.CustomFields = NewJSONSubsetValue(val)
     } else {
@@ -4826,6 +5166,9 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if val, ok := dataMap["disableActiveMonitoring"].(bool); ok {
         data.DisableActiveMonitoring = types.BoolValue(val)
+    }
+    if val, ok := dataMap["keepResponseContent"].(bool); ok {
+        data.KeepResponseContent = types.BoolValue(val)
     }
     if obj, ok := dataMap["incomingRequestMonitorHeartbeatCheckedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -4903,6 +5246,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.IncomingMonitorRequest = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["incomingMonitorRequest"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.IncomingMonitorRequest = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["incomingMonitorRequest"].(string); ok {
         data.IncomingMonitorRequest = NewJSONSubsetValue(val)
     } else {
@@ -4936,6 +5286,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ServerMonitorResponse = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ServerMonitorResponse = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["serverMonitorResponse"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ServerMonitorResponse = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.ServerMonitorResponse = NewJSONSubsetNull()
@@ -4974,6 +5331,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncomingEmailCustomLocalPart = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailCustomLocalPart = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incomingEmailCustomLocalPart"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncomingEmailCustomLocalPart = types.StringValue(string(jsonBytes))
         } else {
             data.IncomingEmailCustomLocalPart = types.StringNull()
@@ -5037,6 +5401,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -5070,6 +5441,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -5122,6 +5500,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.ArchivedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["archivedByUserId"].(string); ok {
         data.ArchivedByUserId = types.StringValue(val)
     } else {
@@ -5159,6 +5544,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.AutoProvisionedNetworkDeviceId = types.StringNull()
         }
+    } else if arr, ok := dataMap["autoProvisionedNetworkDeviceId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AutoProvisionedNetworkDeviceId = types.StringNull()
+        }
     } else if val, ok := dataMap["autoProvisionedNetworkDeviceId"].(string); ok {
         data.AutoProvisionedNetworkDeviceId = types.StringValue(val)
     } else {
@@ -5192,6 +5584,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.NetworkAlertPolicyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.NetworkAlertPolicyId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["networkAlertPolicyId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.NetworkAlertPolicyId = types.StringValue(string(jsonBytes))
         } else {
             data.NetworkAlertPolicyId = types.StringNull()
@@ -5242,6 +5641,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.ServerMonitorSecretKey = types.StringNull()
         }
+    } else if arr, ok := dataMap["serverMonitorSecretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ServerMonitorSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServerMonitorSecretKey = types.StringNull()
+        }
     } else if val, ok := dataMap["serverMonitorSecretKey"].(string); ok {
         data.ServerMonitorSecretKey = types.StringValue(val)
     } else {
@@ -5279,6 +5685,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.IncomingRequestSecretKey = types.StringNull()
         }
+    } else if arr, ok := dataMap["incomingRequestSecretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncomingRequestSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingRequestSecretKey = types.StringNull()
+        }
     } else if val, ok := dataMap["incomingRequestSecretKey"].(string); ok {
         data.IncomingRequestSecretKey = types.StringValue(val)
     } else {
@@ -5312,6 +5725,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncomingEmailSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailSecretKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incomingEmailSecretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncomingEmailSecretKey = types.StringValue(string(jsonBytes))
         } else {
             data.IncomingEmailSecretKey = types.StringNull()
@@ -5360,6 +5780,13 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncomingEmailMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailMonitorRequest = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["incomingEmailMonitorRequest"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncomingEmailMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.IncomingEmailMonitorRequest = NewJSONSubsetNull()
@@ -5523,6 +5950,9 @@ func (r *MonitorResource) keepPlannedValues(data *MonitorResourceModel, plan *Mo
     }
     if config.DisableActiveMonitoring.IsNull() && !plan.DisableActiveMonitoring.IsUnknown() {
         data.DisableActiveMonitoring = plan.DisableActiveMonitoring
+    }
+    if config.KeepResponseContent.IsNull() && !plan.KeepResponseContent.IsUnknown() {
+        data.KeepResponseContent = plan.KeepResponseContent
     }
     if config.IncomingRequestMonitorHeartbeatCheckedAt.IsNull() && !plan.IncomingRequestMonitorHeartbeatCheckedAt.IsUnknown() {
         data.IncomingRequestMonitorHeartbeatCheckedAt = plan.IncomingRequestMonitorHeartbeatCheckedAt

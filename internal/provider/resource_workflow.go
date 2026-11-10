@@ -57,6 +57,7 @@ type WorkflowResourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ArchivedAt RFC3339Value `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
+    GraphRevision types.Number `tfsdk:"graph_revision"`
     IsWebhookSigningSecretSet types.Bool `tfsdk:"is_webhook_signing_secret_set"`
     LastWebhookRequestAt RFC3339Value `tfsdk:"last_webhook_request_at"`
     LastWebhookError types.String `tfsdk:"last_webhook_error"`
@@ -200,6 +201,10 @@ func (r *WorkflowResource) schemaDefinition() schema.Schema {
             },
             "archived_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).",
+                Computed: true,
+            },
+            "graph_revision": schema.NumberAttribute{
+                MarkdownDescription: "How many times the workflow's graph has been saved. To save a graph only if nobody has saved one since you read the workflow, send this number as miscDataProps.graphRevision with the graph: a save made to an older graph is refused with 409 Conflict. Set by the server.",
                 Computed: true,
             },
             "is_webhook_signing_secret_set": schema.BoolAttribute{
@@ -365,6 +370,7 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
+        "graphRevision": true,
         "isWebhookSigningSecretSet": true,
         "lastWebhookRequestAt": true,
         "lastWebhookError": true,
@@ -444,6 +450,13 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -477,6 +490,13 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -520,6 +540,13 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Graph = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Graph = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["graph"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Graph = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Graph = NewJSONSubsetNull()
@@ -593,6 +620,13 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
         } else {
             data.WebhookSecretKey = types.StringNull()
         }
+    } else if arr, ok := dataMap["webhookSecretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.WebhookSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.WebhookSecretKey = types.StringNull()
+        }
     } else if val, ok := dataMap["webhookSecretKey"].(string); ok {
         data.WebhookSecretKey = types.StringValue(val)
     } else {
@@ -626,6 +660,13 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncomingEmailSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailSecretKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incomingEmailSecretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncomingEmailSecretKey = types.StringValue(string(jsonBytes))
         } else {
             data.IncomingEmailSecretKey = types.StringNull()
@@ -689,6 +730,13 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -722,6 +770,13 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -774,11 +829,19 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
         } else {
             data.ArchivedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["archivedByUserId"].(string); ok {
         data.ArchivedByUserId = types.StringValue(val)
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
+    data.GraphRevision = numberFromAPI(data.GraphRevision, dataMap["graphRevision"])
     if val, ok := dataMap["isWebhookSigningSecretSet"].(bool); ok {
         data.IsWebhookSigningSecretSet = types.BoolValue(val)
     }
@@ -821,6 +884,13 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.LastWebhookError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastWebhookError = types.StringNull()
+        }
+    } else if arr, ok := dataMap["lastWebhookError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.LastWebhookError = types.StringValue(string(jsonBytes))
         } else {
             data.LastWebhookError = types.StringNull()
@@ -889,6 +959,7 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
+        "graphRevision": true,
         "isWebhookSigningSecretSet": true,
         "lastWebhookRequestAt": true,
         "lastWebhookError": true,
@@ -969,6 +1040,13 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1002,6 +1080,13 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1045,6 +1130,13 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Graph = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Graph = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["graph"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Graph = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Graph = NewJSONSubsetNull()
@@ -1118,6 +1210,13 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
         } else {
             data.WebhookSecretKey = types.StringNull()
         }
+    } else if arr, ok := dataMap["webhookSecretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.WebhookSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.WebhookSecretKey = types.StringNull()
+        }
     } else if val, ok := dataMap["webhookSecretKey"].(string); ok {
         data.WebhookSecretKey = types.StringValue(val)
     } else {
@@ -1151,6 +1250,13 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncomingEmailSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailSecretKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incomingEmailSecretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncomingEmailSecretKey = types.StringValue(string(jsonBytes))
         } else {
             data.IncomingEmailSecretKey = types.StringNull()
@@ -1214,6 +1320,13 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -1247,6 +1360,13 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1299,11 +1419,19 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
         } else {
             data.ArchivedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["archivedByUserId"].(string); ok {
         data.ArchivedByUserId = types.StringValue(val)
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
+    data.GraphRevision = numberFromAPI(data.GraphRevision, dataMap["graphRevision"])
     if val, ok := dataMap["isWebhookSigningSecretSet"].(bool); ok {
         data.IsWebhookSigningSecretSet = types.BoolValue(val)
     }
@@ -1346,6 +1474,13 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.LastWebhookError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastWebhookError = types.StringNull()
+        }
+    } else if arr, ok := dataMap["lastWebhookError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.LastWebhookError = types.StringValue(string(jsonBytes))
         } else {
             data.LastWebhookError = types.StringNull()
@@ -1484,6 +1619,7 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
         "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
+        "graphRevision": true,
         "isWebhookSigningSecretSet": true,
         "lastWebhookRequestAt": true,
         "lastWebhookError": true,
@@ -1558,6 +1694,13 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1591,6 +1734,13 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1634,6 +1784,13 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Graph = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Graph = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["graph"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Graph = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.Graph = NewJSONSubsetNull()
@@ -1707,6 +1864,13 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
         } else {
             data.WebhookSecretKey = types.StringNull()
         }
+    } else if arr, ok := dataMap["webhookSecretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.WebhookSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.WebhookSecretKey = types.StringNull()
+        }
     } else if val, ok := dataMap["webhookSecretKey"].(string); ok {
         data.WebhookSecretKey = types.StringValue(val)
     } else {
@@ -1740,6 +1904,13 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncomingEmailSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailSecretKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incomingEmailSecretKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncomingEmailSecretKey = types.StringValue(string(jsonBytes))
         } else {
             data.IncomingEmailSecretKey = types.StringNull()
@@ -1803,6 +1974,13 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -1836,6 +2014,13 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1888,11 +2073,19 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
         } else {
             data.ArchivedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["archivedByUserId"].(string); ok {
         data.ArchivedByUserId = types.StringValue(val)
     } else {
         data.ArchivedByUserId = types.StringNull()
     }
+    data.GraphRevision = numberFromAPI(data.GraphRevision, dataMap["graphRevision"])
     if val, ok := dataMap["isWebhookSigningSecretSet"].(bool); ok {
         data.IsWebhookSigningSecretSet = types.BoolValue(val)
     }
@@ -1935,6 +2128,13 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.LastWebhookError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastWebhookError = types.StringNull()
+        }
+    } else if arr, ok := dataMap["lastWebhookError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.LastWebhookError = types.StringValue(string(jsonBytes))
         } else {
             data.LastWebhookError = types.StringNull()

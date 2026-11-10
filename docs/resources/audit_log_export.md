@@ -29,6 +29,7 @@ resource "oneuptime_audit_log_export" "example" {
 
 - `config` (String) The destination's settings that are not secret, such as the bucket and the region. Keys are defined by the destination. A JSON value: write it with `jsonencode()`.
 - `is_enabled` (Boolean) Whether entries are exported. A paused export keeps its place. Defaults to `true`.
+- `schema_version` (Number) Which version of the record each entry is sent as: 2 also says what changed in a workflow's steps and in JSON, 1 is the record as it was first sent. A new export sends 2 unless it asks for 1; an export saved before version 2 keeps 1.
 - `secrets` (String, Sensitive) The destination's secrets, such as an access key's secret, as a JSON object. Encrypted at rest and never returned by the API.
 - `starts_at` (String) Entries recorded from this time on are exported. Empty on create means from now; an earlier date also sends the entries kept since then.
 

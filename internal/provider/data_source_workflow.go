@@ -41,6 +41,7 @@ type WorkflowDataSourceModel struct {
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     Graph types.String `tfsdk:"graph"`
+    GraphRevision types.Number `tfsdk:"graph_revision"`
     Labels types.Set `tfsdk:"labels"`
     WebhookSecretKey types.String `tfsdk:"webhook_secret_key"`
     IncomingEmailSecretKey types.String `tfsdk:"incoming_email_secret_key"`
@@ -119,6 +120,11 @@ func (d *WorkflowDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             },
             "graph": schema.StringAttribute{
                 MarkdownDescription: "Workflow Graph in JSON. Ideally, create this via UI and not via API. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "graph_revision": schema.NumberAttribute{
+                MarkdownDescription: "How many times the workflow's graph has been saved. To save a graph only if nobody has saved one since you read the workflow, send this number as miscDataProps.graphRevision with the graph: a save made to an older graph is refused with 409 Conflict. Set by the server.",
+                Optional: true,
                 Computed: true,
             },
             "labels": schema.SetAttribute{
@@ -221,6 +227,10 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         filters["isEnabled"] = data.IsEnabled.ValueBool()
         filterNames = append(filterNames, "is_enabled = "+fmt.Sprintf("%t", data.IsEnabled.ValueBool()))
     }
+    if !data.GraphRevision.IsNull() && !data.GraphRevision.IsUnknown() {
+        filters["graphRevision"] = lookupNumber(data.GraphRevision)
+        filterNames = append(filterNames, "graph_revision = "+data.GraphRevision.ValueBigFloat().String())
+    }
     if !data.IsWebhookSigningSecretSet.IsNull() && !data.IsWebhookSigningSecretSet.IsUnknown() {
         filters["isWebhookSigningSecretSet"] = data.IsWebhookSigningSecretSet.ValueBool()
         filterNames = append(filterNames, "is_webhook_signing_secret_set = "+fmt.Sprintf("%t", data.IsWebhookSigningSecretSet.ValueBool()))
@@ -258,6 +268,7 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         "archivedByUserId": true,
         "isEnabled": true,
         "graph": true,
+        "graphRevision": true,
         "labels": true,
         "webhookSecretKey": true,
         "incomingEmailSecretKey": true,
@@ -338,6 +349,13 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -351,6 +369,13 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -372,6 +397,13 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -385,6 +417,13 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -406,6 +445,13 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := item["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -419,6 +465,13 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else if val, ok := obj["value"].(float64); ok {
             data.Slug = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
+    } else if arr, ok := item["slug"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Slug = types.StringValue(string(jsonBytes))
         } else {
             data.Slug = types.StringNull()
@@ -440,6 +493,13 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else {
             data.Description = types.StringNull()
         }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
     } else if val, ok := item["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
@@ -453,6 +513,13 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -479,6 +546,13 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else {
             data.ArchivedAt = types.StringNull()
         }
+    } else if arr, ok := item["archivedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ArchivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = types.StringNull()
+        }
     } else if val, ok := item["archivedAt"].(string); ok {
         data.ArchivedAt = types.StringValue(val)
     } else {
@@ -492,6 +566,13 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else if val, ok := obj["value"].(float64); ok {
             data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ArchivedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.ArchivedByUserId = types.StringNull()
@@ -518,11 +599,19 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else {
             data.Graph = types.StringNull()
         }
+    } else if arr, ok := item["graph"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Graph = types.StringValue(string(jsonBytes))
+        } else {
+            data.Graph = types.StringNull()
+        }
     } else if val, ok := item["graph"].(string); ok {
         data.Graph = types.StringValue(val)
     } else {
         data.Graph = types.StringNull()
     }
+    data.GraphRevision = numberFromAPI(data.GraphRevision, item["graphRevision"])
     if val, ok := item["labels"].([]interface{}); ok {
         var setItems []attr.Value
         for _, item := range val {
@@ -559,6 +648,13 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else {
             data.WebhookSecretKey = types.StringNull()
         }
+    } else if arr, ok := item["webhookSecretKey"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.WebhookSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.WebhookSecretKey = types.StringNull()
+        }
     } else if val, ok := item["webhookSecretKey"].(string); ok {
         data.WebhookSecretKey = types.StringValue(val)
     } else {
@@ -572,6 +668,13 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else if val, ok := obj["value"].(float64); ok {
             data.IncomingEmailSecretKey = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncomingEmailSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailSecretKey = types.StringNull()
+        }
+    } else if arr, ok := item["incomingEmailSecretKey"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.IncomingEmailSecretKey = types.StringValue(string(jsonBytes))
         } else {
             data.IncomingEmailSecretKey = types.StringNull()
@@ -598,6 +701,13 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else {
             data.LastWebhookRequestAt = types.StringNull()
         }
+    } else if arr, ok := item["lastWebhookRequestAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastWebhookRequestAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastWebhookRequestAt = types.StringNull()
+        }
     } else if val, ok := item["lastWebhookRequestAt"].(string); ok {
         data.LastWebhookRequestAt = types.StringValue(val)
     } else {
@@ -615,6 +725,13 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else {
             data.LastWebhookError = types.StringNull()
         }
+    } else if arr, ok := item["lastWebhookError"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastWebhookError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastWebhookError = types.StringNull()
+        }
     } else if val, ok := item["lastWebhookError"].(string); ok {
         data.LastWebhookError = types.StringValue(val)
     } else {
@@ -628,6 +745,13 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         } else if val, ok := obj["value"].(float64); ok {
             data.LastWebhookErrorAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastWebhookErrorAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastWebhookErrorAt = types.StringNull()
+        }
+    } else if arr, ok := item["lastWebhookErrorAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.LastWebhookErrorAt = types.StringValue(string(jsonBytes))
         } else {
             data.LastWebhookErrorAt = types.StringNull()

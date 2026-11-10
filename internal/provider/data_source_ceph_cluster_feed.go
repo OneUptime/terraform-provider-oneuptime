@@ -286,6 +286,13 @@ func (d *CephClusterFeedDataSource) Read(ctx context.Context, req datasource.Rea
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -299,6 +306,13 @@ func (d *CephClusterFeedDataSource) Read(ctx context.Context, req datasource.Rea
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -320,6 +334,13 @@ func (d *CephClusterFeedDataSource) Read(ctx context.Context, req datasource.Rea
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -333,6 +354,13 @@ func (d *CephClusterFeedDataSource) Read(ctx context.Context, req datasource.Rea
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -354,6 +382,13 @@ func (d *CephClusterFeedDataSource) Read(ctx context.Context, req datasource.Rea
         } else {
             data.CephClusterId = types.StringNull()
         }
+    } else if arr, ok := item["cephClusterId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CephClusterId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CephClusterId = types.StringNull()
+        }
     } else if val, ok := item["cephClusterId"].(string); ok {
         data.CephClusterId = types.StringValue(val)
     } else {
@@ -367,6 +402,13 @@ func (d *CephClusterFeedDataSource) Read(ctx context.Context, req datasource.Rea
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -388,6 +430,13 @@ func (d *CephClusterFeedDataSource) Read(ctx context.Context, req datasource.Rea
         } else {
             data.FeedInfoInMarkdown = types.StringNull()
         }
+    } else if arr, ok := item["feedInfoInMarkdown"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FeedInfoInMarkdown = types.StringValue(string(jsonBytes))
+        } else {
+            data.FeedInfoInMarkdown = types.StringNull()
+        }
     } else if val, ok := item["feedInfoInMarkdown"].(string); ok {
         data.FeedInfoInMarkdown = types.StringValue(val)
     } else {
@@ -401,6 +450,13 @@ func (d *CephClusterFeedDataSource) Read(ctx context.Context, req datasource.Rea
         } else if val, ok := obj["value"].(float64); ok {
             data.MoreInformationInMarkdown = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MoreInformationInMarkdown = types.StringValue(string(jsonBytes))
+        } else {
+            data.MoreInformationInMarkdown = types.StringNull()
+        }
+    } else if arr, ok := item["moreInformationInMarkdown"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.MoreInformationInMarkdown = types.StringValue(string(jsonBytes))
         } else {
             data.MoreInformationInMarkdown = types.StringNull()
@@ -422,6 +478,13 @@ func (d *CephClusterFeedDataSource) Read(ctx context.Context, req datasource.Rea
         } else {
             data.CephClusterFeedEventType = types.StringNull()
         }
+    } else if arr, ok := item["cephClusterFeedEventType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CephClusterFeedEventType = types.StringValue(string(jsonBytes))
+        } else {
+            data.CephClusterFeedEventType = types.StringNull()
+        }
     } else if val, ok := item["cephClusterFeedEventType"].(string); ok {
         data.CephClusterFeedEventType = types.StringValue(val)
     } else {
@@ -435,6 +498,13 @@ func (d *CephClusterFeedDataSource) Read(ctx context.Context, req datasource.Rea
         } else if val, ok := obj["value"].(float64); ok {
             data.DisplayColor = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DisplayColor = types.StringValue(string(jsonBytes))
+        } else {
+            data.DisplayColor = types.StringNull()
+        }
+    } else if arr, ok := item["displayColor"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.DisplayColor = types.StringValue(string(jsonBytes))
         } else {
             data.DisplayColor = types.StringNull()
@@ -456,6 +526,13 @@ func (d *CephClusterFeedDataSource) Read(ctx context.Context, req datasource.Rea
         } else {
             data.UserId = types.StringNull()
         }
+    } else if arr, ok := item["userId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserId = types.StringNull()
+        }
     } else if val, ok := item["userId"].(string); ok {
         data.UserId = types.StringValue(val)
     } else {
@@ -469,6 +546,13 @@ func (d *CephClusterFeedDataSource) Read(ctx context.Context, req datasource.Rea
         } else if val, ok := obj["value"].(float64); ok {
             data.PostedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PostedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.PostedAt = types.StringNull()
+        }
+    } else if arr, ok := item["postedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.PostedAt = types.StringValue(string(jsonBytes))
         } else {
             data.PostedAt = types.StringNull()

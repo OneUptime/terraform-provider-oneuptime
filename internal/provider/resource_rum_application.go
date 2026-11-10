@@ -62,6 +62,7 @@ type RumApplicationResourceModel struct {
     SessionReplayLcpBudgetMs types.Number `tfsdk:"session_replay_lcp_budget_ms"`
     SessionReplayLongTaskBudgetMs types.Number `tfsdk:"session_replay_long_task_budget_ms"`
     SessionReplaySlowRequestBudgetMs types.Number `tfsdk:"session_replay_slow_request_budget_ms"`
+    SessionReplayFrustrationSignals JSONSubsetValue `tfsdk:"session_replay_frustration_signals"`
     SessionReplayAllowedOrigins JSONSubsetValue `tfsdk:"session_replay_allowed_origins"`
     SessionReplayConsentMode types.String `tfsdk:"session_replay_consent_mode"`
     SessionReplayCaptureTrigger types.String `tfsdk:"session_replay_capture_trigger"`
@@ -80,6 +81,10 @@ type RumApplicationResourceModel struct {
     OtelCollectorStatus types.String `tfsdk:"otel_collector_status"`
     AgentVersion types.String `tfsdk:"agent_version"`
     LastSeenAt RFC3339Value `tfsdk:"last_seen_at"`
+    TracesLastReceivedAt RFC3339Value `tfsdk:"traces_last_received_at"`
+    LogsLastReceivedAt RFC3339Value `tfsdk:"logs_last_received_at"`
+    MetricsLastReceivedAt RFC3339Value `tfsdk:"metrics_last_received_at"`
+    SignalArrivalsTrackedSince RFC3339Value `tfsdk:"signal_arrivals_tracked_since"`
     SessionReplayLastChunkReceivedAt RFC3339Value `tfsdk:"session_replay_last_chunk_received_at"`
     SessionReplayBudgetExceededAt RFC3339Value `tfsdk:"session_replay_budget_exceeded_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -277,6 +282,19 @@ func (r *RumApplicationResource) schemaDefinition() schema.Schema {
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
+            "session_replay_frustration_signals": schema.StringAttribute{
+                MarkdownDescription: "What counts as frustration in this application's recordings: the rules for rage clicks, dead clicks, error clicks and refresh rage (each can be changed or switched off), and up to 20 signals of the application's own (a click on an element, a page, an event from track() or an error's text), each counted as frustration or shown as a marker. Empty means the built-in rules: 3 clicks within 1 second in a 30 px radius, 3 seconds with nothing happening after a click, an error within 1 second of a click, and the same page loaded 3 times within 60 seconds. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
             "session_replay_allowed_origins": schema.StringAttribute{
                 MarkdownDescription: "Browser origins (scheme + host + port) and exact React Native app identities (app:// followed by the Android package or iOS bundle id) allowed to upload replays for this application. Empty (the default) accepts any sender. Web origins may use one leading host wildcard; app:// identities never allow wildcards. Once populated, browsers must send a listed Origin and native recorders without Origin must send a listed app identity. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
@@ -408,7 +426,7 @@ func (r *RumApplicationResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "otel_collector_status": schema.StringAttribute{
-                MarkdownDescription: "Whether telemetry is currently being received (connected) or has gone stale (disconnected).",
+                MarkdownDescription: "connected while data has arrived in the last 15 minutes, disconnected once nothing has for 15 minutes (normal while nobody uses the app), and empty until the first data arrives. The Dashboard shows these as Receiving data, No recent traffic and Waiting for data.",
                 Computed: true,
             },
             "agent_version": schema.StringAttribute{
@@ -417,6 +435,26 @@ func (r *RumApplicationResource) schemaDefinition() schema.Schema {
             },
             "last_seen_at": schema.StringAttribute{
                 MarkdownDescription: "When telemetry was last received for this application.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "traces_last_received_at": schema.StringAttribute{
+                MarkdownDescription: "When page loads, requests or other spans last arrived from this application.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "logs_last_received_at": schema.StringAttribute{
+                MarkdownDescription: "When log records last arrived from this application.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "metrics_last_received_at": schema.StringAttribute{
+                MarkdownDescription: "When metrics, such as Core Web Vitals, last arrived from this application.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "signal_arrivals_tracked_since": schema.StringAttribute{
+                MarkdownDescription: "Since when OneUptime has recorded when traces, logs and metrics last arrived from this application.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
@@ -558,6 +596,9 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
     if !data.SessionReplaySlowRequestBudgetMs.IsNull() && !data.SessionReplaySlowRequestBudgetMs.IsUnknown() {
         requestDataMap["sessionReplaySlowRequestBudgetMs"] = r.bigFloatToFloat64(data.SessionReplaySlowRequestBudgetMs.ValueBigFloat())
     }
+    if parsedSessionReplayFrustrationSignals := r.parseJSONField(data.SessionReplayFrustrationSignals); parsedSessionReplayFrustrationSignals != nil {
+        requestDataMap["sessionReplayFrustrationSignals"] = parsedSessionReplayFrustrationSignals
+    }
     if parsedSessionReplayAllowedOrigins := r.parseJSONField(data.SessionReplayAllowedOrigins); parsedSessionReplayAllowedOrigins != nil {
         requestDataMap["sessionReplayAllowedOrigins"] = parsedSessionReplayAllowedOrigins
     }
@@ -650,6 +691,7 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         "sessionReplayLcpBudgetMs": true,
         "sessionReplayLongTaskBudgetMs": true,
         "sessionReplaySlowRequestBudgetMs": true,
+        "sessionReplayFrustrationSignals": true,
         "sessionReplayAllowedOrigins": true,
         "sessionReplayConsentMode": true,
         "sessionReplayCaptureTrigger": true,
@@ -668,6 +710,10 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         "otelCollectorStatus": true,
         "agentVersion": true,
         "lastSeenAt": true,
+        "tracesLastReceivedAt": true,
+        "logsLastReceivedAt": true,
+        "metricsLastReceivedAt": true,
+        "signalArrivalsTrackedSince": true,
         "sessionReplayLastChunkReceivedAt": true,
         "sessionReplayBudgetExceededAt": true,
         "createdByUserId": true,
@@ -748,6 +794,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -785,6 +838,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         } else {
             data.Description = types.StringNull()
         }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
     } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
@@ -818,6 +878,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AppIdentifier = types.StringValue(string(jsonBytes))
+        } else {
+            data.AppIdentifier = types.StringNull()
+        }
+    } else if arr, ok := dataMap["appIdentifier"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AppIdentifier = types.StringValue(string(jsonBytes))
         } else {
             data.AppIdentifier = types.StringNull()
@@ -892,6 +959,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["telemetryRetentionConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
@@ -928,6 +1002,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayMaskingMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayMaskingMode = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayMaskingMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SessionReplayMaskingMode = types.StringValue(string(jsonBytes))
         } else {
             data.SessionReplayMaskingMode = types.StringNull()
@@ -969,6 +1050,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         } else {
             data.SessionReplayMaskSelectors = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["sessionReplayMaskSelectors"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayMaskSelectors = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayMaskSelectors = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["sessionReplayMaskSelectors"].(string); ok {
         data.SessionReplayMaskSelectors = NewJSONSubsetValue(val)
     } else {
@@ -1002,6 +1090,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayBlockSelectors = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayBlockSelectors = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayBlockSelectors"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SessionReplayBlockSelectors = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.SessionReplayBlockSelectors = NewJSONSubsetNull()
@@ -1043,6 +1138,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         } else {
             data.SessionReplayIgnoreErrorPatterns = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["sessionReplayIgnoreErrorPatterns"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayIgnoreErrorPatterns = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayIgnoreErrorPatterns = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["sessionReplayIgnoreErrorPatterns"].(string); ok {
         data.SessionReplayIgnoreErrorPatterns = NewJSONSubsetValue(val)
     } else {
@@ -1080,6 +1182,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         } else {
             data.SessionReplayTracePropagationOrigins = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["sessionReplayTracePropagationOrigins"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayTracePropagationOrigins = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayTracePropagationOrigins = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["sessionReplayTracePropagationOrigins"].(string); ok {
         data.SessionReplayTracePropagationOrigins = NewJSONSubsetValue(val)
     } else {
@@ -1091,6 +1200,50 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
     data.SessionReplayLcpBudgetMs = numberFromAPI(data.SessionReplayLcpBudgetMs, dataMap["sessionReplayLcpBudgetMs"])
     data.SessionReplayLongTaskBudgetMs = numberFromAPI(data.SessionReplayLongTaskBudgetMs, dataMap["sessionReplayLongTaskBudgetMs"])
     data.SessionReplaySlowRequestBudgetMs = numberFromAPI(data.SessionReplaySlowRequestBudgetMs, dataMap["sessionReplaySlowRequestBudgetMs"])
+    if obj, ok := dataMap["sessionReplayFrustrationSignals"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionReplayFrustrationSignals = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SessionReplayFrustrationSignals = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SessionReplayFrustrationSignals = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SessionReplayFrustrationSignals = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayFrustrationSignals = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SessionReplayFrustrationSignals = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayFrustrationSignals = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayFrustrationSignals = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayFrustrationSignals = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayFrustrationSignals"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayFrustrationSignals = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayFrustrationSignals = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["sessionReplayFrustrationSignals"].(string); ok {
+        data.SessionReplayFrustrationSignals = NewJSONSubsetValue(val)
+    } else {
+        data.SessionReplayFrustrationSignals = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["sessionReplayAllowedOrigins"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1119,6 +1272,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayAllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayAllowedOrigins = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayAllowedOrigins"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SessionReplayAllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.SessionReplayAllowedOrigins = NewJSONSubsetNull()
@@ -1160,6 +1320,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         } else {
             data.SessionReplayConsentMode = types.StringNull()
         }
+    } else if arr, ok := dataMap["sessionReplayConsentMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayConsentMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayConsentMode = types.StringNull()
+        }
     } else if val, ok := dataMap["sessionReplayConsentMode"].(string); ok {
         data.SessionReplayConsentMode = types.StringValue(val)
     } else {
@@ -1193,6 +1360,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayCaptureTrigger = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayCaptureTrigger = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayCaptureTrigger"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SessionReplayCaptureTrigger = types.StringValue(string(jsonBytes))
         } else {
             data.SessionReplayCaptureTrigger = types.StringNull()
@@ -1271,6 +1445,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -1304,6 +1485,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ClientType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ClientType = types.StringNull()
+        }
+    } else if arr, ok := dataMap["clientType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ClientType = types.StringValue(string(jsonBytes))
         } else {
             data.ClientType = types.StringNull()
@@ -1345,6 +1533,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         } else {
             data.SdkLanguage = types.StringNull()
         }
+    } else if arr, ok := dataMap["sdkLanguage"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SdkLanguage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SdkLanguage = types.StringNull()
+        }
     } else if val, ok := dataMap["sdkLanguage"].(string); ok {
         data.SdkLanguage = types.StringValue(val)
     } else {
@@ -1378,6 +1573,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OtelCollectorStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.OtelCollectorStatus = types.StringNull()
+        }
+    } else if arr, ok := dataMap["otelCollectorStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OtelCollectorStatus = types.StringValue(string(jsonBytes))
         } else {
             data.OtelCollectorStatus = types.StringNull()
@@ -1419,6 +1621,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         } else {
             data.AgentVersion = types.StringNull()
         }
+    } else if arr, ok := dataMap["agentVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AgentVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.AgentVersion = types.StringNull()
+        }
     } else if val, ok := dataMap["agentVersion"].(string); ok {
         data.AgentVersion = types.StringValue(val)
     } else {
@@ -1434,6 +1643,50 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         data.LastSeenAt = NewRFC3339Value(val)
     } else {
         data.LastSeenAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["tracesLastReceivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.TracesLastReceivedAt = NewRFC3339Value(val)
+        } else {
+            data.TracesLastReceivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["tracesLastReceivedAt"].(string); ok && val != "" {
+        data.TracesLastReceivedAt = NewRFC3339Value(val)
+    } else {
+        data.TracesLastReceivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["logsLastReceivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LogsLastReceivedAt = NewRFC3339Value(val)
+        } else {
+            data.LogsLastReceivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["logsLastReceivedAt"].(string); ok && val != "" {
+        data.LogsLastReceivedAt = NewRFC3339Value(val)
+    } else {
+        data.LogsLastReceivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["metricsLastReceivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.MetricsLastReceivedAt = NewRFC3339Value(val)
+        } else {
+            data.MetricsLastReceivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["metricsLastReceivedAt"].(string); ok && val != "" {
+        data.MetricsLastReceivedAt = NewRFC3339Value(val)
+    } else {
+        data.MetricsLastReceivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["signalArrivalsTrackedSince"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.SignalArrivalsTrackedSince = NewRFC3339Value(val)
+        } else {
+            data.SignalArrivalsTrackedSince = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["signalArrivalsTrackedSince"].(string); ok && val != "" {
+        data.SignalArrivalsTrackedSince = NewRFC3339Value(val)
+    } else {
+        data.SignalArrivalsTrackedSince = NewRFC3339Null()
     }
     if obj, ok := dataMap["sessionReplayLastChunkReceivedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1489,6 +1742,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -1533,6 +1793,13 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ArchivedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.ArchivedByUserId = types.StringNull()
@@ -1592,6 +1859,7 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         "sessionReplayLcpBudgetMs": true,
         "sessionReplayLongTaskBudgetMs": true,
         "sessionReplaySlowRequestBudgetMs": true,
+        "sessionReplayFrustrationSignals": true,
         "sessionReplayAllowedOrigins": true,
         "sessionReplayConsentMode": true,
         "sessionReplayCaptureTrigger": true,
@@ -1610,6 +1878,10 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         "otelCollectorStatus": true,
         "agentVersion": true,
         "lastSeenAt": true,
+        "tracesLastReceivedAt": true,
+        "logsLastReceivedAt": true,
+        "metricsLastReceivedAt": true,
+        "signalArrivalsTrackedSince": true,
         "sessionReplayLastChunkReceivedAt": true,
         "sessionReplayBudgetExceededAt": true,
         "createdByUserId": true,
@@ -1691,6 +1963,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1728,6 +2007,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.Description = types.StringNull()
         }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
     } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
@@ -1761,6 +2047,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AppIdentifier = types.StringValue(string(jsonBytes))
+        } else {
+            data.AppIdentifier = types.StringNull()
+        }
+    } else if arr, ok := dataMap["appIdentifier"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AppIdentifier = types.StringValue(string(jsonBytes))
         } else {
             data.AppIdentifier = types.StringNull()
@@ -1835,6 +2128,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["telemetryRetentionConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
@@ -1871,6 +2171,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayMaskingMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayMaskingMode = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayMaskingMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SessionReplayMaskingMode = types.StringValue(string(jsonBytes))
         } else {
             data.SessionReplayMaskingMode = types.StringNull()
@@ -1912,6 +2219,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.SessionReplayMaskSelectors = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["sessionReplayMaskSelectors"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayMaskSelectors = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayMaskSelectors = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["sessionReplayMaskSelectors"].(string); ok {
         data.SessionReplayMaskSelectors = NewJSONSubsetValue(val)
     } else {
@@ -1945,6 +2259,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayBlockSelectors = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayBlockSelectors = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayBlockSelectors"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SessionReplayBlockSelectors = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.SessionReplayBlockSelectors = NewJSONSubsetNull()
@@ -1986,6 +2307,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.SessionReplayIgnoreErrorPatterns = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["sessionReplayIgnoreErrorPatterns"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayIgnoreErrorPatterns = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayIgnoreErrorPatterns = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["sessionReplayIgnoreErrorPatterns"].(string); ok {
         data.SessionReplayIgnoreErrorPatterns = NewJSONSubsetValue(val)
     } else {
@@ -2023,6 +2351,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.SessionReplayTracePropagationOrigins = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["sessionReplayTracePropagationOrigins"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayTracePropagationOrigins = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayTracePropagationOrigins = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["sessionReplayTracePropagationOrigins"].(string); ok {
         data.SessionReplayTracePropagationOrigins = NewJSONSubsetValue(val)
     } else {
@@ -2034,6 +2369,50 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
     data.SessionReplayLcpBudgetMs = numberFromAPI(data.SessionReplayLcpBudgetMs, dataMap["sessionReplayLcpBudgetMs"])
     data.SessionReplayLongTaskBudgetMs = numberFromAPI(data.SessionReplayLongTaskBudgetMs, dataMap["sessionReplayLongTaskBudgetMs"])
     data.SessionReplaySlowRequestBudgetMs = numberFromAPI(data.SessionReplaySlowRequestBudgetMs, dataMap["sessionReplaySlowRequestBudgetMs"])
+    if obj, ok := dataMap["sessionReplayFrustrationSignals"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionReplayFrustrationSignals = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SessionReplayFrustrationSignals = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SessionReplayFrustrationSignals = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SessionReplayFrustrationSignals = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayFrustrationSignals = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SessionReplayFrustrationSignals = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayFrustrationSignals = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayFrustrationSignals = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayFrustrationSignals = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayFrustrationSignals"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayFrustrationSignals = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayFrustrationSignals = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["sessionReplayFrustrationSignals"].(string); ok {
+        data.SessionReplayFrustrationSignals = NewJSONSubsetValue(val)
+    } else {
+        data.SessionReplayFrustrationSignals = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["sessionReplayAllowedOrigins"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2062,6 +2441,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayAllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayAllowedOrigins = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayAllowedOrigins"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SessionReplayAllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.SessionReplayAllowedOrigins = NewJSONSubsetNull()
@@ -2103,6 +2489,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.SessionReplayConsentMode = types.StringNull()
         }
+    } else if arr, ok := dataMap["sessionReplayConsentMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayConsentMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayConsentMode = types.StringNull()
+        }
     } else if val, ok := dataMap["sessionReplayConsentMode"].(string); ok {
         data.SessionReplayConsentMode = types.StringValue(val)
     } else {
@@ -2136,6 +2529,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayCaptureTrigger = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayCaptureTrigger = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayCaptureTrigger"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SessionReplayCaptureTrigger = types.StringValue(string(jsonBytes))
         } else {
             data.SessionReplayCaptureTrigger = types.StringNull()
@@ -2214,6 +2614,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -2247,6 +2654,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ClientType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ClientType = types.StringNull()
+        }
+    } else if arr, ok := dataMap["clientType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ClientType = types.StringValue(string(jsonBytes))
         } else {
             data.ClientType = types.StringNull()
@@ -2288,6 +2702,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.SdkLanguage = types.StringNull()
         }
+    } else if arr, ok := dataMap["sdkLanguage"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SdkLanguage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SdkLanguage = types.StringNull()
+        }
     } else if val, ok := dataMap["sdkLanguage"].(string); ok {
         data.SdkLanguage = types.StringValue(val)
     } else {
@@ -2321,6 +2742,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OtelCollectorStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.OtelCollectorStatus = types.StringNull()
+        }
+    } else if arr, ok := dataMap["otelCollectorStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OtelCollectorStatus = types.StringValue(string(jsonBytes))
         } else {
             data.OtelCollectorStatus = types.StringNull()
@@ -2362,6 +2790,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.AgentVersion = types.StringNull()
         }
+    } else if arr, ok := dataMap["agentVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AgentVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.AgentVersion = types.StringNull()
+        }
     } else if val, ok := dataMap["agentVersion"].(string); ok {
         data.AgentVersion = types.StringValue(val)
     } else {
@@ -2377,6 +2812,50 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         data.LastSeenAt = NewRFC3339Value(val)
     } else {
         data.LastSeenAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["tracesLastReceivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.TracesLastReceivedAt = NewRFC3339Value(val)
+        } else {
+            data.TracesLastReceivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["tracesLastReceivedAt"].(string); ok && val != "" {
+        data.TracesLastReceivedAt = NewRFC3339Value(val)
+    } else {
+        data.TracesLastReceivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["logsLastReceivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LogsLastReceivedAt = NewRFC3339Value(val)
+        } else {
+            data.LogsLastReceivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["logsLastReceivedAt"].(string); ok && val != "" {
+        data.LogsLastReceivedAt = NewRFC3339Value(val)
+    } else {
+        data.LogsLastReceivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["metricsLastReceivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.MetricsLastReceivedAt = NewRFC3339Value(val)
+        } else {
+            data.MetricsLastReceivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["metricsLastReceivedAt"].(string); ok && val != "" {
+        data.MetricsLastReceivedAt = NewRFC3339Value(val)
+    } else {
+        data.MetricsLastReceivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["signalArrivalsTrackedSince"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.SignalArrivalsTrackedSince = NewRFC3339Value(val)
+        } else {
+            data.SignalArrivalsTrackedSince = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["signalArrivalsTrackedSince"].(string); ok && val != "" {
+        data.SignalArrivalsTrackedSince = NewRFC3339Value(val)
+    } else {
+        data.SignalArrivalsTrackedSince = NewRFC3339Null()
     }
     if obj, ok := dataMap["sessionReplayLastChunkReceivedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -2432,6 +2911,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -2480,6 +2966,13 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.ArchivedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["archivedByUserId"].(string); ok {
         data.ArchivedByUserId = types.StringValue(val)
     } else {
@@ -2518,6 +3011,7 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
     writtenFromConfig := map[string]bool{
         "session_replay_allowed_origins": !data.SessionReplayAllowedOrigins.Equal(state.SessionReplayAllowedOrigins),
         "session_replay_block_selectors": !data.SessionReplayBlockSelectors.Equal(state.SessionReplayBlockSelectors),
+        "session_replay_frustration_signals": !data.SessionReplayFrustrationSignals.Equal(state.SessionReplayFrustrationSignals),
         "session_replay_ignore_error_patterns": !data.SessionReplayIgnoreErrorPatterns.Equal(state.SessionReplayIgnoreErrorPatterns),
         "session_replay_mask_selectors": !data.SessionReplayMaskSelectors.Equal(state.SessionReplayMaskSelectors),
         "session_replay_trace_propagation_origins": !data.SessionReplayTracePropagationOrigins.Equal(state.SessionReplayTracePropagationOrigins),
@@ -2608,6 +3102,14 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
     if !data.SessionReplaySlowRequestBudgetMs.IsUnknown() && !state.SessionReplaySlowRequestBudgetMs.IsUnknown() && !data.SessionReplaySlowRequestBudgetMs.Equal(state.SessionReplaySlowRequestBudgetMs) {
         requestDataMap["sessionReplaySlowRequestBudgetMs"] = r.bigFloatToFloat64(data.SessionReplaySlowRequestBudgetMs.ValueBigFloat())
     }
+    if !data.SessionReplayFrustrationSignals.IsUnknown() && !state.SessionReplayFrustrationSignals.IsUnknown() && !data.SessionReplayFrustrationSignals.Equal(state.SessionReplayFrustrationSignals) {
+        var sessionreplayfrustrationsignalsData interface{}
+        if err := json.Unmarshal([]byte(data.SessionReplayFrustrationSignals.ValueString()), &sessionreplayfrustrationsignalsData); err == nil {
+            requestDataMap["sessionReplayFrustrationSignals"] = sessionreplayfrustrationsignalsData
+        } else {
+            requestDataMap["sessionReplayFrustrationSignals"] = data.SessionReplayFrustrationSignals.ValueString()
+        }
+    }
     if !data.SessionReplayAllowedOrigins.IsUnknown() && !state.SessionReplayAllowedOrigins.IsUnknown() && !data.SessionReplayAllowedOrigins.Equal(state.SessionReplayAllowedOrigins) {
         var sessionreplayallowedoriginsData interface{}
         if err := json.Unmarshal([]byte(data.SessionReplayAllowedOrigins.ValueString()), &sessionreplayallowedoriginsData); err == nil {
@@ -2683,6 +3185,7 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         "sessionReplayLcpBudgetMs": true,
         "sessionReplayLongTaskBudgetMs": true,
         "sessionReplaySlowRequestBudgetMs": true,
+        "sessionReplayFrustrationSignals": true,
         "sessionReplayAllowedOrigins": true,
         "sessionReplayConsentMode": true,
         "sessionReplayCaptureTrigger": true,
@@ -2701,6 +3204,10 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         "otelCollectorStatus": true,
         "agentVersion": true,
         "lastSeenAt": true,
+        "tracesLastReceivedAt": true,
+        "logsLastReceivedAt": true,
+        "metricsLastReceivedAt": true,
+        "signalArrivalsTrackedSince": true,
         "sessionReplayLastChunkReceivedAt": true,
         "sessionReplayBudgetExceededAt": true,
         "createdByUserId": true,
@@ -2776,6 +3283,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -2813,6 +3327,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         } else {
             data.Description = types.StringNull()
         }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
     } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
@@ -2846,6 +3367,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AppIdentifier = types.StringValue(string(jsonBytes))
+        } else {
+            data.AppIdentifier = types.StringNull()
+        }
+    } else if arr, ok := dataMap["appIdentifier"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AppIdentifier = types.StringValue(string(jsonBytes))
         } else {
             data.AppIdentifier = types.StringNull()
@@ -2920,6 +3448,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["telemetryRetentionConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
@@ -2956,6 +3491,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayMaskingMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayMaskingMode = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayMaskingMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SessionReplayMaskingMode = types.StringValue(string(jsonBytes))
         } else {
             data.SessionReplayMaskingMode = types.StringNull()
@@ -2997,6 +3539,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         } else {
             data.SessionReplayMaskSelectors = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["sessionReplayMaskSelectors"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayMaskSelectors = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayMaskSelectors = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["sessionReplayMaskSelectors"].(string); ok {
         data.SessionReplayMaskSelectors = NewJSONSubsetValue(val)
     } else {
@@ -3030,6 +3579,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayBlockSelectors = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayBlockSelectors = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayBlockSelectors"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SessionReplayBlockSelectors = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.SessionReplayBlockSelectors = NewJSONSubsetNull()
@@ -3071,6 +3627,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         } else {
             data.SessionReplayIgnoreErrorPatterns = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["sessionReplayIgnoreErrorPatterns"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayIgnoreErrorPatterns = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayIgnoreErrorPatterns = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["sessionReplayIgnoreErrorPatterns"].(string); ok {
         data.SessionReplayIgnoreErrorPatterns = NewJSONSubsetValue(val)
     } else {
@@ -3108,6 +3671,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         } else {
             data.SessionReplayTracePropagationOrigins = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["sessionReplayTracePropagationOrigins"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayTracePropagationOrigins = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayTracePropagationOrigins = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["sessionReplayTracePropagationOrigins"].(string); ok {
         data.SessionReplayTracePropagationOrigins = NewJSONSubsetValue(val)
     } else {
@@ -3119,6 +3689,50 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
     data.SessionReplayLcpBudgetMs = numberFromAPI(data.SessionReplayLcpBudgetMs, dataMap["sessionReplayLcpBudgetMs"])
     data.SessionReplayLongTaskBudgetMs = numberFromAPI(data.SessionReplayLongTaskBudgetMs, dataMap["sessionReplayLongTaskBudgetMs"])
     data.SessionReplaySlowRequestBudgetMs = numberFromAPI(data.SessionReplaySlowRequestBudgetMs, dataMap["sessionReplaySlowRequestBudgetMs"])
+    if obj, ok := dataMap["sessionReplayFrustrationSignals"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionReplayFrustrationSignals = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SessionReplayFrustrationSignals = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SessionReplayFrustrationSignals = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SessionReplayFrustrationSignals = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayFrustrationSignals = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SessionReplayFrustrationSignals = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayFrustrationSignals = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayFrustrationSignals = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayFrustrationSignals = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayFrustrationSignals"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayFrustrationSignals = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayFrustrationSignals = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["sessionReplayFrustrationSignals"].(string); ok {
+        data.SessionReplayFrustrationSignals = NewJSONSubsetValue(val)
+    } else {
+        data.SessionReplayFrustrationSignals = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["sessionReplayAllowedOrigins"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3147,6 +3761,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayAllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayAllowedOrigins = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayAllowedOrigins"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SessionReplayAllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.SessionReplayAllowedOrigins = NewJSONSubsetNull()
@@ -3188,6 +3809,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         } else {
             data.SessionReplayConsentMode = types.StringNull()
         }
+    } else if arr, ok := dataMap["sessionReplayConsentMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayConsentMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayConsentMode = types.StringNull()
+        }
     } else if val, ok := dataMap["sessionReplayConsentMode"].(string); ok {
         data.SessionReplayConsentMode = types.StringValue(val)
     } else {
@@ -3221,6 +3849,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayCaptureTrigger = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayCaptureTrigger = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayCaptureTrigger"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SessionReplayCaptureTrigger = types.StringValue(string(jsonBytes))
         } else {
             data.SessionReplayCaptureTrigger = types.StringNull()
@@ -3299,6 +3934,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -3332,6 +3974,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ClientType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ClientType = types.StringNull()
+        }
+    } else if arr, ok := dataMap["clientType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ClientType = types.StringValue(string(jsonBytes))
         } else {
             data.ClientType = types.StringNull()
@@ -3373,6 +4022,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         } else {
             data.SdkLanguage = types.StringNull()
         }
+    } else if arr, ok := dataMap["sdkLanguage"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SdkLanguage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SdkLanguage = types.StringNull()
+        }
     } else if val, ok := dataMap["sdkLanguage"].(string); ok {
         data.SdkLanguage = types.StringValue(val)
     } else {
@@ -3406,6 +4062,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OtelCollectorStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.OtelCollectorStatus = types.StringNull()
+        }
+    } else if arr, ok := dataMap["otelCollectorStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OtelCollectorStatus = types.StringValue(string(jsonBytes))
         } else {
             data.OtelCollectorStatus = types.StringNull()
@@ -3447,6 +4110,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         } else {
             data.AgentVersion = types.StringNull()
         }
+    } else if arr, ok := dataMap["agentVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AgentVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.AgentVersion = types.StringNull()
+        }
     } else if val, ok := dataMap["agentVersion"].(string); ok {
         data.AgentVersion = types.StringValue(val)
     } else {
@@ -3462,6 +4132,50 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         data.LastSeenAt = NewRFC3339Value(val)
     } else {
         data.LastSeenAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["tracesLastReceivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.TracesLastReceivedAt = NewRFC3339Value(val)
+        } else {
+            data.TracesLastReceivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["tracesLastReceivedAt"].(string); ok && val != "" {
+        data.TracesLastReceivedAt = NewRFC3339Value(val)
+    } else {
+        data.TracesLastReceivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["logsLastReceivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LogsLastReceivedAt = NewRFC3339Value(val)
+        } else {
+            data.LogsLastReceivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["logsLastReceivedAt"].(string); ok && val != "" {
+        data.LogsLastReceivedAt = NewRFC3339Value(val)
+    } else {
+        data.LogsLastReceivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["metricsLastReceivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.MetricsLastReceivedAt = NewRFC3339Value(val)
+        } else {
+            data.MetricsLastReceivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["metricsLastReceivedAt"].(string); ok && val != "" {
+        data.MetricsLastReceivedAt = NewRFC3339Value(val)
+    } else {
+        data.MetricsLastReceivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["signalArrivalsTrackedSince"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.SignalArrivalsTrackedSince = NewRFC3339Value(val)
+        } else {
+            data.SignalArrivalsTrackedSince = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["signalArrivalsTrackedSince"].(string); ok && val != "" {
+        data.SignalArrivalsTrackedSince = NewRFC3339Value(val)
+    } else {
+        data.SignalArrivalsTrackedSince = NewRFC3339Null()
     }
     if obj, ok := dataMap["sessionReplayLastChunkReceivedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -3517,6 +4231,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -3561,6 +4282,13 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ArchivedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.ArchivedByUserId = types.StringNull()
@@ -3621,7 +4349,7 @@ func (r *RumApplicationResource) ImportState(ctx context.Context, req resource.I
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
     // These hold the record as OneUptime keeps it, keys it fills in itself
     // included, until an update writes them (see importsettle.go).
-    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"session_replay_allowed_origins", "session_replay_block_selectors", "session_replay_ignore_error_patterns", "session_replay_mask_selectors", "session_replay_trace_propagation_origins", "telemetry_retention_config"})...)
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"session_replay_allowed_origins", "session_replay_block_selectors", "session_replay_frustration_signals", "session_replay_ignore_error_patterns", "session_replay_mask_selectors", "session_replay_trace_propagation_origins", "telemetry_retention_config"})...)
 }
 
 
@@ -3674,6 +4402,9 @@ func (r *RumApplicationResource) keepPlannedValues(data *RumApplicationResourceM
     }
     if config.SessionReplaySlowRequestBudgetMs.IsNull() && !plan.SessionReplaySlowRequestBudgetMs.IsUnknown() {
         data.SessionReplaySlowRequestBudgetMs = plan.SessionReplaySlowRequestBudgetMs
+    }
+    if config.SessionReplayFrustrationSignals.IsNull() && !plan.SessionReplayFrustrationSignals.IsUnknown() {
+        data.SessionReplayFrustrationSignals = plan.SessionReplayFrustrationSignals
     }
     if config.SessionReplayAllowedOrigins.IsNull() && !plan.SessionReplayAllowedOrigins.IsUnknown() {
         data.SessionReplayAllowedOrigins = plan.SessionReplayAllowedOrigins

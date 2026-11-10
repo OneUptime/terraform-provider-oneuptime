@@ -66,6 +66,7 @@ type MonitorDataSourceModel struct {
     CustomFields types.String `tfsdk:"custom_fields"`
     IsOwnerNotifiedOfResourceCreation types.Bool `tfsdk:"is_owner_notified_of_resource_creation"`
     DisableActiveMonitoring types.Bool `tfsdk:"disable_active_monitoring"`
+    KeepResponseContent types.Bool `tfsdk:"keep_response_content"`
     IncomingRequestMonitorHeartbeatCheckedAt types.String `tfsdk:"incoming_request_monitor_heartbeat_checked_at"`
     TelemetryMonitorNextMonitorAt types.String `tfsdk:"telemetry_monitor_next_monitor_at"`
     TelemetryMonitorLastMonitorAt types.String `tfsdk:"telemetry_monitor_last_monitor_at"`
@@ -285,6 +286,11 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Optional: true,
                 Computed: true,
             },
+            "keep_response_content": schema.BoolAttribute{
+                MarkdownDescription: "Keep the response part that matched, and the response body and headers, in this monitor's logs and on its incidents and alerts. Secrets are masked either way.",
+                Optional: true,
+                Computed: true,
+            },
             "incoming_request_monitor_heartbeat_checked_at": schema.StringAttribute{
                 MarkdownDescription: "This field is for Incoming Request monitor only. When was the last time we checked the heartbeat?",
                 Computed: true,
@@ -322,7 +328,7 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Sensitive: true,
             },
             "incoming_monitor_request": schema.StringAttribute{
-                MarkdownDescription: "Incoming Monitor Request for Incoming Request Monitor. A JSON value: read it with `jsondecode()`.",
+                MarkdownDescription: "The latest request this monitor received, as its logs keep it: secrets masked, and no headers or body when it keeps no request content. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "incoming_email_secret_key": schema.StringAttribute{
@@ -461,6 +467,10 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["disableActiveMonitoring"] = data.DisableActiveMonitoring.ValueBool()
         filterNames = append(filterNames, "disable_active_monitoring = "+fmt.Sprintf("%t", data.DisableActiveMonitoring.ValueBool()))
     }
+    if !data.KeepResponseContent.IsNull() && !data.KeepResponseContent.IsUnknown() {
+        filters["keepResponseContent"] = data.KeepResponseContent.ValueBool()
+        filterNames = append(filterNames, "keep_response_content = "+fmt.Sprintf("%t", data.KeepResponseContent.ValueBool()))
+    }
     if !data.DisableActiveMonitoringBecauseOfScheduledMaintenanceEvent.IsNull() && !data.DisableActiveMonitoringBecauseOfScheduledMaintenanceEvent.IsUnknown() {
         filters["disableActiveMonitoringBecauseOfScheduledMaintenanceEvent"] = data.DisableActiveMonitoringBecauseOfScheduledMaintenanceEvent.ValueBool()
         filterNames = append(filterNames, "disable_active_monitoring_because_of_scheduled_maintenance_event = "+fmt.Sprintf("%t", data.DisableActiveMonitoringBecauseOfScheduledMaintenanceEvent.ValueBool()))
@@ -539,6 +549,7 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "customFields": true,
         "isOwnerNotifiedOfResourceCreation": true,
         "disableActiveMonitoring": true,
+        "keepResponseContent": true,
         "incomingRequestMonitorHeartbeatCheckedAt": true,
         "telemetryMonitorNextMonitorAt": true,
         "telemetryMonitorLastMonitorAt": true,
@@ -630,6 +641,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -643,6 +661,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -664,6 +689,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -677,6 +709,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -698,6 +737,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := item["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -711,6 +757,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.Description = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -732,6 +785,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := item["slug"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := item["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -745,6 +805,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -771,6 +838,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.ArchivedAt = types.StringNull()
         }
+    } else if arr, ok := item["archivedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ArchivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = types.StringNull()
+        }
     } else if val, ok := item["archivedAt"].(string); ok {
         data.ArchivedAt = types.StringValue(val)
     } else {
@@ -784,6 +858,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ArchivedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.ArchivedByUserId = types.StringNull()
@@ -1213,6 +1294,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.MonitorTemplateId = types.StringNull()
         }
+    } else if arr, ok := item["monitorTemplateId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorTemplateId = types.StringNull()
+        }
     } else if val, ok := item["monitorTemplateId"].(string); ok {
         data.MonitorTemplateId = types.StringValue(val)
     } else {
@@ -1226,6 +1314,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.AutoProvisionedNetworkDeviceId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AutoProvisionedNetworkDeviceId = types.StringNull()
+        }
+    } else if arr, ok := item["autoProvisionedNetworkDeviceId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.AutoProvisionedNetworkDeviceId = types.StringValue(string(jsonBytes))
         } else {
             data.AutoProvisionedNetworkDeviceId = types.StringNull()
@@ -1247,6 +1342,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.NetworkAlertPolicyId = types.StringNull()
         }
+    } else if arr, ok := item["networkAlertPolicyId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.NetworkAlertPolicyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.NetworkAlertPolicyId = types.StringNull()
+        }
     } else if val, ok := item["networkAlertPolicyId"].(string); ok {
         data.NetworkAlertPolicyId = types.StringValue(val)
     } else {
@@ -1260,6 +1362,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.MonitorType = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MonitorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorType = types.StringNull()
+        }
+    } else if arr, ok := item["monitorType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.MonitorType = types.StringValue(string(jsonBytes))
         } else {
             data.MonitorType = types.StringNull()
@@ -1281,6 +1390,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.CurrentMonitorStatusId = types.StringNull()
         }
+    } else if arr, ok := item["currentMonitorStatusId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CurrentMonitorStatusId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentMonitorStatusId = types.StringNull()
+        }
     } else if val, ok := item["currentMonitorStatusId"].(string); ok {
         data.CurrentMonitorStatusId = types.StringValue(val)
     } else {
@@ -1294,6 +1410,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.MonitorSteps = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MonitorSteps = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorSteps = types.StringNull()
+        }
+    } else if arr, ok := item["monitorSteps"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.MonitorSteps = types.StringValue(string(jsonBytes))
         } else {
             data.MonitorSteps = types.StringNull()
@@ -1315,6 +1438,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.MonitoringInterval = types.StringNull()
         }
+    } else if arr, ok := item["monitoringInterval"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.MonitoringInterval = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitoringInterval = types.StringNull()
+        }
     } else if val, ok := item["monitoringInterval"].(string); ok {
         data.MonitoringInterval = types.StringValue(val)
     } else {
@@ -1328,6 +1458,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.CustomFields = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CustomFields = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomFields = types.StringNull()
+        }
+    } else if arr, ok := item["customFields"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CustomFields = types.StringValue(string(jsonBytes))
         } else {
             data.CustomFields = types.StringNull()
@@ -1347,6 +1484,11 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.DisableActiveMonitoring = types.BoolNull()
     }
+    if val, ok := item["keepResponseContent"].(bool); ok {
+        data.KeepResponseContent = types.BoolValue(val)
+    } else {
+        data.KeepResponseContent = types.BoolNull()
+    }
     if obj, ok := item["incomingRequestMonitorHeartbeatCheckedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.IncomingRequestMonitorHeartbeatCheckedAt = types.StringValue(val)
@@ -1355,6 +1497,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.IncomingRequestMonitorHeartbeatCheckedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncomingRequestMonitorHeartbeatCheckedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingRequestMonitorHeartbeatCheckedAt = types.StringNull()
+        }
+    } else if arr, ok := item["incomingRequestMonitorHeartbeatCheckedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.IncomingRequestMonitorHeartbeatCheckedAt = types.StringValue(string(jsonBytes))
         } else {
             data.IncomingRequestMonitorHeartbeatCheckedAt = types.StringNull()
@@ -1376,6 +1525,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.TelemetryMonitorNextMonitorAt = types.StringNull()
         }
+    } else if arr, ok := item["telemetryMonitorNextMonitorAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TelemetryMonitorNextMonitorAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.TelemetryMonitorNextMonitorAt = types.StringNull()
+        }
     } else if val, ok := item["telemetryMonitorNextMonitorAt"].(string); ok {
         data.TelemetryMonitorNextMonitorAt = types.StringValue(val)
     } else {
@@ -1389,6 +1545,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.TelemetryMonitorLastMonitorAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TelemetryMonitorLastMonitorAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.TelemetryMonitorLastMonitorAt = types.StringNull()
+        }
+    } else if arr, ok := item["telemetryMonitorLastMonitorAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.TelemetryMonitorLastMonitorAt = types.StringValue(string(jsonBytes))
         } else {
             data.TelemetryMonitorLastMonitorAt = types.StringNull()
@@ -1420,6 +1583,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.ServerMonitorRequestReceivedAt = types.StringNull()
         }
+    } else if arr, ok := item["serverMonitorRequestReceivedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ServerMonitorRequestReceivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServerMonitorRequestReceivedAt = types.StringNull()
+        }
     } else if val, ok := item["serverMonitorRequestReceivedAt"].(string); ok {
         data.ServerMonitorRequestReceivedAt = types.StringValue(val)
     } else {
@@ -1433,6 +1603,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.ServerMonitorSecretKey = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ServerMonitorSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServerMonitorSecretKey = types.StringNull()
+        }
+    } else if arr, ok := item["serverMonitorSecretKey"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ServerMonitorSecretKey = types.StringValue(string(jsonBytes))
         } else {
             data.ServerMonitorSecretKey = types.StringNull()
@@ -1454,6 +1631,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.IncomingRequestSecretKey = types.StringNull()
         }
+    } else if arr, ok := item["incomingRequestSecretKey"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.IncomingRequestSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingRequestSecretKey = types.StringNull()
+        }
     } else if val, ok := item["incomingRequestSecretKey"].(string); ok {
         data.IncomingRequestSecretKey = types.StringValue(val)
     } else {
@@ -1467,6 +1651,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.IncomingMonitorRequest = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncomingMonitorRequest = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingMonitorRequest = types.StringNull()
+        }
+    } else if arr, ok := item["incomingMonitorRequest"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.IncomingMonitorRequest = types.StringValue(string(jsonBytes))
         } else {
             data.IncomingMonitorRequest = types.StringNull()
@@ -1488,6 +1679,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.IncomingEmailSecretKey = types.StringNull()
         }
+    } else if arr, ok := item["incomingEmailSecretKey"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.IncomingEmailSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailSecretKey = types.StringNull()
+        }
     } else if val, ok := item["incomingEmailSecretKey"].(string); ok {
         data.IncomingEmailSecretKey = types.StringValue(val)
     } else {
@@ -1501,6 +1699,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.IncomingEmailCustomLocalPart = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncomingEmailCustomLocalPart = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailCustomLocalPart = types.StringNull()
+        }
+    } else if arr, ok := item["incomingEmailCustomLocalPart"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.IncomingEmailCustomLocalPart = types.StringValue(string(jsonBytes))
         } else {
             data.IncomingEmailCustomLocalPart = types.StringNull()
@@ -1522,6 +1727,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.IncomingEmailMonitorLastEmailReceivedAt = types.StringNull()
         }
+    } else if arr, ok := item["incomingEmailMonitorLastEmailReceivedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.IncomingEmailMonitorLastEmailReceivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailMonitorLastEmailReceivedAt = types.StringNull()
+        }
     } else if val, ok := item["incomingEmailMonitorLastEmailReceivedAt"].(string); ok {
         data.IncomingEmailMonitorLastEmailReceivedAt = types.StringValue(val)
     } else {
@@ -1535,6 +1747,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.IncomingEmailMonitorRequest = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncomingEmailMonitorRequest = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailMonitorRequest = types.StringNull()
+        }
+    } else if arr, ok := item["incomingEmailMonitorRequest"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.IncomingEmailMonitorRequest = types.StringValue(string(jsonBytes))
         } else {
             data.IncomingEmailMonitorRequest = types.StringNull()
@@ -1556,6 +1775,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else {
             data.IncomingEmailMonitorHeartbeatCheckedAt = types.StringNull()
         }
+    } else if arr, ok := item["incomingEmailMonitorHeartbeatCheckedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.IncomingEmailMonitorHeartbeatCheckedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailMonitorHeartbeatCheckedAt = types.StringNull()
+        }
     } else if val, ok := item["incomingEmailMonitorHeartbeatCheckedAt"].(string); ok {
         data.IncomingEmailMonitorHeartbeatCheckedAt = types.StringValue(val)
     } else {
@@ -1569,6 +1795,13 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         } else if val, ok := obj["value"].(float64); ok {
             data.ServerMonitorResponse = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ServerMonitorResponse = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServerMonitorResponse = types.StringNull()
+        }
+    } else if arr, ok := item["serverMonitorResponse"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ServerMonitorResponse = types.StringValue(string(jsonBytes))
         } else {
             data.ServerMonitorResponse = types.StringNull()

@@ -342,6 +342,13 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -355,6 +362,13 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -376,6 +390,13 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -389,6 +410,13 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         } else if val, ok := obj["value"].(float64); ok {
             data.Criteria = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Criteria = types.StringValue(string(jsonBytes))
+        } else {
+            data.Criteria = types.StringNull()
+        }
+    } else if arr, ok := item["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Criteria = types.StringValue(string(jsonBytes))
         } else {
             data.Criteria = types.StringNull()
@@ -410,6 +438,13 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         } else {
             data.ProjectId = types.StringNull()
         }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
     } else if val, ok := item["projectId"].(string); ok {
         data.ProjectId = types.StringValue(val)
     } else {
@@ -427,6 +462,13 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := item["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -440,6 +482,13 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         } else if val, ok := obj["value"].(float64); ok {
             data.Description = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -466,6 +515,13 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         } else {
             data.IpMatchTarget = types.StringNull()
         }
+    } else if arr, ok := item["ipMatchTarget"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.IpMatchTarget = types.StringValue(string(jsonBytes))
+        } else {
+            data.IpMatchTarget = types.StringNull()
+        }
     } else if val, ok := item["ipMatchTarget"].(string); ok {
         data.IpMatchTarget = types.StringValue(val)
     } else {
@@ -479,6 +535,13 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         } else if val, ok := obj["value"].(float64); ok {
             data.SysNamePattern = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SysNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.SysNamePattern = types.StringNull()
+        }
+    } else if arr, ok := item["sysNamePattern"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.SysNamePattern = types.StringValue(string(jsonBytes))
         } else {
             data.SysNamePattern = types.StringNull()
@@ -500,6 +563,13 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         } else {
             data.SysDescrPattern = types.StringNull()
         }
+    } else if arr, ok := item["sysDescrPattern"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SysDescrPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.SysDescrPattern = types.StringNull()
+        }
     } else if val, ok := item["sysDescrPattern"].(string); ok {
         data.SysDescrPattern = types.StringValue(val)
     } else {
@@ -513,6 +583,13 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         } else if val, ok := obj["value"].(float64); ok {
             data.SysObjectIdPattern = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SysObjectIdPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.SysObjectIdPattern = types.StringNull()
+        }
+    } else if arr, ok := item["sysObjectIdPattern"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.SysObjectIdPattern = types.StringValue(string(jsonBytes))
         } else {
             data.SysObjectIdPattern = types.StringNull()
@@ -545,6 +622,13 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         } else {
             data.MonitorTemplateId = types.StringNull()
         }
+    } else if arr, ok := item["monitorTemplateId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorTemplateId = types.StringNull()
+        }
     } else if val, ok := item["monitorTemplateId"].(string); ok {
         data.MonitorTemplateId = types.StringValue(val)
     } else {
@@ -562,6 +646,13 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         } else {
             data.OidTemplateId = types.StringNull()
         }
+    } else if arr, ok := item["oidTemplateId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.OidTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OidTemplateId = types.StringNull()
+        }
     } else if val, ok := item["oidTemplateId"].(string); ok {
         data.OidTemplateId = types.StringValue(val)
     } else {
@@ -575,6 +666,13 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

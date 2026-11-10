@@ -32,6 +32,7 @@ resource "oneuptime_scheduled_maintenance_event" "example" {
 
 - `ceph_clusters` (Set of String) List of Ceph clusters affected by this event. IDs of `oneuptime_ceph_cluster` resources.
 - `change_monitor_status_to_id` (String) Relation to Monitor Status Object ID. The monitors attached to this event change to this status when the event starts, and back to operational when it ends. It can be changed until the event starts. The ID of a `oneuptime_monitor_status`.
+- `cloud_resources` (Set of String) List of cloud resources affected by this event. Their monitors open no incident or alert while it is in progress. IDs of `oneuptime_cloud_resource` resources.
 - `current_scheduled_maintenance_state_id` (String) Scheduled Maintenance State ID. The state the event currently is in. The ID of a `oneuptime_scheduled_maintenance_state`.
 - `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
 - `data_store_ids` (String) The databases Data Observability watches that this maintenance affects: their data alerts stay quiet while it is on. A JSON value: write it with `jsonencode()`.

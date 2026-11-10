@@ -41,7 +41,7 @@ data "oneuptime_serverless_function" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_archived` (Boolean) Is this serverless function archived? Archived serverless functions are hidden from lists but keep collecting telemetry.
 - `name` (String) Friendly name for this serverless function.
-- `otel_collector_status` (String) Whether telemetry is currently being received (connected) or has gone stale (disconnected).
+- `otel_collector_status` (String) connected while data has arrived in the last 15 minutes, disconnected once nothing has for 15 minutes (normal while nothing invokes the function: it sends data only while it runs), and empty until the first data arrives. The Dashboard shows these as Receiving data, No recent invocations and Waiting for data.
 - `retain_telemetry_data_for_days` (Number) Number of days to retain telemetry data for this function. Leave blank to use the project-wide default.
 - `runtime_name` (String) Last-seen process.runtime.name OpenTelemetry resource attribute.
 - `runtime_version` (String) Last-seen process.runtime.version OpenTelemetry resource attribute.

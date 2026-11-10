@@ -391,6 +391,13 @@ func (r *StatusPageSsoResource) Create(ctx context.Context, req resource.CreateR
         } else {
             data.StatusPageId = types.StringNull()
         }
+    } else if arr, ok := dataMap["statusPageId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.StatusPageId = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusPageId = types.StringNull()
+        }
     } else if val, ok := dataMap["statusPageId"].(string); ok {
         data.StatusPageId = types.StringValue(val)
     } else {
@@ -424,6 +431,13 @@ func (r *StatusPageSsoResource) Create(ctx context.Context, req resource.CreateR
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Name = types.StringValue(string(jsonBytes))
         } else {
             data.Name = types.StringNull()
@@ -465,6 +479,13 @@ func (r *StatusPageSsoResource) Create(ctx context.Context, req resource.CreateR
         } else {
             data.Description = types.StringNull()
         }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
     } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
@@ -498,6 +519,13 @@ func (r *StatusPageSsoResource) Create(ctx context.Context, req resource.CreateR
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SignatureMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.SignatureMethod = types.StringNull()
+        }
+    } else if arr, ok := dataMap["signatureMethod"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SignatureMethod = types.StringValue(string(jsonBytes))
         } else {
             data.SignatureMethod = types.StringNull()
@@ -539,6 +567,13 @@ func (r *StatusPageSsoResource) Create(ctx context.Context, req resource.CreateR
         } else {
             data.DigestMethod = types.StringNull()
         }
+    } else if arr, ok := dataMap["digestMethod"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DigestMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.DigestMethod = types.StringNull()
+        }
     } else if val, ok := dataMap["digestMethod"].(string); ok {
         data.DigestMethod = types.StringValue(val)
     } else {
@@ -572,6 +607,13 @@ func (r *StatusPageSsoResource) Create(ctx context.Context, req resource.CreateR
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SignOnUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.SignOnUrl = types.StringNull()
+        }
+    } else if arr, ok := dataMap["signOnURL"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SignOnUrl = types.StringValue(string(jsonBytes))
         } else {
             data.SignOnUrl = types.StringNull()
@@ -613,6 +655,13 @@ func (r *StatusPageSsoResource) Create(ctx context.Context, req resource.CreateR
         } else {
             data.IssuerUrl = types.StringNull()
         }
+    } else if arr, ok := dataMap["issuerURL"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IssuerUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.IssuerUrl = types.StringNull()
+        }
     } else if val, ok := dataMap["issuerURL"].(string); ok {
         data.IssuerUrl = types.StringValue(val)
     } else {
@@ -646,6 +695,13 @@ func (r *StatusPageSsoResource) Create(ctx context.Context, req resource.CreateR
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PublicCertificate = types.StringValue(string(jsonBytes))
+        } else {
+            data.PublicCertificate = types.StringNull()
+        }
+    } else if arr, ok := dataMap["publicCertificate"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PublicCertificate = types.StringValue(string(jsonBytes))
         } else {
             data.PublicCertificate = types.StringNull()
@@ -711,6 +767,13 @@ func (r *StatusPageSsoResource) Create(ctx context.Context, req resource.CreateR
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -841,6 +904,13 @@ func (r *StatusPageSsoResource) Read(ctx context.Context, req resource.ReadReque
         } else {
             data.StatusPageId = types.StringNull()
         }
+    } else if arr, ok := dataMap["statusPageId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.StatusPageId = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusPageId = types.StringNull()
+        }
     } else if val, ok := dataMap["statusPageId"].(string); ok {
         data.StatusPageId = types.StringValue(val)
     } else {
@@ -874,6 +944,13 @@ func (r *StatusPageSsoResource) Read(ctx context.Context, req resource.ReadReque
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Name = types.StringValue(string(jsonBytes))
         } else {
             data.Name = types.StringNull()
@@ -915,6 +992,13 @@ func (r *StatusPageSsoResource) Read(ctx context.Context, req resource.ReadReque
         } else {
             data.Description = types.StringNull()
         }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
     } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
@@ -948,6 +1032,13 @@ func (r *StatusPageSsoResource) Read(ctx context.Context, req resource.ReadReque
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SignatureMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.SignatureMethod = types.StringNull()
+        }
+    } else if arr, ok := dataMap["signatureMethod"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SignatureMethod = types.StringValue(string(jsonBytes))
         } else {
             data.SignatureMethod = types.StringNull()
@@ -989,6 +1080,13 @@ func (r *StatusPageSsoResource) Read(ctx context.Context, req resource.ReadReque
         } else {
             data.DigestMethod = types.StringNull()
         }
+    } else if arr, ok := dataMap["digestMethod"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DigestMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.DigestMethod = types.StringNull()
+        }
     } else if val, ok := dataMap["digestMethod"].(string); ok {
         data.DigestMethod = types.StringValue(val)
     } else {
@@ -1022,6 +1120,13 @@ func (r *StatusPageSsoResource) Read(ctx context.Context, req resource.ReadReque
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SignOnUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.SignOnUrl = types.StringNull()
+        }
+    } else if arr, ok := dataMap["signOnURL"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SignOnUrl = types.StringValue(string(jsonBytes))
         } else {
             data.SignOnUrl = types.StringNull()
@@ -1063,6 +1168,13 @@ func (r *StatusPageSsoResource) Read(ctx context.Context, req resource.ReadReque
         } else {
             data.IssuerUrl = types.StringNull()
         }
+    } else if arr, ok := dataMap["issuerURL"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IssuerUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.IssuerUrl = types.StringNull()
+        }
     } else if val, ok := dataMap["issuerURL"].(string); ok {
         data.IssuerUrl = types.StringValue(val)
     } else {
@@ -1096,6 +1208,13 @@ func (r *StatusPageSsoResource) Read(ctx context.Context, req resource.ReadReque
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PublicCertificate = types.StringValue(string(jsonBytes))
+        } else {
+            data.PublicCertificate = types.StringNull()
+        }
+    } else if arr, ok := dataMap["publicCertificate"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PublicCertificate = types.StringValue(string(jsonBytes))
         } else {
             data.PublicCertificate = types.StringNull()
@@ -1161,6 +1280,13 @@ func (r *StatusPageSsoResource) Read(ctx context.Context, req resource.ReadReque
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1344,6 +1470,13 @@ func (r *StatusPageSsoResource) Update(ctx context.Context, req resource.UpdateR
         } else {
             data.StatusPageId = types.StringNull()
         }
+    } else if arr, ok := dataMap["statusPageId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.StatusPageId = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusPageId = types.StringNull()
+        }
     } else if val, ok := dataMap["statusPageId"].(string); ok {
         data.StatusPageId = types.StringValue(val)
     } else {
@@ -1377,6 +1510,13 @@ func (r *StatusPageSsoResource) Update(ctx context.Context, req resource.UpdateR
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Name = types.StringValue(string(jsonBytes))
         } else {
             data.Name = types.StringNull()
@@ -1418,6 +1558,13 @@ func (r *StatusPageSsoResource) Update(ctx context.Context, req resource.UpdateR
         } else {
             data.Description = types.StringNull()
         }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
     } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
@@ -1451,6 +1598,13 @@ func (r *StatusPageSsoResource) Update(ctx context.Context, req resource.UpdateR
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SignatureMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.SignatureMethod = types.StringNull()
+        }
+    } else if arr, ok := dataMap["signatureMethod"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SignatureMethod = types.StringValue(string(jsonBytes))
         } else {
             data.SignatureMethod = types.StringNull()
@@ -1492,6 +1646,13 @@ func (r *StatusPageSsoResource) Update(ctx context.Context, req resource.UpdateR
         } else {
             data.DigestMethod = types.StringNull()
         }
+    } else if arr, ok := dataMap["digestMethod"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DigestMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.DigestMethod = types.StringNull()
+        }
     } else if val, ok := dataMap["digestMethod"].(string); ok {
         data.DigestMethod = types.StringValue(val)
     } else {
@@ -1525,6 +1686,13 @@ func (r *StatusPageSsoResource) Update(ctx context.Context, req resource.UpdateR
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SignOnUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.SignOnUrl = types.StringNull()
+        }
+    } else if arr, ok := dataMap["signOnURL"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SignOnUrl = types.StringValue(string(jsonBytes))
         } else {
             data.SignOnUrl = types.StringNull()
@@ -1566,6 +1734,13 @@ func (r *StatusPageSsoResource) Update(ctx context.Context, req resource.UpdateR
         } else {
             data.IssuerUrl = types.StringNull()
         }
+    } else if arr, ok := dataMap["issuerURL"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IssuerUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.IssuerUrl = types.StringNull()
+        }
     } else if val, ok := dataMap["issuerURL"].(string); ok {
         data.IssuerUrl = types.StringValue(val)
     } else {
@@ -1599,6 +1774,13 @@ func (r *StatusPageSsoResource) Update(ctx context.Context, req resource.UpdateR
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PublicCertificate = types.StringValue(string(jsonBytes))
+        } else {
+            data.PublicCertificate = types.StringNull()
+        }
+    } else if arr, ok := dataMap["publicCertificate"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PublicCertificate = types.StringValue(string(jsonBytes))
         } else {
             data.PublicCertificate = types.StringNull()
@@ -1664,6 +1846,13 @@ func (r *StatusPageSsoResource) Update(ctx context.Context, req resource.UpdateR
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

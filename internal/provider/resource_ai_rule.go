@@ -800,6 +800,13 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -848,6 +855,13 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -881,6 +895,13 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -921,6 +942,13 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TriggerEntityType = types.StringValue(string(jsonBytes))
+        } else {
+            data.TriggerEntityType = types.StringNull()
+        }
+    } else if arr, ok := dataMap["triggerEntityType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TriggerEntityType = types.StringValue(string(jsonBytes))
         } else {
             data.TriggerEntityType = types.StringNull()
@@ -969,6 +997,13 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
         } else {
             data.ExecutionMode = types.StringNull()
         }
+    } else if arr, ok := dataMap["executionMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ExecutionMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExecutionMode = types.StringNull()
+        }
     } else if val, ok := dataMap["executionMode"].(string); ok {
         data.ExecutionMode = types.StringValue(val)
     } else {
@@ -1002,6 +1037,13 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.RemediationAction = types.StringValue(string(jsonBytes))
+        } else {
+            data.RemediationAction = types.StringNull()
+        }
+    } else if arr, ok := dataMap["remediationAction"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.RemediationAction = types.StringValue(string(jsonBytes))
         } else {
             data.RemediationAction = types.StringNull()
@@ -1045,6 +1087,13 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CommandAllowlist = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["commandAllowlist"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.CommandAllowlist = NewJSONSubsetNull()
@@ -1278,6 +1327,13 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
         } else {
             data.TitlePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["titlePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TitlePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.TitlePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["titlePattern"].(string); ok {
         data.TitlePattern = types.StringValue(val)
     } else {
@@ -1311,6 +1367,13 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.DescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["descriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.DescriptionPattern = types.StringNull()
@@ -1416,6 +1479,13 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
         } else {
             data.ServiceNamePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["serviceNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ServiceNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServiceNamePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["serviceNamePattern"].(string); ok {
         data.ServiceNamePattern = types.StringValue(val)
     } else {
@@ -1517,6 +1587,13 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
         } else {
             data.RunnerId = types.StringNull()
         }
+    } else if arr, ok := dataMap["runnerId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RunnerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerId = types.StringNull()
+        }
     } else if val, ok := dataMap["runnerId"].(string); ok {
         data.RunnerId = types.StringValue(val)
     } else {
@@ -1586,6 +1663,13 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
         } else {
             data.LlmProviderId = types.StringNull()
         }
+    } else if arr, ok := dataMap["llmProviderId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmProviderId = types.StringNull()
+        }
     } else if val, ok := dataMap["llmProviderId"].(string); ok {
         data.LlmProviderId = types.StringValue(val)
     } else {
@@ -1619,6 +1703,13 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AiContext = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiContext = types.StringNull()
+        }
+    } else if arr, ok := dataMap["aiContext"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AiContext = types.StringValue(string(jsonBytes))
         } else {
             data.AiContext = types.StringNull()
@@ -1688,6 +1779,13 @@ func (r *AiRuleResource) Create(ctx context.Context, req resource.CreateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1833,6 +1931,13 @@ func (r *AiRuleResource) Read(ctx context.Context, req resource.ReadRequest, res
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -1881,6 +1986,13 @@ func (r *AiRuleResource) Read(ctx context.Context, req resource.ReadRequest, res
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1914,6 +2026,13 @@ func (r *AiRuleResource) Read(ctx context.Context, req resource.ReadRequest, res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1954,6 +2073,13 @@ func (r *AiRuleResource) Read(ctx context.Context, req resource.ReadRequest, res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TriggerEntityType = types.StringValue(string(jsonBytes))
+        } else {
+            data.TriggerEntityType = types.StringNull()
+        }
+    } else if arr, ok := dataMap["triggerEntityType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TriggerEntityType = types.StringValue(string(jsonBytes))
         } else {
             data.TriggerEntityType = types.StringNull()
@@ -2002,6 +2128,13 @@ func (r *AiRuleResource) Read(ctx context.Context, req resource.ReadRequest, res
         } else {
             data.ExecutionMode = types.StringNull()
         }
+    } else if arr, ok := dataMap["executionMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ExecutionMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExecutionMode = types.StringNull()
+        }
     } else if val, ok := dataMap["executionMode"].(string); ok {
         data.ExecutionMode = types.StringValue(val)
     } else {
@@ -2035,6 +2168,13 @@ func (r *AiRuleResource) Read(ctx context.Context, req resource.ReadRequest, res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.RemediationAction = types.StringValue(string(jsonBytes))
+        } else {
+            data.RemediationAction = types.StringNull()
+        }
+    } else if arr, ok := dataMap["remediationAction"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.RemediationAction = types.StringValue(string(jsonBytes))
         } else {
             data.RemediationAction = types.StringNull()
@@ -2078,6 +2218,13 @@ func (r *AiRuleResource) Read(ctx context.Context, req resource.ReadRequest, res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CommandAllowlist = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["commandAllowlist"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.CommandAllowlist = NewJSONSubsetNull()
@@ -2311,6 +2458,13 @@ func (r *AiRuleResource) Read(ctx context.Context, req resource.ReadRequest, res
         } else {
             data.TitlePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["titlePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TitlePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.TitlePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["titlePattern"].(string); ok {
         data.TitlePattern = types.StringValue(val)
     } else {
@@ -2344,6 +2498,13 @@ func (r *AiRuleResource) Read(ctx context.Context, req resource.ReadRequest, res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.DescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["descriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.DescriptionPattern = types.StringNull()
@@ -2449,6 +2610,13 @@ func (r *AiRuleResource) Read(ctx context.Context, req resource.ReadRequest, res
         } else {
             data.ServiceNamePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["serviceNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ServiceNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServiceNamePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["serviceNamePattern"].(string); ok {
         data.ServiceNamePattern = types.StringValue(val)
     } else {
@@ -2550,6 +2718,13 @@ func (r *AiRuleResource) Read(ctx context.Context, req resource.ReadRequest, res
         } else {
             data.RunnerId = types.StringNull()
         }
+    } else if arr, ok := dataMap["runnerId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RunnerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerId = types.StringNull()
+        }
     } else if val, ok := dataMap["runnerId"].(string); ok {
         data.RunnerId = types.StringValue(val)
     } else {
@@ -2619,6 +2794,13 @@ func (r *AiRuleResource) Read(ctx context.Context, req resource.ReadRequest, res
         } else {
             data.LlmProviderId = types.StringNull()
         }
+    } else if arr, ok := dataMap["llmProviderId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmProviderId = types.StringNull()
+        }
     } else if val, ok := dataMap["llmProviderId"].(string); ok {
         data.LlmProviderId = types.StringValue(val)
     } else {
@@ -2652,6 +2834,13 @@ func (r *AiRuleResource) Read(ctx context.Context, req resource.ReadRequest, res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AiContext = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiContext = types.StringNull()
+        }
+    } else if arr, ok := dataMap["aiContext"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AiContext = types.StringValue(string(jsonBytes))
         } else {
             data.AiContext = types.StringNull()
@@ -2721,6 +2910,13 @@ func (r *AiRuleResource) Read(ctx context.Context, req resource.ReadRequest, res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -3008,6 +3204,13 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -3056,6 +3259,13 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -3089,6 +3299,13 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -3129,6 +3346,13 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.TriggerEntityType = types.StringValue(string(jsonBytes))
+        } else {
+            data.TriggerEntityType = types.StringNull()
+        }
+    } else if arr, ok := dataMap["triggerEntityType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.TriggerEntityType = types.StringValue(string(jsonBytes))
         } else {
             data.TriggerEntityType = types.StringNull()
@@ -3177,6 +3401,13 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
         } else {
             data.ExecutionMode = types.StringNull()
         }
+    } else if arr, ok := dataMap["executionMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ExecutionMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExecutionMode = types.StringNull()
+        }
     } else if val, ok := dataMap["executionMode"].(string); ok {
         data.ExecutionMode = types.StringValue(val)
     } else {
@@ -3210,6 +3441,13 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.RemediationAction = types.StringValue(string(jsonBytes))
+        } else {
+            data.RemediationAction = types.StringNull()
+        }
+    } else if arr, ok := dataMap["remediationAction"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.RemediationAction = types.StringValue(string(jsonBytes))
         } else {
             data.RemediationAction = types.StringNull()
@@ -3253,6 +3491,13 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CommandAllowlist = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["commandAllowlist"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.CommandAllowlist = NewJSONSubsetNull()
@@ -3486,6 +3731,13 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
         } else {
             data.TitlePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["titlePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TitlePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.TitlePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["titlePattern"].(string); ok {
         data.TitlePattern = types.StringValue(val)
     } else {
@@ -3519,6 +3771,13 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.DescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["descriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.DescriptionPattern = types.StringNull()
@@ -3624,6 +3883,13 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
         } else {
             data.ServiceNamePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["serviceNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ServiceNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServiceNamePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["serviceNamePattern"].(string); ok {
         data.ServiceNamePattern = types.StringValue(val)
     } else {
@@ -3725,6 +3991,13 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
         } else {
             data.RunnerId = types.StringNull()
         }
+    } else if arr, ok := dataMap["runnerId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RunnerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerId = types.StringNull()
+        }
     } else if val, ok := dataMap["runnerId"].(string); ok {
         data.RunnerId = types.StringValue(val)
     } else {
@@ -3794,6 +4067,13 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
         } else {
             data.LlmProviderId = types.StringNull()
         }
+    } else if arr, ok := dataMap["llmProviderId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmProviderId = types.StringNull()
+        }
     } else if val, ok := dataMap["llmProviderId"].(string); ok {
         data.LlmProviderId = types.StringValue(val)
     } else {
@@ -3827,6 +4107,13 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AiContext = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiContext = types.StringNull()
+        }
+    } else if arr, ok := dataMap["aiContext"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AiContext = types.StringValue(string(jsonBytes))
         } else {
             data.AiContext = types.StringNull()
@@ -3896,6 +4183,13 @@ func (r *AiRuleResource) Update(ctx context.Context, req resource.UpdateRequest,
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

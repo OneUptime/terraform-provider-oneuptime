@@ -80,6 +80,7 @@ resource "oneuptime_incident" "example" {
 - `created_criteria_id` (String) If this incident was created by a Probe, this is the ID of the criteria that created it.
 - `created_incident_template_id` (String) If this incident was created by a Probe, this is the ID of the incident template that was used for creation.
 - `created_state_log` (String) A JSON value: read it with `jsondecode()`.
+- `evaluation_details` (String) Why the monitor opened this incident: the criteria and filters that matched, what the check found, and a redacted excerpt of the response. A JSON value: read it with `jsondecode()`.
 - `first_paged_at` (String) When an on-call policy or a direct page first notified someone about this incident. Empty until someone is paged. Set by OneUptime.
 - `holds_monitors` (Boolean) Whether this incident is holding its monitors - keeping them in its monitor status, or their monitoring paused - so that resolving it gives them back: their monitoring resumes and their status returns to operational. True from when the incident is declared open, or from when an edit while it is open puts its monitors in its monitor status. False for an incident declared already resolved, which never held them, and once a resolve has given them back. Empty for incidents from before it was recorded, which give their monitors back when they are resolved. Set by OneUptime; it cannot be written.
 - `id` (String) Unique identifier for the resource.

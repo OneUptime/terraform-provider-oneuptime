@@ -38,6 +38,7 @@ data "oneuptime_cloud_cost" "by_id" {
 - `region` (String) Region.
 - `resource_id` (String) Resource.
 - `service` (String) Service.
+- `tags` (String) Tags.
 
 ### Read-Only
 

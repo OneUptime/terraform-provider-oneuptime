@@ -48,7 +48,7 @@ resource "oneuptime_serverless_function" "example" {
 - `function_version` (String) Last-seen faas.version OpenTelemetry resource attribute.
 - `id` (String) Unique identifier for the resource.
 - `last_seen_at` (String) When telemetry was last received for this function.
-- `otel_collector_status` (String) Whether telemetry is currently being received (connected) or has gone stale (disconnected).
+- `otel_collector_status` (String) connected while data has arrived in the last 15 minutes, disconnected once nothing has for 15 minutes (normal while nothing invokes the function: it sends data only while it runs), and empty until the first data arrives. The Dashboard shows these as Receiving data, No recent invocations and Waiting for data.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `runtime_name` (String) Last-seen process.runtime.name OpenTelemetry resource attribute.
 - `runtime_version` (String) Last-seen process.runtime.version OpenTelemetry resource attribute.

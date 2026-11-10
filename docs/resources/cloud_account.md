@@ -42,6 +42,7 @@ resource "oneuptime_cloud_account" "example" {
 - `ai_access_configured_at` (String) When OneUptime AI access to this account was first configured by anyone saving an AI access setting. Set by the server; never cleared, so a Cloud AI agent that connects later never overwrites a setting an operator chose.
 - `ai_access_last_error` (String) The most recent failure OneUptime AI hit in this account — an operation that failed, or a Cloud AI agent that could not connect to it — kept until the next success. Set by the server.
 - `ai_access_last_verified_at` (String) When an operation from OneUptime AI last succeeded in this account through its Cloud AI agent. Set by the server.
+- `ai_agent_reset_at` (String) When this account's Cloud AI agent was last reset: every key it had stopped working, and it stays disconnected until its setup command runs again. Set by the server.
 - `cloud_connection_id` (String) ID of the connection that reads this account, if one does. The ID of a `oneuptime_cloud_connection`.
 - `cost_summary` (String) What the account cost this month so far, at its pace and last month, from its cloud's billing, and whether its costs could be read. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.

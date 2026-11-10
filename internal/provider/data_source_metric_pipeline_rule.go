@@ -352,6 +352,13 @@ func (d *MetricPipelineRuleDataSource) Read(ctx context.Context, req datasource.
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -365,6 +372,13 @@ func (d *MetricPipelineRuleDataSource) Read(ctx context.Context, req datasource.
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -386,6 +400,13 @@ func (d *MetricPipelineRuleDataSource) Read(ctx context.Context, req datasource.
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -399,6 +420,13 @@ func (d *MetricPipelineRuleDataSource) Read(ctx context.Context, req datasource.
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -420,6 +448,13 @@ func (d *MetricPipelineRuleDataSource) Read(ctx context.Context, req datasource.
         } else {
             data.ServiceId = types.StringNull()
         }
+    } else if arr, ok := item["serviceId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ServiceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServiceId = types.StringNull()
+        }
     } else if val, ok := item["serviceId"].(string); ok {
         data.ServiceId = types.StringValue(val)
     } else {
@@ -433,6 +468,13 @@ func (d *MetricPipelineRuleDataSource) Read(ctx context.Context, req datasource.
         } else if val, ok := obj["value"].(float64); ok {
             data.Name = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Name = types.StringValue(string(jsonBytes))
         } else {
             data.Name = types.StringNull()
@@ -454,6 +496,13 @@ func (d *MetricPipelineRuleDataSource) Read(ctx context.Context, req datasource.
         } else {
             data.Description = types.StringNull()
         }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
     } else if val, ok := item["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
@@ -467,6 +516,13 @@ func (d *MetricPipelineRuleDataSource) Read(ctx context.Context, req datasource.
         } else if val, ok := obj["value"].(float64); ok {
             data.RuleType = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RuleType = types.StringValue(string(jsonBytes))
+        } else {
+            data.RuleType = types.StringNull()
+        }
+    } else if arr, ok := item["ruleType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.RuleType = types.StringValue(string(jsonBytes))
         } else {
             data.RuleType = types.StringNull()
@@ -488,6 +544,13 @@ func (d *MetricPipelineRuleDataSource) Read(ctx context.Context, req datasource.
         } else {
             data.FilterCondition = types.StringNull()
         }
+    } else if arr, ok := item["filterCondition"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FilterCondition = types.StringValue(string(jsonBytes))
+        } else {
+            data.FilterCondition = types.StringNull()
+        }
     } else if val, ok := item["filterCondition"].(string); ok {
         data.FilterCondition = types.StringValue(val)
     } else {
@@ -501,6 +564,13 @@ func (d *MetricPipelineRuleDataSource) Read(ctx context.Context, req datasource.
         } else if val, ok := obj["value"].(float64); ok {
             data.Filters = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Filters = types.StringValue(string(jsonBytes))
+        } else {
+            data.Filters = types.StringNull()
+        }
+    } else if arr, ok := item["filters"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Filters = types.StringValue(string(jsonBytes))
         } else {
             data.Filters = types.StringNull()
@@ -522,6 +592,13 @@ func (d *MetricPipelineRuleDataSource) Read(ctx context.Context, req datasource.
         } else {
             data.RenameFromKey = types.StringNull()
         }
+    } else if arr, ok := item["renameFromKey"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RenameFromKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.RenameFromKey = types.StringNull()
+        }
     } else if val, ok := item["renameFromKey"].(string); ok {
         data.RenameFromKey = types.StringValue(val)
     } else {
@@ -535,6 +612,13 @@ func (d *MetricPipelineRuleDataSource) Read(ctx context.Context, req datasource.
         } else if val, ok := obj["value"].(float64); ok {
             data.RenameToKey = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RenameToKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.RenameToKey = types.StringNull()
+        }
+    } else if arr, ok := item["renameToKey"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.RenameToKey = types.StringValue(string(jsonBytes))
         } else {
             data.RenameToKey = types.StringNull()
@@ -556,6 +640,13 @@ func (d *MetricPipelineRuleDataSource) Read(ctx context.Context, req datasource.
         } else {
             data.AddAttributeKey = types.StringNull()
         }
+    } else if arr, ok := item["addAttributeKey"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AddAttributeKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.AddAttributeKey = types.StringNull()
+        }
     } else if val, ok := item["addAttributeKey"].(string); ok {
         data.AddAttributeKey = types.StringValue(val)
     } else {
@@ -573,6 +664,13 @@ func (d *MetricPipelineRuleDataSource) Read(ctx context.Context, req datasource.
         } else {
             data.AddAttributeValue = types.StringNull()
         }
+    } else if arr, ok := item["addAttributeValue"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AddAttributeValue = types.StringValue(string(jsonBytes))
+        } else {
+            data.AddAttributeValue = types.StringNull()
+        }
     } else if val, ok := item["addAttributeValue"].(string); ok {
         data.AddAttributeValue = types.StringValue(val)
     } else {
@@ -586,6 +684,13 @@ func (d *MetricPipelineRuleDataSource) Read(ctx context.Context, req datasource.
         } else if val, ok := obj["value"].(float64); ok {
             data.RedactReplacement = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RedactReplacement = types.StringValue(string(jsonBytes))
+        } else {
+            data.RedactReplacement = types.StringNull()
+        }
+    } else if arr, ok := item["redactReplacement"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.RedactReplacement = types.StringValue(string(jsonBytes))
         } else {
             data.RedactReplacement = types.StringNull()
@@ -610,6 +715,13 @@ func (d *MetricPipelineRuleDataSource) Read(ctx context.Context, req datasource.
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

@@ -108,6 +108,7 @@ type OpenstackCloudDataSourceModel struct {
     AiAccessLastVerifiedAt types.String `tfsdk:"ai_access_last_verified_at"`
     AiAccessLastError types.String `tfsdk:"ai_access_last_error"`
     AiAccessConfiguredAt types.String `tfsdk:"ai_access_configured_at"`
+    AiAgentResetAt types.String `tfsdk:"ai_agent_reset_at"`
 }
 
 func (d *OpenstackCloudDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -458,6 +459,10 @@ func (d *OpenstackCloudDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "When OneUptime AI access to this OpenStack cloud was first configured by anyone saving an AI access setting. Set by the server; never cleared, so an OpenStack AI agent that registers later never overwrites a setting an operator chose.",
                 Computed: true,
             },
+            "ai_agent_reset_at": schema.StringAttribute{
+                MarkdownDescription: "When this OpenStack cloud's AI agent was last reset: its key stopped working at once, and it registers again by itself. Set by the server.",
+                Computed: true,
+            },
         },
     }
     if d.isLegacyAlias {
@@ -771,6 +776,7 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         "aiAccessLastVerifiedAt": true,
         "aiAccessLastError": true,
         "aiAccessConfiguredAt": true,
+        "aiAgentResetAt": true,
         "_id": true,
     }
 
@@ -844,6 +850,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -857,6 +870,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -878,6 +898,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -891,6 +918,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -912,6 +946,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := item["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -925,6 +966,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.Slug = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
+    } else if arr, ok := item["slug"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Slug = types.StringValue(string(jsonBytes))
         } else {
             data.Slug = types.StringNull()
@@ -946,6 +994,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.Description = types.StringNull()
         }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
     } else if val, ok := item["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
@@ -959,6 +1014,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.OtelCollectorStatus = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OtelCollectorStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.OtelCollectorStatus = types.StringNull()
+        }
+    } else if arr, ok := item["otelCollectorStatus"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.OtelCollectorStatus = types.StringValue(string(jsonBytes))
         } else {
             data.OtelCollectorStatus = types.StringNull()
@@ -980,6 +1042,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.AgentVersion = types.StringNull()
         }
+    } else if arr, ok := item["agentVersion"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AgentVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.AgentVersion = types.StringNull()
+        }
     } else if val, ok := item["agentVersion"].(string); ok {
         data.AgentVersion = types.StringValue(val)
     } else {
@@ -993,6 +1062,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.LastSeenAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastSeenAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSeenAt = types.StringNull()
+        }
+    } else if arr, ok := item["lastSeenAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.LastSeenAt = types.StringValue(string(jsonBytes))
         } else {
             data.LastSeenAt = types.StringNull()
@@ -1032,6 +1108,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := item["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -1054,6 +1137,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.ArchivedAt = types.StringNull()
         }
+    } else if arr, ok := item["archivedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ArchivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = types.StringNull()
+        }
     } else if val, ok := item["archivedAt"].(string); ok {
         data.ArchivedAt = types.StringValue(val)
     } else {
@@ -1067,6 +1157,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ArchivedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.ArchivedByUserId = types.StringNull()
@@ -1113,6 +1210,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.TelemetryRetentionConfig = types.StringNull()
         }
+    } else if arr, ok := item["telemetryRetentionConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TelemetryRetentionConfig = types.StringValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = types.StringNull()
+        }
     } else if val, ok := item["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = types.StringValue(val)
     } else {
@@ -1126,6 +1230,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.CollectionMethod = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectionMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionMethod = types.StringNull()
+        }
+    } else if arr, ok := item["collectionMethod"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CollectionMethod = types.StringValue(string(jsonBytes))
         } else {
             data.CollectionMethod = types.StringNull()
@@ -1147,6 +1258,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.AuthUrl = types.StringNull()
         }
+    } else if arr, ok := item["authUrl"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AuthUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.AuthUrl = types.StringNull()
+        }
     } else if val, ok := item["authUrl"].(string); ok {
         data.AuthUrl = types.StringValue(val)
     } else {
@@ -1160,6 +1278,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.EndpointInterface = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EndpointInterface = types.StringValue(string(jsonBytes))
+        } else {
+            data.EndpointInterface = types.StringNull()
+        }
+    } else if arr, ok := item["endpointInterface"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.EndpointInterface = types.StringValue(string(jsonBytes))
         } else {
             data.EndpointInterface = types.StringNull()
@@ -1181,6 +1306,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.CollectionRegions = types.StringNull()
         }
+    } else if arr, ok := item["collectionRegions"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CollectionRegions = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionRegions = types.StringNull()
+        }
     } else if val, ok := item["collectionRegions"].(string); ok {
         data.CollectionRegions = types.StringValue(val)
     } else {
@@ -1194,6 +1326,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.CredentialKind = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CredentialKind = types.StringValue(string(jsonBytes))
+        } else {
+            data.CredentialKind = types.StringNull()
+        }
+    } else if arr, ok := item["credentialKind"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CredentialKind = types.StringValue(string(jsonBytes))
         } else {
             data.CredentialKind = types.StringNull()
@@ -1215,6 +1354,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.ApplicationCredentialId = types.StringNull()
         }
+    } else if arr, ok := item["applicationCredentialId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ApplicationCredentialId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApplicationCredentialId = types.StringNull()
+        }
     } else if val, ok := item["applicationCredentialId"].(string); ok {
         data.ApplicationCredentialId = types.StringValue(val)
     } else {
@@ -1228,6 +1374,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.KeystoneUsername = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.KeystoneUsername = types.StringValue(string(jsonBytes))
+        } else {
+            data.KeystoneUsername = types.StringNull()
+        }
+    } else if arr, ok := item["keystoneUsername"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.KeystoneUsername = types.StringValue(string(jsonBytes))
         } else {
             data.KeystoneUsername = types.StringNull()
@@ -1249,6 +1402,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.UserDomainName = types.StringNull()
         }
+    } else if arr, ok := item["userDomainName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UserDomainName = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserDomainName = types.StringNull()
+        }
     } else if val, ok := item["userDomainName"].(string); ok {
         data.UserDomainName = types.StringValue(val)
     } else {
@@ -1266,6 +1426,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.ProjectName = types.StringNull()
         }
+    } else if arr, ok := item["projectName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProjectName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectName = types.StringNull()
+        }
     } else if val, ok := item["projectName"].(string); ok {
         data.ProjectName = types.StringValue(val)
     } else {
@@ -1279,6 +1446,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectDomainName = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectDomainName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectDomainName = types.StringNull()
+        }
+    } else if arr, ok := item["projectDomainName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectDomainName = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectDomainName = types.StringNull()
@@ -1305,6 +1479,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.CredentialsUpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["credentialsUpdatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CredentialsUpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CredentialsUpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["credentialsUpdatedAt"].(string); ok {
         data.CredentialsUpdatedAt = types.StringValue(val)
     } else {
@@ -1322,6 +1503,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.CollectionProbeId = types.StringNull()
         }
+    } else if arr, ok := item["collectionProbeId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CollectionProbeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionProbeId = types.StringNull()
+        }
     } else if val, ok := item["collectionProbeId"].(string); ok {
         data.CollectionProbeId = types.StringValue(val)
     } else {
@@ -1335,6 +1523,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.TrustedCertificateFingerprints = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TrustedCertificateFingerprints = types.StringValue(string(jsonBytes))
+        } else {
+            data.TrustedCertificateFingerprints = types.StringNull()
+        }
+    } else if arr, ok := item["trustedCertificateFingerprints"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.TrustedCertificateFingerprints = types.StringValue(string(jsonBytes))
         } else {
             data.TrustedCertificateFingerprints = types.StringNull()
@@ -1357,6 +1552,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.CollectionOptions = types.StringNull()
         }
+    } else if arr, ok := item["collectionOptions"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CollectionOptions = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionOptions = types.StringNull()
+        }
     } else if val, ok := item["collectionOptions"].(string); ok {
         data.CollectionOptions = types.StringValue(val)
     } else {
@@ -1370,6 +1572,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.InstanceMetricsOptions = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.InstanceMetricsOptions = types.StringValue(string(jsonBytes))
+        } else {
+            data.InstanceMetricsOptions = types.StringNull()
+        }
+    } else if arr, ok := item["instanceMetricsOptions"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.InstanceMetricsOptions = types.StringValue(string(jsonBytes))
         } else {
             data.InstanceMetricsOptions = types.StringNull()
@@ -1391,6 +1600,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.CapacitySnapshot = types.StringNull()
         }
+    } else if arr, ok := item["capacitySnapshot"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CapacitySnapshot = types.StringValue(string(jsonBytes))
+        } else {
+            data.CapacitySnapshot = types.StringNull()
+        }
     } else if val, ok := item["capacitySnapshot"].(string); ok {
         data.CapacitySnapshot = types.StringValue(val)
     } else {
@@ -1404,6 +1620,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.SpendSnapshot = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SpendSnapshot = types.StringValue(string(jsonBytes))
+        } else {
+            data.SpendSnapshot = types.StringNull()
+        }
+    } else if arr, ok := item["spendSnapshot"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.SpendSnapshot = types.StringValue(string(jsonBytes))
         } else {
             data.SpendSnapshot = types.StringNull()
@@ -1425,6 +1648,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.UsageReadAt = types.StringNull()
         }
+    } else if arr, ok := item["usageReadAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UsageReadAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UsageReadAt = types.StringNull()
+        }
     } else if val, ok := item["usageReadAt"].(string); ok {
         data.UsageReadAt = types.StringValue(val)
     } else {
@@ -1438,6 +1668,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.PriceList = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PriceList = types.StringValue(string(jsonBytes))
+        } else {
+            data.PriceList = types.StringNull()
+        }
+    } else if arr, ok := item["priceList"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.PriceList = types.StringValue(string(jsonBytes))
         } else {
             data.PriceList = types.StringNull()
@@ -1459,6 +1696,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.CollectionStatus = types.StringNull()
         }
+    } else if arr, ok := item["collectionStatus"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CollectionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionStatus = types.StringNull()
+        }
     } else if val, ok := item["collectionStatus"].(string); ok {
         data.CollectionStatus = types.StringValue(val)
     } else {
@@ -1472,6 +1716,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.CollectionErrorCode = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CollectionErrorCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionErrorCode = types.StringNull()
+        }
+    } else if arr, ok := item["collectionErrorCode"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CollectionErrorCode = types.StringValue(string(jsonBytes))
         } else {
             data.CollectionErrorCode = types.StringNull()
@@ -1493,6 +1744,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.CollectionError = types.StringNull()
         }
+    } else if arr, ok := item["collectionError"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CollectionError = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionError = types.StringNull()
+        }
     } else if val, ok := item["collectionError"].(string); ok {
         data.CollectionError = types.StringValue(val)
     } else {
@@ -1506,6 +1764,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.PresentedCertificate = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PresentedCertificate = types.StringValue(string(jsonBytes))
+        } else {
+            data.PresentedCertificate = types.StringNull()
+        }
+    } else if arr, ok := item["presentedCertificate"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.PresentedCertificate = types.StringValue(string(jsonBytes))
         } else {
             data.PresentedCertificate = types.StringNull()
@@ -1527,6 +1792,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.CollectionSummary = types.StringNull()
         }
+    } else if arr, ok := item["collectionSummary"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CollectionSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.CollectionSummary = types.StringNull()
+        }
     } else if val, ok := item["collectionSummary"].(string); ok {
         data.CollectionSummary = types.StringValue(val)
     } else {
@@ -1540,6 +1812,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.NextCollectionAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NextCollectionAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.NextCollectionAt = types.StringNull()
+        }
+    } else if arr, ok := item["nextCollectionAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.NextCollectionAt = types.StringValue(string(jsonBytes))
         } else {
             data.NextCollectionAt = types.StringNull()
@@ -1561,6 +1840,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.LastCollectionAt = types.StringNull()
         }
+    } else if arr, ok := item["lastCollectionAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastCollectionAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastCollectionAt = types.StringNull()
+        }
     } else if val, ok := item["lastCollectionAt"].(string); ok {
         data.LastCollectionAt = types.StringValue(val)
     } else {
@@ -1574,6 +1860,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.LastSuccessfulCollectionAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastSuccessfulCollectionAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSuccessfulCollectionAt = types.StringNull()
+        }
+    } else if arr, ok := item["lastSuccessfulCollectionAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.LastSuccessfulCollectionAt = types.StringValue(string(jsonBytes))
         } else {
             data.LastSuccessfulCollectionAt = types.StringNull()
@@ -1601,6 +1894,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.AiRemediationMode = types.StringNull()
         }
+    } else if arr, ok := item["aiRemediationMode"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiRemediationMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiRemediationMode = types.StringNull()
+        }
     } else if val, ok := item["aiRemediationMode"].(string); ok {
         data.AiRemediationMode = types.StringValue(val)
     } else {
@@ -1614,6 +1914,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.AiCommandAllowlist = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiCommandAllowlist = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiCommandAllowlist = types.StringNull()
+        }
+    } else if arr, ok := item["aiCommandAllowlist"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.AiCommandAllowlist = types.StringValue(string(jsonBytes))
         } else {
             data.AiCommandAllowlist = types.StringNull()
@@ -1635,6 +1942,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.AiAccessLastVerifiedAt = types.StringNull()
         }
+    } else if arr, ok := item["aiAccessLastVerifiedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiAccessLastVerifiedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessLastVerifiedAt = types.StringNull()
+        }
     } else if val, ok := item["aiAccessLastVerifiedAt"].(string); ok {
         data.AiAccessLastVerifiedAt = types.StringValue(val)
     } else {
@@ -1648,6 +1962,13 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.AiAccessLastError = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiAccessLastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessLastError = types.StringNull()
+        }
+    } else if arr, ok := item["aiAccessLastError"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.AiAccessLastError = types.StringValue(string(jsonBytes))
         } else {
             data.AiAccessLastError = types.StringNull()
@@ -1669,10 +1990,41 @@ func (d *OpenstackCloudDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.AiAccessConfiguredAt = types.StringNull()
         }
+    } else if arr, ok := item["aiAccessConfiguredAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiAccessConfiguredAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessConfiguredAt = types.StringNull()
+        }
     } else if val, ok := item["aiAccessConfiguredAt"].(string); ok {
         data.AiAccessConfiguredAt = types.StringValue(val)
     } else {
         data.AiAccessConfiguredAt = types.StringNull()
+    }
+    if obj, ok := item["aiAgentResetAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiAgentResetAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiAgentResetAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiAgentResetAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiAgentResetAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAgentResetAt = types.StringNull()
+        }
+    } else if arr, ok := item["aiAgentResetAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiAgentResetAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAgentResetAt = types.StringNull()
+        }
+    } else if val, ok := item["aiAgentResetAt"].(string); ok {
+        data.AiAgentResetAt = types.StringValue(val)
+    } else {
+        data.AiAgentResetAt = types.StringNull()
     }
 
     // Write logs using the tflog package

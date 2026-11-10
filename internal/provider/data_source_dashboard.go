@@ -388,6 +388,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -401,6 +408,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -422,6 +436,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -435,6 +456,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -456,6 +484,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := item["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -469,6 +504,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else if val, ok := obj["value"].(float64); ok {
             data.Slug = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
+    } else if arr, ok := item["slug"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Slug = types.StringValue(string(jsonBytes))
         } else {
             data.Slug = types.StringNull()
@@ -490,6 +532,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             data.Description = types.StringNull()
         }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
     } else if val, ok := item["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
@@ -503,6 +552,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -529,6 +585,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             data.ArchivedAt = types.StringNull()
         }
+    } else if arr, ok := item["archivedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ArchivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = types.StringNull()
+        }
     } else if val, ok := item["archivedAt"].(string); ok {
         data.ArchivedAt = types.StringValue(val)
     } else {
@@ -542,6 +605,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else if val, ok := obj["value"].(float64); ok {
             data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ArchivedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.ArchivedByUserId = types.StringNull()
@@ -587,6 +657,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             data.DashboardViewConfig = types.StringNull()
         }
+    } else if arr, ok := item["dashboardViewConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.DashboardViewConfig = types.StringValue(string(jsonBytes))
+        } else {
+            data.DashboardViewConfig = types.StringNull()
+        }
     } else if val, ok := item["dashboardViewConfig"].(string); ok {
         data.DashboardViewConfig = types.StringValue(val)
     } else {
@@ -600,6 +677,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else if val, ok := obj["value"].(float64); ok {
             data.PageTitle = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PageTitle = types.StringValue(string(jsonBytes))
+        } else {
+            data.PageTitle = types.StringNull()
+        }
+    } else if arr, ok := item["pageTitle"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.PageTitle = types.StringValue(string(jsonBytes))
         } else {
             data.PageTitle = types.StringNull()
@@ -621,6 +705,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             data.PageDescription = types.StringNull()
         }
+    } else if arr, ok := item["pageDescription"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PageDescription = types.StringValue(string(jsonBytes))
+        } else {
+            data.PageDescription = types.StringNull()
+        }
     } else if val, ok := item["pageDescription"].(string); ok {
         data.PageDescription = types.StringValue(val)
     } else {
@@ -634,6 +725,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else if val, ok := obj["value"].(float64); ok {
             data.LogoFileId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LogoFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LogoFileId = types.StringNull()
+        }
+    } else if arr, ok := item["logoFileId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.LogoFileId = types.StringValue(string(jsonBytes))
         } else {
             data.LogoFileId = types.StringNull()
@@ -655,6 +753,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             data.DarkThemeLogoFileId = types.StringNull()
         }
+    } else if arr, ok := item["darkThemeLogoFileId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.DarkThemeLogoFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DarkThemeLogoFileId = types.StringNull()
+        }
     } else if val, ok := item["darkThemeLogoFileId"].(string); ok {
         data.DarkThemeLogoFileId = types.StringValue(val)
     } else {
@@ -672,6 +777,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             data.FaviconFileId = types.StringNull()
         }
+    } else if arr, ok := item["faviconFileId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FaviconFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.FaviconFileId = types.StringNull()
+        }
     } else if val, ok := item["faviconFileId"].(string); ok {
         data.FaviconFileId = types.StringValue(val)
     } else {
@@ -685,6 +797,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else if val, ok := obj["value"].(float64); ok {
             data.Theme = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Theme = types.StringValue(string(jsonBytes))
+        } else {
+            data.Theme = types.StringNull()
+        }
+    } else if arr, ok := item["theme"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Theme = types.StringValue(string(jsonBytes))
         } else {
             data.Theme = types.StringNull()
@@ -716,6 +835,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else {
             data.MasterPassword = types.StringNull()
         }
+    } else if arr, ok := item["masterPassword"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.MasterPassword = types.StringValue(string(jsonBytes))
+        } else {
+            data.MasterPassword = types.StringNull()
+        }
     } else if val, ok := item["masterPassword"].(string); ok {
         data.MasterPassword = types.StringValue(val)
     } else {
@@ -729,6 +855,13 @@ func (d *DashboardDataSource) Read(ctx context.Context, req datasource.ReadReque
         } else if val, ok := obj["value"].(float64); ok {
             data.IpWhitelist = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IpWhitelist = types.StringValue(string(jsonBytes))
+        } else {
+            data.IpWhitelist = types.StringNull()
+        }
+    } else if arr, ok := item["ipWhitelist"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.IpWhitelist = types.StringValue(string(jsonBytes))
         } else {
             data.IpWhitelist = types.StringNull()

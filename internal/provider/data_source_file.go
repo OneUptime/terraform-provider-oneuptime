@@ -220,6 +220,13 @@ func (d *FileDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -233,6 +240,13 @@ func (d *FileDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         } else if val, ok := obj["value"].(float64); ok {
             data.File = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.File = types.StringValue(string(jsonBytes))
+        } else {
+            data.File = types.StringNull()
+        }
+    } else if arr, ok := item["file"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.File = types.StringValue(string(jsonBytes))
         } else {
             data.File = types.StringNull()
@@ -254,6 +268,13 @@ func (d *FileDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := item["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -271,6 +292,13 @@ func (d *FileDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         } else {
             data.FileType = types.StringNull()
         }
+    } else if arr, ok := item["fileType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FileType = types.StringValue(string(jsonBytes))
+        } else {
+            data.FileType = types.StringNull()
+        }
     } else if val, ok := item["fileType"].(string); ok {
         data.FileType = types.StringValue(val)
     } else {
@@ -284,6 +312,13 @@ func (d *FileDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         } else if val, ok := obj["value"].(float64); ok {
             data.Slug = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
+    } else if arr, ok := item["slug"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Slug = types.StringValue(string(jsonBytes))
         } else {
             data.Slug = types.StringNull()
@@ -306,6 +341,13 @@ func (d *FileDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         } else if val, ok := obj["value"].(float64); ok {
             data.ImageAccessToken = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ImageAccessToken = types.StringValue(string(jsonBytes))
+        } else {
+            data.ImageAccessToken = types.StringNull()
+        }
+    } else if arr, ok := item["imageAccessToken"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ImageAccessToken = types.StringValue(string(jsonBytes))
         } else {
             data.ImageAccessToken = types.StringNull()

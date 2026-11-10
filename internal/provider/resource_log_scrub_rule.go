@@ -388,6 +388,13 @@ func (r *LogScrubRuleResource) Create(ctx context.Context, req resource.CreateRe
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -421,6 +428,13 @@ func (r *LogScrubRuleResource) Create(ctx context.Context, req resource.CreateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -462,6 +476,13 @@ func (r *LogScrubRuleResource) Create(ctx context.Context, req resource.CreateRe
         } else {
             data.PatternType = types.StringNull()
         }
+    } else if arr, ok := dataMap["patternType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PatternType = types.StringValue(string(jsonBytes))
+        } else {
+            data.PatternType = types.StringNull()
+        }
     } else if val, ok := dataMap["patternType"].(string); ok {
         data.PatternType = types.StringValue(val)
     } else {
@@ -495,6 +516,13 @@ func (r *LogScrubRuleResource) Create(ctx context.Context, req resource.CreateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRegex = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRegex = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRegex"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRegex = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRegex = types.StringNull()
@@ -536,6 +564,13 @@ func (r *LogScrubRuleResource) Create(ctx context.Context, req resource.CreateRe
         } else {
             data.ScrubAction = types.StringNull()
         }
+    } else if arr, ok := dataMap["scrubAction"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScrubAction = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScrubAction = types.StringNull()
+        }
     } else if val, ok := dataMap["scrubAction"].(string); ok {
         data.ScrubAction = types.StringValue(val)
     } else {
@@ -569,6 +604,13 @@ func (r *LogScrubRuleResource) Create(ctx context.Context, req resource.CreateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.FieldsToScrub = types.StringValue(string(jsonBytes))
+        } else {
+            data.FieldsToScrub = types.StringNull()
+        }
+    } else if arr, ok := dataMap["fieldsToScrub"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.FieldsToScrub = types.StringValue(string(jsonBytes))
         } else {
             data.FieldsToScrub = types.StringNull()
@@ -632,6 +674,13 @@ func (r *LogScrubRuleResource) Create(ctx context.Context, req resource.CreateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -760,6 +809,13 @@ func (r *LogScrubRuleResource) Read(ctx context.Context, req resource.ReadReques
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -793,6 +849,13 @@ func (r *LogScrubRuleResource) Read(ctx context.Context, req resource.ReadReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -834,6 +897,13 @@ func (r *LogScrubRuleResource) Read(ctx context.Context, req resource.ReadReques
         } else {
             data.PatternType = types.StringNull()
         }
+    } else if arr, ok := dataMap["patternType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PatternType = types.StringValue(string(jsonBytes))
+        } else {
+            data.PatternType = types.StringNull()
+        }
     } else if val, ok := dataMap["patternType"].(string); ok {
         data.PatternType = types.StringValue(val)
     } else {
@@ -867,6 +937,13 @@ func (r *LogScrubRuleResource) Read(ctx context.Context, req resource.ReadReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRegex = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRegex = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRegex"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRegex = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRegex = types.StringNull()
@@ -908,6 +985,13 @@ func (r *LogScrubRuleResource) Read(ctx context.Context, req resource.ReadReques
         } else {
             data.ScrubAction = types.StringNull()
         }
+    } else if arr, ok := dataMap["scrubAction"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScrubAction = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScrubAction = types.StringNull()
+        }
     } else if val, ok := dataMap["scrubAction"].(string); ok {
         data.ScrubAction = types.StringValue(val)
     } else {
@@ -941,6 +1025,13 @@ func (r *LogScrubRuleResource) Read(ctx context.Context, req resource.ReadReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.FieldsToScrub = types.StringValue(string(jsonBytes))
+        } else {
+            data.FieldsToScrub = types.StringNull()
+        }
+    } else if arr, ok := dataMap["fieldsToScrub"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.FieldsToScrub = types.StringValue(string(jsonBytes))
         } else {
             data.FieldsToScrub = types.StringNull()
@@ -1004,6 +1095,13 @@ func (r *LogScrubRuleResource) Read(ctx context.Context, req resource.ReadReques
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1185,6 +1283,13 @@ func (r *LogScrubRuleResource) Update(ctx context.Context, req resource.UpdateRe
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1218,6 +1323,13 @@ func (r *LogScrubRuleResource) Update(ctx context.Context, req resource.UpdateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1259,6 +1371,13 @@ func (r *LogScrubRuleResource) Update(ctx context.Context, req resource.UpdateRe
         } else {
             data.PatternType = types.StringNull()
         }
+    } else if arr, ok := dataMap["patternType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PatternType = types.StringValue(string(jsonBytes))
+        } else {
+            data.PatternType = types.StringNull()
+        }
     } else if val, ok := dataMap["patternType"].(string); ok {
         data.PatternType = types.StringValue(val)
     } else {
@@ -1292,6 +1411,13 @@ func (r *LogScrubRuleResource) Update(ctx context.Context, req resource.UpdateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CustomRegex = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomRegex = types.StringNull()
+        }
+    } else if arr, ok := dataMap["customRegex"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CustomRegex = types.StringValue(string(jsonBytes))
         } else {
             data.CustomRegex = types.StringNull()
@@ -1333,6 +1459,13 @@ func (r *LogScrubRuleResource) Update(ctx context.Context, req resource.UpdateRe
         } else {
             data.ScrubAction = types.StringNull()
         }
+    } else if arr, ok := dataMap["scrubAction"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScrubAction = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScrubAction = types.StringNull()
+        }
     } else if val, ok := dataMap["scrubAction"].(string); ok {
         data.ScrubAction = types.StringValue(val)
     } else {
@@ -1366,6 +1499,13 @@ func (r *LogScrubRuleResource) Update(ctx context.Context, req resource.UpdateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.FieldsToScrub = types.StringValue(string(jsonBytes))
+        } else {
+            data.FieldsToScrub = types.StringNull()
+        }
+    } else if arr, ok := dataMap["fieldsToScrub"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.FieldsToScrub = types.StringValue(string(jsonBytes))
         } else {
             data.FieldsToScrub = types.StringNull()
@@ -1429,6 +1569,13 @@ func (r *LogScrubRuleResource) Update(ctx context.Context, req resource.UpdateRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

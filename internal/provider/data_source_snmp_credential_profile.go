@@ -311,6 +311,13 @@ func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasour
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -324,6 +331,13 @@ func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasour
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -345,6 +359,13 @@ func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasour
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -358,6 +379,13 @@ func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasour
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -379,6 +407,13 @@ func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasour
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := item["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -392,6 +427,13 @@ func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasour
         } else if val, ok := obj["value"].(float64); ok {
             data.Description = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -413,6 +455,13 @@ func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasour
         } else {
             data.SnmpVersion = types.StringNull()
         }
+    } else if arr, ok := item["snmpVersion"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SnmpVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpVersion = types.StringNull()
+        }
     } else if val, ok := item["snmpVersion"].(string); ok {
         data.SnmpVersion = types.StringValue(val)
     } else {
@@ -426,6 +475,13 @@ func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasour
         } else if val, ok := obj["value"].(float64); ok {
             data.SnmpCommunityString = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpCommunityString = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpCommunityString = types.StringNull()
+        }
+    } else if arr, ok := item["snmpCommunityString"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.SnmpCommunityString = types.StringValue(string(jsonBytes))
         } else {
             data.SnmpCommunityString = types.StringNull()
@@ -448,6 +504,13 @@ func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasour
         } else {
             data.SnmpV3SecurityLevel = types.StringNull()
         }
+    } else if arr, ok := item["snmpV3SecurityLevel"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3SecurityLevel = types.StringNull()
+        }
     } else if val, ok := item["snmpV3SecurityLevel"].(string); ok {
         data.SnmpV3SecurityLevel = types.StringValue(val)
     } else {
@@ -461,6 +524,13 @@ func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasour
         } else if val, ok := obj["value"].(float64); ok {
             data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpV3Username = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3Username = types.StringNull()
+        }
+    } else if arr, ok := item["snmpV3Username"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.SnmpV3Username = types.StringValue(string(jsonBytes))
         } else {
             data.SnmpV3Username = types.StringNull()
@@ -482,6 +552,13 @@ func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasour
         } else {
             data.SnmpV3AuthProtocol = types.StringNull()
         }
+    } else if arr, ok := item["snmpV3AuthProtocol"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthProtocol = types.StringNull()
+        }
     } else if val, ok := item["snmpV3AuthProtocol"].(string); ok {
         data.SnmpV3AuthProtocol = types.StringValue(val)
     } else {
@@ -495,6 +572,13 @@ func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasour
         } else if val, ok := obj["value"].(float64); ok {
             data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthKey = types.StringNull()
+        }
+    } else if arr, ok := item["snmpV3AuthKey"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
         } else {
             data.SnmpV3AuthKey = types.StringNull()
@@ -516,6 +600,13 @@ func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasour
         } else {
             data.SnmpV3PrivProtocol = types.StringNull()
         }
+    } else if arr, ok := item["snmpV3PrivProtocol"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivProtocol = types.StringNull()
+        }
     } else if val, ok := item["snmpV3PrivProtocol"].(string); ok {
         data.SnmpV3PrivProtocol = types.StringValue(val)
     } else {
@@ -533,6 +624,13 @@ func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasour
         } else {
             data.SnmpV3PrivKey = types.StringNull()
         }
+    } else if arr, ok := item["snmpV3PrivKey"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivKey = types.StringNull()
+        }
     } else if val, ok := item["snmpV3PrivKey"].(string); ok {
         data.SnmpV3PrivKey = types.StringValue(val)
     } else {
@@ -546,6 +644,13 @@ func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasour
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

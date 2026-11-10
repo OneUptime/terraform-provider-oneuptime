@@ -32,6 +32,7 @@ resource "oneuptime_on_call_duty_execution_log" "example" {
 - `acknowledged_at` (String) When was this policy execution acknowledged?
 - `acknowledged_by_team_id` (String) Team ID who acknowledged this object (if this object was acknowledged by a Team). The ID of a `oneuptime_team`.
 - `execute_next_escalation_rule_in_minutes` (Number) How many minutes should we wait before executing the next escalation rule?
+- `is_observer_page` (Boolean) Whether this run pages its people as observers: they are kept informed, and acknowledging their page only says they have seen it - the incident or alert is not acknowledged, and nobody else's page stops. Defaults to `false`.
 - `last_escalation_rule_executed_at` (String) When was the escalation rule executed?
 - `last_executed_escalation_rule_id` (String) ID of your On-Call Policy Last Executed Escalation Rule. The ID of a `oneuptime_escalation_rule`.
 - `last_executed_escalation_rule_order` (Number) Which escalation rule was executed?

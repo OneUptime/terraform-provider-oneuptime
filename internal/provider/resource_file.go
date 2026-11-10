@@ -241,6 +241,13 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -274,6 +281,13 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.FileType = types.StringValue(string(jsonBytes))
+        } else {
+            data.FileType = types.StringNull()
+        }
+    } else if arr, ok := dataMap["fileType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.FileType = types.StringValue(string(jsonBytes))
         } else {
             data.FileType = types.StringNull()
@@ -315,6 +329,13 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -351,6 +372,13 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ImageAccessToken = types.StringValue(string(jsonBytes))
+        } else {
+            data.ImageAccessToken = types.StringNull()
+        }
+    } else if arr, ok := dataMap["imageAccessToken"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ImageAccessToken = types.StringValue(string(jsonBytes))
         } else {
             data.ImageAccessToken = types.StringNull()

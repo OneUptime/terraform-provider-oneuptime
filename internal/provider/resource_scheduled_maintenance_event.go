@@ -59,6 +59,7 @@ type ScheduledMaintenanceEventResourceModel struct {
     CephClusters types.Set `tfsdk:"ceph_clusters"`
     StorageArrays types.Set `tfsdk:"storage_arrays"`
     DatabaseServers types.Set `tfsdk:"database_servers"`
+    CloudResources types.Set `tfsdk:"cloud_resources"`
     DataStoreIds JSONSubsetValue `tfsdk:"data_store_ids"`
     OpenStackParts JSONSubsetValue `tfsdk:"open_stack_parts"`
     Services types.Set `tfsdk:"services"`
@@ -268,6 +269,16 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                     setplanmodifier.UseStateForUnknown(),
                 },
                 Validators: recordIDSetValidators("oneuptime_database"),
+            },
+            "cloud_resources": schema.SetAttribute{
+                MarkdownDescription: "List of cloud resources affected by this event. Their monitors open no incident or alert while it is in progress. IDs of `oneuptime_cloud_resource` resources.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+                Validators: recordIDSetValidators("oneuptime_cloud_resource"),
             },
             "data_store_ids": schema.StringAttribute{
                 MarkdownDescription: "The databases Data Observability watches that this maintenance affects: their data alerts stay quiet while it is on. A JSON value: write it with `jsonencode()`.",
@@ -627,6 +638,9 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     if !data.DatabaseServers.IsNull() && !data.DatabaseServers.IsUnknown() {
         requestDataMap["databaseServers"] = r.convertTerraformSetToInterface(data.DatabaseServers)
     }
+    if !data.CloudResources.IsNull() && !data.CloudResources.IsUnknown() {
+        requestDataMap["cloudResources"] = r.convertTerraformSetToInterface(data.CloudResources)
+    }
     if parsedDataStoreIds := r.parseJSONField(data.DataStoreIds); parsedDataStoreIds != nil {
         requestDataMap["dataStoreIds"] = parsedDataStoreIds
     }
@@ -743,6 +757,7 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         "cephClusters": true,
         "storageArrays": true,
         "databaseServers": true,
+        "cloudResources": true,
         "dataStoreIds": true,
         "openStackParts": true,
         "services": true,
@@ -847,6 +862,13 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         } else {
             data.Title = types.StringNull()
         }
+    } else if arr, ok := dataMap["title"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Title = types.StringValue(string(jsonBytes))
+        } else {
+            data.Title = types.StringNull()
+        }
     } else if val, ok := dataMap["title"].(string); ok {
         data.Title = types.StringValue(val)
     } else {
@@ -880,6 +902,13 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1337,6 +1366,38 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         // For sets, always use empty set instead of null to match default values
         data.DatabaseServers = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["cloudResources"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CloudResources = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CloudResources = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if obj, ok := dataMap["dataStoreIds"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1365,6 +1426,13 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DataStoreIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DataStoreIds = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["dataStoreIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DataStoreIds = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.DataStoreIds = NewJSONSubsetNull()
@@ -1402,6 +1470,13 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OpenStackParts = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.OpenStackParts = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["openStackParts"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OpenStackParts = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.OpenStackParts = NewJSONSubsetNull()
@@ -1539,6 +1614,13 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         } else {
             data.CurrentScheduledMaintenanceStateId = types.StringNull()
         }
+    } else if arr, ok := dataMap["currentScheduledMaintenanceStateId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CurrentScheduledMaintenanceStateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentScheduledMaintenanceStateId = types.StringNull()
+        }
     } else if val, ok := dataMap["currentScheduledMaintenanceStateId"].(string); ok {
         data.CurrentScheduledMaintenanceStateId = types.StringValue(val)
     } else {
@@ -1572,6 +1654,13 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ChangeMonitorStatusToId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ChangeMonitorStatusToId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["changeMonitorStatusToId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ChangeMonitorStatusToId = types.StringValue(string(jsonBytes))
         } else {
             data.ChangeMonitorStatusToId = types.StringNull()
@@ -1644,6 +1733,13 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         } else {
             data.CustomFields = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["customFields"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CustomFields = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["customFields"].(string); ok {
         data.CustomFields = NewJSONSubsetValue(val)
     } else {
@@ -1677,6 +1773,13 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sendSubscriberNotificationsOnBeforeTheEvent"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetNull()
@@ -1768,6 +1871,13 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -1801,6 +1911,13 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1842,6 +1959,13 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         } else {
             data.SubscriberNotificationStatusOnEventScheduled = types.StringNull()
         }
+    } else if arr, ok := dataMap["subscriberNotificationStatusOnEventScheduled"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SubscriberNotificationStatusOnEventScheduled = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusOnEventScheduled = types.StringNull()
+        }
     } else if val, ok := dataMap["subscriberNotificationStatusOnEventScheduled"].(string); ok {
         data.SubscriberNotificationStatusOnEventScheduled = types.StringValue(val)
     } else {
@@ -1875,6 +1999,13 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessage = types.StringNull()
+        }
+    } else if arr, ok := dataMap["subscriberNotificationStatusMessage"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
         } else {
             data.SubscriberNotificationStatusMessage = types.StringNull()
@@ -1916,6 +2047,13 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(string(jsonBytes))
         } else {
             data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
@@ -1987,6 +2125,7 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         "cephClusters": true,
         "storageArrays": true,
         "databaseServers": true,
+        "cloudResources": true,
         "dataStoreIds": true,
         "openStackParts": true,
         "services": true,
@@ -2092,6 +2231,13 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         } else {
             data.Title = types.StringNull()
         }
+    } else if arr, ok := dataMap["title"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Title = types.StringValue(string(jsonBytes))
+        } else {
+            data.Title = types.StringNull()
+        }
     } else if val, ok := dataMap["title"].(string); ok {
         data.Title = types.StringValue(val)
     } else {
@@ -2125,6 +2271,13 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -2582,6 +2735,38 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         // For sets, always use empty set instead of null to match default values
         data.DatabaseServers = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["cloudResources"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CloudResources = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CloudResources = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if obj, ok := dataMap["dataStoreIds"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2610,6 +2795,13 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DataStoreIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DataStoreIds = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["dataStoreIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DataStoreIds = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.DataStoreIds = NewJSONSubsetNull()
@@ -2647,6 +2839,13 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OpenStackParts = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.OpenStackParts = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["openStackParts"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OpenStackParts = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.OpenStackParts = NewJSONSubsetNull()
@@ -2784,6 +2983,13 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         } else {
             data.CurrentScheduledMaintenanceStateId = types.StringNull()
         }
+    } else if arr, ok := dataMap["currentScheduledMaintenanceStateId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CurrentScheduledMaintenanceStateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentScheduledMaintenanceStateId = types.StringNull()
+        }
     } else if val, ok := dataMap["currentScheduledMaintenanceStateId"].(string); ok {
         data.CurrentScheduledMaintenanceStateId = types.StringValue(val)
     } else {
@@ -2817,6 +3023,13 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ChangeMonitorStatusToId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ChangeMonitorStatusToId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["changeMonitorStatusToId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ChangeMonitorStatusToId = types.StringValue(string(jsonBytes))
         } else {
             data.ChangeMonitorStatusToId = types.StringNull()
@@ -2889,6 +3102,13 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         } else {
             data.CustomFields = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["customFields"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CustomFields = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["customFields"].(string); ok {
         data.CustomFields = NewJSONSubsetValue(val)
     } else {
@@ -2922,6 +3142,13 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sendSubscriberNotificationsOnBeforeTheEvent"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetNull()
@@ -3013,6 +3240,13 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -3046,6 +3280,13 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -3087,6 +3328,13 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         } else {
             data.SubscriberNotificationStatusOnEventScheduled = types.StringNull()
         }
+    } else if arr, ok := dataMap["subscriberNotificationStatusOnEventScheduled"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SubscriberNotificationStatusOnEventScheduled = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusOnEventScheduled = types.StringNull()
+        }
     } else if val, ok := dataMap["subscriberNotificationStatusOnEventScheduled"].(string); ok {
         data.SubscriberNotificationStatusOnEventScheduled = types.StringValue(val)
     } else {
@@ -3120,6 +3368,13 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessage = types.StringNull()
+        }
+    } else if arr, ok := dataMap["subscriberNotificationStatusMessage"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
         } else {
             data.SubscriberNotificationStatusMessage = types.StringNull()
@@ -3161,6 +3416,13 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(string(jsonBytes))
         } else {
             data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
@@ -3281,6 +3543,9 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     if !data.DatabaseServers.IsUnknown() && !state.DatabaseServers.IsUnknown() && !data.DatabaseServers.Equal(state.DatabaseServers) {
         requestDataMap["databaseServers"] = r.convertTerraformSetToInterface(data.DatabaseServers)
     }
+    if !data.CloudResources.IsUnknown() && !state.CloudResources.IsUnknown() && !data.CloudResources.Equal(state.CloudResources) {
+        requestDataMap["cloudResources"] = r.convertTerraformSetToInterface(data.CloudResources)
+    }
     if !data.DataStoreIds.IsUnknown() && !state.DataStoreIds.IsUnknown() && !data.DataStoreIds.Equal(state.DataStoreIds) {
         var datastoreidsData interface{}
         if err := json.Unmarshal([]byte(data.DataStoreIds.ValueString()), &datastoreidsData); err == nil {
@@ -3386,6 +3651,7 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         "cephClusters": true,
         "storageArrays": true,
         "databaseServers": true,
+        "cloudResources": true,
         "dataStoreIds": true,
         "openStackParts": true,
         "services": true,
@@ -3485,6 +3751,13 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         } else {
             data.Title = types.StringNull()
         }
+    } else if arr, ok := dataMap["title"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Title = types.StringValue(string(jsonBytes))
+        } else {
+            data.Title = types.StringNull()
+        }
     } else if val, ok := dataMap["title"].(string); ok {
         data.Title = types.StringValue(val)
     } else {
@@ -3518,6 +3791,13 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -3975,6 +4255,38 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         // For sets, always use empty set instead of null to match default values
         data.DatabaseServers = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["cloudResources"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CloudResources = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CloudResources = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if obj, ok := dataMap["dataStoreIds"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4003,6 +4315,13 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DataStoreIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DataStoreIds = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["dataStoreIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DataStoreIds = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.DataStoreIds = NewJSONSubsetNull()
@@ -4040,6 +4359,13 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OpenStackParts = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.OpenStackParts = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["openStackParts"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OpenStackParts = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.OpenStackParts = NewJSONSubsetNull()
@@ -4177,6 +4503,13 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         } else {
             data.CurrentScheduledMaintenanceStateId = types.StringNull()
         }
+    } else if arr, ok := dataMap["currentScheduledMaintenanceStateId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CurrentScheduledMaintenanceStateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentScheduledMaintenanceStateId = types.StringNull()
+        }
     } else if val, ok := dataMap["currentScheduledMaintenanceStateId"].(string); ok {
         data.CurrentScheduledMaintenanceStateId = types.StringValue(val)
     } else {
@@ -4210,6 +4543,13 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ChangeMonitorStatusToId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ChangeMonitorStatusToId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["changeMonitorStatusToId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ChangeMonitorStatusToId = types.StringValue(string(jsonBytes))
         } else {
             data.ChangeMonitorStatusToId = types.StringNull()
@@ -4282,6 +4622,13 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         } else {
             data.CustomFields = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["customFields"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CustomFields = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["customFields"].(string); ok {
         data.CustomFields = NewJSONSubsetValue(val)
     } else {
@@ -4315,6 +4662,13 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sendSubscriberNotificationsOnBeforeTheEvent"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetNull()
@@ -4406,6 +4760,13 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -4439,6 +4800,13 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -4480,6 +4848,13 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         } else {
             data.SubscriberNotificationStatusOnEventScheduled = types.StringNull()
         }
+    } else if arr, ok := dataMap["subscriberNotificationStatusOnEventScheduled"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SubscriberNotificationStatusOnEventScheduled = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusOnEventScheduled = types.StringNull()
+        }
     } else if val, ok := dataMap["subscriberNotificationStatusOnEventScheduled"].(string); ok {
         data.SubscriberNotificationStatusOnEventScheduled = types.StringValue(val)
     } else {
@@ -4513,6 +4888,13 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessage = types.StringNull()
+        }
+    } else if arr, ok := dataMap["subscriberNotificationStatusMessage"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
         } else {
             data.SubscriberNotificationStatusMessage = types.StringNull()
@@ -4554,6 +4936,13 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(string(jsonBytes))
         } else {
             data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
@@ -4682,6 +5071,9 @@ func (r *ScheduledMaintenanceEventResource) keepPlannedValues(data *ScheduledMai
     }
     if config.DatabaseServers.IsNull() && !plan.DatabaseServers.IsUnknown() {
         data.DatabaseServers = plan.DatabaseServers
+    }
+    if config.CloudResources.IsNull() && !plan.CloudResources.IsUnknown() {
+        data.CloudResources = plan.CloudResources
     }
     if config.DataStoreIds.IsNull() && !plan.DataStoreIds.IsUnknown() {
         data.DataStoreIds = plan.DataStoreIds

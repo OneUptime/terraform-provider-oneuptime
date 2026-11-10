@@ -493,6 +493,13 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
         } else {
             data.WorkflowId = types.StringNull()
         }
+    } else if arr, ok := dataMap["workflowId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.WorkflowId = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkflowId = types.StringNull()
+        }
     } else if val, ok := dataMap["workflowId"].(string); ok {
         data.WorkflowId = types.StringValue(val)
     } else {
@@ -530,6 +537,13 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -563,6 +577,13 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -607,6 +628,13 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
         } else {
             data.VariableType = types.StringNull()
         }
+    } else if arr, ok := dataMap["variableType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.VariableType = types.StringValue(string(jsonBytes))
+        } else {
+            data.VariableType = types.StringNull()
+        }
     } else if val, ok := dataMap["variableType"].(string); ok {
         data.VariableType = types.StringValue(val)
     } else {
@@ -640,6 +668,13 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OauthGrantType = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthGrantType = types.StringNull()
+        }
+    } else if arr, ok := dataMap["oauthGrantType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OauthGrantType = types.StringValue(string(jsonBytes))
         } else {
             data.OauthGrantType = types.StringNull()
@@ -681,6 +716,13 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
         } else {
             data.OauthTokenUrl = types.StringNull()
         }
+    } else if arr, ok := dataMap["oauthTokenUrl"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OauthTokenUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthTokenUrl = types.StringNull()
+        }
     } else if val, ok := dataMap["oauthTokenUrl"].(string); ok {
         data.OauthTokenUrl = types.StringValue(val)
     } else {
@@ -714,6 +756,13 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OauthClientId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthClientId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["oauthClientId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OauthClientId = types.StringValue(string(jsonBytes))
         } else {
             data.OauthClientId = types.StringNull()
@@ -755,6 +804,13 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
         } else {
             data.OauthScope = types.StringNull()
         }
+    } else if arr, ok := dataMap["oauthScope"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OauthScope = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthScope = types.StringNull()
+        }
     } else if val, ok := dataMap["oauthScope"].(string); ok {
         data.OauthScope = types.StringValue(val)
     } else {
@@ -792,6 +848,13 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
         } else {
             data.OauthAdditionalParameters = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["oauthAdditionalParameters"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OauthAdditionalParameters = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.OauthAdditionalParameters = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["oauthAdditionalParameters"].(string); ok {
         data.OauthAdditionalParameters = NewJSONSubsetValue(val)
     } else {
@@ -825,6 +888,13 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OauthClientAuthenticationMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthClientAuthenticationMethod = types.StringNull()
+        }
+    } else if arr, ok := dataMap["oauthClientAuthenticationMethod"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OauthClientAuthenticationMethod = types.StringValue(string(jsonBytes))
         } else {
             data.OauthClientAuthenticationMethod = types.StringNull()
@@ -910,6 +980,13 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
         } else {
             data.OauthLastRefreshError = types.StringNull()
         }
+    } else if arr, ok := dataMap["oauthLastRefreshError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OauthLastRefreshError = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthLastRefreshError = types.StringNull()
+        }
     } else if val, ok := dataMap["oauthLastRefreshError"].(string); ok {
         data.OauthLastRefreshError = types.StringValue(val)
     } else {
@@ -954,6 +1031,13 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1091,6 +1175,13 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
         } else {
             data.WorkflowId = types.StringNull()
         }
+    } else if arr, ok := dataMap["workflowId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.WorkflowId = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkflowId = types.StringNull()
+        }
     } else if val, ok := dataMap["workflowId"].(string); ok {
         data.WorkflowId = types.StringValue(val)
     } else {
@@ -1128,6 +1219,13 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1161,6 +1259,13 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1205,6 +1310,13 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
         } else {
             data.VariableType = types.StringNull()
         }
+    } else if arr, ok := dataMap["variableType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.VariableType = types.StringValue(string(jsonBytes))
+        } else {
+            data.VariableType = types.StringNull()
+        }
     } else if val, ok := dataMap["variableType"].(string); ok {
         data.VariableType = types.StringValue(val)
     } else {
@@ -1238,6 +1350,13 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OauthGrantType = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthGrantType = types.StringNull()
+        }
+    } else if arr, ok := dataMap["oauthGrantType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OauthGrantType = types.StringValue(string(jsonBytes))
         } else {
             data.OauthGrantType = types.StringNull()
@@ -1279,6 +1398,13 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
         } else {
             data.OauthTokenUrl = types.StringNull()
         }
+    } else if arr, ok := dataMap["oauthTokenUrl"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OauthTokenUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthTokenUrl = types.StringNull()
+        }
     } else if val, ok := dataMap["oauthTokenUrl"].(string); ok {
         data.OauthTokenUrl = types.StringValue(val)
     } else {
@@ -1312,6 +1438,13 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OauthClientId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthClientId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["oauthClientId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OauthClientId = types.StringValue(string(jsonBytes))
         } else {
             data.OauthClientId = types.StringNull()
@@ -1353,6 +1486,13 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
         } else {
             data.OauthScope = types.StringNull()
         }
+    } else if arr, ok := dataMap["oauthScope"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OauthScope = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthScope = types.StringNull()
+        }
     } else if val, ok := dataMap["oauthScope"].(string); ok {
         data.OauthScope = types.StringValue(val)
     } else {
@@ -1390,6 +1530,13 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
         } else {
             data.OauthAdditionalParameters = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["oauthAdditionalParameters"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OauthAdditionalParameters = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.OauthAdditionalParameters = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["oauthAdditionalParameters"].(string); ok {
         data.OauthAdditionalParameters = NewJSONSubsetValue(val)
     } else {
@@ -1423,6 +1570,13 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OauthClientAuthenticationMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthClientAuthenticationMethod = types.StringNull()
+        }
+    } else if arr, ok := dataMap["oauthClientAuthenticationMethod"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OauthClientAuthenticationMethod = types.StringValue(string(jsonBytes))
         } else {
             data.OauthClientAuthenticationMethod = types.StringNull()
@@ -1508,6 +1662,13 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
         } else {
             data.OauthLastRefreshError = types.StringNull()
         }
+    } else if arr, ok := dataMap["oauthLastRefreshError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OauthLastRefreshError = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthLastRefreshError = types.StringNull()
+        }
     } else if val, ok := dataMap["oauthLastRefreshError"].(string); ok {
         data.OauthLastRefreshError = types.StringValue(val)
     } else {
@@ -1552,6 +1713,13 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1759,6 +1927,13 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
         } else {
             data.WorkflowId = types.StringNull()
         }
+    } else if arr, ok := dataMap["workflowId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.WorkflowId = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkflowId = types.StringNull()
+        }
     } else if val, ok := dataMap["workflowId"].(string); ok {
         data.WorkflowId = types.StringValue(val)
     } else {
@@ -1796,6 +1971,13 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1829,6 +2011,13 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1873,6 +2062,13 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
         } else {
             data.VariableType = types.StringNull()
         }
+    } else if arr, ok := dataMap["variableType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.VariableType = types.StringValue(string(jsonBytes))
+        } else {
+            data.VariableType = types.StringNull()
+        }
     } else if val, ok := dataMap["variableType"].(string); ok {
         data.VariableType = types.StringValue(val)
     } else {
@@ -1906,6 +2102,13 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OauthGrantType = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthGrantType = types.StringNull()
+        }
+    } else if arr, ok := dataMap["oauthGrantType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OauthGrantType = types.StringValue(string(jsonBytes))
         } else {
             data.OauthGrantType = types.StringNull()
@@ -1947,6 +2150,13 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
         } else {
             data.OauthTokenUrl = types.StringNull()
         }
+    } else if arr, ok := dataMap["oauthTokenUrl"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OauthTokenUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthTokenUrl = types.StringNull()
+        }
     } else if val, ok := dataMap["oauthTokenUrl"].(string); ok {
         data.OauthTokenUrl = types.StringValue(val)
     } else {
@@ -1980,6 +2190,13 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OauthClientId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthClientId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["oauthClientId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OauthClientId = types.StringValue(string(jsonBytes))
         } else {
             data.OauthClientId = types.StringNull()
@@ -2021,6 +2238,13 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
         } else {
             data.OauthScope = types.StringNull()
         }
+    } else if arr, ok := dataMap["oauthScope"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OauthScope = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthScope = types.StringNull()
+        }
     } else if val, ok := dataMap["oauthScope"].(string); ok {
         data.OauthScope = types.StringValue(val)
     } else {
@@ -2058,6 +2282,13 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
         } else {
             data.OauthAdditionalParameters = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["oauthAdditionalParameters"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OauthAdditionalParameters = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.OauthAdditionalParameters = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["oauthAdditionalParameters"].(string); ok {
         data.OauthAdditionalParameters = NewJSONSubsetValue(val)
     } else {
@@ -2091,6 +2322,13 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OauthClientAuthenticationMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthClientAuthenticationMethod = types.StringNull()
+        }
+    } else if arr, ok := dataMap["oauthClientAuthenticationMethod"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OauthClientAuthenticationMethod = types.StringValue(string(jsonBytes))
         } else {
             data.OauthClientAuthenticationMethod = types.StringNull()
@@ -2176,6 +2414,13 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
         } else {
             data.OauthLastRefreshError = types.StringNull()
         }
+    } else if arr, ok := dataMap["oauthLastRefreshError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OauthLastRefreshError = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthLastRefreshError = types.StringNull()
+        }
     } else if val, ok := dataMap["oauthLastRefreshError"].(string); ok {
         data.OauthLastRefreshError = types.StringValue(val)
     } else {
@@ -2220,6 +2465,13 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

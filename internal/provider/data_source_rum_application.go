@@ -41,6 +41,10 @@ type RumApplicationDataSourceModel struct {
     OtelCollectorStatus types.String `tfsdk:"otel_collector_status"`
     AgentVersion types.String `tfsdk:"agent_version"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
+    TracesLastReceivedAt types.String `tfsdk:"traces_last_received_at"`
+    LogsLastReceivedAt types.String `tfsdk:"logs_last_received_at"`
+    MetricsLastReceivedAt types.String `tfsdk:"metrics_last_received_at"`
+    SignalArrivalsTrackedSince types.String `tfsdk:"signal_arrivals_tracked_since"`
     Labels types.Set `tfsdk:"labels"`
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
     TelemetryRetentionConfig types.String `tfsdk:"telemetry_retention_config"`
@@ -54,6 +58,7 @@ type RumApplicationDataSourceModel struct {
     SessionReplayLcpBudgetMs types.Number `tfsdk:"session_replay_lcp_budget_ms"`
     SessionReplayLongTaskBudgetMs types.Number `tfsdk:"session_replay_long_task_budget_ms"`
     SessionReplaySlowRequestBudgetMs types.Number `tfsdk:"session_replay_slow_request_budget_ms"`
+    SessionReplayFrustrationSignals types.String `tfsdk:"session_replay_frustration_signals"`
     SessionReplayAllowedOrigins types.String `tfsdk:"session_replay_allowed_origins"`
     SessionReplayConsentMode types.String `tfsdk:"session_replay_consent_mode"`
     SessionReplayCaptureTrigger types.String `tfsdk:"session_replay_capture_trigger"`
@@ -128,7 +133,7 @@ func (d *RumApplicationDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "otel_collector_status": schema.StringAttribute{
-                MarkdownDescription: "Whether telemetry is currently being received (connected) or has gone stale (disconnected).",
+                MarkdownDescription: "connected while data has arrived in the last 15 minutes, disconnected once nothing has for 15 minutes (normal while nobody uses the app), and empty until the first data arrives. The Dashboard shows these as Receiving data, No recent traffic and Waiting for data.",
                 Optional: true,
                 Computed: true,
             },
@@ -139,6 +144,22 @@ func (d *RumApplicationDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "last_seen_at": schema.StringAttribute{
                 MarkdownDescription: "When telemetry was last received for this application.",
+                Computed: true,
+            },
+            "traces_last_received_at": schema.StringAttribute{
+                MarkdownDescription: "When page loads, requests or other spans last arrived from this application.",
+                Computed: true,
+            },
+            "logs_last_received_at": schema.StringAttribute{
+                MarkdownDescription: "When log records last arrived from this application.",
+                Computed: true,
+            },
+            "metrics_last_received_at": schema.StringAttribute{
+                MarkdownDescription: "When metrics, such as Core Web Vitals, last arrived from this application.",
+                Computed: true,
+            },
+            "signal_arrivals_tracked_since": schema.StringAttribute{
+                MarkdownDescription: "Since when OneUptime has recorded when traces, logs and metrics last arrived from this application.",
                 Computed: true,
             },
             "labels": schema.SetAttribute{
@@ -199,6 +220,10 @@ func (d *RumApplicationDataSource) Schema(ctx context.Context, req datasource.Sc
             "session_replay_slow_request_budget_ms": schema.NumberAttribute{
                 MarkdownDescription: "Request duration budget in milliseconds. An instrumented request slower than this uploads the session with the Performance trigger. 0 disables the trigger.",
                 Optional: true,
+                Computed: true,
+            },
+            "session_replay_frustration_signals": schema.StringAttribute{
+                MarkdownDescription: "What counts as frustration in this application's recordings: the rules for rage clicks, dead clicks, error clicks and refresh rage (each can be changed or switched off), and up to 20 signals of the application's own (a click on an element, a page, an event from track() or an error's text), each counted as frustration or shown as a marker. Empty means the built-in rules: 3 clicks within 1 second in a 30 px radius, 3 seconds with nothing happening after a click, an error within 1 second of a click, and the same page loaded 3 times within 60 seconds. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "session_replay_allowed_origins": schema.StringAttribute{
@@ -446,6 +471,10 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         "otelCollectorStatus": true,
         "agentVersion": true,
         "lastSeenAt": true,
+        "tracesLastReceivedAt": true,
+        "logsLastReceivedAt": true,
+        "metricsLastReceivedAt": true,
+        "signalArrivalsTrackedSince": true,
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
@@ -459,6 +488,7 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         "sessionReplayLcpBudgetMs": true,
         "sessionReplayLongTaskBudgetMs": true,
         "sessionReplaySlowRequestBudgetMs": true,
+        "sessionReplayFrustrationSignals": true,
         "sessionReplayAllowedOrigins": true,
         "sessionReplayConsentMode": true,
         "sessionReplayCaptureTrigger": true,
@@ -547,6 +577,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -560,6 +597,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -581,6 +625,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -594,6 +645,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -615,6 +673,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := item["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -628,6 +693,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.Slug = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
+    } else if arr, ok := item["slug"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Slug = types.StringValue(string(jsonBytes))
         } else {
             data.Slug = types.StringNull()
@@ -649,6 +721,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.Description = types.StringNull()
         }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
     } else if val, ok := item["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
@@ -662,6 +741,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AppIdentifier = types.StringValue(string(jsonBytes))
+        } else {
+            data.AppIdentifier = types.StringNull()
+        }
+    } else if arr, ok := item["appIdentifier"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.AppIdentifier = types.StringValue(string(jsonBytes))
         } else {
             data.AppIdentifier = types.StringNull()
@@ -683,6 +769,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.ClientType = types.StringNull()
         }
+    } else if arr, ok := item["clientType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ClientType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ClientType = types.StringNull()
+        }
     } else if val, ok := item["clientType"].(string); ok {
         data.ClientType = types.StringValue(val)
     } else {
@@ -696,6 +789,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.SdkLanguage = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SdkLanguage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SdkLanguage = types.StringNull()
+        }
+    } else if arr, ok := item["sdkLanguage"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.SdkLanguage = types.StringValue(string(jsonBytes))
         } else {
             data.SdkLanguage = types.StringNull()
@@ -717,6 +817,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.OtelCollectorStatus = types.StringNull()
         }
+    } else if arr, ok := item["otelCollectorStatus"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.OtelCollectorStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.OtelCollectorStatus = types.StringNull()
+        }
     } else if val, ok := item["otelCollectorStatus"].(string); ok {
         data.OtelCollectorStatus = types.StringValue(val)
     } else {
@@ -730,6 +837,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.AgentVersion = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AgentVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.AgentVersion = types.StringNull()
+        }
+    } else if arr, ok := item["agentVersion"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.AgentVersion = types.StringValue(string(jsonBytes))
         } else {
             data.AgentVersion = types.StringNull()
@@ -751,10 +865,113 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.LastSeenAt = types.StringNull()
         }
+    } else if arr, ok := item["lastSeenAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastSeenAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSeenAt = types.StringNull()
+        }
     } else if val, ok := item["lastSeenAt"].(string); ok {
         data.LastSeenAt = types.StringValue(val)
     } else {
         data.LastSeenAt = types.StringNull()
+    }
+    if obj, ok := item["tracesLastReceivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TracesLastReceivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TracesLastReceivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TracesLastReceivedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TracesLastReceivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.TracesLastReceivedAt = types.StringNull()
+        }
+    } else if arr, ok := item["tracesLastReceivedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TracesLastReceivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.TracesLastReceivedAt = types.StringNull()
+        }
+    } else if val, ok := item["tracesLastReceivedAt"].(string); ok {
+        data.TracesLastReceivedAt = types.StringValue(val)
+    } else {
+        data.TracesLastReceivedAt = types.StringNull()
+    }
+    if obj, ok := item["logsLastReceivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LogsLastReceivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LogsLastReceivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LogsLastReceivedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LogsLastReceivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LogsLastReceivedAt = types.StringNull()
+        }
+    } else if arr, ok := item["logsLastReceivedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LogsLastReceivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LogsLastReceivedAt = types.StringNull()
+        }
+    } else if val, ok := item["logsLastReceivedAt"].(string); ok {
+        data.LogsLastReceivedAt = types.StringValue(val)
+    } else {
+        data.LogsLastReceivedAt = types.StringNull()
+    }
+    if obj, ok := item["metricsLastReceivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MetricsLastReceivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MetricsLastReceivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MetricsLastReceivedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MetricsLastReceivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.MetricsLastReceivedAt = types.StringNull()
+        }
+    } else if arr, ok := item["metricsLastReceivedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.MetricsLastReceivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.MetricsLastReceivedAt = types.StringNull()
+        }
+    } else if val, ok := item["metricsLastReceivedAt"].(string); ok {
+        data.MetricsLastReceivedAt = types.StringValue(val)
+    } else {
+        data.MetricsLastReceivedAt = types.StringNull()
+    }
+    if obj, ok := item["signalArrivalsTrackedSince"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SignalArrivalsTrackedSince = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SignalArrivalsTrackedSince = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SignalArrivalsTrackedSince = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SignalArrivalsTrackedSince = types.StringValue(string(jsonBytes))
+        } else {
+            data.SignalArrivalsTrackedSince = types.StringNull()
+        }
+    } else if arr, ok := item["signalArrivalsTrackedSince"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SignalArrivalsTrackedSince = types.StringValue(string(jsonBytes))
+        } else {
+            data.SignalArrivalsTrackedSince = types.StringNull()
+        }
+    } else if val, ok := item["signalArrivalsTrackedSince"].(string); ok {
+        data.SignalArrivalsTrackedSince = types.StringValue(val)
+    } else {
+        data.SignalArrivalsTrackedSince = types.StringNull()
     }
     if val, ok := item["labels"].([]interface{}); ok {
         var setItems []attr.Value
@@ -793,6 +1010,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.TelemetryRetentionConfig = types.StringNull()
         }
+    } else if arr, ok := item["telemetryRetentionConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TelemetryRetentionConfig = types.StringValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = types.StringNull()
+        }
     } else if val, ok := item["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = types.StringValue(val)
     } else {
@@ -815,6 +1039,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.SessionReplayMaskingMode = types.StringNull()
         }
+    } else if arr, ok := item["sessionReplayMaskingMode"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SessionReplayMaskingMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayMaskingMode = types.StringNull()
+        }
     } else if val, ok := item["sessionReplayMaskingMode"].(string); ok {
         data.SessionReplayMaskingMode = types.StringValue(val)
     } else {
@@ -828,6 +1059,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.SessionReplayMaskSelectors = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SessionReplayMaskSelectors = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayMaskSelectors = types.StringNull()
+        }
+    } else if arr, ok := item["sessionReplayMaskSelectors"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.SessionReplayMaskSelectors = types.StringValue(string(jsonBytes))
         } else {
             data.SessionReplayMaskSelectors = types.StringNull()
@@ -849,6 +1087,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.SessionReplayBlockSelectors = types.StringNull()
         }
+    } else if arr, ok := item["sessionReplayBlockSelectors"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SessionReplayBlockSelectors = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayBlockSelectors = types.StringNull()
+        }
     } else if val, ok := item["sessionReplayBlockSelectors"].(string); ok {
         data.SessionReplayBlockSelectors = types.StringValue(val)
     } else {
@@ -862,6 +1107,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.SessionReplayIgnoreErrorPatterns = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SessionReplayIgnoreErrorPatterns = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayIgnoreErrorPatterns = types.StringNull()
+        }
+    } else if arr, ok := item["sessionReplayIgnoreErrorPatterns"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.SessionReplayIgnoreErrorPatterns = types.StringValue(string(jsonBytes))
         } else {
             data.SessionReplayIgnoreErrorPatterns = types.StringNull()
@@ -883,6 +1135,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.SessionReplayTracePropagationOrigins = types.StringNull()
         }
+    } else if arr, ok := item["sessionReplayTracePropagationOrigins"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SessionReplayTracePropagationOrigins = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayTracePropagationOrigins = types.StringNull()
+        }
     } else if val, ok := item["sessionReplayTracePropagationOrigins"].(string); ok {
         data.SessionReplayTracePropagationOrigins = types.StringValue(val)
     } else {
@@ -896,6 +1155,30 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
     data.SessionReplayLcpBudgetMs = numberFromAPI(data.SessionReplayLcpBudgetMs, item["sessionReplayLcpBudgetMs"])
     data.SessionReplayLongTaskBudgetMs = numberFromAPI(data.SessionReplayLongTaskBudgetMs, item["sessionReplayLongTaskBudgetMs"])
     data.SessionReplaySlowRequestBudgetMs = numberFromAPI(data.SessionReplaySlowRequestBudgetMs, item["sessionReplaySlowRequestBudgetMs"])
+    if obj, ok := item["sessionReplayFrustrationSignals"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionReplayFrustrationSignals = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SessionReplayFrustrationSignals = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SessionReplayFrustrationSignals = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SessionReplayFrustrationSignals = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayFrustrationSignals = types.StringNull()
+        }
+    } else if arr, ok := item["sessionReplayFrustrationSignals"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SessionReplayFrustrationSignals = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayFrustrationSignals = types.StringNull()
+        }
+    } else if val, ok := item["sessionReplayFrustrationSignals"].(string); ok {
+        data.SessionReplayFrustrationSignals = types.StringValue(val)
+    } else {
+        data.SessionReplayFrustrationSignals = types.StringNull()
+    }
     if obj, ok := item["sessionReplayAllowedOrigins"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SessionReplayAllowedOrigins = types.StringValue(val)
@@ -904,6 +1187,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.SessionReplayAllowedOrigins = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SessionReplayAllowedOrigins = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayAllowedOrigins = types.StringNull()
+        }
+    } else if arr, ok := item["sessionReplayAllowedOrigins"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.SessionReplayAllowedOrigins = types.StringValue(string(jsonBytes))
         } else {
             data.SessionReplayAllowedOrigins = types.StringNull()
@@ -925,6 +1215,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.SessionReplayConsentMode = types.StringNull()
         }
+    } else if arr, ok := item["sessionReplayConsentMode"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SessionReplayConsentMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayConsentMode = types.StringNull()
+        }
     } else if val, ok := item["sessionReplayConsentMode"].(string); ok {
         data.SessionReplayConsentMode = types.StringValue(val)
     } else {
@@ -938,6 +1235,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.SessionReplayCaptureTrigger = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SessionReplayCaptureTrigger = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayCaptureTrigger = types.StringNull()
+        }
+    } else if arr, ok := item["sessionReplayCaptureTrigger"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.SessionReplayCaptureTrigger = types.StringValue(string(jsonBytes))
         } else {
             data.SessionReplayCaptureTrigger = types.StringNull()
@@ -977,6 +1281,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.SessionReplayLastChunkReceivedAt = types.StringNull()
         }
+    } else if arr, ok := item["sessionReplayLastChunkReceivedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SessionReplayLastChunkReceivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayLastChunkReceivedAt = types.StringNull()
+        }
     } else if val, ok := item["sessionReplayLastChunkReceivedAt"].(string); ok {
         data.SessionReplayLastChunkReceivedAt = types.StringValue(val)
     } else {
@@ -994,6 +1305,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.SessionReplayBudgetExceededAt = types.StringNull()
         }
+    } else if arr, ok := item["sessionReplayBudgetExceededAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SessionReplayBudgetExceededAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayBudgetExceededAt = types.StringNull()
+        }
     } else if val, ok := item["sessionReplayBudgetExceededAt"].(string); ok {
         data.SessionReplayBudgetExceededAt = types.StringValue(val)
     } else {
@@ -1007,6 +1325,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1033,6 +1358,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else {
             data.ArchivedAt = types.StringNull()
         }
+    } else if arr, ok := item["archivedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ArchivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = types.StringNull()
+        }
     } else if val, ok := item["archivedAt"].(string); ok {
         data.ArchivedAt = types.StringValue(val)
     } else {
@@ -1046,6 +1378,13 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         } else if val, ok := obj["value"].(float64); ok {
             data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ArchivedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.ArchivedByUserId = types.StringNull()

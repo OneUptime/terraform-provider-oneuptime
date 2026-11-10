@@ -75,6 +75,11 @@ type ServiceLevelObjectiveResourceModel struct {
     CurrentBurnRate types.Number `tfsdk:"current_burn_rate"`
     SloStatus types.String `tfsdk:"slo_status"`
     StatusChangeNotificationSentAt RFC3339Value `tfsdk:"status_change_notification_sent_at"`
+    CurrentErrorBudgetPolicyTierId types.String `tfsdk:"current_error_budget_policy_tier_id"`
+    CurrentErrorBudgetPolicyTierName types.String `tfsdk:"current_error_budget_policy_tier_name"`
+    CurrentErrorBudgetPolicyTierEnteredAt RFC3339Value `tfsdk:"current_error_budget_policy_tier_entered_at"`
+    DeploymentsAllowed types.Bool `tfsdk:"deployments_allowed"`
+    DeploymentsFrozenAt RFC3339Value `tfsdk:"deployments_frozen_at"`
     LastEvaluatedAt RFC3339Value `tfsdk:"last_evaluated_at"`
     NextEvaluationAt RFC3339Value `tfsdk:"next_evaluation_at"`
     LastAccumulatedBucketEndAt RFC3339Value `tfsdk:"last_accumulated_bucket_end_at"`
@@ -320,6 +325,28 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
+            "current_error_budget_policy_tier_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the error budget policy tier this Service Level Objective is in. Empty while its error budget is above every tier, or when it has no error budget policy. Computed by the worker.",
+                Computed: true,
+            },
+            "current_error_budget_policy_tier_name": schema.StringAttribute{
+                MarkdownDescription: "Name of the error budget policy tier this Service Level Objective is in. Empty while its error budget is above every tier, or when it has no error budget policy. Computed by the worker.",
+                Computed: true,
+            },
+            "current_error_budget_policy_tier_entered_at": schema.StringAttribute{
+                MarkdownDescription: "When this Service Level Objective entered the error budget policy tier it is in. Empty while it is in no tier. Computed by the worker.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "deployments_allowed": schema.BoolAttribute{
+                MarkdownDescription: "False while this Service Level Objective is in a tier of its error budget policy that freezes deployments, and true otherwise, so a CI/CD pipeline can check it before it releases. Kept as it is while the SLO is not measured. Computed by the worker.",
+                Computed: true,
+            },
+            "deployments_frozen_at": schema.StringAttribute{
+                MarkdownDescription: "When deployments of this Service Level Objective were frozen: when it entered a tier of its error budget policy that freezes deployments, or the tier it is in started freezing them. Empty while deployments are allowed. Computed by the worker.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
             "last_evaluated_at": schema.StringAttribute{
                 MarkdownDescription: "The last time this Service Level Objective was evaluated. Computed by the worker.",
                 CustomType: RFC3339Type{},
@@ -526,6 +553,11 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
         "currentBurnRate": true,
         "sloStatus": true,
         "statusChangeNotificationSentAt": true,
+        "currentErrorBudgetPolicyTierId": true,
+        "currentErrorBudgetPolicyTierName": true,
+        "currentErrorBudgetPolicyTierEnteredAt": true,
+        "deploymentsAllowed": true,
+        "deploymentsFrozenAt": true,
         "lastEvaluatedAt": true,
         "nextEvaluationAt": true,
         "lastAccumulatedBucketEndAt": true,
@@ -605,6 +637,13 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -638,6 +677,13 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -717,6 +763,13 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
         } else {
             data.SliType = types.StringNull()
         }
+    } else if arr, ok := dataMap["sliType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SliType = types.StringValue(string(jsonBytes))
+        } else {
+            data.SliType = types.StringNull()
+        }
     } else if val, ok := dataMap["sliType"].(string); ok {
         data.SliType = types.StringValue(val)
     } else {
@@ -750,6 +803,13 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.MultiMonitorMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.MultiMonitorMode = types.StringNull()
+        }
+    } else if arr, ok := dataMap["multiMonitorMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.MultiMonitorMode = types.StringValue(string(jsonBytes))
         } else {
             data.MultiMonitorMode = types.StringNull()
@@ -855,6 +915,13 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
         } else {
             data.MetricQueryConfig = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["metricQueryConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MetricQueryConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.MetricQueryConfig = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["metricQueryConfig"].(string); ok {
         data.MetricQueryConfig = NewJSONSubsetValue(val)
     } else {
@@ -893,6 +960,13 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
         } else {
             data.WindowType = types.StringNull()
         }
+    } else if arr, ok := dataMap["windowType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.WindowType = types.StringValue(string(jsonBytes))
+        } else {
+            data.WindowType = types.StringNull()
+        }
     } else if val, ok := dataMap["windowType"].(string); ok {
         data.WindowType = types.StringValue(val)
     } else {
@@ -927,6 +1001,13 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Timezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.Timezone = types.StringNull()
+        }
+    } else if arr, ok := dataMap["timezone"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Timezone = types.StringValue(string(jsonBytes))
         } else {
             data.Timezone = types.StringNull()
@@ -991,6 +1072,13 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -1035,6 +1123,13 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ArchivedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.ArchivedByUserId = types.StringNull()
@@ -1145,6 +1240,13 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
         } else {
             data.SloStatus = types.StringNull()
         }
+    } else if arr, ok := dataMap["sloStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SloStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.SloStatus = types.StringNull()
+        }
     } else if val, ok := dataMap["sloStatus"].(string); ok {
         data.SloStatus = types.StringValue(val)
     } else {
@@ -1160,6 +1262,119 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
         data.StatusChangeNotificationSentAt = NewRFC3339Value(val)
     } else {
         data.StatusChangeNotificationSentAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["currentErrorBudgetPolicyTierId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CurrentErrorBudgetPolicyTierId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CurrentErrorBudgetPolicyTierId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CurrentErrorBudgetPolicyTierId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CurrentErrorBudgetPolicyTierId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CurrentErrorBudgetPolicyTierId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CurrentErrorBudgetPolicyTierId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CurrentErrorBudgetPolicyTierId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CurrentErrorBudgetPolicyTierId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentErrorBudgetPolicyTierId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["currentErrorBudgetPolicyTierId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CurrentErrorBudgetPolicyTierId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentErrorBudgetPolicyTierId = types.StringNull()
+        }
+    } else if val, ok := dataMap["currentErrorBudgetPolicyTierId"].(string); ok {
+        data.CurrentErrorBudgetPolicyTierId = types.StringValue(val)
+    } else {
+        data.CurrentErrorBudgetPolicyTierId = types.StringNull()
+    }
+    if obj, ok := dataMap["currentErrorBudgetPolicyTierName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CurrentErrorBudgetPolicyTierName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CurrentErrorBudgetPolicyTierName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CurrentErrorBudgetPolicyTierName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CurrentErrorBudgetPolicyTierName = types.StringValue(string(jsonBytes))
+            } else {
+                data.CurrentErrorBudgetPolicyTierName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CurrentErrorBudgetPolicyTierName = types.StringValue(string(jsonBytes))
+            } else {
+                data.CurrentErrorBudgetPolicyTierName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CurrentErrorBudgetPolicyTierName = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentErrorBudgetPolicyTierName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["currentErrorBudgetPolicyTierName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CurrentErrorBudgetPolicyTierName = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentErrorBudgetPolicyTierName = types.StringNull()
+        }
+    } else if val, ok := dataMap["currentErrorBudgetPolicyTierName"].(string); ok {
+        data.CurrentErrorBudgetPolicyTierName = types.StringValue(val)
+    } else {
+        data.CurrentErrorBudgetPolicyTierName = types.StringNull()
+    }
+    if obj, ok := dataMap["currentErrorBudgetPolicyTierEnteredAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CurrentErrorBudgetPolicyTierEnteredAt = NewRFC3339Value(val)
+        } else {
+            data.CurrentErrorBudgetPolicyTierEnteredAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["currentErrorBudgetPolicyTierEnteredAt"].(string); ok && val != "" {
+        data.CurrentErrorBudgetPolicyTierEnteredAt = NewRFC3339Value(val)
+    } else {
+        data.CurrentErrorBudgetPolicyTierEnteredAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["deploymentsAllowed"].(bool); ok {
+        data.DeploymentsAllowed = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["deploymentsFrozenAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeploymentsFrozenAt = NewRFC3339Value(val)
+        } else {
+            data.DeploymentsFrozenAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["deploymentsFrozenAt"].(string); ok && val != "" {
+        data.DeploymentsFrozenAt = NewRFC3339Value(val)
+    } else {
+        data.DeploymentsFrozenAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["lastEvaluatedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1222,6 +1437,13 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1294,6 +1516,11 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
         "currentBurnRate": true,
         "sloStatus": true,
         "statusChangeNotificationSentAt": true,
+        "currentErrorBudgetPolicyTierId": true,
+        "currentErrorBudgetPolicyTierName": true,
+        "currentErrorBudgetPolicyTierEnteredAt": true,
+        "deploymentsAllowed": true,
+        "deploymentsFrozenAt": true,
         "lastEvaluatedAt": true,
         "nextEvaluationAt": true,
         "lastAccumulatedBucketEndAt": true,
@@ -1374,6 +1601,13 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1407,6 +1641,13 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1486,6 +1727,13 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
         } else {
             data.SliType = types.StringNull()
         }
+    } else if arr, ok := dataMap["sliType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SliType = types.StringValue(string(jsonBytes))
+        } else {
+            data.SliType = types.StringNull()
+        }
     } else if val, ok := dataMap["sliType"].(string); ok {
         data.SliType = types.StringValue(val)
     } else {
@@ -1519,6 +1767,13 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.MultiMonitorMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.MultiMonitorMode = types.StringNull()
+        }
+    } else if arr, ok := dataMap["multiMonitorMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.MultiMonitorMode = types.StringValue(string(jsonBytes))
         } else {
             data.MultiMonitorMode = types.StringNull()
@@ -1624,6 +1879,13 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
         } else {
             data.MetricQueryConfig = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["metricQueryConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MetricQueryConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.MetricQueryConfig = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["metricQueryConfig"].(string); ok {
         data.MetricQueryConfig = NewJSONSubsetValue(val)
     } else {
@@ -1662,6 +1924,13 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
         } else {
             data.WindowType = types.StringNull()
         }
+    } else if arr, ok := dataMap["windowType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.WindowType = types.StringValue(string(jsonBytes))
+        } else {
+            data.WindowType = types.StringNull()
+        }
     } else if val, ok := dataMap["windowType"].(string); ok {
         data.WindowType = types.StringValue(val)
     } else {
@@ -1696,6 +1965,13 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Timezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.Timezone = types.StringNull()
+        }
+    } else if arr, ok := dataMap["timezone"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Timezone = types.StringValue(string(jsonBytes))
         } else {
             data.Timezone = types.StringNull()
@@ -1760,6 +2036,13 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -1804,6 +2087,13 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ArchivedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.ArchivedByUserId = types.StringNull()
@@ -1914,6 +2204,13 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
         } else {
             data.SloStatus = types.StringNull()
         }
+    } else if arr, ok := dataMap["sloStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SloStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.SloStatus = types.StringNull()
+        }
     } else if val, ok := dataMap["sloStatus"].(string); ok {
         data.SloStatus = types.StringValue(val)
     } else {
@@ -1929,6 +2226,119 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
         data.StatusChangeNotificationSentAt = NewRFC3339Value(val)
     } else {
         data.StatusChangeNotificationSentAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["currentErrorBudgetPolicyTierId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CurrentErrorBudgetPolicyTierId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CurrentErrorBudgetPolicyTierId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CurrentErrorBudgetPolicyTierId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CurrentErrorBudgetPolicyTierId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CurrentErrorBudgetPolicyTierId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CurrentErrorBudgetPolicyTierId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CurrentErrorBudgetPolicyTierId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CurrentErrorBudgetPolicyTierId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentErrorBudgetPolicyTierId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["currentErrorBudgetPolicyTierId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CurrentErrorBudgetPolicyTierId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentErrorBudgetPolicyTierId = types.StringNull()
+        }
+    } else if val, ok := dataMap["currentErrorBudgetPolicyTierId"].(string); ok {
+        data.CurrentErrorBudgetPolicyTierId = types.StringValue(val)
+    } else {
+        data.CurrentErrorBudgetPolicyTierId = types.StringNull()
+    }
+    if obj, ok := dataMap["currentErrorBudgetPolicyTierName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CurrentErrorBudgetPolicyTierName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CurrentErrorBudgetPolicyTierName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CurrentErrorBudgetPolicyTierName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CurrentErrorBudgetPolicyTierName = types.StringValue(string(jsonBytes))
+            } else {
+                data.CurrentErrorBudgetPolicyTierName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CurrentErrorBudgetPolicyTierName = types.StringValue(string(jsonBytes))
+            } else {
+                data.CurrentErrorBudgetPolicyTierName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CurrentErrorBudgetPolicyTierName = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentErrorBudgetPolicyTierName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["currentErrorBudgetPolicyTierName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CurrentErrorBudgetPolicyTierName = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentErrorBudgetPolicyTierName = types.StringNull()
+        }
+    } else if val, ok := dataMap["currentErrorBudgetPolicyTierName"].(string); ok {
+        data.CurrentErrorBudgetPolicyTierName = types.StringValue(val)
+    } else {
+        data.CurrentErrorBudgetPolicyTierName = types.StringNull()
+    }
+    if obj, ok := dataMap["currentErrorBudgetPolicyTierEnteredAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CurrentErrorBudgetPolicyTierEnteredAt = NewRFC3339Value(val)
+        } else {
+            data.CurrentErrorBudgetPolicyTierEnteredAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["currentErrorBudgetPolicyTierEnteredAt"].(string); ok && val != "" {
+        data.CurrentErrorBudgetPolicyTierEnteredAt = NewRFC3339Value(val)
+    } else {
+        data.CurrentErrorBudgetPolicyTierEnteredAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["deploymentsAllowed"].(bool); ok {
+        data.DeploymentsAllowed = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["deploymentsFrozenAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeploymentsFrozenAt = NewRFC3339Value(val)
+        } else {
+            data.DeploymentsFrozenAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["deploymentsFrozenAt"].(string); ok && val != "" {
+        data.DeploymentsFrozenAt = NewRFC3339Value(val)
+    } else {
+        data.DeploymentsFrozenAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["lastEvaluatedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1991,6 +2401,13 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -2151,6 +2568,11 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         "currentBurnRate": true,
         "sloStatus": true,
         "statusChangeNotificationSentAt": true,
+        "currentErrorBudgetPolicyTierId": true,
+        "currentErrorBudgetPolicyTierName": true,
+        "currentErrorBudgetPolicyTierEnteredAt": true,
+        "deploymentsAllowed": true,
+        "deploymentsFrozenAt": true,
         "lastEvaluatedAt": true,
         "nextEvaluationAt": true,
         "lastAccumulatedBucketEndAt": true,
@@ -2225,6 +2647,13 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -2258,6 +2687,13 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -2337,6 +2773,13 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         } else {
             data.SliType = types.StringNull()
         }
+    } else if arr, ok := dataMap["sliType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SliType = types.StringValue(string(jsonBytes))
+        } else {
+            data.SliType = types.StringNull()
+        }
     } else if val, ok := dataMap["sliType"].(string); ok {
         data.SliType = types.StringValue(val)
     } else {
@@ -2370,6 +2813,13 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.MultiMonitorMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.MultiMonitorMode = types.StringNull()
+        }
+    } else if arr, ok := dataMap["multiMonitorMode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.MultiMonitorMode = types.StringValue(string(jsonBytes))
         } else {
             data.MultiMonitorMode = types.StringNull()
@@ -2475,6 +2925,13 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         } else {
             data.MetricQueryConfig = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["metricQueryConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MetricQueryConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.MetricQueryConfig = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["metricQueryConfig"].(string); ok {
         data.MetricQueryConfig = NewJSONSubsetValue(val)
     } else {
@@ -2513,6 +2970,13 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         } else {
             data.WindowType = types.StringNull()
         }
+    } else if arr, ok := dataMap["windowType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.WindowType = types.StringValue(string(jsonBytes))
+        } else {
+            data.WindowType = types.StringNull()
+        }
     } else if val, ok := dataMap["windowType"].(string); ok {
         data.WindowType = types.StringValue(val)
     } else {
@@ -2547,6 +3011,13 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Timezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.Timezone = types.StringNull()
+        }
+    } else if arr, ok := dataMap["timezone"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Timezone = types.StringValue(string(jsonBytes))
         } else {
             data.Timezone = types.StringNull()
@@ -2611,6 +3082,13 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -2655,6 +3133,13 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["archivedByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ArchivedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.ArchivedByUserId = types.StringNull()
@@ -2765,6 +3250,13 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         } else {
             data.SloStatus = types.StringNull()
         }
+    } else if arr, ok := dataMap["sloStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SloStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.SloStatus = types.StringNull()
+        }
     } else if val, ok := dataMap["sloStatus"].(string); ok {
         data.SloStatus = types.StringValue(val)
     } else {
@@ -2780,6 +3272,119 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         data.StatusChangeNotificationSentAt = NewRFC3339Value(val)
     } else {
         data.StatusChangeNotificationSentAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["currentErrorBudgetPolicyTierId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CurrentErrorBudgetPolicyTierId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CurrentErrorBudgetPolicyTierId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CurrentErrorBudgetPolicyTierId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CurrentErrorBudgetPolicyTierId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CurrentErrorBudgetPolicyTierId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CurrentErrorBudgetPolicyTierId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CurrentErrorBudgetPolicyTierId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CurrentErrorBudgetPolicyTierId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentErrorBudgetPolicyTierId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["currentErrorBudgetPolicyTierId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CurrentErrorBudgetPolicyTierId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentErrorBudgetPolicyTierId = types.StringNull()
+        }
+    } else if val, ok := dataMap["currentErrorBudgetPolicyTierId"].(string); ok {
+        data.CurrentErrorBudgetPolicyTierId = types.StringValue(val)
+    } else {
+        data.CurrentErrorBudgetPolicyTierId = types.StringNull()
+    }
+    if obj, ok := dataMap["currentErrorBudgetPolicyTierName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CurrentErrorBudgetPolicyTierName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CurrentErrorBudgetPolicyTierName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CurrentErrorBudgetPolicyTierName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CurrentErrorBudgetPolicyTierName = types.StringValue(string(jsonBytes))
+            } else {
+                data.CurrentErrorBudgetPolicyTierName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CurrentErrorBudgetPolicyTierName = types.StringValue(string(jsonBytes))
+            } else {
+                data.CurrentErrorBudgetPolicyTierName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CurrentErrorBudgetPolicyTierName = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentErrorBudgetPolicyTierName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["currentErrorBudgetPolicyTierName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CurrentErrorBudgetPolicyTierName = types.StringValue(string(jsonBytes))
+        } else {
+            data.CurrentErrorBudgetPolicyTierName = types.StringNull()
+        }
+    } else if val, ok := dataMap["currentErrorBudgetPolicyTierName"].(string); ok {
+        data.CurrentErrorBudgetPolicyTierName = types.StringValue(val)
+    } else {
+        data.CurrentErrorBudgetPolicyTierName = types.StringNull()
+    }
+    if obj, ok := dataMap["currentErrorBudgetPolicyTierEnteredAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CurrentErrorBudgetPolicyTierEnteredAt = NewRFC3339Value(val)
+        } else {
+            data.CurrentErrorBudgetPolicyTierEnteredAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["currentErrorBudgetPolicyTierEnteredAt"].(string); ok && val != "" {
+        data.CurrentErrorBudgetPolicyTierEnteredAt = NewRFC3339Value(val)
+    } else {
+        data.CurrentErrorBudgetPolicyTierEnteredAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["deploymentsAllowed"].(bool); ok {
+        data.DeploymentsAllowed = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["deploymentsFrozenAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeploymentsFrozenAt = NewRFC3339Value(val)
+        } else {
+            data.DeploymentsFrozenAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["deploymentsFrozenAt"].(string); ok && val != "" {
+        data.DeploymentsFrozenAt = NewRFC3339Value(val)
+    } else {
+        data.DeploymentsFrozenAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["lastEvaluatedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -2842,6 +3447,13 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

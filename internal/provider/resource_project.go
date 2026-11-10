@@ -103,11 +103,18 @@ type ProjectResourceModel struct {
     AiContext types.String `tfsdk:"ai_context"`
     AiDailyTokenLimit types.Number `tfsdk:"ai_daily_token_limit"`
     AiDailySpendLimitInUsd types.Number `tfsdk:"ai_daily_spend_limit_in_usd"`
+    AiRunMaxModelCalls types.Number `tfsdk:"ai_run_max_model_calls"`
+    AiRunMaxToolCalls types.Number `tfsdk:"ai_run_max_tool_calls"`
+    AiRunMaxTokens types.Number `tfsdk:"ai_run_max_tokens"`
+    AiRunTimeLimitInMinutes types.Number `tfsdk:"ai_run_time_limit_in_minutes"`
+    RequireTwoApprovalsForRiskierFixes types.Bool `tfsdk:"require_two_approvals_for_riskier_fixes"`
     AcknowledgeLinkedAlertsWhenIncidentAcknowledged types.Bool `tfsdk:"acknowledge_linked_alerts_when_incident_acknowledged"`
     ResolveLinkedAlertsWhenIncidentResolved types.Bool `tfsdk:"resolve_linked_alerts_when_incident_resolved"`
     LimitIncidentsToOneEpisode types.Bool `tfsdk:"limit_incidents_to_one_episode"`
     LimitAlertsToOneEpisode types.Bool `tfsdk:"limit_alerts_to_one_episode"`
     DefaultNetworkTopologyLayout types.String `tfsdk:"default_network_topology_layout"`
+    DiscoveredDeviceRetentionInDays types.Number `tfsdk:"discovered_device_retention_in_days"`
+    DefaultTableColumns JSONSubsetValue `tfsdk:"default_table_columns"`
     AlertInvestigationMinimumSeverityId types.String `tfsdk:"alert_investigation_minimum_severity_id"`
     AiDailyAutonomousTokenLimit types.Number `tfsdk:"ai_daily_autonomous_token_limit"`
     IncidentAiDailyAutonomousTokenLimit types.Number `tfsdk:"incident_ai_daily_autonomous_token_limit"`
@@ -129,6 +136,8 @@ type ProjectResourceModel struct {
     DefaultTelemetryRetentionInDays types.Number `tfsdk:"default_telemetry_retention_in_days"`
     TelemetryRetentionConfig JSONSubsetValue `tfsdk:"telemetry_retention_config"`
     DefaultMetricDownsamplingRetentionDays JSONSubsetValue `tfsdk:"default_metric_downsampling_retention_days"`
+    RequireApprovalForIncidentPublicNotes types.Bool `tfsdk:"require_approval_for_incident_public_notes"`
+    RequireApprovalForScheduledMaintenancePublicNotes types.Bool `tfsdk:"require_approval_for_scheduled_maintenance_public_notes"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Slug types.String `tfsdk:"slug"`
@@ -150,6 +159,16 @@ type ProjectResourceModel struct {
     BillingMarketplace types.String `tfsdk:"billing_marketplace"`
     LetCustomerSupportAccessProject types.Bool `tfsdk:"let_customer_support_access_project"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
+    LogsDailyIngestionBudgetInGb types.Number `tfsdk:"logs_daily_ingestion_budget_in_gb"`
+    TracesDailyIngestionBudgetInGb types.Number `tfsdk:"traces_daily_ingestion_budget_in_gb"`
+    MetricsDailyIngestionBudgetInGb types.Number `tfsdk:"metrics_daily_ingestion_budget_in_gb"`
+    ProfilesDailyIngestionBudgetInGb types.Number `tfsdk:"profiles_daily_ingestion_budget_in_gb"`
+    SecurityEventsDailyIngestionBudgetInGb types.Number `tfsdk:"security_events_daily_ingestion_budget_in_gb"`
+    LogsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"logs_ingestion_rate_limit_in_mb_per_second"`
+    TracesIngestionRateLimitInMbPerSecond types.Number `tfsdk:"traces_ingestion_rate_limit_in_mb_per_second"`
+    MetricsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"metrics_ingestion_rate_limit_in_mb_per_second"`
+    ProfilesIngestionRateLimitInMbPerSecond types.Number `tfsdk:"profiles_ingestion_rate_limit_in_mb_per_second"`
+    SecurityEventsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"security_events_ingestion_rate_limit_in_mb_per_second"`
 }
 
 func (r *ProjectResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -706,6 +725,51 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
+            "ai_run_max_model_calls": schema.NumberAttribute{
+                MarkdownDescription: "The most model (LLM) calls one OneUptime AI run may make: an investigation, an Ask AI answer, a Slack or Microsoft Teams answer, a triage, a remediation or a code task. The run answers with what it found when it gets there. Unset means no limit.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "ai_run_max_tool_calls": schema.NumberAttribute{
+                MarkdownDescription: "The most tool calls (queries, commands, file reads and edits) one OneUptime AI run may make. The run answers with what it found when it gets there. Unset means no limit.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "ai_run_max_tokens": schema.NumberAttribute{
+                MarkdownDescription: "The most tokens one OneUptime AI run may use, counted as the AI Logs count them. The run stops when it gets there and says so. Unset means no limit.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "ai_run_time_limit_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "How long one OneUptime AI run may take before it answers with what it found. An incident or alert investigation uses its own lane's time limit when that is set. Unset means the default, 120 minutes.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "require_two_approvals_for_riskier_fixes": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, a fix OneUptime AI proposes that holds a riskier change runs only once two different people approve it. Off by default.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "acknowledge_linked_alerts_when_incident_acknowledged": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, acknowledging an incident also acknowledges every alert linked to it. This stops those alerts' on-call escalations, and their reminders only when the alert reminder rule is set to stop on Acknowledged. Alerts linked to an incident that is already acknowledged are acknowledged as they are linked. On for new projects created in OneUptime; projects that existed before keep their setting.",
                 Optional: true,
@@ -751,6 +815,29 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                 },
                 Validators: []validator.String{
                     stringvalidator.OneOf("force", "tiered", "radial", "star", "parentChild"),
+                },
+            },
+            "discovered_device_retention_in_days": schema.NumberAttribute{
+                MarkdownDescription: "Days a discovered device stays once no longer seen: 7, 14, 30, 60, 90, 180 or 365, or 0 to keep all. Monitored and classified devices always stay.",
+                Optional: true,
+                Computed: true,
+                Default: numberdefault.StaticBigFloat(big.NewFloat(30)),
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "default_table_columns": schema.StringAttribute{
+                MarkdownDescription: "The columns each list shows, and their order, for everyone in the project who has not chosen their own: a list's key to its column ids in order and the ones hidden. Empty: every list shows its own columns. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
                 },
             },
             "alert_investigation_minimum_severity_id": schema.StringAttribute{
@@ -950,6 +1037,24 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                     JSONEnvelopeValidator(),
                 },
             },
+            "require_approval_for_incident_public_notes": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, a public note on an incident or an incident episode is published - shown on status pages, sent to subscribers and posted to chat channels - only once the project's incident approvers approve it (PublicNoteApprovalStep). Edits of published notes wait for approval too. Off by default. Turning it on needs at least one approval step.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "require_approval_for_scheduled_maintenance_public_notes": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, a public note on a scheduled maintenance event is published - shown on status pages, sent to subscribers and posted to chat channels - only once the project's scheduled maintenance approvers approve it (PublicNoteApprovalStep). Edits of published notes wait for approval too. Off by default. Turning it on needs at least one approval step.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
@@ -1044,6 +1149,46 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
             },
             "git_hub_app_installation_id": schema.StringAttribute{
                 MarkdownDescription: "The GitHub App installation ID for this project. This is set when the GitHub App is installed on the organization.",
+                Computed: true,
+            },
+            "logs_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The most logs this project may send in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. Empty: the instance default. 0: no limit for this project.",
+                Computed: true,
+            },
+            "traces_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The most traces this project may send in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. Empty: the instance default. 0: no limit for this project.",
+                Computed: true,
+            },
+            "metrics_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The most metrics this project may send in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. Empty: the instance default. 0: no limit for this project.",
+                Computed: true,
+            },
+            "profiles_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The most profiles this project may send in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. Empty: the instance default. 0: no limit for this project.",
+                Computed: true,
+            },
+            "security_events_daily_ingestion_budget_in_gb": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The most security events this project may send in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. Empty: the instance default. 0: no limit for this project.",
+                Computed: true,
+            },
+            "logs_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The fastest this project may send logs, in MB per second; faster requests are answered 429 with Retry-After. Empty: the instance default. 0: no limit for this project.",
+                Computed: true,
+            },
+            "traces_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The fastest this project may send traces, in MB per second; faster requests are answered 429 with Retry-After. Empty: the instance default. 0: no limit for this project.",
+                Computed: true,
+            },
+            "metrics_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The fastest this project may send metrics, in MB per second; faster requests are answered 429 with Retry-After. Empty: the instance default. 0: no limit for this project.",
+                Computed: true,
+            },
+            "profiles_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The fastest this project may send profiles, in MB per second; faster requests are answered 429 with Retry-After. Empty: the instance default. 0: no limit for this project.",
+                Computed: true,
+            },
+            "security_events_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
+                MarkdownDescription: "Set by the instance admin. The fastest this project may send security events, in MB per second; faster requests are answered 429 with Retry-After. Empty: the instance default. 0: no limit for this project.",
                 Computed: true,
             },
         },
@@ -1348,11 +1493,18 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "aiContext": true,
         "aiDailyTokenLimit": true,
         "aiDailySpendLimitInUSD": true,
+        "aiRunMaxModelCalls": true,
+        "aiRunMaxToolCalls": true,
+        "aiRunMaxTokens": true,
+        "aiRunTimeLimitInMinutes": true,
+        "requireTwoApprovalsForRiskierFixes": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "limitIncidentsToOneEpisode": true,
         "limitAlertsToOneEpisode": true,
         "defaultNetworkTopologyLayout": true,
+        "discoveredDeviceRetentionInDays": true,
+        "defaultTableColumns": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
         "incidentAiDailyAutonomousTokenLimit": true,
@@ -1374,6 +1526,8 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "defaultTelemetryRetentionInDays": true,
         "telemetryRetentionConfig": true,
         "defaultMetricDownsamplingRetentionDays": true,
+        "requireApprovalForIncidentPublicNotes": true,
+        "requireApprovalForScheduledMaintenancePublicNotes": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
@@ -1395,6 +1549,16 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "billingMarketplace": true,
         "letCustomerSupportAccessProject": true,
         "gitHubAppInstallationId": true,
+        "logsDailyIngestionBudgetInGB": true,
+        "tracesDailyIngestionBudgetInGB": true,
+        "metricsDailyIngestionBudgetInGB": true,
+        "profilesDailyIngestionBudgetInGB": true,
+        "securityEventsDailyIngestionBudgetInGB": true,
+        "logsIngestionRateLimitInMBPerSecond": true,
+        "tracesIngestionRateLimitInMBPerSecond": true,
+        "metricsIngestionRateLimitInMBPerSecond": true,
+        "profilesIngestionRateLimitInMBPerSecond": true,
+        "securityEventsIngestionRateLimitInMBPerSecond": true,
         "_id": true,
     }
 
@@ -1459,6 +1623,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1492,6 +1663,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PaymentProviderPlanId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderPlanId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["paymentProviderPlanId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PaymentProviderPlanId = types.StringValue(string(jsonBytes))
         } else {
             data.PaymentProviderPlanId = types.StringNull()
@@ -1533,6 +1711,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.BusinessDetails = types.StringNull()
         }
+    } else if arr, ok := dataMap["businessDetails"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.BusinessDetails = types.StringValue(string(jsonBytes))
+        } else {
+            data.BusinessDetails = types.StringNull()
+        }
     } else if val, ok := dataMap["businessDetails"].(string); ok {
         data.BusinessDetails = types.StringValue(val)
     } else {
@@ -1566,6 +1751,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.BusinessDetailsCountry = types.StringValue(string(jsonBytes))
+        } else {
+            data.BusinessDetailsCountry = types.StringNull()
+        }
+    } else if arr, ok := dataMap["businessDetailsCountry"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.BusinessDetailsCountry = types.StringValue(string(jsonBytes))
         } else {
             data.BusinessDetailsCountry = types.StringNull()
@@ -1607,6 +1799,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.FinanceAccountingEmail = types.StringNull()
         }
+    } else if arr, ok := dataMap["financeAccountingEmail"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.FinanceAccountingEmail = types.StringValue(string(jsonBytes))
+        } else {
+            data.FinanceAccountingEmail = types.StringNull()
+        }
     } else if val, ok := dataMap["financeAccountingEmail"].(string); ok {
         data.FinanceAccountingEmail = types.StringValue(val)
     } else {
@@ -1640,6 +1839,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PaymentProviderPromoCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderPromoCode = types.StringNull()
+        }
+    } else if arr, ok := dataMap["paymentProviderPromoCode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PaymentProviderPromoCode = types.StringValue(string(jsonBytes))
         } else {
             data.PaymentProviderPromoCode = types.StringNull()
@@ -1684,6 +1890,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.IncidentNumberPrefix = types.StringNull()
         }
+    } else if arr, ok := dataMap["incidentNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncidentNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentNumberPrefix = types.StringNull()
+        }
     } else if val, ok := dataMap["incidentNumberPrefix"].(string); ok {
         data.IncidentNumberPrefix = types.StringValue(val)
     } else {
@@ -1717,6 +1930,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertNumberPrefix = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertNumberPrefix = types.StringValue(string(jsonBytes))
         } else {
             data.AlertNumberPrefix = types.StringNull()
@@ -1758,6 +1978,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.ScheduledMaintenanceNumberPrefix = types.StringNull()
         }
+    } else if arr, ok := dataMap["scheduledMaintenanceNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScheduledMaintenanceNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduledMaintenanceNumberPrefix = types.StringNull()
+        }
     } else if val, ok := dataMap["scheduledMaintenanceNumberPrefix"].(string); ok {
         data.ScheduledMaintenanceNumberPrefix = types.StringValue(val)
     } else {
@@ -1791,6 +2018,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SecurityCaseNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseNumberPrefix = types.StringNull()
+        }
+    } else if arr, ok := dataMap["securityCaseNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SecurityCaseNumberPrefix = types.StringValue(string(jsonBytes))
         } else {
             data.SecurityCaseNumberPrefix = types.StringNull()
@@ -1832,6 +2066,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.IncidentEpisodeNumberPrefix = types.StringNull()
         }
+    } else if arr, ok := dataMap["incidentEpisodeNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncidentEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentEpisodeNumberPrefix = types.StringNull()
+        }
     } else if val, ok := dataMap["incidentEpisodeNumberPrefix"].(string); ok {
         data.IncidentEpisodeNumberPrefix = types.StringValue(val)
     } else {
@@ -1865,6 +2106,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertEpisodeNumberPrefix = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertEpisodeNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
         } else {
             data.AlertEpisodeNumberPrefix = types.StringNull()
@@ -1980,6 +2228,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.RequireSsoWithSsoProviderId = types.StringNull()
         }
+    } else if arr, ok := dataMap["requireSsoWithSsoProviderId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RequireSsoWithSsoProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequireSsoWithSsoProviderId = types.StringNull()
+        }
     } else if val, ok := dataMap["requireSsoWithSsoProviderId"].(string); ok {
         data.RequireSsoWithSsoProviderId = types.StringValue(val)
     } else {
@@ -2042,6 +2297,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.AiContext = types.StringNull()
         }
+    } else if arr, ok := dataMap["aiContext"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AiContext = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiContext = types.StringNull()
+        }
     } else if val, ok := dataMap["aiContext"].(string); ok {
         data.AiContext = types.StringValue(val)
     } else {
@@ -2049,6 +2311,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     data.AiDailyTokenLimit = numberFromAPI(data.AiDailyTokenLimit, dataMap["aiDailyTokenLimit"])
     data.AiDailySpendLimitInUsd = numberFromAPI(data.AiDailySpendLimitInUsd, dataMap["aiDailySpendLimitInUSD"])
+    data.AiRunMaxModelCalls = numberFromAPI(data.AiRunMaxModelCalls, dataMap["aiRunMaxModelCalls"])
+    data.AiRunMaxToolCalls = numberFromAPI(data.AiRunMaxToolCalls, dataMap["aiRunMaxToolCalls"])
+    data.AiRunMaxTokens = numberFromAPI(data.AiRunMaxTokens, dataMap["aiRunMaxTokens"])
+    data.AiRunTimeLimitInMinutes = numberFromAPI(data.AiRunTimeLimitInMinutes, dataMap["aiRunTimeLimitInMinutes"])
+    if val, ok := dataMap["requireTwoApprovalsForRiskierFixes"].(bool); ok {
+        data.RequireTwoApprovalsForRiskierFixes = types.BoolValue(val)
+    }
     if val, ok := dataMap["acknowledgeLinkedAlertsWhenIncidentAcknowledged"].(bool); ok {
         data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolValue(val)
     }
@@ -2093,10 +2362,62 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.DefaultNetworkTopologyLayout = types.StringNull()
         }
+    } else if arr, ok := dataMap["defaultNetworkTopologyLayout"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DefaultNetworkTopologyLayout = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultNetworkTopologyLayout = types.StringNull()
+        }
     } else if val, ok := dataMap["defaultNetworkTopologyLayout"].(string); ok {
         data.DefaultNetworkTopologyLayout = types.StringValue(val)
     } else {
         data.DefaultNetworkTopologyLayout = types.StringNull()
+    }
+    data.DiscoveredDeviceRetentionInDays = numberFromAPI(data.DiscoveredDeviceRetentionInDays, dataMap["discoveredDeviceRetentionInDays"])
+    if obj, ok := dataMap["defaultTableColumns"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultTableColumns = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DefaultTableColumns = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DefaultTableColumns = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DefaultTableColumns = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DefaultTableColumns = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DefaultTableColumns = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DefaultTableColumns = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DefaultTableColumns = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DefaultTableColumns = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["defaultTableColumns"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DefaultTableColumns = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DefaultTableColumns = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["defaultTableColumns"].(string); ok {
+        data.DefaultTableColumns = NewJSONSubsetValue(val)
+    } else {
+        data.DefaultTableColumns = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2126,6 +2447,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertInvestigationMinimumSeverityId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertInvestigationMinimumSeverityId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
         } else {
             data.AlertInvestigationMinimumSeverityId = types.StringNull()
@@ -2170,6 +2498,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncidentInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentInvestigationMinimumSeverityId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incidentInvestigationMinimumSeverityId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncidentInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
         } else {
             data.IncidentInvestigationMinimumSeverityId = types.StringNull()
@@ -2225,6 +2560,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["telemetryRetentionConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
@@ -2262,10 +2604,23 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["defaultMetricDownsamplingRetentionDays"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(string); ok {
         data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetValue(val)
     } else {
         data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["requireApprovalForIncidentPublicNotes"].(bool); ok {
+        data.RequireApprovalForIncidentPublicNotes = types.BoolValue(val)
+    }
+    if val, ok := dataMap["requireApprovalForScheduledMaintenancePublicNotes"].(bool); ok {
+        data.RequireApprovalForScheduledMaintenancePublicNotes = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -2321,6 +2676,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -2358,6 +2720,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.PaymentProviderSubscriptionId = types.StringNull()
         }
+    } else if arr, ok := dataMap["paymentProviderSubscriptionId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PaymentProviderSubscriptionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderSubscriptionId = types.StringNull()
+        }
     } else if val, ok := dataMap["paymentProviderSubscriptionId"].(string); ok {
         data.PaymentProviderSubscriptionId = types.StringValue(val)
     } else {
@@ -2391,6 +2760,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PaymentProviderMeteredSubscriptionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderMeteredSubscriptionId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["paymentProviderMeteredSubscriptionId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PaymentProviderMeteredSubscriptionId = types.StringValue(string(jsonBytes))
         } else {
             data.PaymentProviderMeteredSubscriptionId = types.StringNull()
@@ -2444,6 +2820,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.PaymentProviderCustomerId = types.StringNull()
         }
+    } else if arr, ok := dataMap["paymentProviderCustomerId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PaymentProviderCustomerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderCustomerId = types.StringNull()
+        }
     } else if val, ok := dataMap["paymentProviderCustomerId"].(string); ok {
         data.PaymentProviderCustomerId = types.StringValue(val)
     } else {
@@ -2477,6 +2860,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PaymentProviderSubscriptionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderSubscriptionStatus = types.StringNull()
+        }
+    } else if arr, ok := dataMap["paymentProviderSubscriptionStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PaymentProviderSubscriptionStatus = types.StringValue(string(jsonBytes))
         } else {
             data.PaymentProviderSubscriptionStatus = types.StringNull()
@@ -2518,6 +2908,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.PaymentProviderMeteredSubscriptionStatus = types.StringNull()
         }
+    } else if arr, ok := dataMap["paymentProviderMeteredSubscriptionStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PaymentProviderMeteredSubscriptionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderMeteredSubscriptionStatus = types.StringNull()
+        }
     } else if val, ok := dataMap["paymentProviderMeteredSubscriptionStatus"].(string); ok {
         data.PaymentProviderMeteredSubscriptionStatus = types.StringValue(val)
     } else {
@@ -2551,6 +2948,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -2595,6 +2999,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.PlanName = types.StringNull()
         }
+    } else if arr, ok := dataMap["planName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PlanName = types.StringValue(string(jsonBytes))
+        } else {
+            data.PlanName = types.StringNull()
+        }
     } else if val, ok := dataMap["planName"].(string); ok {
         data.PlanName = types.StringValue(val)
     } else {
@@ -2628,6 +3039,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DataResidency = types.StringValue(string(jsonBytes))
+        } else {
+            data.DataResidency = types.StringNull()
+        }
+    } else if arr, ok := dataMap["dataResidency"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DataResidency = types.StringValue(string(jsonBytes))
         } else {
             data.DataResidency = types.StringNull()
@@ -2669,6 +3087,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.ResellerId = types.StringNull()
         }
+    } else if arr, ok := dataMap["resellerId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResellerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResellerId = types.StringNull()
+        }
     } else if val, ok := dataMap["resellerId"].(string); ok {
         data.ResellerId = types.StringValue(val)
     } else {
@@ -2706,6 +3131,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.ResellerPlanId = types.StringNull()
         }
+    } else if arr, ok := dataMap["resellerPlanId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResellerPlanId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResellerPlanId = types.StringNull()
+        }
     } else if val, ok := dataMap["resellerPlanId"].(string); ok {
         data.ResellerPlanId = types.StringValue(val)
     } else {
@@ -2739,6 +3171,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.BillingMarketplace = types.StringValue(string(jsonBytes))
+        } else {
+            data.BillingMarketplace = types.StringNull()
+        }
+    } else if arr, ok := dataMap["billingMarketplace"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.BillingMarketplace = types.StringValue(string(jsonBytes))
         } else {
             data.BillingMarketplace = types.StringNull()
@@ -2783,11 +3222,28 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.GitHubAppInstallationId = types.StringNull()
         }
+    } else if arr, ok := dataMap["gitHubAppInstallationId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitHubAppInstallationId = types.StringNull()
+        }
     } else if val, ok := dataMap["gitHubAppInstallationId"].(string); ok {
         data.GitHubAppInstallationId = types.StringValue(val)
     } else {
         data.GitHubAppInstallationId = types.StringNull()
     }
+    data.LogsDailyIngestionBudgetInGb = numberFromAPI(data.LogsDailyIngestionBudgetInGb, dataMap["logsDailyIngestionBudgetInGB"])
+    data.TracesDailyIngestionBudgetInGb = numberFromAPI(data.TracesDailyIngestionBudgetInGb, dataMap["tracesDailyIngestionBudgetInGB"])
+    data.MetricsDailyIngestionBudgetInGb = numberFromAPI(data.MetricsDailyIngestionBudgetInGb, dataMap["metricsDailyIngestionBudgetInGB"])
+    data.ProfilesDailyIngestionBudgetInGb = numberFromAPI(data.ProfilesDailyIngestionBudgetInGb, dataMap["profilesDailyIngestionBudgetInGB"])
+    data.SecurityEventsDailyIngestionBudgetInGb = numberFromAPI(data.SecurityEventsDailyIngestionBudgetInGb, dataMap["securityEventsDailyIngestionBudgetInGB"])
+    data.LogsIngestionRateLimitInMbPerSecond = numberFromAPI(data.LogsIngestionRateLimitInMbPerSecond, dataMap["logsIngestionRateLimitInMBPerSecond"])
+    data.TracesIngestionRateLimitInMbPerSecond = numberFromAPI(data.TracesIngestionRateLimitInMbPerSecond, dataMap["tracesIngestionRateLimitInMBPerSecond"])
+    data.MetricsIngestionRateLimitInMbPerSecond = numberFromAPI(data.MetricsIngestionRateLimitInMbPerSecond, dataMap["metricsIngestionRateLimitInMBPerSecond"])
+    data.ProfilesIngestionRateLimitInMbPerSecond = numberFromAPI(data.ProfilesIngestionRateLimitInMbPerSecond, dataMap["profilesIngestionRateLimitInMBPerSecond"])
+    data.SecurityEventsIngestionRateLimitInMbPerSecond = numberFromAPI(data.SecurityEventsIngestionRateLimitInMbPerSecond, dataMap["securityEventsIngestionRateLimitInMBPerSecond"])
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -2879,11 +3335,18 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "aiContext": true,
         "aiDailyTokenLimit": true,
         "aiDailySpendLimitInUSD": true,
+        "aiRunMaxModelCalls": true,
+        "aiRunMaxToolCalls": true,
+        "aiRunMaxTokens": true,
+        "aiRunTimeLimitInMinutes": true,
+        "requireTwoApprovalsForRiskierFixes": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "limitIncidentsToOneEpisode": true,
         "limitAlertsToOneEpisode": true,
         "defaultNetworkTopologyLayout": true,
+        "discoveredDeviceRetentionInDays": true,
+        "defaultTableColumns": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
         "incidentAiDailyAutonomousTokenLimit": true,
@@ -2905,6 +3368,8 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "defaultTelemetryRetentionInDays": true,
         "telemetryRetentionConfig": true,
         "defaultMetricDownsamplingRetentionDays": true,
+        "requireApprovalForIncidentPublicNotes": true,
+        "requireApprovalForScheduledMaintenancePublicNotes": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
@@ -2926,6 +3391,16 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "billingMarketplace": true,
         "letCustomerSupportAccessProject": true,
         "gitHubAppInstallationId": true,
+        "logsDailyIngestionBudgetInGB": true,
+        "tracesDailyIngestionBudgetInGB": true,
+        "metricsDailyIngestionBudgetInGB": true,
+        "profilesDailyIngestionBudgetInGB": true,
+        "securityEventsDailyIngestionBudgetInGB": true,
+        "logsIngestionRateLimitInMBPerSecond": true,
+        "tracesIngestionRateLimitInMBPerSecond": true,
+        "metricsIngestionRateLimitInMBPerSecond": true,
+        "profilesIngestionRateLimitInMBPerSecond": true,
+        "securityEventsIngestionRateLimitInMBPerSecond": true,
         "_id": true,
     }
 
@@ -2991,6 +3466,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -3024,6 +3506,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PaymentProviderPlanId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderPlanId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["paymentProviderPlanId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PaymentProviderPlanId = types.StringValue(string(jsonBytes))
         } else {
             data.PaymentProviderPlanId = types.StringNull()
@@ -3065,6 +3554,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.BusinessDetails = types.StringNull()
         }
+    } else if arr, ok := dataMap["businessDetails"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.BusinessDetails = types.StringValue(string(jsonBytes))
+        } else {
+            data.BusinessDetails = types.StringNull()
+        }
     } else if val, ok := dataMap["businessDetails"].(string); ok {
         data.BusinessDetails = types.StringValue(val)
     } else {
@@ -3098,6 +3594,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.BusinessDetailsCountry = types.StringValue(string(jsonBytes))
+        } else {
+            data.BusinessDetailsCountry = types.StringNull()
+        }
+    } else if arr, ok := dataMap["businessDetailsCountry"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.BusinessDetailsCountry = types.StringValue(string(jsonBytes))
         } else {
             data.BusinessDetailsCountry = types.StringNull()
@@ -3139,6 +3642,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.FinanceAccountingEmail = types.StringNull()
         }
+    } else if arr, ok := dataMap["financeAccountingEmail"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.FinanceAccountingEmail = types.StringValue(string(jsonBytes))
+        } else {
+            data.FinanceAccountingEmail = types.StringNull()
+        }
     } else if val, ok := dataMap["financeAccountingEmail"].(string); ok {
         data.FinanceAccountingEmail = types.StringValue(val)
     } else {
@@ -3172,6 +3682,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PaymentProviderPromoCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderPromoCode = types.StringNull()
+        }
+    } else if arr, ok := dataMap["paymentProviderPromoCode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PaymentProviderPromoCode = types.StringValue(string(jsonBytes))
         } else {
             data.PaymentProviderPromoCode = types.StringNull()
@@ -3216,6 +3733,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.IncidentNumberPrefix = types.StringNull()
         }
+    } else if arr, ok := dataMap["incidentNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncidentNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentNumberPrefix = types.StringNull()
+        }
     } else if val, ok := dataMap["incidentNumberPrefix"].(string); ok {
         data.IncidentNumberPrefix = types.StringValue(val)
     } else {
@@ -3249,6 +3773,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertNumberPrefix = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertNumberPrefix = types.StringValue(string(jsonBytes))
         } else {
             data.AlertNumberPrefix = types.StringNull()
@@ -3290,6 +3821,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.ScheduledMaintenanceNumberPrefix = types.StringNull()
         }
+    } else if arr, ok := dataMap["scheduledMaintenanceNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScheduledMaintenanceNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduledMaintenanceNumberPrefix = types.StringNull()
+        }
     } else if val, ok := dataMap["scheduledMaintenanceNumberPrefix"].(string); ok {
         data.ScheduledMaintenanceNumberPrefix = types.StringValue(val)
     } else {
@@ -3323,6 +3861,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SecurityCaseNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseNumberPrefix = types.StringNull()
+        }
+    } else if arr, ok := dataMap["securityCaseNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SecurityCaseNumberPrefix = types.StringValue(string(jsonBytes))
         } else {
             data.SecurityCaseNumberPrefix = types.StringNull()
@@ -3364,6 +3909,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.IncidentEpisodeNumberPrefix = types.StringNull()
         }
+    } else if arr, ok := dataMap["incidentEpisodeNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncidentEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentEpisodeNumberPrefix = types.StringNull()
+        }
     } else if val, ok := dataMap["incidentEpisodeNumberPrefix"].(string); ok {
         data.IncidentEpisodeNumberPrefix = types.StringValue(val)
     } else {
@@ -3397,6 +3949,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertEpisodeNumberPrefix = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertEpisodeNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
         } else {
             data.AlertEpisodeNumberPrefix = types.StringNull()
@@ -3512,6 +4071,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.RequireSsoWithSsoProviderId = types.StringNull()
         }
+    } else if arr, ok := dataMap["requireSsoWithSsoProviderId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RequireSsoWithSsoProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequireSsoWithSsoProviderId = types.StringNull()
+        }
     } else if val, ok := dataMap["requireSsoWithSsoProviderId"].(string); ok {
         data.RequireSsoWithSsoProviderId = types.StringValue(val)
     } else {
@@ -3574,6 +4140,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.AiContext = types.StringNull()
         }
+    } else if arr, ok := dataMap["aiContext"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AiContext = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiContext = types.StringNull()
+        }
     } else if val, ok := dataMap["aiContext"].(string); ok {
         data.AiContext = types.StringValue(val)
     } else {
@@ -3581,6 +4154,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     data.AiDailyTokenLimit = numberFromAPI(data.AiDailyTokenLimit, dataMap["aiDailyTokenLimit"])
     data.AiDailySpendLimitInUsd = numberFromAPI(data.AiDailySpendLimitInUsd, dataMap["aiDailySpendLimitInUSD"])
+    data.AiRunMaxModelCalls = numberFromAPI(data.AiRunMaxModelCalls, dataMap["aiRunMaxModelCalls"])
+    data.AiRunMaxToolCalls = numberFromAPI(data.AiRunMaxToolCalls, dataMap["aiRunMaxToolCalls"])
+    data.AiRunMaxTokens = numberFromAPI(data.AiRunMaxTokens, dataMap["aiRunMaxTokens"])
+    data.AiRunTimeLimitInMinutes = numberFromAPI(data.AiRunTimeLimitInMinutes, dataMap["aiRunTimeLimitInMinutes"])
+    if val, ok := dataMap["requireTwoApprovalsForRiskierFixes"].(bool); ok {
+        data.RequireTwoApprovalsForRiskierFixes = types.BoolValue(val)
+    }
     if val, ok := dataMap["acknowledgeLinkedAlertsWhenIncidentAcknowledged"].(bool); ok {
         data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolValue(val)
     }
@@ -3625,10 +4205,62 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.DefaultNetworkTopologyLayout = types.StringNull()
         }
+    } else if arr, ok := dataMap["defaultNetworkTopologyLayout"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DefaultNetworkTopologyLayout = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultNetworkTopologyLayout = types.StringNull()
+        }
     } else if val, ok := dataMap["defaultNetworkTopologyLayout"].(string); ok {
         data.DefaultNetworkTopologyLayout = types.StringValue(val)
     } else {
         data.DefaultNetworkTopologyLayout = types.StringNull()
+    }
+    data.DiscoveredDeviceRetentionInDays = numberFromAPI(data.DiscoveredDeviceRetentionInDays, dataMap["discoveredDeviceRetentionInDays"])
+    if obj, ok := dataMap["defaultTableColumns"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultTableColumns = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DefaultTableColumns = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DefaultTableColumns = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DefaultTableColumns = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DefaultTableColumns = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DefaultTableColumns = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DefaultTableColumns = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DefaultTableColumns = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DefaultTableColumns = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["defaultTableColumns"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DefaultTableColumns = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DefaultTableColumns = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["defaultTableColumns"].(string); ok {
+        data.DefaultTableColumns = NewJSONSubsetValue(val)
+    } else {
+        data.DefaultTableColumns = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -3658,6 +4290,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertInvestigationMinimumSeverityId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertInvestigationMinimumSeverityId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
         } else {
             data.AlertInvestigationMinimumSeverityId = types.StringNull()
@@ -3702,6 +4341,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncidentInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentInvestigationMinimumSeverityId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incidentInvestigationMinimumSeverityId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncidentInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
         } else {
             data.IncidentInvestigationMinimumSeverityId = types.StringNull()
@@ -3757,6 +4403,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["telemetryRetentionConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
@@ -3794,10 +4447,23 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["defaultMetricDownsamplingRetentionDays"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(string); ok {
         data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetValue(val)
     } else {
         data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["requireApprovalForIncidentPublicNotes"].(bool); ok {
+        data.RequireApprovalForIncidentPublicNotes = types.BoolValue(val)
+    }
+    if val, ok := dataMap["requireApprovalForScheduledMaintenancePublicNotes"].(bool); ok {
+        data.RequireApprovalForScheduledMaintenancePublicNotes = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -3853,6 +4519,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -3890,6 +4563,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.PaymentProviderSubscriptionId = types.StringNull()
         }
+    } else if arr, ok := dataMap["paymentProviderSubscriptionId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PaymentProviderSubscriptionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderSubscriptionId = types.StringNull()
+        }
     } else if val, ok := dataMap["paymentProviderSubscriptionId"].(string); ok {
         data.PaymentProviderSubscriptionId = types.StringValue(val)
     } else {
@@ -3923,6 +4603,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PaymentProviderMeteredSubscriptionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderMeteredSubscriptionId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["paymentProviderMeteredSubscriptionId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PaymentProviderMeteredSubscriptionId = types.StringValue(string(jsonBytes))
         } else {
             data.PaymentProviderMeteredSubscriptionId = types.StringNull()
@@ -3976,6 +4663,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.PaymentProviderCustomerId = types.StringNull()
         }
+    } else if arr, ok := dataMap["paymentProviderCustomerId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PaymentProviderCustomerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderCustomerId = types.StringNull()
+        }
     } else if val, ok := dataMap["paymentProviderCustomerId"].(string); ok {
         data.PaymentProviderCustomerId = types.StringValue(val)
     } else {
@@ -4009,6 +4703,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PaymentProviderSubscriptionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderSubscriptionStatus = types.StringNull()
+        }
+    } else if arr, ok := dataMap["paymentProviderSubscriptionStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PaymentProviderSubscriptionStatus = types.StringValue(string(jsonBytes))
         } else {
             data.PaymentProviderSubscriptionStatus = types.StringNull()
@@ -4050,6 +4751,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.PaymentProviderMeteredSubscriptionStatus = types.StringNull()
         }
+    } else if arr, ok := dataMap["paymentProviderMeteredSubscriptionStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PaymentProviderMeteredSubscriptionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderMeteredSubscriptionStatus = types.StringNull()
+        }
     } else if val, ok := dataMap["paymentProviderMeteredSubscriptionStatus"].(string); ok {
         data.PaymentProviderMeteredSubscriptionStatus = types.StringValue(val)
     } else {
@@ -4083,6 +4791,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -4127,6 +4842,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.PlanName = types.StringNull()
         }
+    } else if arr, ok := dataMap["planName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PlanName = types.StringValue(string(jsonBytes))
+        } else {
+            data.PlanName = types.StringNull()
+        }
     } else if val, ok := dataMap["planName"].(string); ok {
         data.PlanName = types.StringValue(val)
     } else {
@@ -4160,6 +4882,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DataResidency = types.StringValue(string(jsonBytes))
+        } else {
+            data.DataResidency = types.StringNull()
+        }
+    } else if arr, ok := dataMap["dataResidency"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DataResidency = types.StringValue(string(jsonBytes))
         } else {
             data.DataResidency = types.StringNull()
@@ -4201,6 +4930,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.ResellerId = types.StringNull()
         }
+    } else if arr, ok := dataMap["resellerId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResellerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResellerId = types.StringNull()
+        }
     } else if val, ok := dataMap["resellerId"].(string); ok {
         data.ResellerId = types.StringValue(val)
     } else {
@@ -4238,6 +4974,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.ResellerPlanId = types.StringNull()
         }
+    } else if arr, ok := dataMap["resellerPlanId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResellerPlanId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResellerPlanId = types.StringNull()
+        }
     } else if val, ok := dataMap["resellerPlanId"].(string); ok {
         data.ResellerPlanId = types.StringValue(val)
     } else {
@@ -4271,6 +5014,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.BillingMarketplace = types.StringValue(string(jsonBytes))
+        } else {
+            data.BillingMarketplace = types.StringNull()
+        }
+    } else if arr, ok := dataMap["billingMarketplace"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.BillingMarketplace = types.StringValue(string(jsonBytes))
         } else {
             data.BillingMarketplace = types.StringNull()
@@ -4315,11 +5065,28 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.GitHubAppInstallationId = types.StringNull()
         }
+    } else if arr, ok := dataMap["gitHubAppInstallationId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitHubAppInstallationId = types.StringNull()
+        }
     } else if val, ok := dataMap["gitHubAppInstallationId"].(string); ok {
         data.GitHubAppInstallationId = types.StringValue(val)
     } else {
         data.GitHubAppInstallationId = types.StringNull()
     }
+    data.LogsDailyIngestionBudgetInGb = numberFromAPI(data.LogsDailyIngestionBudgetInGb, dataMap["logsDailyIngestionBudgetInGB"])
+    data.TracesDailyIngestionBudgetInGb = numberFromAPI(data.TracesDailyIngestionBudgetInGb, dataMap["tracesDailyIngestionBudgetInGB"])
+    data.MetricsDailyIngestionBudgetInGb = numberFromAPI(data.MetricsDailyIngestionBudgetInGb, dataMap["metricsDailyIngestionBudgetInGB"])
+    data.ProfilesDailyIngestionBudgetInGb = numberFromAPI(data.ProfilesDailyIngestionBudgetInGb, dataMap["profilesDailyIngestionBudgetInGB"])
+    data.SecurityEventsDailyIngestionBudgetInGb = numberFromAPI(data.SecurityEventsDailyIngestionBudgetInGb, dataMap["securityEventsDailyIngestionBudgetInGB"])
+    data.LogsIngestionRateLimitInMbPerSecond = numberFromAPI(data.LogsIngestionRateLimitInMbPerSecond, dataMap["logsIngestionRateLimitInMBPerSecond"])
+    data.TracesIngestionRateLimitInMbPerSecond = numberFromAPI(data.TracesIngestionRateLimitInMbPerSecond, dataMap["tracesIngestionRateLimitInMBPerSecond"])
+    data.MetricsIngestionRateLimitInMbPerSecond = numberFromAPI(data.MetricsIngestionRateLimitInMbPerSecond, dataMap["metricsIngestionRateLimitInMBPerSecond"])
+    data.ProfilesIngestionRateLimitInMbPerSecond = numberFromAPI(data.ProfilesIngestionRateLimitInMbPerSecond, dataMap["profilesIngestionRateLimitInMBPerSecond"])
+    data.SecurityEventsIngestionRateLimitInMbPerSecond = numberFromAPI(data.SecurityEventsIngestionRateLimitInMbPerSecond, dataMap["securityEventsIngestionRateLimitInMBPerSecond"])
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -4352,6 +5119,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     // The attributes this update writes from the configuration (see importsettle.go).
     writtenFromConfig := map[string]bool{
         "default_metric_downsampling_retention_days": !data.DefaultMetricDownsamplingRetentionDays.Equal(state.DefaultMetricDownsamplingRetentionDays),
+        "default_table_columns": !data.DefaultTableColumns.Equal(state.DefaultTableColumns),
         "telemetry_retention_config": !data.TelemetryRetentionConfig.Equal(state.TelemetryRetentionConfig),
     }
 
@@ -4471,6 +5239,18 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.AiDailySpendLimitInUsd.IsUnknown() && !state.AiDailySpendLimitInUsd.IsUnknown() && !data.AiDailySpendLimitInUsd.Equal(state.AiDailySpendLimitInUsd) {
         requestDataMap["aiDailySpendLimitInUSD"] = r.bigFloatToFloat64(data.AiDailySpendLimitInUsd.ValueBigFloat())
     }
+    if !data.AiRunMaxModelCalls.IsUnknown() && !state.AiRunMaxModelCalls.IsUnknown() && !data.AiRunMaxModelCalls.Equal(state.AiRunMaxModelCalls) {
+        requestDataMap["aiRunMaxModelCalls"] = r.bigFloatToFloat64(data.AiRunMaxModelCalls.ValueBigFloat())
+    }
+    if !data.AiRunMaxToolCalls.IsUnknown() && !state.AiRunMaxToolCalls.IsUnknown() && !data.AiRunMaxToolCalls.Equal(state.AiRunMaxToolCalls) {
+        requestDataMap["aiRunMaxToolCalls"] = r.bigFloatToFloat64(data.AiRunMaxToolCalls.ValueBigFloat())
+    }
+    if !data.AiRunMaxTokens.IsUnknown() && !state.AiRunMaxTokens.IsUnknown() && !data.AiRunMaxTokens.Equal(state.AiRunMaxTokens) {
+        requestDataMap["aiRunMaxTokens"] = r.bigFloatToFloat64(data.AiRunMaxTokens.ValueBigFloat())
+    }
+    if !data.AiRunTimeLimitInMinutes.IsUnknown() && !state.AiRunTimeLimitInMinutes.IsUnknown() && !data.AiRunTimeLimitInMinutes.Equal(state.AiRunTimeLimitInMinutes) {
+        requestDataMap["aiRunTimeLimitInMinutes"] = r.bigFloatToFloat64(data.AiRunTimeLimitInMinutes.ValueBigFloat())
+    }
     if !data.EnableAutomaticIncidentInvestigation.IsUnknown() && !state.EnableAutomaticIncidentInvestigation.IsUnknown() && !data.EnableAutomaticIncidentInvestigation.Equal(state.EnableAutomaticIncidentInvestigation) {
         requestDataMap["enableAutomaticIncidentInvestigation"] = data.EnableAutomaticIncidentInvestigation.ValueBool()
     }
@@ -4492,6 +5272,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.EnableAutomaticAlertRemediation.IsUnknown() && !state.EnableAutomaticAlertRemediation.IsUnknown() && !data.EnableAutomaticAlertRemediation.Equal(state.EnableAutomaticAlertRemediation) {
         requestDataMap["enableAutomaticAlertRemediation"] = data.EnableAutomaticAlertRemediation.ValueBool()
     }
+    if !data.RequireTwoApprovalsForRiskierFixes.IsUnknown() && !state.RequireTwoApprovalsForRiskierFixes.IsUnknown() && !data.RequireTwoApprovalsForRiskierFixes.Equal(state.RequireTwoApprovalsForRiskierFixes) {
+        requestDataMap["requireTwoApprovalsForRiskierFixes"] = data.RequireTwoApprovalsForRiskierFixes.ValueBool()
+    }
     if !data.EnableAutomaticPostmortemDraft.IsUnknown() && !state.EnableAutomaticPostmortemDraft.IsUnknown() && !data.EnableAutomaticPostmortemDraft.Equal(state.EnableAutomaticPostmortemDraft) {
         requestDataMap["enableAutomaticPostmortemDraft"] = data.EnableAutomaticPostmortemDraft.ValueBool()
     }
@@ -4509,6 +5292,17 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if !data.DefaultNetworkTopologyLayout.IsUnknown() && !state.DefaultNetworkTopologyLayout.IsUnknown() && !data.DefaultNetworkTopologyLayout.Equal(state.DefaultNetworkTopologyLayout) {
         requestDataMap["defaultNetworkTopologyLayout"] = data.DefaultNetworkTopologyLayout.ValueString()
+    }
+    if !data.DiscoveredDeviceRetentionInDays.IsUnknown() && !state.DiscoveredDeviceRetentionInDays.IsUnknown() && !data.DiscoveredDeviceRetentionInDays.Equal(state.DiscoveredDeviceRetentionInDays) {
+        requestDataMap["discoveredDeviceRetentionInDays"] = r.bigFloatToFloat64(data.DiscoveredDeviceRetentionInDays.ValueBigFloat())
+    }
+    if !data.DefaultTableColumns.IsUnknown() && !state.DefaultTableColumns.IsUnknown() && !data.DefaultTableColumns.Equal(state.DefaultTableColumns) {
+        var defaulttablecolumnsData interface{}
+        if err := json.Unmarshal([]byte(data.DefaultTableColumns.ValueString()), &defaulttablecolumnsData); err == nil {
+            requestDataMap["defaultTableColumns"] = defaulttablecolumnsData
+        } else {
+            requestDataMap["defaultTableColumns"] = data.DefaultTableColumns.ValueString()
+        }
     }
     if !data.EnableAiInsights.IsUnknown() && !state.EnableAiInsights.IsUnknown() && !data.EnableAiInsights.Equal(state.EnableAiInsights) {
         requestDataMap["enableAiInsights"] = data.EnableAiInsights.ValueBool()
@@ -4628,6 +5422,12 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.RecordAndTranscribeIncidentCalls.IsUnknown() && !state.RecordAndTranscribeIncidentCalls.IsUnknown() && !data.RecordAndTranscribeIncidentCalls.Equal(state.RecordAndTranscribeIncidentCalls) {
         requestDataMap["recordAndTranscribeIncidentCalls"] = data.RecordAndTranscribeIncidentCalls.ValueBool()
     }
+    if !data.RequireApprovalForIncidentPublicNotes.IsUnknown() && !state.RequireApprovalForIncidentPublicNotes.IsUnknown() && !data.RequireApprovalForIncidentPublicNotes.Equal(state.RequireApprovalForIncidentPublicNotes) {
+        requestDataMap["requireApprovalForIncidentPublicNotes"] = data.RequireApprovalForIncidentPublicNotes.ValueBool()
+    }
+    if !data.RequireApprovalForScheduledMaintenancePublicNotes.IsUnknown() && !state.RequireApprovalForScheduledMaintenancePublicNotes.IsUnknown() && !data.RequireApprovalForScheduledMaintenancePublicNotes.Equal(state.RequireApprovalForScheduledMaintenancePublicNotes) {
+        requestDataMap["requireApprovalForScheduledMaintenancePublicNotes"] = data.RequireApprovalForScheduledMaintenancePublicNotes.ValueBool()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -4709,11 +5509,18 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "aiContext": true,
         "aiDailyTokenLimit": true,
         "aiDailySpendLimitInUSD": true,
+        "aiRunMaxModelCalls": true,
+        "aiRunMaxToolCalls": true,
+        "aiRunMaxTokens": true,
+        "aiRunTimeLimitInMinutes": true,
+        "requireTwoApprovalsForRiskierFixes": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "limitIncidentsToOneEpisode": true,
         "limitAlertsToOneEpisode": true,
         "defaultNetworkTopologyLayout": true,
+        "discoveredDeviceRetentionInDays": true,
+        "defaultTableColumns": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
         "incidentAiDailyAutonomousTokenLimit": true,
@@ -4735,6 +5542,8 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "defaultTelemetryRetentionInDays": true,
         "telemetryRetentionConfig": true,
         "defaultMetricDownsamplingRetentionDays": true,
+        "requireApprovalForIncidentPublicNotes": true,
+        "requireApprovalForScheduledMaintenancePublicNotes": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
@@ -4756,6 +5565,16 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "billingMarketplace": true,
         "letCustomerSupportAccessProject": true,
         "gitHubAppInstallationId": true,
+        "logsDailyIngestionBudgetInGB": true,
+        "tracesDailyIngestionBudgetInGB": true,
+        "metricsDailyIngestionBudgetInGB": true,
+        "profilesDailyIngestionBudgetInGB": true,
+        "securityEventsDailyIngestionBudgetInGB": true,
+        "logsIngestionRateLimitInMBPerSecond": true,
+        "tracesIngestionRateLimitInMBPerSecond": true,
+        "metricsIngestionRateLimitInMBPerSecond": true,
+        "profilesIngestionRateLimitInMBPerSecond": true,
+        "securityEventsIngestionRateLimitInMBPerSecond": true,
         "_id": true,
     }
 
@@ -4815,6 +5634,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -4848,6 +5674,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PaymentProviderPlanId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderPlanId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["paymentProviderPlanId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PaymentProviderPlanId = types.StringValue(string(jsonBytes))
         } else {
             data.PaymentProviderPlanId = types.StringNull()
@@ -4889,6 +5722,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.BusinessDetails = types.StringNull()
         }
+    } else if arr, ok := dataMap["businessDetails"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.BusinessDetails = types.StringValue(string(jsonBytes))
+        } else {
+            data.BusinessDetails = types.StringNull()
+        }
     } else if val, ok := dataMap["businessDetails"].(string); ok {
         data.BusinessDetails = types.StringValue(val)
     } else {
@@ -4922,6 +5762,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.BusinessDetailsCountry = types.StringValue(string(jsonBytes))
+        } else {
+            data.BusinessDetailsCountry = types.StringNull()
+        }
+    } else if arr, ok := dataMap["businessDetailsCountry"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.BusinessDetailsCountry = types.StringValue(string(jsonBytes))
         } else {
             data.BusinessDetailsCountry = types.StringNull()
@@ -4963,6 +5810,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.FinanceAccountingEmail = types.StringNull()
         }
+    } else if arr, ok := dataMap["financeAccountingEmail"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.FinanceAccountingEmail = types.StringValue(string(jsonBytes))
+        } else {
+            data.FinanceAccountingEmail = types.StringNull()
+        }
     } else if val, ok := dataMap["financeAccountingEmail"].(string); ok {
         data.FinanceAccountingEmail = types.StringValue(val)
     } else {
@@ -4996,6 +5850,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PaymentProviderPromoCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderPromoCode = types.StringNull()
+        }
+    } else if arr, ok := dataMap["paymentProviderPromoCode"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PaymentProviderPromoCode = types.StringValue(string(jsonBytes))
         } else {
             data.PaymentProviderPromoCode = types.StringNull()
@@ -5040,6 +5901,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.IncidentNumberPrefix = types.StringNull()
         }
+    } else if arr, ok := dataMap["incidentNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncidentNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentNumberPrefix = types.StringNull()
+        }
     } else if val, ok := dataMap["incidentNumberPrefix"].(string); ok {
         data.IncidentNumberPrefix = types.StringValue(val)
     } else {
@@ -5073,6 +5941,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertNumberPrefix = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertNumberPrefix = types.StringValue(string(jsonBytes))
         } else {
             data.AlertNumberPrefix = types.StringNull()
@@ -5114,6 +5989,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.ScheduledMaintenanceNumberPrefix = types.StringNull()
         }
+    } else if arr, ok := dataMap["scheduledMaintenanceNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScheduledMaintenanceNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduledMaintenanceNumberPrefix = types.StringNull()
+        }
     } else if val, ok := dataMap["scheduledMaintenanceNumberPrefix"].(string); ok {
         data.ScheduledMaintenanceNumberPrefix = types.StringValue(val)
     } else {
@@ -5147,6 +6029,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SecurityCaseNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseNumberPrefix = types.StringNull()
+        }
+    } else if arr, ok := dataMap["securityCaseNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SecurityCaseNumberPrefix = types.StringValue(string(jsonBytes))
         } else {
             data.SecurityCaseNumberPrefix = types.StringNull()
@@ -5188,6 +6077,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.IncidentEpisodeNumberPrefix = types.StringNull()
         }
+    } else if arr, ok := dataMap["incidentEpisodeNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncidentEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentEpisodeNumberPrefix = types.StringNull()
+        }
     } else if val, ok := dataMap["incidentEpisodeNumberPrefix"].(string); ok {
         data.IncidentEpisodeNumberPrefix = types.StringValue(val)
     } else {
@@ -5221,6 +6117,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertEpisodeNumberPrefix = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertEpisodeNumberPrefix"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
         } else {
             data.AlertEpisodeNumberPrefix = types.StringNull()
@@ -5336,6 +6239,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.RequireSsoWithSsoProviderId = types.StringNull()
         }
+    } else if arr, ok := dataMap["requireSsoWithSsoProviderId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RequireSsoWithSsoProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequireSsoWithSsoProviderId = types.StringNull()
+        }
     } else if val, ok := dataMap["requireSsoWithSsoProviderId"].(string); ok {
         data.RequireSsoWithSsoProviderId = types.StringValue(val)
     } else {
@@ -5398,6 +6308,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.AiContext = types.StringNull()
         }
+    } else if arr, ok := dataMap["aiContext"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AiContext = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiContext = types.StringNull()
+        }
     } else if val, ok := dataMap["aiContext"].(string); ok {
         data.AiContext = types.StringValue(val)
     } else {
@@ -5405,6 +6322,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     data.AiDailyTokenLimit = numberFromAPI(data.AiDailyTokenLimit, dataMap["aiDailyTokenLimit"])
     data.AiDailySpendLimitInUsd = numberFromAPI(data.AiDailySpendLimitInUsd, dataMap["aiDailySpendLimitInUSD"])
+    data.AiRunMaxModelCalls = numberFromAPI(data.AiRunMaxModelCalls, dataMap["aiRunMaxModelCalls"])
+    data.AiRunMaxToolCalls = numberFromAPI(data.AiRunMaxToolCalls, dataMap["aiRunMaxToolCalls"])
+    data.AiRunMaxTokens = numberFromAPI(data.AiRunMaxTokens, dataMap["aiRunMaxTokens"])
+    data.AiRunTimeLimitInMinutes = numberFromAPI(data.AiRunTimeLimitInMinutes, dataMap["aiRunTimeLimitInMinutes"])
+    if val, ok := dataMap["requireTwoApprovalsForRiskierFixes"].(bool); ok {
+        data.RequireTwoApprovalsForRiskierFixes = types.BoolValue(val)
+    }
     if val, ok := dataMap["acknowledgeLinkedAlertsWhenIncidentAcknowledged"].(bool); ok {
         data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolValue(val)
     }
@@ -5449,10 +6373,62 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.DefaultNetworkTopologyLayout = types.StringNull()
         }
+    } else if arr, ok := dataMap["defaultNetworkTopologyLayout"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DefaultNetworkTopologyLayout = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultNetworkTopologyLayout = types.StringNull()
+        }
     } else if val, ok := dataMap["defaultNetworkTopologyLayout"].(string); ok {
         data.DefaultNetworkTopologyLayout = types.StringValue(val)
     } else {
         data.DefaultNetworkTopologyLayout = types.StringNull()
+    }
+    data.DiscoveredDeviceRetentionInDays = numberFromAPI(data.DiscoveredDeviceRetentionInDays, dataMap["discoveredDeviceRetentionInDays"])
+    if obj, ok := dataMap["defaultTableColumns"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultTableColumns = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DefaultTableColumns = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DefaultTableColumns = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DefaultTableColumns = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DefaultTableColumns = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DefaultTableColumns = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DefaultTableColumns = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DefaultTableColumns = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DefaultTableColumns = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["defaultTableColumns"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DefaultTableColumns = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DefaultTableColumns = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["defaultTableColumns"].(string); ok {
+        data.DefaultTableColumns = NewJSONSubsetValue(val)
+    } else {
+        data.DefaultTableColumns = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -5482,6 +6458,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertInvestigationMinimumSeverityId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertInvestigationMinimumSeverityId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
         } else {
             data.AlertInvestigationMinimumSeverityId = types.StringNull()
@@ -5526,6 +6509,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.IncidentInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentInvestigationMinimumSeverityId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incidentInvestigationMinimumSeverityId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.IncidentInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
         } else {
             data.IncidentInvestigationMinimumSeverityId = types.StringNull()
@@ -5581,6 +6571,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["telemetryRetentionConfig"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
@@ -5618,10 +6615,23 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["defaultMetricDownsamplingRetentionDays"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(string); ok {
         data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetValue(val)
     } else {
         data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["requireApprovalForIncidentPublicNotes"].(bool); ok {
+        data.RequireApprovalForIncidentPublicNotes = types.BoolValue(val)
+    }
+    if val, ok := dataMap["requireApprovalForScheduledMaintenancePublicNotes"].(bool); ok {
+        data.RequireApprovalForScheduledMaintenancePublicNotes = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -5677,6 +6687,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -5714,6 +6731,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.PaymentProviderSubscriptionId = types.StringNull()
         }
+    } else if arr, ok := dataMap["paymentProviderSubscriptionId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PaymentProviderSubscriptionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderSubscriptionId = types.StringNull()
+        }
     } else if val, ok := dataMap["paymentProviderSubscriptionId"].(string); ok {
         data.PaymentProviderSubscriptionId = types.StringValue(val)
     } else {
@@ -5747,6 +6771,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PaymentProviderMeteredSubscriptionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderMeteredSubscriptionId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["paymentProviderMeteredSubscriptionId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PaymentProviderMeteredSubscriptionId = types.StringValue(string(jsonBytes))
         } else {
             data.PaymentProviderMeteredSubscriptionId = types.StringNull()
@@ -5800,6 +6831,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.PaymentProviderCustomerId = types.StringNull()
         }
+    } else if arr, ok := dataMap["paymentProviderCustomerId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PaymentProviderCustomerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderCustomerId = types.StringNull()
+        }
     } else if val, ok := dataMap["paymentProviderCustomerId"].(string); ok {
         data.PaymentProviderCustomerId = types.StringValue(val)
     } else {
@@ -5833,6 +6871,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.PaymentProviderSubscriptionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderSubscriptionStatus = types.StringNull()
+        }
+    } else if arr, ok := dataMap["paymentProviderSubscriptionStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.PaymentProviderSubscriptionStatus = types.StringValue(string(jsonBytes))
         } else {
             data.PaymentProviderSubscriptionStatus = types.StringNull()
@@ -5874,6 +6919,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.PaymentProviderMeteredSubscriptionStatus = types.StringNull()
         }
+    } else if arr, ok := dataMap["paymentProviderMeteredSubscriptionStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PaymentProviderMeteredSubscriptionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.PaymentProviderMeteredSubscriptionStatus = types.StringNull()
+        }
     } else if val, ok := dataMap["paymentProviderMeteredSubscriptionStatus"].(string); ok {
         data.PaymentProviderMeteredSubscriptionStatus = types.StringValue(val)
     } else {
@@ -5907,6 +6959,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -5951,6 +7010,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.PlanName = types.StringNull()
         }
+    } else if arr, ok := dataMap["planName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PlanName = types.StringValue(string(jsonBytes))
+        } else {
+            data.PlanName = types.StringNull()
+        }
     } else if val, ok := dataMap["planName"].(string); ok {
         data.PlanName = types.StringValue(val)
     } else {
@@ -5984,6 +7050,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DataResidency = types.StringValue(string(jsonBytes))
+        } else {
+            data.DataResidency = types.StringNull()
+        }
+    } else if arr, ok := dataMap["dataResidency"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DataResidency = types.StringValue(string(jsonBytes))
         } else {
             data.DataResidency = types.StringNull()
@@ -6025,6 +7098,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.ResellerId = types.StringNull()
         }
+    } else if arr, ok := dataMap["resellerId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResellerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResellerId = types.StringNull()
+        }
     } else if val, ok := dataMap["resellerId"].(string); ok {
         data.ResellerId = types.StringValue(val)
     } else {
@@ -6062,6 +7142,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.ResellerPlanId = types.StringNull()
         }
+    } else if arr, ok := dataMap["resellerPlanId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResellerPlanId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResellerPlanId = types.StringNull()
+        }
     } else if val, ok := dataMap["resellerPlanId"].(string); ok {
         data.ResellerPlanId = types.StringValue(val)
     } else {
@@ -6095,6 +7182,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.BillingMarketplace = types.StringValue(string(jsonBytes))
+        } else {
+            data.BillingMarketplace = types.StringNull()
+        }
+    } else if arr, ok := dataMap["billingMarketplace"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.BillingMarketplace = types.StringValue(string(jsonBytes))
         } else {
             data.BillingMarketplace = types.StringNull()
@@ -6139,11 +7233,28 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.GitHubAppInstallationId = types.StringNull()
         }
+    } else if arr, ok := dataMap["gitHubAppInstallationId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitHubAppInstallationId = types.StringNull()
+        }
     } else if val, ok := dataMap["gitHubAppInstallationId"].(string); ok {
         data.GitHubAppInstallationId = types.StringValue(val)
     } else {
         data.GitHubAppInstallationId = types.StringNull()
     }
+    data.LogsDailyIngestionBudgetInGb = numberFromAPI(data.LogsDailyIngestionBudgetInGb, dataMap["logsDailyIngestionBudgetInGB"])
+    data.TracesDailyIngestionBudgetInGb = numberFromAPI(data.TracesDailyIngestionBudgetInGb, dataMap["tracesDailyIngestionBudgetInGB"])
+    data.MetricsDailyIngestionBudgetInGb = numberFromAPI(data.MetricsDailyIngestionBudgetInGb, dataMap["metricsDailyIngestionBudgetInGB"])
+    data.ProfilesDailyIngestionBudgetInGb = numberFromAPI(data.ProfilesDailyIngestionBudgetInGb, dataMap["profilesDailyIngestionBudgetInGB"])
+    data.SecurityEventsDailyIngestionBudgetInGb = numberFromAPI(data.SecurityEventsDailyIngestionBudgetInGb, dataMap["securityEventsDailyIngestionBudgetInGB"])
+    data.LogsIngestionRateLimitInMbPerSecond = numberFromAPI(data.LogsIngestionRateLimitInMbPerSecond, dataMap["logsIngestionRateLimitInMBPerSecond"])
+    data.TracesIngestionRateLimitInMbPerSecond = numberFromAPI(data.TracesIngestionRateLimitInMbPerSecond, dataMap["tracesIngestionRateLimitInMBPerSecond"])
+    data.MetricsIngestionRateLimitInMbPerSecond = numberFromAPI(data.MetricsIngestionRateLimitInMbPerSecond, dataMap["metricsIngestionRateLimitInMBPerSecond"])
+    data.ProfilesIngestionRateLimitInMbPerSecond = numberFromAPI(data.ProfilesIngestionRateLimitInMbPerSecond, dataMap["profilesIngestionRateLimitInMBPerSecond"])
+    data.SecurityEventsIngestionRateLimitInMbPerSecond = numberFromAPI(data.SecurityEventsIngestionRateLimitInMbPerSecond, dataMap["securityEventsIngestionRateLimitInMBPerSecond"])
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -6195,7 +7306,7 @@ func (r *ProjectResource) ImportState(ctx context.Context, req resource.ImportSt
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
     // These hold the record as OneUptime keeps it, keys it fills in itself
     // included, until an update writes them (see importsettle.go).
-    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"default_metric_downsampling_retention_days", "telemetry_retention_config"})...)
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"default_metric_downsampling_retention_days", "default_table_columns", "telemetry_retention_config"})...)
 }
 
 
@@ -6378,6 +7489,21 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     if config.AiDailySpendLimitInUsd.IsNull() && !plan.AiDailySpendLimitInUsd.IsUnknown() {
         data.AiDailySpendLimitInUsd = plan.AiDailySpendLimitInUsd
     }
+    if config.AiRunMaxModelCalls.IsNull() && !plan.AiRunMaxModelCalls.IsUnknown() {
+        data.AiRunMaxModelCalls = plan.AiRunMaxModelCalls
+    }
+    if config.AiRunMaxToolCalls.IsNull() && !plan.AiRunMaxToolCalls.IsUnknown() {
+        data.AiRunMaxToolCalls = plan.AiRunMaxToolCalls
+    }
+    if config.AiRunMaxTokens.IsNull() && !plan.AiRunMaxTokens.IsUnknown() {
+        data.AiRunMaxTokens = plan.AiRunMaxTokens
+    }
+    if config.AiRunTimeLimitInMinutes.IsNull() && !plan.AiRunTimeLimitInMinutes.IsUnknown() {
+        data.AiRunTimeLimitInMinutes = plan.AiRunTimeLimitInMinutes
+    }
+    if config.RequireTwoApprovalsForRiskierFixes.IsNull() && !plan.RequireTwoApprovalsForRiskierFixes.IsUnknown() {
+        data.RequireTwoApprovalsForRiskierFixes = plan.RequireTwoApprovalsForRiskierFixes
+    }
     if config.AcknowledgeLinkedAlertsWhenIncidentAcknowledged.IsNull() && !plan.AcknowledgeLinkedAlertsWhenIncidentAcknowledged.IsUnknown() {
         data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = plan.AcknowledgeLinkedAlertsWhenIncidentAcknowledged
     }
@@ -6392,6 +7518,12 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.DefaultNetworkTopologyLayout.IsNull() && !plan.DefaultNetworkTopologyLayout.IsUnknown() {
         data.DefaultNetworkTopologyLayout = plan.DefaultNetworkTopologyLayout
+    }
+    if config.DiscoveredDeviceRetentionInDays.IsNull() && !plan.DiscoveredDeviceRetentionInDays.IsUnknown() {
+        data.DiscoveredDeviceRetentionInDays = plan.DiscoveredDeviceRetentionInDays
+    }
+    if config.DefaultTableColumns.IsNull() && !plan.DefaultTableColumns.IsUnknown() {
+        data.DefaultTableColumns = plan.DefaultTableColumns
     }
     if config.AlertInvestigationMinimumSeverityId.IsNull() && !plan.AlertInvestigationMinimumSeverityId.IsUnknown() {
         data.AlertInvestigationMinimumSeverityId = plan.AlertInvestigationMinimumSeverityId
@@ -6455,6 +7587,12 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.DefaultMetricDownsamplingRetentionDays.IsNull() && !plan.DefaultMetricDownsamplingRetentionDays.IsUnknown() {
         data.DefaultMetricDownsamplingRetentionDays = plan.DefaultMetricDownsamplingRetentionDays
+    }
+    if config.RequireApprovalForIncidentPublicNotes.IsNull() && !plan.RequireApprovalForIncidentPublicNotes.IsUnknown() {
+        data.RequireApprovalForIncidentPublicNotes = plan.RequireApprovalForIncidentPublicNotes
+    }
+    if config.RequireApprovalForScheduledMaintenancePublicNotes.IsNull() && !plan.RequireApprovalForScheduledMaintenancePublicNotes.IsUnknown() {
+        data.RequireApprovalForScheduledMaintenancePublicNotes = plan.RequireApprovalForScheduledMaintenancePublicNotes
     }
 }
 

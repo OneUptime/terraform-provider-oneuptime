@@ -55,6 +55,10 @@ type IncidentEpisodePublicNoteResourceModel struct {
     SubscriberNotificationStatusMessageOnNoteUpdated types.String `tfsdk:"subscriber_notification_status_message_on_note_updated"`
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
     SavedFromChatMessage JSONSubsetValue `tfsdk:"saved_from_chat_message"`
+    IsPublished types.Bool `tfsdk:"is_published"`
+    ApprovalStatus types.String `tfsdk:"approval_status"`
+    Approval JSONSubsetValue `tfsdk:"approval"`
+    PendingNote types.String `tfsdk:"pending_note"`
 }
 
 func (r *IncidentEpisodePublicNoteResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -181,6 +185,23 @@ func (r *IncidentEpisodePublicNoteResource) schemaDefinition() schema.Schema {
             "saved_from_chat_message": schema.StringAttribute{
                 MarkdownDescription: "When this note was saved from a Slack or Microsoft Teams message - pinned, or given a note emoji - the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). Written by OneUptime; the note's creator is whoever saved it. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "is_published": schema.BoolAttribute{
+                MarkdownDescription: "Whether this note is published: shown on status pages and sent to subscribers. False while it waits for approval, or after it was rejected, when the project asks for public notes to be approved.",
+                Computed: true,
+            },
+            "approval_status": schema.StringAttribute{
+                MarkdownDescription: "Where this note stands in the project's public note approval: WaitingForApproval, Approved or Rejected. Empty for a note that needed no approval. On a published note, WaitingForApproval or Rejected is about an edit of it (pendingNote).",
+                Computed: true,
+            },
+            "approval": schema.StringAttribute{
+                MarkdownDescription: "This note's approval so far: when it was sent for approval and by whom (submittedAt, submittedByUserId), whether it is an edit of the published note (isEdit), each step's approval (approvals: stepId, userId, at, comment) and a rejection (rejection: userId, at, reason). A JSON value: read it with `jsondecode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "pending_note": schema.StringAttribute{
+                MarkdownDescription: "An edit of this published note that waits for approval, in markdown. Status pages show the note as it was approved until the edit is approved. Empty when no edit waits.",
                 Computed: true,
             },
         },
@@ -326,6 +347,10 @@ func (r *IncidentEpisodePublicNoteResource) Create(ctx context.Context, req reso
         "subscriberNotificationStatusMessageOnNoteUpdated": true,
         "isOwnerNotified": true,
         "savedFromChatMessage": true,
+        "isPublished": true,
+        "approvalStatus": true,
+        "approval": true,
+        "pendingNote": true,
         "_id": true,
     }
 
@@ -401,6 +426,13 @@ func (r *IncidentEpisodePublicNoteResource) Create(ctx context.Context, req reso
         } else {
             data.IncidentEpisodeId = types.StringNull()
         }
+    } else if arr, ok := dataMap["incidentEpisodeId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentEpisodeId = types.StringNull()
+        }
     } else if val, ok := dataMap["incidentEpisodeId"].(string); ok {
         data.IncidentEpisodeId = types.StringValue(val)
     } else {
@@ -434,6 +466,13 @@ func (r *IncidentEpisodePublicNoteResource) Create(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Note = types.StringValue(string(jsonBytes))
+        } else {
+            data.Note = types.StringNull()
+        }
+    } else if arr, ok := dataMap["note"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Note = types.StringValue(string(jsonBytes))
         } else {
             data.Note = types.StringNull()
@@ -523,6 +562,13 @@ func (r *IncidentEpisodePublicNoteResource) Create(ctx context.Context, req reso
         } else {
             data.PostedFromSlackMessageId = types.StringNull()
         }
+    } else if arr, ok := dataMap["postedFromSlackMessageId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PostedFromSlackMessageId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PostedFromSlackMessageId = types.StringNull()
+        }
     } else if val, ok := dataMap["postedFromSlackMessageId"].(string); ok {
         data.PostedFromSlackMessageId = types.StringValue(val)
     } else {
@@ -582,6 +628,13 @@ func (r *IncidentEpisodePublicNoteResource) Create(ctx context.Context, req reso
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -615,6 +668,13 @@ func (r *IncidentEpisodePublicNoteResource) Create(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusOnNoteCreated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusOnNoteCreated = types.StringNull()
+        }
+    } else if arr, ok := dataMap["subscriberNotificationStatusOnNoteCreated"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SubscriberNotificationStatusOnNoteCreated = types.StringValue(string(jsonBytes))
         } else {
             data.SubscriberNotificationStatusOnNoteCreated = types.StringNull()
@@ -656,6 +716,13 @@ func (r *IncidentEpisodePublicNoteResource) Create(ctx context.Context, req reso
         } else {
             data.SubscriberNotificationStatusMessage = types.StringNull()
         }
+    } else if arr, ok := dataMap["subscriberNotificationStatusMessage"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessage = types.StringNull()
+        }
     } else if val, ok := dataMap["subscriberNotificationStatusMessage"].(string); ok {
         data.SubscriberNotificationStatusMessage = types.StringValue(val)
     } else {
@@ -693,6 +760,13 @@ func (r *IncidentEpisodePublicNoteResource) Create(ctx context.Context, req reso
         } else {
             data.SubscriberNotificationStatusOnNoteUpdated = types.StringNull()
         }
+    } else if arr, ok := dataMap["subscriberNotificationStatusOnNoteUpdated"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SubscriberNotificationStatusOnNoteUpdated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusOnNoteUpdated = types.StringNull()
+        }
     } else if val, ok := dataMap["subscriberNotificationStatusOnNoteUpdated"].(string); ok {
         data.SubscriberNotificationStatusOnNoteUpdated = types.StringValue(val)
     } else {
@@ -726,6 +800,13 @@ func (r *IncidentEpisodePublicNoteResource) Create(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringNull()
+        }
+    } else if arr, ok := dataMap["subscriberNotificationStatusMessageOnNoteUpdated"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringValue(string(jsonBytes))
         } else {
             data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringNull()
@@ -770,10 +851,152 @@ func (r *IncidentEpisodePublicNoteResource) Create(ctx context.Context, req reso
         } else {
             data.SavedFromChatMessage = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["savedFromChatMessage"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SavedFromChatMessage = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["savedFromChatMessage"].(string); ok {
         data.SavedFromChatMessage = NewJSONSubsetValue(val)
     } else {
         data.SavedFromChatMessage = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["isPublished"].(bool); ok {
+        data.IsPublished = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["approvalStatus"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ApprovalStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ApprovalStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ApprovalStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ApprovalStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ApprovalStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ApprovalStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ApprovalStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ApprovalStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApprovalStatus = types.StringNull()
+        }
+    } else if arr, ok := dataMap["approvalStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ApprovalStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApprovalStatus = types.StringNull()
+        }
+    } else if val, ok := dataMap["approvalStatus"].(string); ok {
+        data.ApprovalStatus = types.StringValue(val)
+    } else {
+        data.ApprovalStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["approval"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Approval = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Approval = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Approval = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Approval = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Approval = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Approval = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Approval = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Approval = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Approval = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["approval"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Approval = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Approval = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["approval"].(string); ok {
+        data.Approval = NewJSONSubsetValue(val)
+    } else {
+        data.Approval = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["pendingNote"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PendingNote = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PendingNote = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PendingNote = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PendingNote = types.StringValue(string(jsonBytes))
+            } else {
+                data.PendingNote = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PendingNote = types.StringValue(string(jsonBytes))
+            } else {
+                data.PendingNote = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PendingNote = types.StringValue(string(jsonBytes))
+        } else {
+            data.PendingNote = types.StringNull()
+        }
+    } else if arr, ok := dataMap["pendingNote"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PendingNote = types.StringValue(string(jsonBytes))
+        } else {
+            data.PendingNote = types.StringNull()
+        }
+    } else if val, ok := dataMap["pendingNote"].(string); ok {
+        data.PendingNote = types.StringValue(val)
+    } else {
+        data.PendingNote = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -822,6 +1045,10 @@ func (r *IncidentEpisodePublicNoteResource) Read(ctx context.Context, req resour
         "subscriberNotificationStatusMessageOnNoteUpdated": true,
         "isOwnerNotified": true,
         "savedFromChatMessage": true,
+        "isPublished": true,
+        "approvalStatus": true,
+        "approval": true,
+        "pendingNote": true,
         "_id": true,
     }
 
@@ -898,6 +1125,13 @@ func (r *IncidentEpisodePublicNoteResource) Read(ctx context.Context, req resour
         } else {
             data.IncidentEpisodeId = types.StringNull()
         }
+    } else if arr, ok := dataMap["incidentEpisodeId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentEpisodeId = types.StringNull()
+        }
     } else if val, ok := dataMap["incidentEpisodeId"].(string); ok {
         data.IncidentEpisodeId = types.StringValue(val)
     } else {
@@ -931,6 +1165,13 @@ func (r *IncidentEpisodePublicNoteResource) Read(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Note = types.StringValue(string(jsonBytes))
+        } else {
+            data.Note = types.StringNull()
+        }
+    } else if arr, ok := dataMap["note"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Note = types.StringValue(string(jsonBytes))
         } else {
             data.Note = types.StringNull()
@@ -1020,6 +1261,13 @@ func (r *IncidentEpisodePublicNoteResource) Read(ctx context.Context, req resour
         } else {
             data.PostedFromSlackMessageId = types.StringNull()
         }
+    } else if arr, ok := dataMap["postedFromSlackMessageId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PostedFromSlackMessageId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PostedFromSlackMessageId = types.StringNull()
+        }
     } else if val, ok := dataMap["postedFromSlackMessageId"].(string); ok {
         data.PostedFromSlackMessageId = types.StringValue(val)
     } else {
@@ -1079,6 +1327,13 @@ func (r *IncidentEpisodePublicNoteResource) Read(ctx context.Context, req resour
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -1112,6 +1367,13 @@ func (r *IncidentEpisodePublicNoteResource) Read(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusOnNoteCreated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusOnNoteCreated = types.StringNull()
+        }
+    } else if arr, ok := dataMap["subscriberNotificationStatusOnNoteCreated"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SubscriberNotificationStatusOnNoteCreated = types.StringValue(string(jsonBytes))
         } else {
             data.SubscriberNotificationStatusOnNoteCreated = types.StringNull()
@@ -1153,6 +1415,13 @@ func (r *IncidentEpisodePublicNoteResource) Read(ctx context.Context, req resour
         } else {
             data.SubscriberNotificationStatusMessage = types.StringNull()
         }
+    } else if arr, ok := dataMap["subscriberNotificationStatusMessage"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessage = types.StringNull()
+        }
     } else if val, ok := dataMap["subscriberNotificationStatusMessage"].(string); ok {
         data.SubscriberNotificationStatusMessage = types.StringValue(val)
     } else {
@@ -1190,6 +1459,13 @@ func (r *IncidentEpisodePublicNoteResource) Read(ctx context.Context, req resour
         } else {
             data.SubscriberNotificationStatusOnNoteUpdated = types.StringNull()
         }
+    } else if arr, ok := dataMap["subscriberNotificationStatusOnNoteUpdated"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SubscriberNotificationStatusOnNoteUpdated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusOnNoteUpdated = types.StringNull()
+        }
     } else if val, ok := dataMap["subscriberNotificationStatusOnNoteUpdated"].(string); ok {
         data.SubscriberNotificationStatusOnNoteUpdated = types.StringValue(val)
     } else {
@@ -1223,6 +1499,13 @@ func (r *IncidentEpisodePublicNoteResource) Read(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringNull()
+        }
+    } else if arr, ok := dataMap["subscriberNotificationStatusMessageOnNoteUpdated"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringValue(string(jsonBytes))
         } else {
             data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringNull()
@@ -1267,10 +1550,152 @@ func (r *IncidentEpisodePublicNoteResource) Read(ctx context.Context, req resour
         } else {
             data.SavedFromChatMessage = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["savedFromChatMessage"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SavedFromChatMessage = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["savedFromChatMessage"].(string); ok {
         data.SavedFromChatMessage = NewJSONSubsetValue(val)
     } else {
         data.SavedFromChatMessage = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["isPublished"].(bool); ok {
+        data.IsPublished = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["approvalStatus"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ApprovalStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ApprovalStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ApprovalStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ApprovalStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ApprovalStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ApprovalStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ApprovalStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ApprovalStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApprovalStatus = types.StringNull()
+        }
+    } else if arr, ok := dataMap["approvalStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ApprovalStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApprovalStatus = types.StringNull()
+        }
+    } else if val, ok := dataMap["approvalStatus"].(string); ok {
+        data.ApprovalStatus = types.StringValue(val)
+    } else {
+        data.ApprovalStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["approval"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Approval = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Approval = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Approval = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Approval = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Approval = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Approval = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Approval = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Approval = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Approval = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["approval"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Approval = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Approval = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["approval"].(string); ok {
+        data.Approval = NewJSONSubsetValue(val)
+    } else {
+        data.Approval = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["pendingNote"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PendingNote = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PendingNote = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PendingNote = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PendingNote = types.StringValue(string(jsonBytes))
+            } else {
+                data.PendingNote = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PendingNote = types.StringValue(string(jsonBytes))
+            } else {
+                data.PendingNote = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PendingNote = types.StringValue(string(jsonBytes))
+        } else {
+            data.PendingNote = types.StringNull()
+        }
+    } else if arr, ok := dataMap["pendingNote"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PendingNote = types.StringValue(string(jsonBytes))
+        } else {
+            data.PendingNote = types.StringNull()
+        }
+    } else if val, ok := dataMap["pendingNote"].(string); ok {
+        data.PendingNote = types.StringValue(val)
+    } else {
+        data.PendingNote = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -1363,6 +1788,10 @@ func (r *IncidentEpisodePublicNoteResource) Update(ctx context.Context, req reso
         "subscriberNotificationStatusMessageOnNoteUpdated": true,
         "isOwnerNotified": true,
         "savedFromChatMessage": true,
+        "isPublished": true,
+        "approvalStatus": true,
+        "approval": true,
+        "pendingNote": true,
         "_id": true,
     }
 
@@ -1433,6 +1862,13 @@ func (r *IncidentEpisodePublicNoteResource) Update(ctx context.Context, req reso
         } else {
             data.IncidentEpisodeId = types.StringNull()
         }
+    } else if arr, ok := dataMap["incidentEpisodeId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentEpisodeId = types.StringNull()
+        }
     } else if val, ok := dataMap["incidentEpisodeId"].(string); ok {
         data.IncidentEpisodeId = types.StringValue(val)
     } else {
@@ -1466,6 +1902,13 @@ func (r *IncidentEpisodePublicNoteResource) Update(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Note = types.StringValue(string(jsonBytes))
+        } else {
+            data.Note = types.StringNull()
+        }
+    } else if arr, ok := dataMap["note"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Note = types.StringValue(string(jsonBytes))
         } else {
             data.Note = types.StringNull()
@@ -1555,6 +1998,13 @@ func (r *IncidentEpisodePublicNoteResource) Update(ctx context.Context, req reso
         } else {
             data.PostedFromSlackMessageId = types.StringNull()
         }
+    } else if arr, ok := dataMap["postedFromSlackMessageId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PostedFromSlackMessageId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PostedFromSlackMessageId = types.StringNull()
+        }
     } else if val, ok := dataMap["postedFromSlackMessageId"].(string); ok {
         data.PostedFromSlackMessageId = types.StringValue(val)
     } else {
@@ -1614,6 +2064,13 @@ func (r *IncidentEpisodePublicNoteResource) Update(ctx context.Context, req reso
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -1647,6 +2104,13 @@ func (r *IncidentEpisodePublicNoteResource) Update(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusOnNoteCreated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusOnNoteCreated = types.StringNull()
+        }
+    } else if arr, ok := dataMap["subscriberNotificationStatusOnNoteCreated"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SubscriberNotificationStatusOnNoteCreated = types.StringValue(string(jsonBytes))
         } else {
             data.SubscriberNotificationStatusOnNoteCreated = types.StringNull()
@@ -1688,6 +2152,13 @@ func (r *IncidentEpisodePublicNoteResource) Update(ctx context.Context, req reso
         } else {
             data.SubscriberNotificationStatusMessage = types.StringNull()
         }
+    } else if arr, ok := dataMap["subscriberNotificationStatusMessage"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessage = types.StringNull()
+        }
     } else if val, ok := dataMap["subscriberNotificationStatusMessage"].(string); ok {
         data.SubscriberNotificationStatusMessage = types.StringValue(val)
     } else {
@@ -1725,6 +2196,13 @@ func (r *IncidentEpisodePublicNoteResource) Update(ctx context.Context, req reso
         } else {
             data.SubscriberNotificationStatusOnNoteUpdated = types.StringNull()
         }
+    } else if arr, ok := dataMap["subscriberNotificationStatusOnNoteUpdated"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SubscriberNotificationStatusOnNoteUpdated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusOnNoteUpdated = types.StringNull()
+        }
     } else if val, ok := dataMap["subscriberNotificationStatusOnNoteUpdated"].(string); ok {
         data.SubscriberNotificationStatusOnNoteUpdated = types.StringValue(val)
     } else {
@@ -1758,6 +2236,13 @@ func (r *IncidentEpisodePublicNoteResource) Update(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringNull()
+        }
+    } else if arr, ok := dataMap["subscriberNotificationStatusMessageOnNoteUpdated"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringValue(string(jsonBytes))
         } else {
             data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringNull()
@@ -1802,10 +2287,152 @@ func (r *IncidentEpisodePublicNoteResource) Update(ctx context.Context, req reso
         } else {
             data.SavedFromChatMessage = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["savedFromChatMessage"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SavedFromChatMessage = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SavedFromChatMessage = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["savedFromChatMessage"].(string); ok {
         data.SavedFromChatMessage = NewJSONSubsetValue(val)
     } else {
         data.SavedFromChatMessage = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["isPublished"].(bool); ok {
+        data.IsPublished = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["approvalStatus"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ApprovalStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ApprovalStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ApprovalStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ApprovalStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ApprovalStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ApprovalStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ApprovalStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ApprovalStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApprovalStatus = types.StringNull()
+        }
+    } else if arr, ok := dataMap["approvalStatus"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ApprovalStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApprovalStatus = types.StringNull()
+        }
+    } else if val, ok := dataMap["approvalStatus"].(string); ok {
+        data.ApprovalStatus = types.StringValue(val)
+    } else {
+        data.ApprovalStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["approval"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Approval = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Approval = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Approval = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Approval = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Approval = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Approval = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Approval = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Approval = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Approval = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["approval"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Approval = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Approval = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["approval"].(string); ok {
+        data.Approval = NewJSONSubsetValue(val)
+    } else {
+        data.Approval = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["pendingNote"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PendingNote = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PendingNote = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PendingNote = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PendingNote = types.StringValue(string(jsonBytes))
+            } else {
+                data.PendingNote = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PendingNote = types.StringValue(string(jsonBytes))
+            } else {
+                data.PendingNote = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PendingNote = types.StringValue(string(jsonBytes))
+        } else {
+            data.PendingNote = types.StringNull()
+        }
+    } else if arr, ok := dataMap["pendingNote"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.PendingNote = types.StringValue(string(jsonBytes))
+        } else {
+            data.PendingNote = types.StringNull()
+        }
+    } else if val, ok := dataMap["pendingNote"].(string); ok {
+        data.PendingNote = types.StringValue(val)
+    } else {
+        data.PendingNote = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

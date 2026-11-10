@@ -287,6 +287,13 @@ func (d *RuleExceptionDataSource) Read(ctx context.Context, req datasource.ReadR
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -300,6 +307,13 @@ func (d *RuleExceptionDataSource) Read(ctx context.Context, req datasource.ReadR
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -321,6 +335,13 @@ func (d *RuleExceptionDataSource) Read(ctx context.Context, req datasource.ReadR
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -334,6 +355,13 @@ func (d *RuleExceptionDataSource) Read(ctx context.Context, req datasource.ReadR
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -355,6 +383,13 @@ func (d *RuleExceptionDataSource) Read(ctx context.Context, req datasource.ReadR
         } else {
             data.DetectionRuleId = types.StringNull()
         }
+    } else if arr, ok := item["detectionRuleId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.DetectionRuleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DetectionRuleId = types.StringNull()
+        }
     } else if val, ok := item["detectionRuleId"].(string); ok {
         data.DetectionRuleId = types.StringValue(val)
     } else {
@@ -368,6 +403,13 @@ func (d *RuleExceptionDataSource) Read(ctx context.Context, req datasource.ReadR
         } else if val, ok := obj["value"].(float64); ok {
             data.Kind = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Kind = types.StringValue(string(jsonBytes))
+        } else {
+            data.Kind = types.StringNull()
+        }
+    } else if arr, ok := item["kind"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Kind = types.StringValue(string(jsonBytes))
         } else {
             data.Kind = types.StringNull()
@@ -389,6 +431,13 @@ func (d *RuleExceptionDataSource) Read(ctx context.Context, req datasource.ReadR
         } else {
             data.EntityType = types.StringNull()
         }
+    } else if arr, ok := item["entityType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.EntityType = types.StringValue(string(jsonBytes))
+        } else {
+            data.EntityType = types.StringNull()
+        }
     } else if val, ok := item["entityType"].(string); ok {
         data.EntityType = types.StringValue(val)
     } else {
@@ -402,6 +451,13 @@ func (d *RuleExceptionDataSource) Read(ctx context.Context, req datasource.ReadR
         } else if val, ok := obj["value"].(float64); ok {
             data.FieldName = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FieldName = types.StringValue(string(jsonBytes))
+        } else {
+            data.FieldName = types.StringNull()
+        }
+    } else if arr, ok := item["fieldName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.FieldName = types.StringValue(string(jsonBytes))
         } else {
             data.FieldName = types.StringNull()
@@ -423,6 +479,13 @@ func (d *RuleExceptionDataSource) Read(ctx context.Context, req datasource.ReadR
         } else {
             data.Value = types.StringNull()
         }
+    } else if arr, ok := item["value"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Value = types.StringValue(string(jsonBytes))
+        } else {
+            data.Value = types.StringNull()
+        }
     } else if val, ok := item["value"].(string); ok {
         data.Value = types.StringValue(val)
     } else {
@@ -436,6 +499,13 @@ func (d *RuleExceptionDataSource) Read(ctx context.Context, req datasource.ReadR
         } else if val, ok := obj["value"].(float64); ok {
             data.StartsAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.StartsAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.StartsAt = types.StringNull()
+        }
+    } else if arr, ok := item["startsAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.StartsAt = types.StringValue(string(jsonBytes))
         } else {
             data.StartsAt = types.StringNull()
@@ -457,6 +527,13 @@ func (d *RuleExceptionDataSource) Read(ctx context.Context, req datasource.ReadR
         } else {
             data.EndsAt = types.StringNull()
         }
+    } else if arr, ok := item["endsAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.EndsAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.EndsAt = types.StringNull()
+        }
     } else if val, ok := item["endsAt"].(string); ok {
         data.EndsAt = types.StringValue(val)
     } else {
@@ -470,6 +547,13 @@ func (d *RuleExceptionDataSource) Read(ctx context.Context, req datasource.ReadR
         } else if val, ok := obj["value"].(float64); ok {
             data.Reason = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Reason = types.StringValue(string(jsonBytes))
+        } else {
+            data.Reason = types.StringNull()
+        }
+    } else if arr, ok := item["reason"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Reason = types.StringValue(string(jsonBytes))
         } else {
             data.Reason = types.StringNull()
@@ -491,6 +575,13 @@ func (d *RuleExceptionDataSource) Read(ctx context.Context, req datasource.ReadR
         } else {
             data.ExpiresAt = types.StringNull()
         }
+    } else if arr, ok := item["expiresAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ExpiresAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExpiresAt = types.StringNull()
+        }
     } else if val, ok := item["expiresAt"].(string); ok {
         data.ExpiresAt = types.StringValue(val)
     } else {
@@ -504,6 +595,13 @@ func (d *RuleExceptionDataSource) Read(ctx context.Context, req datasource.ReadR
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

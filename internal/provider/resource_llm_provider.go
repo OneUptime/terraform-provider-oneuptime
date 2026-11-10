@@ -18,6 +18,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
     "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
@@ -48,6 +49,7 @@ type LlmProviderResourceModel struct {
     AdditionalParams JSONSubsetValue `tfsdk:"additional_params"`
     ProjectId types.String `tfsdk:"project_id"`
     IsDefault types.Bool `tfsdk:"is_default"`
+    RequestTimeoutInSeconds types.Number `tfsdk:"request_timeout_in_seconds"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Slug types.String `tfsdk:"slug"`
@@ -147,6 +149,15 @@ func (r *LlmProviderResource) schemaDefinition() schema.Schema {
                 Default: booldefault.StaticBool(false),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "request_timeout_in_seconds": schema.NumberAttribute{
+                MarkdownDescription: "How long to wait for the provider to answer one request, in seconds (10 to 3600). Leave empty for the default: 120 seconds, or 300 for Ollama. Raise it for a slow or self-hosted model.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -272,6 +283,9 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
     if !data.IsDefault.IsNull() && !data.IsDefault.IsUnknown() {
         requestDataMap["isDefault"] = data.IsDefault.ValueBool()
     }
+    if !data.RequestTimeoutInSeconds.IsNull() && !data.RequestTimeoutInSeconds.IsUnknown() {
+        requestDataMap["requestTimeoutInSeconds"] = r.bigFloatToFloat64(data.RequestTimeoutInSeconds.ValueBigFloat())
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/llm-provider", llmProviderRequest)
@@ -326,6 +340,7 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
         "additionalParams": true,
         "projectId": true,
         "isDefault": true,
+        "requestTimeoutInSeconds": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
@@ -396,6 +411,13 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -429,6 +451,13 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -470,6 +499,13 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
         } else {
             data.LlmType = types.StringNull()
         }
+    } else if arr, ok := dataMap["llmType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LlmType = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmType = types.StringNull()
+        }
     } else if val, ok := dataMap["llmType"].(string); ok {
         data.LlmType = types.StringValue(val)
     } else {
@@ -503,6 +539,13 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ApiKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["apiKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ApiKey = types.StringValue(string(jsonBytes))
         } else {
             data.ApiKey = types.StringNull()
@@ -544,6 +587,13 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
         } else {
             data.ModelName = types.StringNull()
         }
+    } else if arr, ok := dataMap["modelName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ModelName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ModelName = types.StringNull()
+        }
     } else if val, ok := dataMap["modelName"].(string); ok {
         data.ModelName = types.StringValue(val)
     } else {
@@ -577,6 +627,13 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.BaseUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.BaseUrl = types.StringNull()
+        }
+    } else if arr, ok := dataMap["baseUrl"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.BaseUrl = types.StringValue(string(jsonBytes))
         } else {
             data.BaseUrl = types.StringNull()
@@ -618,6 +675,13 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
         } else {
             data.AdditionalParams = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["additionalParams"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AdditionalParams = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AdditionalParams = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["additionalParams"].(string); ok {
         data.AdditionalParams = NewJSONSubsetValue(val)
     } else {
@@ -637,6 +701,7 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
     if val, ok := dataMap["isDefault"].(bool); ok {
         data.IsDefault = types.BoolValue(val)
     }
+    data.RequestTimeoutInSeconds = numberFromAPI(data.RequestTimeoutInSeconds, dataMap["requestTimeoutInSeconds"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -691,6 +756,13 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -729,6 +801,13 @@ func (r *LlmProviderResource) Create(ctx context.Context, req resource.CreateReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -781,6 +860,7 @@ func (r *LlmProviderResource) Read(ctx context.Context, req resource.ReadRequest
         "additionalParams": true,
         "projectId": true,
         "isDefault": true,
+        "requestTimeoutInSeconds": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
@@ -852,6 +932,13 @@ func (r *LlmProviderResource) Read(ctx context.Context, req resource.ReadRequest
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -885,6 +972,13 @@ func (r *LlmProviderResource) Read(ctx context.Context, req resource.ReadRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -926,6 +1020,13 @@ func (r *LlmProviderResource) Read(ctx context.Context, req resource.ReadRequest
         } else {
             data.LlmType = types.StringNull()
         }
+    } else if arr, ok := dataMap["llmType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LlmType = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmType = types.StringNull()
+        }
     } else if val, ok := dataMap["llmType"].(string); ok {
         data.LlmType = types.StringValue(val)
     } else {
@@ -959,6 +1060,13 @@ func (r *LlmProviderResource) Read(ctx context.Context, req resource.ReadRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ApiKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["apiKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ApiKey = types.StringValue(string(jsonBytes))
         } else {
             data.ApiKey = types.StringNull()
@@ -1000,6 +1108,13 @@ func (r *LlmProviderResource) Read(ctx context.Context, req resource.ReadRequest
         } else {
             data.ModelName = types.StringNull()
         }
+    } else if arr, ok := dataMap["modelName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ModelName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ModelName = types.StringNull()
+        }
     } else if val, ok := dataMap["modelName"].(string); ok {
         data.ModelName = types.StringValue(val)
     } else {
@@ -1033,6 +1148,13 @@ func (r *LlmProviderResource) Read(ctx context.Context, req resource.ReadRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.BaseUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.BaseUrl = types.StringNull()
+        }
+    } else if arr, ok := dataMap["baseUrl"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.BaseUrl = types.StringValue(string(jsonBytes))
         } else {
             data.BaseUrl = types.StringNull()
@@ -1074,6 +1196,13 @@ func (r *LlmProviderResource) Read(ctx context.Context, req resource.ReadRequest
         } else {
             data.AdditionalParams = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["additionalParams"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AdditionalParams = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AdditionalParams = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["additionalParams"].(string); ok {
         data.AdditionalParams = NewJSONSubsetValue(val)
     } else {
@@ -1093,6 +1222,7 @@ func (r *LlmProviderResource) Read(ctx context.Context, req resource.ReadRequest
     if val, ok := dataMap["isDefault"].(bool); ok {
         data.IsDefault = types.BoolValue(val)
     }
+    data.RequestTimeoutInSeconds = numberFromAPI(data.RequestTimeoutInSeconds, dataMap["requestTimeoutInSeconds"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1147,6 +1277,13 @@ func (r *LlmProviderResource) Read(ctx context.Context, req resource.ReadRequest
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -1185,6 +1322,13 @@ func (r *LlmProviderResource) Read(ctx context.Context, req resource.ReadRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1272,6 +1416,9 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
     if !data.IsDefault.IsUnknown() && !state.IsDefault.IsUnknown() && !data.IsDefault.Equal(state.IsDefault) {
         requestDataMap["isDefault"] = data.IsDefault.ValueBool()
     }
+    if !data.RequestTimeoutInSeconds.IsUnknown() && !state.RequestTimeoutInSeconds.IsUnknown() && !data.RequestTimeoutInSeconds.Equal(state.RequestTimeoutInSeconds) {
+        requestDataMap["requestTimeoutInSeconds"] = r.bigFloatToFloat64(data.RequestTimeoutInSeconds.ValueBigFloat())
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -1304,6 +1451,7 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
         "additionalParams": true,
         "projectId": true,
         "isDefault": true,
+        "requestTimeoutInSeconds": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
@@ -1369,6 +1517,13 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1402,6 +1557,13 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1443,6 +1605,13 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
         } else {
             data.LlmType = types.StringNull()
         }
+    } else if arr, ok := dataMap["llmType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LlmType = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmType = types.StringNull()
+        }
     } else if val, ok := dataMap["llmType"].(string); ok {
         data.LlmType = types.StringValue(val)
     } else {
@@ -1476,6 +1645,13 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.ApiKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["apiKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.ApiKey = types.StringValue(string(jsonBytes))
         } else {
             data.ApiKey = types.StringNull()
@@ -1517,6 +1693,13 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
         } else {
             data.ModelName = types.StringNull()
         }
+    } else if arr, ok := dataMap["modelName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ModelName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ModelName = types.StringNull()
+        }
     } else if val, ok := dataMap["modelName"].(string); ok {
         data.ModelName = types.StringValue(val)
     } else {
@@ -1550,6 +1733,13 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.BaseUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.BaseUrl = types.StringNull()
+        }
+    } else if arr, ok := dataMap["baseUrl"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.BaseUrl = types.StringValue(string(jsonBytes))
         } else {
             data.BaseUrl = types.StringNull()
@@ -1591,6 +1781,13 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
         } else {
             data.AdditionalParams = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["additionalParams"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AdditionalParams = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AdditionalParams = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["additionalParams"].(string); ok {
         data.AdditionalParams = NewJSONSubsetValue(val)
     } else {
@@ -1610,6 +1807,7 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
     if val, ok := dataMap["isDefault"].(bool); ok {
         data.IsDefault = types.BoolValue(val)
     }
+    data.RequestTimeoutInSeconds = numberFromAPI(data.RequestTimeoutInSeconds, dataMap["requestTimeoutInSeconds"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1664,6 +1862,13 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
         } else {
             data.Slug = types.StringNull()
         }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
     } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
@@ -1702,6 +1907,13 @@ func (r *LlmProviderResource) Update(ctx context.Context, req resource.UpdateReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1792,6 +2004,9 @@ func (r *LlmProviderResource) keepPlannedValues(data *LlmProviderResourceModel, 
     }
     if config.IsDefault.IsNull() && !plan.IsDefault.IsUnknown() {
         data.IsDefault = plan.IsDefault
+    }
+    if config.RequestTimeoutInSeconds.IsNull() && !plan.RequestTimeoutInSeconds.IsUnknown() {
+        data.RequestTimeoutInSeconds = plan.RequestTimeoutInSeconds
     }
 }
 

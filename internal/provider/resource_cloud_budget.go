@@ -448,6 +448,13 @@ func (r *CloudBudgetResource) Create(ctx context.Context, req resource.CreateReq
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -481,6 +488,13 @@ func (r *CloudBudgetResource) Create(ctx context.Context, req resource.CreateReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -525,6 +539,13 @@ func (r *CloudBudgetResource) Create(ctx context.Context, req resource.CreateReq
         } else {
             data.CloudAccountId = types.StringNull()
         }
+    } else if arr, ok := dataMap["cloudAccountId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CloudAccountId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudAccountId = types.StringNull()
+        }
     } else if val, ok := dataMap["cloudAccountId"].(string); ok {
         data.CloudAccountId = types.StringValue(val)
     } else {
@@ -563,6 +584,13 @@ func (r *CloudBudgetResource) Create(ctx context.Context, req resource.CreateReq
         } else {
             data.Currency = types.StringNull()
         }
+    } else if arr, ok := dataMap["currency"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Currency = types.StringValue(string(jsonBytes))
+        } else {
+            data.Currency = types.StringNull()
+        }
     } else if val, ok := dataMap["currency"].(string); ok {
         data.Currency = types.StringValue(val)
     } else {
@@ -596,6 +624,13 @@ func (r *CloudBudgetResource) Create(ctx context.Context, req resource.CreateReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertThresholds = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertThresholds = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertThresholds"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertThresholds = types.StringValue(string(jsonBytes))
         } else {
             data.AlertThresholds = types.StringNull()
@@ -639,6 +674,13 @@ func (r *CloudBudgetResource) Create(ctx context.Context, req resource.CreateReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertSeverityId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertSeverityId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertSeverityId = types.StringValue(string(jsonBytes))
         } else {
             data.AlertSeverityId = types.StringNull()
@@ -743,6 +785,13 @@ func (r *CloudBudgetResource) Create(ctx context.Context, req resource.CreateReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -877,6 +926,13 @@ func (r *CloudBudgetResource) Read(ctx context.Context, req resource.ReadRequest
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -910,6 +966,13 @@ func (r *CloudBudgetResource) Read(ctx context.Context, req resource.ReadRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -954,6 +1017,13 @@ func (r *CloudBudgetResource) Read(ctx context.Context, req resource.ReadRequest
         } else {
             data.CloudAccountId = types.StringNull()
         }
+    } else if arr, ok := dataMap["cloudAccountId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CloudAccountId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudAccountId = types.StringNull()
+        }
     } else if val, ok := dataMap["cloudAccountId"].(string); ok {
         data.CloudAccountId = types.StringValue(val)
     } else {
@@ -992,6 +1062,13 @@ func (r *CloudBudgetResource) Read(ctx context.Context, req resource.ReadRequest
         } else {
             data.Currency = types.StringNull()
         }
+    } else if arr, ok := dataMap["currency"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Currency = types.StringValue(string(jsonBytes))
+        } else {
+            data.Currency = types.StringNull()
+        }
     } else if val, ok := dataMap["currency"].(string); ok {
         data.Currency = types.StringValue(val)
     } else {
@@ -1025,6 +1102,13 @@ func (r *CloudBudgetResource) Read(ctx context.Context, req resource.ReadRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertThresholds = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertThresholds = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertThresholds"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertThresholds = types.StringValue(string(jsonBytes))
         } else {
             data.AlertThresholds = types.StringNull()
@@ -1068,6 +1152,13 @@ func (r *CloudBudgetResource) Read(ctx context.Context, req resource.ReadRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertSeverityId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertSeverityId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertSeverityId = types.StringValue(string(jsonBytes))
         } else {
             data.AlertSeverityId = types.StringNull()
@@ -1172,6 +1263,13 @@ func (r *CloudBudgetResource) Read(ctx context.Context, req resource.ReadRequest
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1368,6 +1466,13 @@ func (r *CloudBudgetResource) Update(ctx context.Context, req resource.UpdateReq
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1401,6 +1506,13 @@ func (r *CloudBudgetResource) Update(ctx context.Context, req resource.UpdateReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1445,6 +1557,13 @@ func (r *CloudBudgetResource) Update(ctx context.Context, req resource.UpdateReq
         } else {
             data.CloudAccountId = types.StringNull()
         }
+    } else if arr, ok := dataMap["cloudAccountId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CloudAccountId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudAccountId = types.StringNull()
+        }
     } else if val, ok := dataMap["cloudAccountId"].(string); ok {
         data.CloudAccountId = types.StringValue(val)
     } else {
@@ -1483,6 +1602,13 @@ func (r *CloudBudgetResource) Update(ctx context.Context, req resource.UpdateReq
         } else {
             data.Currency = types.StringNull()
         }
+    } else if arr, ok := dataMap["currency"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Currency = types.StringValue(string(jsonBytes))
+        } else {
+            data.Currency = types.StringNull()
+        }
     } else if val, ok := dataMap["currency"].(string); ok {
         data.Currency = types.StringValue(val)
     } else {
@@ -1516,6 +1642,13 @@ func (r *CloudBudgetResource) Update(ctx context.Context, req resource.UpdateReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertThresholds = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertThresholds = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertThresholds"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertThresholds = types.StringValue(string(jsonBytes))
         } else {
             data.AlertThresholds = types.StringNull()
@@ -1559,6 +1692,13 @@ func (r *CloudBudgetResource) Update(ctx context.Context, req resource.UpdateReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.AlertSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertSeverityId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["alertSeverityId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.AlertSeverityId = types.StringValue(string(jsonBytes))
         } else {
             data.AlertSeverityId = types.StringNull()
@@ -1663,6 +1803,13 @@ func (r *CloudBudgetResource) Update(ctx context.Context, req resource.UpdateReq
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

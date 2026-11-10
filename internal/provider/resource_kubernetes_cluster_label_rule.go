@@ -381,6 +381,13 @@ func (r *KubernetesClusterLabelRuleResource) Create(ctx context.Context, req res
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -429,6 +436,13 @@ func (r *KubernetesClusterLabelRuleResource) Create(ctx context.Context, req res
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -462,6 +476,13 @@ func (r *KubernetesClusterLabelRuleResource) Create(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -538,6 +559,13 @@ func (r *KubernetesClusterLabelRuleResource) Create(ctx context.Context, req res
         } else {
             data.KubernetesClusterNamePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["kubernetesClusterNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.KubernetesClusterNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.KubernetesClusterNamePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["kubernetesClusterNamePattern"].(string); ok {
         data.KubernetesClusterNamePattern = types.StringValue(val)
     } else {
@@ -571,6 +599,13 @@ func (r *KubernetesClusterLabelRuleResource) Create(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.KubernetesClusterDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.KubernetesClusterDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["kubernetesClusterDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.KubernetesClusterDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.KubernetesClusterDescriptionPattern = types.StringNull()
@@ -662,6 +697,13 @@ func (r *KubernetesClusterLabelRuleResource) Create(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -781,6 +823,13 @@ func (r *KubernetesClusterLabelRuleResource) Read(ctx context.Context, req resou
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -829,6 +878,13 @@ func (r *KubernetesClusterLabelRuleResource) Read(ctx context.Context, req resou
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -862,6 +918,13 @@ func (r *KubernetesClusterLabelRuleResource) Read(ctx context.Context, req resou
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -938,6 +1001,13 @@ func (r *KubernetesClusterLabelRuleResource) Read(ctx context.Context, req resou
         } else {
             data.KubernetesClusterNamePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["kubernetesClusterNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.KubernetesClusterNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.KubernetesClusterNamePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["kubernetesClusterNamePattern"].(string); ok {
         data.KubernetesClusterNamePattern = types.StringValue(val)
     } else {
@@ -971,6 +1041,13 @@ func (r *KubernetesClusterLabelRuleResource) Read(ctx context.Context, req resou
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.KubernetesClusterDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.KubernetesClusterDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["kubernetesClusterDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.KubernetesClusterDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.KubernetesClusterDescriptionPattern = types.StringNull()
@@ -1062,6 +1139,13 @@ func (r *KubernetesClusterLabelRuleResource) Read(ctx context.Context, req resou
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1242,6 +1326,13 @@ func (r *KubernetesClusterLabelRuleResource) Update(ctx context.Context, req res
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -1290,6 +1381,13 @@ func (r *KubernetesClusterLabelRuleResource) Update(ctx context.Context, req res
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1323,6 +1421,13 @@ func (r *KubernetesClusterLabelRuleResource) Update(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1399,6 +1504,13 @@ func (r *KubernetesClusterLabelRuleResource) Update(ctx context.Context, req res
         } else {
             data.KubernetesClusterNamePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["kubernetesClusterNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.KubernetesClusterNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.KubernetesClusterNamePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["kubernetesClusterNamePattern"].(string); ok {
         data.KubernetesClusterNamePattern = types.StringValue(val)
     } else {
@@ -1432,6 +1544,13 @@ func (r *KubernetesClusterLabelRuleResource) Update(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.KubernetesClusterDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.KubernetesClusterDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["kubernetesClusterDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.KubernetesClusterDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.KubernetesClusterDescriptionPattern = types.StringNull()
@@ -1523,6 +1642,13 @@ func (r *KubernetesClusterLabelRuleResource) Update(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

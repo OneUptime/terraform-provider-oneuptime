@@ -469,6 +469,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -482,6 +489,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -503,6 +517,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -516,6 +537,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -537,6 +565,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else {
             data.AiRunId = types.StringNull()
         }
+    } else if arr, ok := item["aiRunId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiRunId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiRunId = types.StringNull()
+        }
     } else if val, ok := item["aiRunId"].(string); ok {
         data.AiRunId = types.StringValue(val)
     } else {
@@ -550,6 +585,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else if val, ok := obj["value"].(float64); ok {
             data.AiAgentId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiAgentId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAgentId = types.StringNull()
+        }
+    } else if arr, ok := item["aiAgentId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.AiAgentId = types.StringValue(string(jsonBytes))
         } else {
             data.AiAgentId = types.StringNull()
@@ -571,6 +613,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else {
             data.CodeRepositoryId = types.StringNull()
         }
+    } else if arr, ok := item["codeRepositoryId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CodeRepositoryId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CodeRepositoryId = types.StringNull()
+        }
     } else if val, ok := item["codeRepositoryId"].(string); ok {
         data.CodeRepositoryId = types.StringValue(val)
     } else {
@@ -584,6 +633,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else if val, ok := obj["value"].(float64); ok {
             data.Title = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Title = types.StringValue(string(jsonBytes))
+        } else {
+            data.Title = types.StringNull()
+        }
+    } else if arr, ok := item["title"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Title = types.StringValue(string(jsonBytes))
         } else {
             data.Title = types.StringNull()
@@ -605,6 +661,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else {
             data.Description = types.StringNull()
         }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
     } else if val, ok := item["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
@@ -618,6 +681,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else if val, ok := obj["value"].(float64); ok {
             data.PullRequestUrl = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PullRequestUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.PullRequestUrl = types.StringNull()
+        }
+    } else if arr, ok := item["pullRequestUrl"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.PullRequestUrl = types.StringValue(string(jsonBytes))
         } else {
             data.PullRequestUrl = types.StringNull()
@@ -641,6 +711,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else {
             data.PullRequestState = types.StringNull()
         }
+    } else if arr, ok := item["pullRequestState"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PullRequestState = types.StringValue(string(jsonBytes))
+        } else {
+            data.PullRequestState = types.StringNull()
+        }
     } else if val, ok := item["pullRequestState"].(string); ok {
         data.PullRequestState = types.StringValue(val)
     } else {
@@ -654,6 +731,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else if val, ok := obj["value"].(float64); ok {
             data.CiStatus = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CiStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.CiStatus = types.StringNull()
+        }
+    } else if arr, ok := item["ciStatus"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CiStatus = types.StringValue(string(jsonBytes))
         } else {
             data.CiStatus = types.StringNull()
@@ -675,6 +759,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else {
             data.CiStatusAt = types.StringNull()
         }
+    } else if arr, ok := item["ciStatusAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CiStatusAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CiStatusAt = types.StringNull()
+        }
     } else if val, ok := item["ciStatusAt"].(string); ok {
         data.CiStatusAt = types.StringValue(val)
     } else {
@@ -688,6 +779,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else if val, ok := obj["value"].(float64); ok {
             data.RunnerVerificationStatus = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunnerVerificationStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerVerificationStatus = types.StringNull()
+        }
+    } else if arr, ok := item["runnerVerificationStatus"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.RunnerVerificationStatus = types.StringValue(string(jsonBytes))
         } else {
             data.RunnerVerificationStatus = types.StringNull()
@@ -709,6 +807,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else {
             data.RunnerVerificationSummary = types.StringNull()
         }
+    } else if arr, ok := item["runnerVerificationSummary"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RunnerVerificationSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerVerificationSummary = types.StringNull()
+        }
     } else if val, ok := item["runnerVerificationSummary"].(string); ok {
         data.RunnerVerificationSummary = types.StringValue(val)
     } else {
@@ -722,6 +827,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else if val, ok := obj["value"].(float64); ok {
             data.MergeCommitSha = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MergeCommitSha = types.StringValue(string(jsonBytes))
+        } else {
+            data.MergeCommitSha = types.StringNull()
+        }
+    } else if arr, ok := item["mergeCommitSha"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.MergeCommitSha = types.StringValue(string(jsonBytes))
         } else {
             data.MergeCommitSha = types.StringNull()
@@ -743,6 +855,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else {
             data.MergedAt = types.StringNull()
         }
+    } else if arr, ok := item["mergedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.MergedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.MergedAt = types.StringNull()
+        }
     } else if val, ok := item["mergedAt"].(string); ok {
         data.MergedAt = types.StringValue(val)
     } else {
@@ -756,6 +875,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else if val, ok := obj["value"].(float64); ok {
             data.ProductionStatus = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProductionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionStatus = types.StringNull()
+        }
+    } else if arr, ok := item["productionStatus"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProductionStatus = types.StringValue(string(jsonBytes))
         } else {
             data.ProductionStatus = types.StringNull()
@@ -777,6 +903,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else {
             data.ProductionStatusAt = types.StringNull()
         }
+    } else if arr, ok := item["productionStatusAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProductionStatusAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionStatusAt = types.StringNull()
+        }
     } else if val, ok := item["productionStatusAt"].(string); ok {
         data.ProductionStatusAt = types.StringValue(val)
     } else {
@@ -790,6 +923,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else if val, ok := obj["value"].(float64); ok {
             data.DeployedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DeployedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.DeployedAt = types.StringNull()
+        }
+    } else if arr, ok := item["deployedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.DeployedAt = types.StringValue(string(jsonBytes))
         } else {
             data.DeployedAt = types.StringNull()
@@ -811,6 +951,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else {
             data.DeployedVersion = types.StringNull()
         }
+    } else if arr, ok := item["deployedVersion"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.DeployedVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.DeployedVersion = types.StringNull()
+        }
     } else if val, ok := item["deployedVersion"].(string); ok {
         data.DeployedVersion = types.StringValue(val)
     } else {
@@ -824,6 +971,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else if val, ok := obj["value"].(float64); ok {
             data.DeployedCommitSha = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DeployedCommitSha = types.StringValue(string(jsonBytes))
+        } else {
+            data.DeployedCommitSha = types.StringNull()
+        }
+    } else if arr, ok := item["deployedCommitSha"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.DeployedCommitSha = types.StringValue(string(jsonBytes))
         } else {
             data.DeployedCommitSha = types.StringNull()
@@ -845,6 +999,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else {
             data.ProductionSummary = types.StringNull()
         }
+    } else if arr, ok := item["productionSummary"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProductionSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionSummary = types.StringNull()
+        }
     } else if val, ok := item["productionSummary"].(string); ok {
         data.ProductionSummary = types.StringValue(val)
     } else {
@@ -858,6 +1019,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else if val, ok := obj["value"].(float64); ok {
             data.ProductionCheck = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProductionCheck = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionCheck = types.StringNull()
+        }
+    } else if arr, ok := item["productionCheck"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProductionCheck = types.StringValue(string(jsonBytes))
         } else {
             data.ProductionCheck = types.StringNull()
@@ -879,6 +1047,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else {
             data.HeadRefName = types.StringNull()
         }
+    } else if arr, ok := item["headRefName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.HeadRefName = types.StringValue(string(jsonBytes))
+        } else {
+            data.HeadRefName = types.StringNull()
+        }
     } else if val, ok := item["headRefName"].(string); ok {
         data.HeadRefName = types.StringValue(val)
     } else {
@@ -892,6 +1067,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else if val, ok := obj["value"].(float64); ok {
             data.BaseRefName = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.BaseRefName = types.StringValue(string(jsonBytes))
+        } else {
+            data.BaseRefName = types.StringNull()
+        }
+    } else if arr, ok := item["baseRefName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.BaseRefName = types.StringValue(string(jsonBytes))
         } else {
             data.BaseRefName = types.StringNull()
@@ -913,6 +1095,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else {
             data.RepoOrganizationName = types.StringNull()
         }
+    } else if arr, ok := item["repoOrganizationName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RepoOrganizationName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RepoOrganizationName = types.StringNull()
+        }
     } else if val, ok := item["repoOrganizationName"].(string); ok {
         data.RepoOrganizationName = types.StringValue(val)
     } else {
@@ -930,6 +1119,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else {
             data.RepoName = types.StringNull()
         }
+    } else if arr, ok := item["repoName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RepoName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RepoName = types.StringNull()
+        }
     } else if val, ok := item["repoName"].(string); ok {
         data.RepoName = types.StringValue(val)
     } else {
@@ -943,6 +1139,13 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

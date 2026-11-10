@@ -441,6 +441,13 @@ func (r *OpenstackCloudLabelRuleResource) Create(ctx context.Context, req resour
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -489,6 +496,13 @@ func (r *OpenstackCloudLabelRuleResource) Create(ctx context.Context, req resour
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -522,6 +536,13 @@ func (r *OpenstackCloudLabelRuleResource) Create(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -598,6 +619,13 @@ func (r *OpenstackCloudLabelRuleResource) Create(ctx context.Context, req resour
         } else {
             data.OpenStackCloudNamePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["openStackCloudNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OpenStackCloudNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackCloudNamePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["openStackCloudNamePattern"].(string); ok {
         data.OpenStackCloudNamePattern = types.StringValue(val)
     } else {
@@ -631,6 +659,13 @@ func (r *OpenstackCloudLabelRuleResource) Create(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OpenStackCloudDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackCloudDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["openStackCloudDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OpenStackCloudDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.OpenStackCloudDescriptionPattern = types.StringNull()
@@ -672,6 +707,13 @@ func (r *OpenstackCloudLabelRuleResource) Create(ctx context.Context, req resour
         } else {
             data.OpenStackProjectId = types.StringNull()
         }
+    } else if arr, ok := dataMap["openStackProjectId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OpenStackProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackProjectId = types.StringNull()
+        }
     } else if val, ok := dataMap["openStackProjectId"].(string); ok {
         data.OpenStackProjectId = types.StringValue(val)
     } else {
@@ -705,6 +747,13 @@ func (r *OpenstackCloudLabelRuleResource) Create(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OpenStackDomainId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackDomainId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["openStackDomainId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OpenStackDomainId = types.StringValue(string(jsonBytes))
         } else {
             data.OpenStackDomainId = types.StringNull()
@@ -796,6 +845,13 @@ func (r *OpenstackCloudLabelRuleResource) Create(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -917,6 +973,13 @@ func (r *OpenstackCloudLabelRuleResource) Read(ctx context.Context, req resource
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -965,6 +1028,13 @@ func (r *OpenstackCloudLabelRuleResource) Read(ctx context.Context, req resource
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -998,6 +1068,13 @@ func (r *OpenstackCloudLabelRuleResource) Read(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1074,6 +1151,13 @@ func (r *OpenstackCloudLabelRuleResource) Read(ctx context.Context, req resource
         } else {
             data.OpenStackCloudNamePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["openStackCloudNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OpenStackCloudNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackCloudNamePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["openStackCloudNamePattern"].(string); ok {
         data.OpenStackCloudNamePattern = types.StringValue(val)
     } else {
@@ -1107,6 +1191,13 @@ func (r *OpenstackCloudLabelRuleResource) Read(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OpenStackCloudDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackCloudDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["openStackCloudDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OpenStackCloudDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.OpenStackCloudDescriptionPattern = types.StringNull()
@@ -1148,6 +1239,13 @@ func (r *OpenstackCloudLabelRuleResource) Read(ctx context.Context, req resource
         } else {
             data.OpenStackProjectId = types.StringNull()
         }
+    } else if arr, ok := dataMap["openStackProjectId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OpenStackProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackProjectId = types.StringNull()
+        }
     } else if val, ok := dataMap["openStackProjectId"].(string); ok {
         data.OpenStackProjectId = types.StringValue(val)
     } else {
@@ -1181,6 +1279,13 @@ func (r *OpenstackCloudLabelRuleResource) Read(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OpenStackDomainId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackDomainId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["openStackDomainId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OpenStackDomainId = types.StringValue(string(jsonBytes))
         } else {
             data.OpenStackDomainId = types.StringNull()
@@ -1272,6 +1377,13 @@ func (r *OpenstackCloudLabelRuleResource) Read(ctx context.Context, req resource
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1460,6 +1572,13 @@ func (r *OpenstackCloudLabelRuleResource) Update(ctx context.Context, req resour
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -1508,6 +1627,13 @@ func (r *OpenstackCloudLabelRuleResource) Update(ctx context.Context, req resour
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1541,6 +1667,13 @@ func (r *OpenstackCloudLabelRuleResource) Update(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1617,6 +1750,13 @@ func (r *OpenstackCloudLabelRuleResource) Update(ctx context.Context, req resour
         } else {
             data.OpenStackCloudNamePattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["openStackCloudNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OpenStackCloudNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackCloudNamePattern = types.StringNull()
+        }
     } else if val, ok := dataMap["openStackCloudNamePattern"].(string); ok {
         data.OpenStackCloudNamePattern = types.StringValue(val)
     } else {
@@ -1650,6 +1790,13 @@ func (r *OpenstackCloudLabelRuleResource) Update(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OpenStackCloudDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackCloudDescriptionPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["openStackCloudDescriptionPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OpenStackCloudDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
             data.OpenStackCloudDescriptionPattern = types.StringNull()
@@ -1691,6 +1838,13 @@ func (r *OpenstackCloudLabelRuleResource) Update(ctx context.Context, req resour
         } else {
             data.OpenStackProjectId = types.StringNull()
         }
+    } else if arr, ok := dataMap["openStackProjectId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OpenStackProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackProjectId = types.StringNull()
+        }
     } else if val, ok := dataMap["openStackProjectId"].(string); ok {
         data.OpenStackProjectId = types.StringValue(val)
     } else {
@@ -1724,6 +1878,13 @@ func (r *OpenstackCloudLabelRuleResource) Update(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OpenStackDomainId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OpenStackDomainId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["openStackDomainId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OpenStackDomainId = types.StringValue(string(jsonBytes))
         } else {
             data.OpenStackDomainId = types.StringNull()
@@ -1815,6 +1976,13 @@ func (r *OpenstackCloudLabelRuleResource) Update(ctx context.Context, req resour
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

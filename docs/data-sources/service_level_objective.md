@@ -32,7 +32,10 @@ data "oneuptime_service_level_objective" "by_id" {
 - `at_risk_threshold_percentage` (Number) Percentage of remaining error budget at which the SLO status changes to At Risk. For example, 20 means the status becomes At Risk when less than 20% of the error budget remains.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `current_burn_rate` (Number) Rate at which the error budget is currently being consumed. A burn rate of 1 exhausts the budget exactly at the end of the window. Computed by the worker.
+- `current_error_budget_policy_tier_id` (String) ID of the error budget policy tier this Service Level Objective is in. Empty while its error budget is above every tier, or when it has no error budget policy. Computed by the worker.
+- `current_error_budget_policy_tier_name` (String) Name of the error budget policy tier this Service Level Objective is in. Empty while its error budget is above every tier, or when it has no error budget policy. Computed by the worker.
 - `current_sli_percentage` (Number) Current Service Level Indicator over the compliance window, as a percentage. Computed by the worker.
+- `deployments_allowed` (Boolean) False while this Service Level Objective is in a tier of its error budget policy that freezes deployments, and true otherwise, so a CI/CD pipeline can check it before it releases. Kept as it is while the SLO is not measured. Computed by the worker.
 - `description` (String) Description of this Service Level Objective.
 - `error_budget_remaining_percentage` (Number) Percentage of the error budget that remains. Can be negative when the budget is exhausted. Computed by the worker.
 - `error_budget_remaining_seconds` (Number) Seconds of error budget that remain. Can be negative when the budget is exhausted. Computed by the worker.
@@ -55,6 +58,8 @@ data "oneuptime_service_level_objective" "by_id" {
 - `archived_at` (String) When this Service Level Objective was archived.
 - `auto_added_monitors` (Set of String) Monitors that were attached to this SLO by its monitor rules rather than by hand. Maintained by the server. IDs of `oneuptime_monitor` resources.
 - `created_at` (String) Date and Time when the object was created.
+- `current_error_budget_policy_tier_entered_at` (String) When this Service Level Objective entered the error budget policy tier it is in. Empty while it is in no tier. Computed by the worker.
+- `deployments_frozen_at` (String) When deployments of this Service Level Objective were frozen: when it entered a tier of its error budget policy that freezes deployments, or the tier it is in started freezing them. Empty while deployments are allowed. Computed by the worker.
 - `downtime_monitor_statuses` (Set of String) List of monitor statuses that are considered as "down" for this Service Level Objective. IDs of `oneuptime_monitor_status` resources.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_accumulated_bucket_end_at` (String) Accumulation cursor for Metric SLIs: end of the last bucket whose good/total counts were persisted. Computed by the worker.

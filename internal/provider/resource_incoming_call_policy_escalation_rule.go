@@ -405,6 +405,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Create(ctx context.Context, r
         } else {
             data.IncomingCallPolicyId = types.StringNull()
         }
+    } else if arr, ok := dataMap["incomingCallPolicyId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncomingCallPolicyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingCallPolicyId = types.StringNull()
+        }
     } else if val, ok := dataMap["incomingCallPolicyId"].(string); ok {
         data.IncomingCallPolicyId = types.StringValue(val)
     } else {
@@ -442,6 +449,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Create(ctx context.Context, r
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -475,6 +489,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Create(ctx context.Context, r
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -518,6 +539,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Create(ctx context.Context, r
         } else {
             data.OnCallDutyPolicyScheduleId = types.StringNull()
         }
+    } else if arr, ok := dataMap["onCallDutyPolicyScheduleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OnCallDutyPolicyScheduleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OnCallDutyPolicyScheduleId = types.StringNull()
+        }
     } else if val, ok := dataMap["onCallDutyPolicyScheduleId"].(string); ok {
         data.OnCallDutyPolicyScheduleId = types.StringValue(val)
     } else {
@@ -551,6 +579,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Create(ctx context.Context, r
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.UserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["userId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.UserId = types.StringValue(string(jsonBytes))
         } else {
             data.UserId = types.StringNull()
@@ -610,6 +645,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Create(ctx context.Context, r
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -743,6 +785,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Read(ctx context.Context, req
         } else {
             data.IncomingCallPolicyId = types.StringNull()
         }
+    } else if arr, ok := dataMap["incomingCallPolicyId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncomingCallPolicyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingCallPolicyId = types.StringNull()
+        }
     } else if val, ok := dataMap["incomingCallPolicyId"].(string); ok {
         data.IncomingCallPolicyId = types.StringValue(val)
     } else {
@@ -780,6 +829,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Read(ctx context.Context, req
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -813,6 +869,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Read(ctx context.Context, req
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -856,6 +919,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Read(ctx context.Context, req
         } else {
             data.OnCallDutyPolicyScheduleId = types.StringNull()
         }
+    } else if arr, ok := dataMap["onCallDutyPolicyScheduleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OnCallDutyPolicyScheduleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OnCallDutyPolicyScheduleId = types.StringNull()
+        }
     } else if val, ok := dataMap["onCallDutyPolicyScheduleId"].(string); ok {
         data.OnCallDutyPolicyScheduleId = types.StringValue(val)
     } else {
@@ -889,6 +959,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Read(ctx context.Context, req
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.UserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["userId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.UserId = types.StringValue(string(jsonBytes))
         } else {
             data.UserId = types.StringNull()
@@ -948,6 +1025,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Read(ctx context.Context, req
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1129,6 +1213,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Update(ctx context.Context, r
         } else {
             data.IncomingCallPolicyId = types.StringNull()
         }
+    } else if arr, ok := dataMap["incomingCallPolicyId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncomingCallPolicyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingCallPolicyId = types.StringNull()
+        }
     } else if val, ok := dataMap["incomingCallPolicyId"].(string); ok {
         data.IncomingCallPolicyId = types.StringValue(val)
     } else {
@@ -1166,6 +1257,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Update(ctx context.Context, r
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1199,6 +1297,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Update(ctx context.Context, r
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1242,6 +1347,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Update(ctx context.Context, r
         } else {
             data.OnCallDutyPolicyScheduleId = types.StringNull()
         }
+    } else if arr, ok := dataMap["onCallDutyPolicyScheduleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.OnCallDutyPolicyScheduleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OnCallDutyPolicyScheduleId = types.StringNull()
+        }
     } else if val, ok := dataMap["onCallDutyPolicyScheduleId"].(string); ok {
         data.OnCallDutyPolicyScheduleId = types.StringValue(val)
     } else {
@@ -1275,6 +1387,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Update(ctx context.Context, r
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.UserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["userId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.UserId = types.StringValue(string(jsonBytes))
         } else {
             data.UserId = types.StringNull()
@@ -1334,6 +1453,13 @@ func (r *IncomingCallPolicyEscalationRuleResource) Update(ctx context.Context, r
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

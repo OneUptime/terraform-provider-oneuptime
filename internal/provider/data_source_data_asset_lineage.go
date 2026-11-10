@@ -289,6 +289,13 @@ func (d *DataAssetLineageDataSource) Read(ctx context.Context, req datasource.Re
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -302,6 +309,13 @@ func (d *DataAssetLineageDataSource) Read(ctx context.Context, req datasource.Re
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -323,6 +337,13 @@ func (d *DataAssetLineageDataSource) Read(ctx context.Context, req datasource.Re
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -336,6 +357,13 @@ func (d *DataAssetLineageDataSource) Read(ctx context.Context, req datasource.Re
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -357,6 +385,13 @@ func (d *DataAssetLineageDataSource) Read(ctx context.Context, req datasource.Re
         } else {
             data.UpstreamDataAssetId = types.StringNull()
         }
+    } else if arr, ok := item["upstreamDataAssetId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpstreamDataAssetId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpstreamDataAssetId = types.StringNull()
+        }
     } else if val, ok := item["upstreamDataAssetId"].(string); ok {
         data.UpstreamDataAssetId = types.StringValue(val)
     } else {
@@ -370,6 +405,13 @@ func (d *DataAssetLineageDataSource) Read(ctx context.Context, req datasource.Re
         } else if val, ok := obj["value"].(float64); ok {
             data.DownstreamDataAssetId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DownstreamDataAssetId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DownstreamDataAssetId = types.StringNull()
+        }
+    } else if arr, ok := item["downstreamDataAssetId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.DownstreamDataAssetId = types.StringValue(string(jsonBytes))
         } else {
             data.DownstreamDataAssetId = types.StringNull()
@@ -391,6 +433,13 @@ func (d *DataAssetLineageDataSource) Read(ctx context.Context, req datasource.Re
         } else {
             data.DataPipelineId = types.StringNull()
         }
+    } else if arr, ok := item["dataPipelineId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.DataPipelineId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DataPipelineId = types.StringNull()
+        }
     } else if val, ok := item["dataPipelineId"].(string); ok {
         data.DataPipelineId = types.StringValue(val)
     } else {
@@ -404,6 +453,13 @@ func (d *DataAssetLineageDataSource) Read(ctx context.Context, req datasource.Re
         } else if val, ok := obj["value"].(float64); ok {
             data.EdgeKey = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EdgeKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.EdgeKey = types.StringNull()
+        }
+    } else if arr, ok := item["edgeKey"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.EdgeKey = types.StringValue(string(jsonBytes))
         } else {
             data.EdgeKey = types.StringNull()
@@ -425,6 +481,13 @@ func (d *DataAssetLineageDataSource) Read(ctx context.Context, req datasource.Re
         } else {
             data.FirstSeenAt = types.StringNull()
         }
+    } else if arr, ok := item["firstSeenAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FirstSeenAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.FirstSeenAt = types.StringNull()
+        }
     } else if val, ok := item["firstSeenAt"].(string); ok {
         data.FirstSeenAt = types.StringValue(val)
     } else {
@@ -438,6 +501,13 @@ func (d *DataAssetLineageDataSource) Read(ctx context.Context, req datasource.Re
         } else if val, ok := obj["value"].(float64); ok {
             data.LastSeenAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastSeenAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSeenAt = types.StringNull()
+        }
+    } else if arr, ok := item["lastSeenAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.LastSeenAt = types.StringValue(string(jsonBytes))
         } else {
             data.LastSeenAt = types.StringNull()
@@ -459,6 +529,13 @@ func (d *DataAssetLineageDataSource) Read(ctx context.Context, req datasource.Re
         } else {
             data.Source = types.StringNull()
         }
+    } else if arr, ok := item["source"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Source = types.StringValue(string(jsonBytes))
+        } else {
+            data.Source = types.StringNull()
+        }
     } else if val, ok := item["source"].(string); ok {
         data.Source = types.StringValue(val)
     } else {
@@ -472,6 +549,13 @@ func (d *DataAssetLineageDataSource) Read(ctx context.Context, req datasource.Re
         } else if val, ok := obj["value"].(float64); ok {
             data.SeenBy = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SeenBy = types.StringValue(string(jsonBytes))
+        } else {
+            data.SeenBy = types.StringNull()
+        }
+    } else if arr, ok := item["seenBy"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.SeenBy = types.StringValue(string(jsonBytes))
         } else {
             data.SeenBy = types.StringNull()
@@ -493,6 +577,13 @@ func (d *DataAssetLineageDataSource) Read(ctx context.Context, req datasource.Re
         } else {
             data.ColumnMappings = types.StringNull()
         }
+    } else if arr, ok := item["columnMappings"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ColumnMappings = types.StringValue(string(jsonBytes))
+        } else {
+            data.ColumnMappings = types.StringNull()
+        }
     } else if val, ok := item["columnMappings"].(string); ok {
         data.ColumnMappings = types.StringValue(val)
     } else {
@@ -506,6 +597,13 @@ func (d *DataAssetLineageDataSource) Read(ctx context.Context, req datasource.Re
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

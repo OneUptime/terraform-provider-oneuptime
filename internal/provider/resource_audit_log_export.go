@@ -18,6 +18,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
     "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
@@ -46,6 +47,7 @@ type AuditLogExportResourceModel struct {
     Secrets types.String `tfsdk:"secrets"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     StartsAt RFC3339Value `tfsdk:"starts_at"`
+    SchemaVersion types.Number `tfsdk:"schema_version"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CursorCreatedAt RFC3339Value `tfsdk:"cursor_created_at"`
@@ -136,6 +138,15 @@ func (r *AuditLogExportResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     RFC3339KeepSameInstant(),
                     stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "schema_version": schema.NumberAttribute{
+                MarkdownDescription: "Which version of the record each entry is sent as: 2 also says what changed in a workflow's steps and in JSON, 1 is the record as it was first sent. A new export sends 2 unless it asks for 1; an export saved before version 2 keeps 1.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -281,6 +292,9 @@ func (r *AuditLogExportResource) Create(ctx context.Context, req resource.Create
     if !data.StartsAt.IsNull() && !data.StartsAt.IsUnknown() {
         requestDataMap["startsAt"] = data.StartsAt.ValueString()
     }
+    if !data.SchemaVersion.IsNull() && !data.SchemaVersion.IsUnknown() {
+        requestDataMap["schemaVersion"] = r.bigFloatToFloat64(data.SchemaVersion.ValueBigFloat())
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/audit-log-export", auditLogExportRequest)
@@ -332,6 +346,7 @@ func (r *AuditLogExportResource) Create(ctx context.Context, req resource.Create
         "config": true,
         "isEnabled": true,
         "startsAt": true,
+        "schemaVersion": true,
         "createdAt": true,
         "updatedAt": true,
         "cursorCreatedAt": true,
@@ -419,6 +434,13 @@ func (r *AuditLogExportResource) Create(ctx context.Context, req resource.Create
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -452,6 +474,13 @@ func (r *AuditLogExportResource) Create(ctx context.Context, req resource.Create
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DestinationType = types.StringValue(string(jsonBytes))
+        } else {
+            data.DestinationType = types.StringNull()
+        }
+    } else if arr, ok := dataMap["destinationType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DestinationType = types.StringValue(string(jsonBytes))
         } else {
             data.DestinationType = types.StringNull()
@@ -493,6 +522,13 @@ func (r *AuditLogExportResource) Create(ctx context.Context, req resource.Create
         } else {
             data.Config = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["config"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Config = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Config = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["config"].(string); ok {
         data.Config = NewJSONSubsetValue(val)
     } else {
@@ -512,6 +548,7 @@ func (r *AuditLogExportResource) Create(ctx context.Context, req resource.Create
     } else {
         data.StartsAt = NewRFC3339Null()
     }
+    data.SchemaVersion = numberFromAPI(data.SchemaVersion, dataMap["schemaVersion"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -577,6 +614,13 @@ func (r *AuditLogExportResource) Create(ctx context.Context, req resource.Create
         } else {
             data.CursorEntryId = types.StringNull()
         }
+    } else if arr, ok := dataMap["cursorEntryId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CursorEntryId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CursorEntryId = types.StringNull()
+        }
     } else if val, ok := dataMap["cursorEntryId"].(string); ok {
         data.CursorEntryId = types.StringValue(val)
     } else {
@@ -633,6 +677,13 @@ func (r *AuditLogExportResource) Create(ctx context.Context, req resource.Create
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.LastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastError = types.StringNull()
+        }
+    } else if arr, ok := dataMap["lastError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.LastError = types.StringValue(string(jsonBytes))
         } else {
             data.LastError = types.StringNull()
@@ -697,6 +748,13 @@ func (r *AuditLogExportResource) Create(ctx context.Context, req resource.Create
         } else {
             data.CreatedByUserId = types.StringNull()
         }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
     } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
@@ -741,6 +799,7 @@ func (r *AuditLogExportResource) Read(ctx context.Context, req resource.ReadRequ
         "config": true,
         "isEnabled": true,
         "startsAt": true,
+        "schemaVersion": true,
         "createdAt": true,
         "updatedAt": true,
         "cursorCreatedAt": true,
@@ -829,6 +888,13 @@ func (r *AuditLogExportResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -862,6 +928,13 @@ func (r *AuditLogExportResource) Read(ctx context.Context, req resource.ReadRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DestinationType = types.StringValue(string(jsonBytes))
+        } else {
+            data.DestinationType = types.StringNull()
+        }
+    } else if arr, ok := dataMap["destinationType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DestinationType = types.StringValue(string(jsonBytes))
         } else {
             data.DestinationType = types.StringNull()
@@ -903,6 +976,13 @@ func (r *AuditLogExportResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.Config = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["config"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Config = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Config = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["config"].(string); ok {
         data.Config = NewJSONSubsetValue(val)
     } else {
@@ -922,6 +1002,7 @@ func (r *AuditLogExportResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.StartsAt = NewRFC3339Null()
     }
+    data.SchemaVersion = numberFromAPI(data.SchemaVersion, dataMap["schemaVersion"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -987,6 +1068,13 @@ func (r *AuditLogExportResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.CursorEntryId = types.StringNull()
         }
+    } else if arr, ok := dataMap["cursorEntryId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CursorEntryId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CursorEntryId = types.StringNull()
+        }
     } else if val, ok := dataMap["cursorEntryId"].(string); ok {
         data.CursorEntryId = types.StringValue(val)
     } else {
@@ -1047,6 +1135,13 @@ func (r *AuditLogExportResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.LastError = types.StringNull()
         }
+    } else if arr, ok := dataMap["lastError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastError = types.StringNull()
+        }
     } else if val, ok := dataMap["lastError"].(string); ok {
         data.LastError = types.StringValue(val)
     } else {
@@ -1103,6 +1198,13 @@ func (r *AuditLogExportResource) Read(ctx context.Context, req resource.ReadRequ
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1180,6 +1282,9 @@ func (r *AuditLogExportResource) Update(ctx context.Context, req resource.Update
     if !data.StartsAt.IsUnknown() && !state.StartsAt.IsUnknown() && !data.StartsAt.Equal(state.StartsAt) {
         requestDataMap["startsAt"] = data.StartsAt.ValueString()
     }
+    if !data.SchemaVersion.IsUnknown() && !state.SchemaVersion.IsUnknown() && !data.SchemaVersion.Equal(state.SchemaVersion) {
+        requestDataMap["schemaVersion"] = r.bigFloatToFloat64(data.SchemaVersion.ValueBigFloat())
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -1209,6 +1314,7 @@ func (r *AuditLogExportResource) Update(ctx context.Context, req resource.Update
         "config": true,
         "isEnabled": true,
         "startsAt": true,
+        "schemaVersion": true,
         "createdAt": true,
         "updatedAt": true,
         "cursorCreatedAt": true,
@@ -1291,6 +1397,13 @@ func (r *AuditLogExportResource) Update(ctx context.Context, req resource.Update
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1324,6 +1437,13 @@ func (r *AuditLogExportResource) Update(ctx context.Context, req resource.Update
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DestinationType = types.StringValue(string(jsonBytes))
+        } else {
+            data.DestinationType = types.StringNull()
+        }
+    } else if arr, ok := dataMap["destinationType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DestinationType = types.StringValue(string(jsonBytes))
         } else {
             data.DestinationType = types.StringNull()
@@ -1365,6 +1485,13 @@ func (r *AuditLogExportResource) Update(ctx context.Context, req resource.Update
         } else {
             data.Config = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["config"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Config = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Config = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["config"].(string); ok {
         data.Config = NewJSONSubsetValue(val)
     } else {
@@ -1384,6 +1511,7 @@ func (r *AuditLogExportResource) Update(ctx context.Context, req resource.Update
     } else {
         data.StartsAt = NewRFC3339Null()
     }
+    data.SchemaVersion = numberFromAPI(data.SchemaVersion, dataMap["schemaVersion"])
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1449,6 +1577,13 @@ func (r *AuditLogExportResource) Update(ctx context.Context, req resource.Update
         } else {
             data.CursorEntryId = types.StringNull()
         }
+    } else if arr, ok := dataMap["cursorEntryId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CursorEntryId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CursorEntryId = types.StringNull()
+        }
     } else if val, ok := dataMap["cursorEntryId"].(string); ok {
         data.CursorEntryId = types.StringValue(val)
     } else {
@@ -1509,6 +1644,13 @@ func (r *AuditLogExportResource) Update(ctx context.Context, req resource.Update
         } else {
             data.LastError = types.StringNull()
         }
+    } else if arr, ok := dataMap["lastError"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastError = types.StringNull()
+        }
     } else if val, ok := dataMap["lastError"].(string); ok {
         data.LastError = types.StringValue(val)
     } else {
@@ -1565,6 +1707,13 @@ func (r *AuditLogExportResource) Update(ctx context.Context, req resource.Update
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1645,6 +1794,9 @@ func (r *AuditLogExportResource) keepPlannedValues(data *AuditLogExportResourceM
     }
     if config.StartsAt.IsNull() && !plan.StartsAt.IsUnknown() {
         data.StartsAt = plan.StartsAt
+    }
+    if config.SchemaVersion.IsNull() && !plan.SchemaVersion.IsUnknown() {
+        data.SchemaVersion = plan.SchemaVersion
     }
 }
 

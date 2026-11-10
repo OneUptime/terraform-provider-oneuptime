@@ -26,7 +26,7 @@ resource "oneuptime_incident_episode_feed" "example" {
 
 - `display_color` (String) Display color for the incident episode log.
 - `feed_info_in_markdown` (String) Log of the entire incident episode activity in Markdown.
-- `incident_episode_feed_event_type` (String) Incident Episode Feed Event Type. Allowed values: `EpisodeCreated`, `EpisodeStateChanged`, `EpisodeUpdated`, `IncidentAdded`, `IncidentRemoved`, `OwnerUserAdded`, `OwnerTeamAdded`, `OwnerUserRemoved`, `OwnerTeamRemoved`, `OwnerNotificationSent`, `PrivateNote`, `PublicNote`, `RootCause`, `RemediationNotes`, `PostmortemNote`, `OnCallPolicy`, `OnCallNotification`, `SeverityChanged`, `SubscriberNotificationSent`, `LabelRuleExecuted`, `OwnerRuleExecuted`, `PrivacyRuleExecuted`, `OnCallRuleExecuted`, `ChannelMemberAdded`.
+- `incident_episode_feed_event_type` (String) Incident Episode Feed Event Type. Allowed values: `EpisodeCreated`, `EpisodeStateChanged`, `EpisodeUpdated`, `IncidentAdded`, `IncidentRemoved`, `OwnerUserAdded`, `OwnerTeamAdded`, `OwnerUserRemoved`, `OwnerTeamRemoved`, `OwnerNotificationSent`, `PrivateNote`, `PublicNote`, `RootCause`, `RemediationNotes`, `PostmortemNote`, `OnCallPolicy`, `OnCallNotification`, `SeverityChanged`, `SubscriberNotificationSent`, `LabelRuleExecuted`, `OwnerRuleExecuted`, `PrivacyRuleExecuted`, `OnCallRuleExecuted`, `ChannelMemberAdded`, `PublicNoteApproval`.
 - `incident_episode_id` (String) Relation to Incident Episode ID in which this resource belongs. The ID of a `oneuptime_incident_episode`.
 
 ### Optional

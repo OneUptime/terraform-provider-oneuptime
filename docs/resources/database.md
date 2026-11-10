@@ -48,6 +48,7 @@ resource "oneuptime_database" "example" {
 - `ai_access_configured_at` (String) When OneUptime AI access to this database server was first configured by anyone saving an AI access setting. Set by the server; never cleared, so a Database AI agent that registers later never overwrites a setting an operator chose.
 - `ai_access_last_error` (String) The most recent failure OneUptime AI hit while running a command on this database server, kept until the next successful command. Set by the server.
 - `ai_access_last_verified_at` (String) When a command from OneUptime AI last succeeded on this database server through its Database AI agent. Set by the server.
+- `ai_agent_reset_at` (String) When this database's AI agent was last reset: its key stopped working at once, and it registers again by itself. Set by the server.
 - `archived_at` (String) When was this database archived?
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `auto_archived_at` (String) When this database was archived automatically because no discovery source had seen it for a while. Empty when it was archived by a person or is not archived.

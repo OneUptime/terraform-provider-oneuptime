@@ -445,6 +445,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -493,6 +500,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -526,6 +540,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -570,6 +591,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
         } else {
             data.IpMatchTarget = types.StringNull()
         }
+    } else if arr, ok := dataMap["ipMatchTarget"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IpMatchTarget = types.StringValue(string(jsonBytes))
+        } else {
+            data.IpMatchTarget = types.StringNull()
+        }
     } else if val, ok := dataMap["ipMatchTarget"].(string); ok {
         data.IpMatchTarget = types.StringValue(val)
     } else {
@@ -603,6 +631,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SysNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.SysNamePattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sysNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SysNamePattern = types.StringValue(string(jsonBytes))
         } else {
             data.SysNamePattern = types.StringNull()
@@ -644,6 +679,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
         } else {
             data.SysDescrPattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["sysDescrPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SysDescrPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.SysDescrPattern = types.StringNull()
+        }
     } else if val, ok := dataMap["sysDescrPattern"].(string); ok {
         data.SysDescrPattern = types.StringValue(val)
     } else {
@@ -677,6 +719,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SysObjectIdPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.SysObjectIdPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sysObjectIdPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SysObjectIdPattern = types.StringValue(string(jsonBytes))
         } else {
             data.SysObjectIdPattern = types.StringNull()
@@ -725,6 +774,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
         } else {
             data.MonitorTemplateId = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitorTemplateId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorTemplateId = types.StringNull()
+        }
     } else if val, ok := dataMap["monitorTemplateId"].(string); ok {
         data.MonitorTemplateId = types.StringValue(val)
     } else {
@@ -758,6 +814,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OidTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OidTemplateId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["oidTemplateId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OidTemplateId = types.StringValue(string(jsonBytes))
         } else {
             data.OidTemplateId = types.StringNull()
@@ -817,6 +880,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -941,6 +1011,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Read(ctx context.Context, req reso
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -989,6 +1066,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Read(ctx context.Context, req reso
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1022,6 +1106,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Read(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1066,6 +1157,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Read(ctx context.Context, req reso
         } else {
             data.IpMatchTarget = types.StringNull()
         }
+    } else if arr, ok := dataMap["ipMatchTarget"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IpMatchTarget = types.StringValue(string(jsonBytes))
+        } else {
+            data.IpMatchTarget = types.StringNull()
+        }
     } else if val, ok := dataMap["ipMatchTarget"].(string); ok {
         data.IpMatchTarget = types.StringValue(val)
     } else {
@@ -1099,6 +1197,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Read(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SysNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.SysNamePattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sysNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SysNamePattern = types.StringValue(string(jsonBytes))
         } else {
             data.SysNamePattern = types.StringNull()
@@ -1140,6 +1245,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Read(ctx context.Context, req reso
         } else {
             data.SysDescrPattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["sysDescrPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SysDescrPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.SysDescrPattern = types.StringNull()
+        }
     } else if val, ok := dataMap["sysDescrPattern"].(string); ok {
         data.SysDescrPattern = types.StringValue(val)
     } else {
@@ -1173,6 +1285,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Read(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SysObjectIdPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.SysObjectIdPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sysObjectIdPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SysObjectIdPattern = types.StringValue(string(jsonBytes))
         } else {
             data.SysObjectIdPattern = types.StringNull()
@@ -1221,6 +1340,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Read(ctx context.Context, req reso
         } else {
             data.MonitorTemplateId = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitorTemplateId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorTemplateId = types.StringNull()
+        }
     } else if val, ok := dataMap["monitorTemplateId"].(string); ok {
         data.MonitorTemplateId = types.StringValue(val)
     } else {
@@ -1254,6 +1380,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Read(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OidTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OidTemplateId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["oidTemplateId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OidTemplateId = types.StringValue(string(jsonBytes))
         } else {
             data.OidTemplateId = types.StringNull()
@@ -1313,6 +1446,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Read(ctx context.Context, req reso
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1513,6 +1653,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
         } else {
             data.Criteria = NewJSONSubsetNull()
         }
+    } else if arr, ok := dataMap["criteria"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
     } else if val, ok := dataMap["criteria"].(string); ok {
         data.Criteria = NewJSONSubsetValue(val)
     } else {
@@ -1561,6 +1708,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
         } else {
             data.Name = types.StringNull()
         }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
     } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
@@ -1594,6 +1748,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Description = types.StringValue(string(jsonBytes))
         } else {
             data.Description = types.StringNull()
@@ -1638,6 +1799,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
         } else {
             data.IpMatchTarget = types.StringNull()
         }
+    } else if arr, ok := dataMap["ipMatchTarget"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IpMatchTarget = types.StringValue(string(jsonBytes))
+        } else {
+            data.IpMatchTarget = types.StringNull()
+        }
     } else if val, ok := dataMap["ipMatchTarget"].(string); ok {
         data.IpMatchTarget = types.StringValue(val)
     } else {
@@ -1671,6 +1839,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SysNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.SysNamePattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sysNamePattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SysNamePattern = types.StringValue(string(jsonBytes))
         } else {
             data.SysNamePattern = types.StringNull()
@@ -1712,6 +1887,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
         } else {
             data.SysDescrPattern = types.StringNull()
         }
+    } else if arr, ok := dataMap["sysDescrPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SysDescrPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.SysDescrPattern = types.StringNull()
+        }
     } else if val, ok := dataMap["sysDescrPattern"].(string); ok {
         data.SysDescrPattern = types.StringValue(val)
     } else {
@@ -1745,6 +1927,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SysObjectIdPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.SysObjectIdPattern = types.StringNull()
+        }
+    } else if arr, ok := dataMap["sysObjectIdPattern"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SysObjectIdPattern = types.StringValue(string(jsonBytes))
         } else {
             data.SysObjectIdPattern = types.StringNull()
@@ -1793,6 +1982,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
         } else {
             data.MonitorTemplateId = types.StringNull()
         }
+    } else if arr, ok := dataMap["monitorTemplateId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorTemplateId = types.StringNull()
+        }
     } else if val, ok := dataMap["monitorTemplateId"].(string); ok {
         data.MonitorTemplateId = types.StringValue(val)
     } else {
@@ -1826,6 +2022,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.OidTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OidTemplateId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["oidTemplateId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.OidTemplateId = types.StringValue(string(jsonBytes))
         } else {
             data.OidTemplateId = types.StringNull()
@@ -1885,6 +2088,13 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

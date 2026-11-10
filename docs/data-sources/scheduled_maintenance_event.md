@@ -50,6 +50,7 @@ data "oneuptime_scheduled_maintenance_event" "by_id" {
 ### Read-Only
 
 - `ceph_clusters` (Set of String) List of Ceph clusters affected by this event. IDs of `oneuptime_ceph_cluster` resources.
+- `cloud_resources` (Set of String) List of cloud resources affected by this event. Their monitors open no incident or alert while it is in progress. IDs of `oneuptime_cloud_resource` resources.
 - `created_at` (String) Date and Time when the object was created.
 - `custom_fields` (String) Custom Fields on this resource. A JSON value: read it with `jsondecode()`.
 - `data_store_ids` (String) The databases Data Observability watches that this maintenance affects: their data alerts stay quiet while it is on. A JSON value: read it with `jsondecode()`.

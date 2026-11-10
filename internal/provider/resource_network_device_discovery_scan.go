@@ -581,6 +581,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
         } else {
             data.ProbeId = types.StringNull()
         }
+    } else if arr, ok := dataMap["probeId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ProbeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProbeId = types.StringNull()
+        }
     } else if val, ok := dataMap["probeId"].(string); ok {
         data.ProbeId = types.StringValue(val)
     } else {
@@ -614,6 +621,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Name = types.StringValue(string(jsonBytes))
         } else {
             data.Name = types.StringNull()
@@ -655,6 +669,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
         } else {
             data.Cidr = types.StringNull()
         }
+    } else if arr, ok := dataMap["cidr"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Cidr = types.StringValue(string(jsonBytes))
+        } else {
+            data.Cidr = types.StringNull()
+        }
     } else if val, ok := dataMap["cidr"].(string); ok {
         data.Cidr = types.StringValue(val)
     } else {
@@ -688,6 +709,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SnmpConfigs = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SnmpConfigs = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["snmpConfigs"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SnmpConfigs = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.SnmpConfigs = NewJSONSubsetNull()
@@ -735,6 +763,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
         } else {
             data.SnmpVersion = types.StringNull()
         }
+    } else if arr, ok := dataMap["snmpVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SnmpVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpVersion = types.StringNull()
+        }
     } else if val, ok := dataMap["snmpVersion"].(string); ok {
         data.SnmpVersion = types.StringValue(val)
     } else {
@@ -768,6 +803,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SnmpCommunityString = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpCommunityString = types.StringNull()
+        }
+    } else if arr, ok := dataMap["snmpCommunityString"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SnmpCommunityString = types.StringValue(string(jsonBytes))
         } else {
             data.SnmpCommunityString = types.StringNull()
@@ -810,6 +852,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
         } else {
             data.SnmpV3SecurityLevel = types.StringNull()
         }
+    } else if arr, ok := dataMap["snmpV3SecurityLevel"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3SecurityLevel = types.StringNull()
+        }
     } else if val, ok := dataMap["snmpV3SecurityLevel"].(string); ok {
         data.SnmpV3SecurityLevel = types.StringValue(val)
     } else {
@@ -843,6 +892,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3Username = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3Username = types.StringNull()
+        }
+    } else if arr, ok := dataMap["snmpV3Username"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SnmpV3Username = types.StringValue(string(jsonBytes))
         } else {
             data.SnmpV3Username = types.StringNull()
@@ -884,6 +940,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
         } else {
             data.SnmpV3AuthProtocol = types.StringNull()
         }
+    } else if arr, ok := dataMap["snmpV3AuthProtocol"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthProtocol = types.StringNull()
+        }
     } else if val, ok := dataMap["snmpV3AuthProtocol"].(string); ok {
         data.SnmpV3AuthProtocol = types.StringValue(val)
     } else {
@@ -917,6 +980,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["snmpV3AuthKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
         } else {
             data.SnmpV3AuthKey = types.StringNull()
@@ -958,6 +1028,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
         } else {
             data.SnmpV3PrivProtocol = types.StringNull()
         }
+    } else if arr, ok := dataMap["snmpV3PrivProtocol"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivProtocol = types.StringNull()
+        }
     } else if val, ok := dataMap["snmpV3PrivProtocol"].(string); ok {
         data.SnmpV3PrivProtocol = types.StringValue(val)
     } else {
@@ -991,6 +1068,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["snmpV3PrivKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
         } else {
             data.SnmpV3PrivKey = types.StringNull()
@@ -1061,6 +1145,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
         } else {
             data.Status = types.StringNull()
         }
+    } else if arr, ok := dataMap["status"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Status = types.StringValue(string(jsonBytes))
+        } else {
+            data.Status = types.StringNull()
+        }
     } else if val, ok := dataMap["status"].(string); ok {
         data.Status = types.StringValue(val)
     } else {
@@ -1098,6 +1189,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
         } else {
             data.StatusMessage = types.StringNull()
         }
+    } else if arr, ok := dataMap["statusMessage"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.StatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusMessage = types.StringNull()
+        }
     } else if val, ok := dataMap["statusMessage"].(string); ok {
         data.StatusMessage = types.StringValue(val)
     } else {
@@ -1131,6 +1229,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DiscoveredDevices = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DiscoveredDevices = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["discoveredDevices"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DiscoveredDevices = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.DiscoveredDevices = NewJSONSubsetNull()
@@ -1214,6 +1319,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -1363,6 +1475,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         } else {
             data.ProbeId = types.StringNull()
         }
+    } else if arr, ok := dataMap["probeId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ProbeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProbeId = types.StringNull()
+        }
     } else if val, ok := dataMap["probeId"].(string); ok {
         data.ProbeId = types.StringValue(val)
     } else {
@@ -1396,6 +1515,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Name = types.StringValue(string(jsonBytes))
         } else {
             data.Name = types.StringNull()
@@ -1437,6 +1563,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         } else {
             data.Cidr = types.StringNull()
         }
+    } else if arr, ok := dataMap["cidr"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Cidr = types.StringValue(string(jsonBytes))
+        } else {
+            data.Cidr = types.StringNull()
+        }
     } else if val, ok := dataMap["cidr"].(string); ok {
         data.Cidr = types.StringValue(val)
     } else {
@@ -1470,6 +1603,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SnmpConfigs = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SnmpConfigs = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["snmpConfigs"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SnmpConfigs = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.SnmpConfigs = NewJSONSubsetNull()
@@ -1517,6 +1657,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         } else {
             data.SnmpVersion = types.StringNull()
         }
+    } else if arr, ok := dataMap["snmpVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SnmpVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpVersion = types.StringNull()
+        }
     } else if val, ok := dataMap["snmpVersion"].(string); ok {
         data.SnmpVersion = types.StringValue(val)
     } else {
@@ -1550,6 +1697,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SnmpCommunityString = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpCommunityString = types.StringNull()
+        }
+    } else if arr, ok := dataMap["snmpCommunityString"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SnmpCommunityString = types.StringValue(string(jsonBytes))
         } else {
             data.SnmpCommunityString = types.StringNull()
@@ -1592,6 +1746,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         } else {
             data.SnmpV3SecurityLevel = types.StringNull()
         }
+    } else if arr, ok := dataMap["snmpV3SecurityLevel"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3SecurityLevel = types.StringNull()
+        }
     } else if val, ok := dataMap["snmpV3SecurityLevel"].(string); ok {
         data.SnmpV3SecurityLevel = types.StringValue(val)
     } else {
@@ -1625,6 +1786,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3Username = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3Username = types.StringNull()
+        }
+    } else if arr, ok := dataMap["snmpV3Username"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SnmpV3Username = types.StringValue(string(jsonBytes))
         } else {
             data.SnmpV3Username = types.StringNull()
@@ -1666,6 +1834,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         } else {
             data.SnmpV3AuthProtocol = types.StringNull()
         }
+    } else if arr, ok := dataMap["snmpV3AuthProtocol"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthProtocol = types.StringNull()
+        }
     } else if val, ok := dataMap["snmpV3AuthProtocol"].(string); ok {
         data.SnmpV3AuthProtocol = types.StringValue(val)
     } else {
@@ -1699,6 +1874,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["snmpV3AuthKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
         } else {
             data.SnmpV3AuthKey = types.StringNull()
@@ -1740,6 +1922,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         } else {
             data.SnmpV3PrivProtocol = types.StringNull()
         }
+    } else if arr, ok := dataMap["snmpV3PrivProtocol"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivProtocol = types.StringNull()
+        }
     } else if val, ok := dataMap["snmpV3PrivProtocol"].(string); ok {
         data.SnmpV3PrivProtocol = types.StringValue(val)
     } else {
@@ -1773,6 +1962,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["snmpV3PrivKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
         } else {
             data.SnmpV3PrivKey = types.StringNull()
@@ -1843,6 +2039,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         } else {
             data.Status = types.StringNull()
         }
+    } else if arr, ok := dataMap["status"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Status = types.StringValue(string(jsonBytes))
+        } else {
+            data.Status = types.StringNull()
+        }
     } else if val, ok := dataMap["status"].(string); ok {
         data.Status = types.StringValue(val)
     } else {
@@ -1880,6 +2083,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         } else {
             data.StatusMessage = types.StringNull()
         }
+    } else if arr, ok := dataMap["statusMessage"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.StatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusMessage = types.StringNull()
+        }
     } else if val, ok := dataMap["statusMessage"].(string); ok {
         data.StatusMessage = types.StringValue(val)
     } else {
@@ -1913,6 +2123,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DiscoveredDevices = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DiscoveredDevices = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["discoveredDevices"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DiscoveredDevices = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.DiscoveredDevices = NewJSONSubsetNull()
@@ -1996,6 +2213,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()
@@ -2236,6 +2460,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         } else {
             data.ProbeId = types.StringNull()
         }
+    } else if arr, ok := dataMap["probeId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ProbeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProbeId = types.StringNull()
+        }
     } else if val, ok := dataMap["probeId"].(string); ok {
         data.ProbeId = types.StringValue(val)
     } else {
@@ -2269,6 +2500,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.Name = types.StringValue(string(jsonBytes))
         } else {
             data.Name = types.StringNull()
@@ -2310,6 +2548,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         } else {
             data.Cidr = types.StringNull()
         }
+    } else if arr, ok := dataMap["cidr"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Cidr = types.StringValue(string(jsonBytes))
+        } else {
+            data.Cidr = types.StringNull()
+        }
     } else if val, ok := dataMap["cidr"].(string); ok {
         data.Cidr = types.StringValue(val)
     } else {
@@ -2343,6 +2588,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SnmpConfigs = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SnmpConfigs = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["snmpConfigs"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SnmpConfigs = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.SnmpConfigs = NewJSONSubsetNull()
@@ -2390,6 +2642,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         } else {
             data.SnmpVersion = types.StringNull()
         }
+    } else if arr, ok := dataMap["snmpVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SnmpVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpVersion = types.StringNull()
+        }
     } else if val, ok := dataMap["snmpVersion"].(string); ok {
         data.SnmpVersion = types.StringValue(val)
     } else {
@@ -2423,6 +2682,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SnmpCommunityString = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpCommunityString = types.StringNull()
+        }
+    } else if arr, ok := dataMap["snmpCommunityString"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SnmpCommunityString = types.StringValue(string(jsonBytes))
         } else {
             data.SnmpCommunityString = types.StringNull()
@@ -2465,6 +2731,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         } else {
             data.SnmpV3SecurityLevel = types.StringNull()
         }
+    } else if arr, ok := dataMap["snmpV3SecurityLevel"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3SecurityLevel = types.StringNull()
+        }
     } else if val, ok := dataMap["snmpV3SecurityLevel"].(string); ok {
         data.SnmpV3SecurityLevel = types.StringValue(val)
     } else {
@@ -2498,6 +2771,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3Username = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3Username = types.StringNull()
+        }
+    } else if arr, ok := dataMap["snmpV3Username"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SnmpV3Username = types.StringValue(string(jsonBytes))
         } else {
             data.SnmpV3Username = types.StringNull()
@@ -2539,6 +2819,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         } else {
             data.SnmpV3AuthProtocol = types.StringNull()
         }
+    } else if arr, ok := dataMap["snmpV3AuthProtocol"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthProtocol = types.StringNull()
+        }
     } else if val, ok := dataMap["snmpV3AuthProtocol"].(string); ok {
         data.SnmpV3AuthProtocol = types.StringValue(val)
     } else {
@@ -2572,6 +2859,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["snmpV3AuthKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
         } else {
             data.SnmpV3AuthKey = types.StringNull()
@@ -2613,6 +2907,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         } else {
             data.SnmpV3PrivProtocol = types.StringNull()
         }
+    } else if arr, ok := dataMap["snmpV3PrivProtocol"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivProtocol = types.StringNull()
+        }
     } else if val, ok := dataMap["snmpV3PrivProtocol"].(string); ok {
         data.SnmpV3PrivProtocol = types.StringValue(val)
     } else {
@@ -2646,6 +2947,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["snmpV3PrivKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
         } else {
             data.SnmpV3PrivKey = types.StringNull()
@@ -2716,6 +3024,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         } else {
             data.Status = types.StringNull()
         }
+    } else if arr, ok := dataMap["status"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Status = types.StringValue(string(jsonBytes))
+        } else {
+            data.Status = types.StringNull()
+        }
     } else if val, ok := dataMap["status"].(string); ok {
         data.Status = types.StringValue(val)
     } else {
@@ -2753,6 +3068,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         } else {
             data.StatusMessage = types.StringNull()
         }
+    } else if arr, ok := dataMap["statusMessage"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.StatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusMessage = types.StringNull()
+        }
     } else if val, ok := dataMap["statusMessage"].(string); ok {
         data.StatusMessage = types.StringValue(val)
     } else {
@@ -2786,6 +3108,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.DiscoveredDevices = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DiscoveredDevices = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["discoveredDevices"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.DiscoveredDevices = NewJSONSubsetValue(string(jsonBytes))
         } else {
             data.DiscoveredDevices = NewJSONSubsetNull()
@@ -2869,6 +3198,13 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
             data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedByUserId = types.StringNull()

@@ -37,6 +37,7 @@ data "oneuptime_alert_grouping_rule" "by_id" {
 - `default_assign_to_user_id` (String) ID of defaultAssignToUser. Kept for API compatibility: OneUptime does not show it anywhere. To make someone responsible for the episodes this rule opens, use episodeOwnerUsers. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `default_assign_to_user_email`.
 - `description` (String) Description of this alert grouping rule.
 - `enable_inactivity_timeout` (Boolean) Enable auto-resolving episodes after a period of inactivity. Helps automatically close episodes when no new alerts arrive.
+- `enable_minimum_alert_count` (Boolean) Wait for more alerts before opening an episode. When enabled, a matching alert with no open episode to join stays on its own until Minimum Alert Count matching alerts of the same group are ongoing - and, with the time window enabled, arrived within it of each other. The episode then opens with all of them. Until then, each alert runs only its own on-call policies. When disabled, the first matching alert opens an episode.
 - `enable_reopen_window` (Boolean) Enable reopening recently resolved episodes instead of creating new ones. Useful when related issues recur shortly after resolution.
 - `enable_resolve_delay` (Boolean) Enable grace period before auto-resolving episode after all alerts resolve. Helps prevent rapid state changes during alert flapping.
 - `enable_time_window` (Boolean) Enable time-based grouping. When enabled, alerts are grouped within the specified time window. When disabled, all matching alerts are grouped into a single ongoing episode regardless of time.
@@ -50,6 +51,7 @@ data "oneuptime_alert_grouping_rule" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `inactivity_timeout_minutes` (Number) Time in minutes after which an inactive episode will be auto-resolved.
 - `is_enabled` (Boolean) Whether this rule is enabled.
+- `minimum_alert_count` (Number) How many matching alerts of the same group must be ongoing before the rule opens an episode for them, while Enable Minimum Alert Count is on. A whole number from 1 to 100; 1 opens an episode for the first matching alert.
 - `monitor_description_pattern` (String) Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.
 - `monitor_name_pattern` (String) Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.
 - `name` (String) Name of this alert grouping rule.

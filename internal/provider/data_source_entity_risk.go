@@ -304,6 +304,13 @@ func (d *EntityRiskDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else {
             data.Id = types.StringNull()
         }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
     } else if val, ok := item["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -317,6 +324,13 @@ func (d *EntityRiskDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else if val, ok := obj["value"].(float64); ok {
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.CreatedAt = types.StringValue(string(jsonBytes))
         } else {
             data.CreatedAt = types.StringNull()
@@ -338,6 +352,13 @@ func (d *EntityRiskDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else {
             data.UpdatedAt = types.StringNull()
         }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
     } else if val, ok := item["updatedAt"].(string); ok {
         data.UpdatedAt = types.StringValue(val)
     } else {
@@ -351,6 +372,13 @@ func (d *EntityRiskDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else if val, ok := obj["value"].(float64); ok {
             data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.ProjectId = types.StringValue(string(jsonBytes))
         } else {
             data.ProjectId = types.StringNull()
@@ -372,6 +400,13 @@ func (d *EntityRiskDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else {
             data.EntityType = types.StringNull()
         }
+    } else if arr, ok := item["entityType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.EntityType = types.StringValue(string(jsonBytes))
+        } else {
+            data.EntityType = types.StringNull()
+        }
     } else if val, ok := item["entityType"].(string); ok {
         data.EntityType = types.StringValue(val)
     } else {
@@ -389,6 +424,13 @@ func (d *EntityRiskDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else {
             data.EntityValue = types.StringNull()
         }
+    } else if arr, ok := item["entityValue"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.EntityValue = types.StringValue(string(jsonBytes))
+        } else {
+            data.EntityValue = types.StringNull()
+        }
     } else if val, ok := item["entityValue"].(string); ok {
         data.EntityValue = types.StringValue(val)
     } else {
@@ -402,6 +444,13 @@ func (d *EntityRiskDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else if val, ok := obj["value"].(float64); ok {
             data.EntityKey = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EntityKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.EntityKey = types.StringNull()
+        }
+    } else if arr, ok := item["entityKey"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.EntityKey = types.StringValue(string(jsonBytes))
         } else {
             data.EntityKey = types.StringNull()
@@ -424,6 +473,13 @@ func (d *EntityRiskDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else {
             data.Criticality = types.StringNull()
         }
+    } else if arr, ok := item["criticality"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Criticality = types.StringValue(string(jsonBytes))
+        } else {
+            data.Criticality = types.StringNull()
+        }
     } else if val, ok := item["criticality"].(string); ok {
         data.Criticality = types.StringValue(val)
     } else {
@@ -438,6 +494,13 @@ func (d *EntityRiskDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else if val, ok := obj["value"].(float64); ok {
             data.Contributions = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Contributions = types.StringValue(string(jsonBytes))
+        } else {
+            data.Contributions = types.StringNull()
+        }
+    } else if arr, ok := item["contributions"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.Contributions = types.StringValue(string(jsonBytes))
         } else {
             data.Contributions = types.StringNull()
@@ -459,6 +522,13 @@ func (d *EntityRiskDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else {
             data.MitreTactics = types.StringNull()
         }
+    } else if arr, ok := item["mitreTactics"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.MitreTactics = types.StringValue(string(jsonBytes))
+        } else {
+            data.MitreTactics = types.StringNull()
+        }
     } else if val, ok := item["mitreTactics"].(string); ok {
         data.MitreTactics = types.StringValue(val)
     } else {
@@ -472,6 +542,13 @@ func (d *EntityRiskDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else if val, ok := obj["value"].(float64); ok {
             data.MitreTechniques = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MitreTechniques = types.StringValue(string(jsonBytes))
+        } else {
+            data.MitreTechniques = types.StringNull()
+        }
+    } else if arr, ok := item["mitreTechniques"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.MitreTechniques = types.StringValue(string(jsonBytes))
         } else {
             data.MitreTechniques = types.StringNull()
@@ -493,6 +570,13 @@ func (d *EntityRiskDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else {
             data.FirstRiskAt = types.StringNull()
         }
+    } else if arr, ok := item["firstRiskAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FirstRiskAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.FirstRiskAt = types.StringNull()
+        }
     } else if val, ok := item["firstRiskAt"].(string); ok {
         data.FirstRiskAt = types.StringValue(val)
     } else {
@@ -506,6 +590,13 @@ func (d *EntityRiskDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else if val, ok := obj["value"].(float64); ok {
             data.LastRiskAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastRiskAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastRiskAt = types.StringNull()
+        }
+    } else if arr, ok := item["lastRiskAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.LastRiskAt = types.StringValue(string(jsonBytes))
         } else {
             data.LastRiskAt = types.StringNull()
@@ -527,6 +618,13 @@ func (d *EntityRiskDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else {
             data.RiskExpiresAt = types.StringNull()
         }
+    } else if arr, ok := item["riskExpiresAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RiskExpiresAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.RiskExpiresAt = types.StringNull()
+        }
     } else if val, ok := item["riskExpiresAt"].(string); ok {
         data.RiskExpiresAt = types.StringValue(val)
     } else {
@@ -544,6 +642,13 @@ func (d *EntityRiskDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else {
             data.RiskCaseAt = types.StringNull()
         }
+    } else if arr, ok := item["riskCaseAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RiskCaseAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.RiskCaseAt = types.StringNull()
+        }
     } else if val, ok := item["riskCaseAt"].(string); ok {
         data.RiskCaseAt = types.StringValue(val)
     } else {
@@ -557,6 +662,13 @@ func (d *EntityRiskDataSource) Read(ctx context.Context, req datasource.ReadRequ
         } else if val, ok := obj["value"].(float64); ok {
             data.RiskHistory = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RiskHistory = types.StringValue(string(jsonBytes))
+        } else {
+            data.RiskHistory = types.StringNull()
+        }
+    } else if arr, ok := item["riskHistory"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
             data.RiskHistory = types.StringValue(string(jsonBytes))
         } else {
             data.RiskHistory = types.StringNull()

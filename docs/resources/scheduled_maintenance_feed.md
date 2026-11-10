@@ -26,7 +26,7 @@ resource "oneuptime_scheduled_maintenance_feed" "example" {
 
 - `display_color` (String) Display color for this log.
 - `feed_info_in_markdown` (String) Log of the entire scheduled maintenance state change in Markdown.
-- `scheduled_maintenance_feed_event_type` (String) ScheduledMaintenance Log Event. Allowed values: `PublicNote`, `SubscriberNotificationSent`, `OwnerNotificationSent`, `OwnerUserAdded`, `OwnerTeamAdded`, `ScheduledMaintenanceCreated`, `ScheduledMaintenanceStateChanged`, `PrivateNote`, `ScheduledMaintenanceUpdated`, `RootCause`, `RemediationNotes`, `OwnerUserRemoved`, `OwnerTeamRemoved`, `OnCallPolicy`, `OnCallNotification`, `OwnerRuleExecuted`, `LabelRuleExecuted`, `ChannelMemberAdded`.
+- `scheduled_maintenance_feed_event_type` (String) ScheduledMaintenance Log Event. Allowed values: `PublicNote`, `SubscriberNotificationSent`, `OwnerNotificationSent`, `OwnerUserAdded`, `OwnerTeamAdded`, `ScheduledMaintenanceCreated`, `ScheduledMaintenanceStateChanged`, `PrivateNote`, `ScheduledMaintenanceUpdated`, `RootCause`, `RemediationNotes`, `OwnerUserRemoved`, `OwnerTeamRemoved`, `OnCallPolicy`, `OnCallNotification`, `OwnerRuleExecuted`, `LabelRuleExecuted`, `ChannelMemberAdded`, `PublicNoteApproval`.
 - `scheduled_maintenance_id` (String) Relation to ScheduledMaintenance ID in which this resource belongs. The ID of a `oneuptime_scheduled_maintenance_event`.
 
 ### Optional
