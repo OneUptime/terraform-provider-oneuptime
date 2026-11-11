@@ -63,6 +63,7 @@ resource "oneuptime_network_device" "example" {
 - `other_addresses` (String) Other IP addresses this device sends traps, syslog and flow records from - a loopback or another interface - separated by commas. Records from its hostname always match; these match too.
 - `polling_interval_in_minutes` (Number) How often, in minutes, the assigned probe polls this device via SNMP.
 - `probe_id` (String) ID of the Probe that polls this network device. The ID of a `oneuptime_probe`.
+- `rule_assigned_name` (String) The name a naming rule gave this device. While the device is still called exactly this, applying the naming rules again may rename it when the rules change. Rename the device yourself and the naming rules leave it alone unless you choose to rename it.
 - `serial_number` (String) Chassis serial number from ENTITY-MIB (entPhysicalSerialNum). Managed by the probe.
 - `site_id` (String) ID of the Network Site this network device belongs to. The ID of a `oneuptime_network_site`.
 - `snmp_community_string` (String, Sensitive) Community string used for SNMP v1/v2c polling.

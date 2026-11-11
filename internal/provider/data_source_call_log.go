@@ -47,6 +47,7 @@ type CallLogDataSourceModel struct {
     OnCallDutyPolicyEscalationRuleId types.String `tfsdk:"on_call_duty_policy_escalation_rule_id"`
     OnCallDutyPolicyScheduleId types.String `tfsdk:"on_call_duty_policy_schedule_id"`
     TeamId types.String `tfsdk:"team_id"`
+    UserOnCallLogTimelineId types.String `tfsdk:"user_on_call_log_timeline_id"`
 }
 
 func (d *CallLogDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -168,6 +169,12 @@ func (d *CallLogDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_team"),
             },
+            "user_on_call_log_timeline_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the on-call notification timeline entry this call was made for (if any). The ID of a `oneuptime_user_on_call_log_timeline` (see the data source).",
+                Optional: true,
+                Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user_on_call_log_timeline"),
+            },
         },
     }
 }
@@ -263,6 +270,10 @@ func (d *CallLogDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["teamId"] = data.TeamId.ValueString()
         filterNames = append(filterNames, "team_id = "+fmt.Sprintf("%q", data.TeamId.ValueString()))
     }
+    if !data.UserOnCallLogTimelineId.IsNull() && !data.UserOnCallLogTimelineId.IsUnknown() {
+        filters["userOnCallLogTimelineId"] = data.UserOnCallLogTimelineId.ValueString()
+        filterNames = append(filterNames, "user_on_call_log_timeline_id = "+fmt.Sprintf("%q", data.UserOnCallLogTimelineId.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -300,6 +311,7 @@ func (d *CallLogDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "onCallDutyPolicyEscalationRuleId": true,
         "onCallDutyPolicyScheduleId": true,
         "teamId": true,
+        "userOnCallLogTimelineId": true,
         "_id": true,
     }
 
@@ -841,6 +853,30 @@ func (d *CallLogDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.TeamId = types.StringValue(val)
     } else {
         data.TeamId = types.StringNull()
+    }
+    if obj, ok := item["userOnCallLogTimelineId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UserOnCallLogTimelineId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.UserOnCallLogTimelineId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.UserOnCallLogTimelineId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UserOnCallLogTimelineId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserOnCallLogTimelineId = types.StringNull()
+        }
+    } else if arr, ok := item["userOnCallLogTimelineId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UserOnCallLogTimelineId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserOnCallLogTimelineId = types.StringNull()
+        }
+    } else if val, ok := item["userOnCallLogTimelineId"].(string); ok {
+        data.UserOnCallLogTimelineId = types.StringValue(val)
+    } else {
+        data.UserOnCallLogTimelineId = types.StringNull()
     }
 
     // Write logs using the tflog package

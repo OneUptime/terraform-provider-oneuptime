@@ -51,5 +51,6 @@ data "oneuptime_on_call_duty_execution_log_timeline" "by_id" {
 
 - `acknowledged_at` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]
 - `created_at` (String) Date and Time when the object was created.
+- `notification_channels` (String) The channels this step's page went out to its person by - phone call, SMS, email, push notification and so on - as the person's own notifications say. Kept by OneUptime as the notifications go out, so a notification that could not be sent is not listed. Empty when the page reached nobody, and not set on steps written before OneUptime kept it. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

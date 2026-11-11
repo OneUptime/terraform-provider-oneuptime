@@ -68,6 +68,8 @@ type RumApplicationDataSourceModel struct {
     SessionReplayRecordCanvas types.Bool `tfsdk:"session_replay_record_canvas"`
     SessionReplayRetentionInDays types.Number `tfsdk:"session_replay_retention_in_days"`
     SessionReplayMonthlyBudgetInGb types.Number `tfsdk:"session_replay_monthly_budget_in_gb"`
+    IsProductAnalyticsEnabled types.Bool `tfsdk:"is_product_analytics_enabled"`
+    ProductAnalyticsUserPropertyKeys types.String `tfsdk:"product_analytics_user_property_keys"`
     SessionReplayLastChunkReceivedAt types.String `tfsdk:"session_replay_last_chunk_received_at"`
     SessionReplayBudgetExceededAt types.String `tfsdk:"session_replay_budget_exceeded_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -270,6 +272,15 @@ func (d *RumApplicationDataSource) Schema(ctx context.Context, req datasource.Sc
                 Optional: true,
                 Computed: true,
             },
+            "is_product_analytics_enabled": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, the browser recorder sends product analytics events (session starts, page views and track() calls) and metric() points from every session, whether or not Session Replay records it, for the Events, Funnels and User Retention pages. On for applications created from now on; off for existing ones until it is switched on. Session Replay must be enabled for the application.",
+                Optional: true,
+                Computed: true,
+            },
+            "product_analytics_user_property_keys": schema.StringAttribute{
+                MarkdownDescription: "The identify() trait keys product analytics keeps on each event, for breakdowns and segments (at most 20). Matched as written. Only kept while user-identity capture is on; every other trait is dropped before it leaves the page. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
             "session_replay_last_chunk_received_at": schema.StringAttribute{
                 MarkdownDescription: "When a session replay chunk was last accepted for this application.",
                 Computed: true,
@@ -430,6 +441,10 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         filters["sessionReplayMonthlyBudgetInGB"] = lookupNumber(data.SessionReplayMonthlyBudgetInGb)
         filterNames = append(filterNames, "session_replay_monthly_budget_in_gb = "+data.SessionReplayMonthlyBudgetInGb.ValueBigFloat().String())
     }
+    if !data.IsProductAnalyticsEnabled.IsNull() && !data.IsProductAnalyticsEnabled.IsUnknown() {
+        filters["isProductAnalyticsEnabled"] = data.IsProductAnalyticsEnabled.ValueBool()
+        filterNames = append(filterNames, "is_product_analytics_enabled = "+fmt.Sprintf("%t", data.IsProductAnalyticsEnabled.ValueBool()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -498,6 +513,8 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         "sessionReplayRecordCanvas": true,
         "sessionReplayRetentionInDays": true,
         "sessionReplayMonthlyBudgetInGB": true,
+        "isProductAnalyticsEnabled": true,
+        "productAnalyticsUserPropertyKeys": true,
         "sessionReplayLastChunkReceivedAt": true,
         "sessionReplayBudgetExceededAt": true,
         "createdByUserId": true,
@@ -1269,6 +1286,35 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
     }
     data.SessionReplayRetentionInDays = numberFromAPI(data.SessionReplayRetentionInDays, item["sessionReplayRetentionInDays"])
     data.SessionReplayMonthlyBudgetInGb = numberFromAPI(data.SessionReplayMonthlyBudgetInGb, item["sessionReplayMonthlyBudgetInGB"])
+    if val, ok := item["isProductAnalyticsEnabled"].(bool); ok {
+        data.IsProductAnalyticsEnabled = types.BoolValue(val)
+    } else {
+        data.IsProductAnalyticsEnabled = types.BoolNull()
+    }
+    if obj, ok := item["productAnalyticsUserPropertyKeys"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductAnalyticsUserPropertyKeys = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProductAnalyticsUserPropertyKeys = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProductAnalyticsUserPropertyKeys = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProductAnalyticsUserPropertyKeys = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductAnalyticsUserPropertyKeys = types.StringNull()
+        }
+    } else if arr, ok := item["productAnalyticsUserPropertyKeys"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProductAnalyticsUserPropertyKeys = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductAnalyticsUserPropertyKeys = types.StringNull()
+        }
+    } else if val, ok := item["productAnalyticsUserPropertyKeys"].(string); ok {
+        data.ProductAnalyticsUserPropertyKeys = types.StringValue(val)
+    } else {
+        data.ProductAnalyticsUserPropertyKeys = types.StringNull()
+    }
     if obj, ok := item["sessionReplayLastChunkReceivedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SessionReplayLastChunkReceivedAt = types.StringValue(val)

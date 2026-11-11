@@ -28,6 +28,7 @@ resource "oneuptime_network_site" "example" {
 
 - `address` (String) Street address of this site, shown on map views.
 - `alert_severity_id` (String) ID of the severity used for site-unhealthy alerts. The ID of a `oneuptime_alert_severity`.
+- `code` (String) A short code for this site, such as a store or unit number. Naming rules can put it in device names with {site.code}.
 - `current_monitor_status_id` (String) Whats the current rolled-up status ID of this site? Computed from the devices and child sites below it. The ID of a `oneuptime_monitor_status`.
 - `depth` (Number) Number of ancestors above this site (0 for root sites). Managed by the server on parent changes.
 - `description` (String) Friendly description for this network site.

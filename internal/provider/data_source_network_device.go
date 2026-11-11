@@ -40,6 +40,7 @@ type NetworkDeviceDataSourceModel struct {
     OtherAddresses types.String `tfsdk:"other_addresses"`
     DiscoveredName types.String `tfsdk:"discovered_name"`
     DiscoveredNameSource types.String `tfsdk:"discovered_name_source"`
+    RuleAssignedName types.String `tfsdk:"rule_assigned_name"`
     DiscoveredDetails types.String `tfsdk:"discovered_details"`
     MacAddress types.String `tfsdk:"mac_address"`
     IsMacAddressLearned types.Bool `tfsdk:"is_mac_address_learned"`
@@ -165,6 +166,11 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "discovered_name_source": schema.StringAttribute{
                 MarkdownDescription: "Where the discovered name came from: system-name (the name the device reports over SNMP), netbios-name (the computer name a Windows or Samba host reports over NetBIOS), dns-name (its reverse-DNS record) or address (its IP address). Empty for devices discovery did not name.",
+                Optional: true,
+                Computed: true,
+            },
+            "rule_assigned_name": schema.StringAttribute{
+                MarkdownDescription: "The name a naming rule gave this device. While the device is still called exactly this, applying the naming rules again may rename it when the rules change. Rename the device yourself and the naming rules leave it alone unless you choose to rename it.",
                 Optional: true,
                 Computed: true,
             },
@@ -533,6 +539,10 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         filters["discoveredNameSource"] = data.DiscoveredNameSource.ValueString()
         filterNames = append(filterNames, "discovered_name_source = "+fmt.Sprintf("%q", data.DiscoveredNameSource.ValueString()))
     }
+    if !data.RuleAssignedName.IsNull() && !data.RuleAssignedName.IsUnknown() {
+        filters["ruleAssignedName"] = data.RuleAssignedName.ValueString()
+        filterNames = append(filterNames, "rule_assigned_name = "+fmt.Sprintf("%q", data.RuleAssignedName.ValueString()))
+    }
     if !data.MacAddress.IsNull() && !data.MacAddress.IsUnknown() {
         filters["macAddress"] = data.MacAddress.ValueString()
         filterNames = append(filterNames, "mac_address = "+fmt.Sprintf("%q", data.MacAddress.ValueString()))
@@ -721,6 +731,7 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "otherAddresses": true,
         "discoveredName": true,
         "discoveredNameSource": true,
+        "ruleAssignedName": true,
         "discoveredDetails": true,
         "macAddress": true,
         "isMacAddressLearned": true,
@@ -1129,6 +1140,30 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.DiscoveredNameSource = types.StringValue(val)
     } else {
         data.DiscoveredNameSource = types.StringNull()
+    }
+    if obj, ok := item["ruleAssignedName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RuleAssignedName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RuleAssignedName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RuleAssignedName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RuleAssignedName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RuleAssignedName = types.StringNull()
+        }
+    } else if arr, ok := item["ruleAssignedName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RuleAssignedName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RuleAssignedName = types.StringNull()
+        }
+    } else if val, ok := item["ruleAssignedName"].(string); ok {
+        data.RuleAssignedName = types.StringValue(val)
+    } else {
+        data.RuleAssignedName = types.StringNull()
     }
     if obj, ok := item["discoveredDetails"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

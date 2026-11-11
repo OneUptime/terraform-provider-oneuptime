@@ -31,6 +31,7 @@ type NetworkSiteDataSourceModel struct {
     UpdatedAt types.String `tfsdk:"updated_at"`
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
+    Code types.String `tfsdk:"code"`
     Slug types.String `tfsdk:"slug"`
     Description types.String `tfsdk:"description"`
     SiteType types.String `tfsdk:"site_type"`
@@ -81,6 +82,11 @@ func (d *NetworkSiteDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Friendly name for this network site.",
+                Optional: true,
+                Computed: true,
+            },
+            "code": schema.StringAttribute{
+                MarkdownDescription: "A short code for this site, such as a store or unit number. Naming rules can put it in device names with {site.code}.",
                 Optional: true,
                 Computed: true,
             },
@@ -233,6 +239,10 @@ func (d *NetworkSiteDataSource) Read(ctx context.Context, req datasource.ReadReq
         filters["name"] = data.Name.ValueString()
         filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
     }
+    if !data.Code.IsNull() && !data.Code.IsUnknown() {
+        filters["code"] = data.Code.ValueString()
+        filterNames = append(filterNames, "code = "+fmt.Sprintf("%q", data.Code.ValueString()))
+    }
     if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
         filters["slug"] = data.Slug.ValueString()
         filterNames = append(filterNames, "slug = "+fmt.Sprintf("%q", data.Slug.ValueString()))
@@ -330,6 +340,7 @@ func (d *NetworkSiteDataSource) Read(ctx context.Context, req datasource.ReadReq
         "updatedAt": true,
         "projectId": true,
         "name": true,
+        "code": true,
         "slug": true,
         "description": true,
         "siteType": true,
@@ -530,6 +541,30 @@ func (d *NetworkSiteDataSource) Read(ctx context.Context, req datasource.ReadReq
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
+    }
+    if obj, ok := item["code"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Code = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Code = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Code = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Code = types.StringValue(string(jsonBytes))
+        } else {
+            data.Code = types.StringNull()
+        }
+    } else if arr, ok := item["code"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Code = types.StringValue(string(jsonBytes))
+        } else {
+            data.Code = types.StringNull()
+        }
+    } else if val, ok := item["code"].(string); ok {
+        data.Code = types.StringValue(val)
+    } else {
+        data.Code = types.StringNull()
     }
     if obj, ok := item["slug"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

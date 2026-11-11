@@ -51,6 +51,9 @@ type BiToolResourceModel struct {
     LastSyncError types.String `tfsdk:"last_sync_error"`
     DashboardCount types.Number `tfsdk:"dashboard_count"`
     MatchedTableCount types.Number `tfsdk:"matched_table_count"`
+    LastSyncWarning types.String `tfsdk:"last_sync_warning"`
+    UsageReadFrom RFC3339Value `tfsdk:"usage_read_from"`
+    UsageReadUntil RFC3339Value `tfsdk:"usage_read_until"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -145,6 +148,20 @@ func (r *BiToolResource) schemaDefinition() schema.Schema {
             },
             "matched_table_count": schema.NumberAttribute{
                 MarkdownDescription: "How many watched tables the last read found behind its dashboards.",
+                Computed: true,
+            },
+            "last_sync_warning": schema.StringAttribute{
+                MarkdownDescription: "What the last read could not read while it read the dashboards - views or refreshes - and why; empty when it read everything.",
+                Computed: true,
+            },
+            "usage_read_from": schema.StringAttribute{
+                MarkdownDescription: "The start of the hours of the tool's activity log read so far (Power BI): its dashboards' views are counted from them.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "usage_read_until": schema.StringAttribute{
+                MarkdownDescription: "The end of the hours of the tool's activity log read so far (Power BI): the next read goes on from here.",
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -289,6 +306,9 @@ func (r *BiToolResource) Create(ctx context.Context, req resource.CreateRequest,
         "lastSyncError": true,
         "dashboardCount": true,
         "matchedTableCount": true,
+        "lastSyncWarning": true,
+        "usageReadFrom": true,
+        "usageReadUntil": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -547,6 +567,72 @@ func (r *BiToolResource) Create(ctx context.Context, req resource.CreateRequest,
     }
     data.DashboardCount = numberFromAPI(data.DashboardCount, dataMap["dashboardCount"])
     data.MatchedTableCount = numberFromAPI(data.MatchedTableCount, dataMap["matchedTableCount"])
+    if obj, ok := dataMap["lastSyncWarning"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastSyncWarning = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastSyncWarning = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastSyncWarning = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastSyncWarning = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastSyncWarning = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastSyncWarning = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastSyncWarning = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastSyncWarning = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSyncWarning = types.StringNull()
+        }
+    } else if arr, ok := dataMap["lastSyncWarning"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LastSyncWarning = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSyncWarning = types.StringNull()
+        }
+    } else if val, ok := dataMap["lastSyncWarning"].(string); ok {
+        data.LastSyncWarning = types.StringValue(val)
+    } else {
+        data.LastSyncWarning = types.StringNull()
+    }
+    if obj, ok := dataMap["usageReadFrom"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UsageReadFrom = NewRFC3339Value(val)
+        } else {
+            data.UsageReadFrom = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["usageReadFrom"].(string); ok && val != "" {
+        data.UsageReadFrom = NewRFC3339Value(val)
+    } else {
+        data.UsageReadFrom = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["usageReadUntil"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UsageReadUntil = NewRFC3339Value(val)
+        } else {
+            data.UsageReadUntil = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["usageReadUntil"].(string); ok && val != "" {
+        data.UsageReadUntil = NewRFC3339Value(val)
+    } else {
+        data.UsageReadUntil = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -633,6 +719,9 @@ func (r *BiToolResource) Read(ctx context.Context, req resource.ReadRequest, res
         "lastSyncError": true,
         "dashboardCount": true,
         "matchedTableCount": true,
+        "lastSyncWarning": true,
+        "usageReadFrom": true,
+        "usageReadUntil": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -892,6 +981,72 @@ func (r *BiToolResource) Read(ctx context.Context, req resource.ReadRequest, res
     }
     data.DashboardCount = numberFromAPI(data.DashboardCount, dataMap["dashboardCount"])
     data.MatchedTableCount = numberFromAPI(data.MatchedTableCount, dataMap["matchedTableCount"])
+    if obj, ok := dataMap["lastSyncWarning"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastSyncWarning = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastSyncWarning = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastSyncWarning = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastSyncWarning = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastSyncWarning = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastSyncWarning = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastSyncWarning = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastSyncWarning = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSyncWarning = types.StringNull()
+        }
+    } else if arr, ok := dataMap["lastSyncWarning"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LastSyncWarning = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSyncWarning = types.StringNull()
+        }
+    } else if val, ok := dataMap["lastSyncWarning"].(string); ok {
+        data.LastSyncWarning = types.StringValue(val)
+    } else {
+        data.LastSyncWarning = types.StringNull()
+    }
+    if obj, ok := dataMap["usageReadFrom"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UsageReadFrom = NewRFC3339Value(val)
+        } else {
+            data.UsageReadFrom = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["usageReadFrom"].(string); ok && val != "" {
+        data.UsageReadFrom = NewRFC3339Value(val)
+    } else {
+        data.UsageReadFrom = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["usageReadUntil"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UsageReadUntil = NewRFC3339Value(val)
+        } else {
+            data.UsageReadUntil = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["usageReadUntil"].(string); ok && val != "" {
+        data.UsageReadUntil = NewRFC3339Value(val)
+    } else {
+        data.UsageReadUntil = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1025,6 +1180,9 @@ func (r *BiToolResource) Update(ctx context.Context, req resource.UpdateRequest,
         "lastSyncError": true,
         "dashboardCount": true,
         "matchedTableCount": true,
+        "lastSyncWarning": true,
+        "usageReadFrom": true,
+        "usageReadUntil": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1278,6 +1436,72 @@ func (r *BiToolResource) Update(ctx context.Context, req resource.UpdateRequest,
     }
     data.DashboardCount = numberFromAPI(data.DashboardCount, dataMap["dashboardCount"])
     data.MatchedTableCount = numberFromAPI(data.MatchedTableCount, dataMap["matchedTableCount"])
+    if obj, ok := dataMap["lastSyncWarning"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastSyncWarning = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastSyncWarning = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastSyncWarning = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastSyncWarning = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastSyncWarning = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastSyncWarning = types.StringValue(string(jsonBytes))
+            } else {
+                data.LastSyncWarning = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastSyncWarning = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSyncWarning = types.StringNull()
+        }
+    } else if arr, ok := dataMap["lastSyncWarning"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LastSyncWarning = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSyncWarning = types.StringNull()
+        }
+    } else if val, ok := dataMap["lastSyncWarning"].(string); ok {
+        data.LastSyncWarning = types.StringValue(val)
+    } else {
+        data.LastSyncWarning = types.StringNull()
+    }
+    if obj, ok := dataMap["usageReadFrom"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UsageReadFrom = NewRFC3339Value(val)
+        } else {
+            data.UsageReadFrom = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["usageReadFrom"].(string); ok && val != "" {
+        data.UsageReadFrom = NewRFC3339Value(val)
+    } else {
+        data.UsageReadFrom = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["usageReadUntil"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UsageReadUntil = NewRFC3339Value(val)
+        } else {
+            data.UsageReadUntil = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["usageReadUntil"].(string); ok && val != "" {
+        data.UsageReadUntil = NewRFC3339Value(val)
+    } else {
+        data.UsageReadUntil = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -44,6 +44,7 @@ type OnCallDutyExecutionLogTimelineDataSourceModel struct {
     IsNextInRotation types.Bool `tfsdk:"is_next_in_rotation"`
     StatusMessage types.String `tfsdk:"status_message"`
     Status types.String `tfsdk:"status"`
+    NotificationChannels types.String `tfsdk:"notification_channels"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsAcknowledged types.Bool `tfsdk:"is_acknowledged"`
     AcknowledgedAt types.String `tfsdk:"acknowledged_at"`
@@ -154,6 +155,10 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Schema(ctx context.Context, r
             "status": schema.StringAttribute{
                 MarkdownDescription: "Status of this execution timeline event.",
                 Optional: true,
+                Computed: true,
+            },
+            "notification_channels": schema.StringAttribute{
+                MarkdownDescription: "The channels this step's page went out to its person by - phone call, SMS, email, push notification and so on - as the person's own notifications say. Kept by OneUptime as the notifications go out, so a notification that could not be sent is not listed. Empty when the page reached nobody, and not set on steps written before OneUptime kept it. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -318,6 +323,7 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Read(ctx context.Context, req
         "isNextInRotation": true,
         "statusMessage": true,
         "status": true,
+        "notificationChannels": true,
         "createdByUserId": true,
         "isAcknowledged": true,
         "acknowledgedAt": true,
@@ -795,6 +801,30 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Read(ctx context.Context, req
         data.Status = types.StringValue(val)
     } else {
         data.Status = types.StringNull()
+    }
+    if obj, ok := item["notificationChannels"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NotificationChannels = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.NotificationChannels = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.NotificationChannels = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NotificationChannels = types.StringValue(string(jsonBytes))
+        } else {
+            data.NotificationChannels = types.StringNull()
+        }
+    } else if arr, ok := item["notificationChannels"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.NotificationChannels = types.StringValue(string(jsonBytes))
+        } else {
+            data.NotificationChannels = types.StringNull()
+        }
+    } else if val, ok := item["notificationChannels"].(string); ok {
+        data.NotificationChannels = types.StringValue(val)
+    } else {
+        data.NotificationChannels = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -41,6 +41,13 @@ type BiDashboardDataSourceModel struct {
     Owner types.String `tfsdk:"owner"`
     ChangedAt types.String `tfsdk:"changed_at"`
     TableCount types.Number `tfsdk:"table_count"`
+    ViewCount types.Number `tfsdk:"view_count"`
+    ViewerCount types.Number `tfsdk:"viewer_count"`
+    LastViewedAt types.String `tfsdk:"last_viewed_at"`
+    UsageSummary types.String `tfsdk:"usage_summary"`
+    LastRefreshStatus types.String `tfsdk:"last_refresh_status"`
+    LastRefreshAt types.String `tfsdk:"last_refresh_at"`
+    RefreshHistory types.String `tfsdk:"refresh_history"`
     DataAssets types.Set `tfsdk:"data_assets"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -114,6 +121,37 @@ func (d *BiDashboardDataSource) Schema(ctx context.Context, req datasource.Schem
             "table_count": schema.NumberAttribute{
                 MarkdownDescription: "How many watched tables its charts query.",
                 Optional: true,
+                Computed: true,
+            },
+            "view_count": schema.NumberAttribute{
+                MarkdownDescription: "How many times it was opened in the last 28 days, from its tool's activity log (Power BI).",
+                Optional: true,
+                Computed: true,
+            },
+            "viewer_count": schema.NumberAttribute{
+                MarkdownDescription: "How many people opened it in the last 28 days.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_viewed_at": schema.StringAttribute{
+                MarkdownDescription: "When someone last opened it.",
+                Computed: true,
+            },
+            "usage_summary": schema.StringAttribute{
+                MarkdownDescription: "Who opened it most in the last 28 days, with how often and when last, and since when its views are counted while the 28 days are still being read. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "last_refresh_status": schema.StringAttribute{
+                MarkdownDescription: "How the last refresh of the data it charts went (Power BI): Completed, Failed, Cancelled, Disabled, In Progress or Unknown.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_refresh_at": schema.StringAttribute{
+                MarkdownDescription: "When the last refresh of the data it charts ended, or started while it runs.",
+                Computed: true,
+            },
+            "refresh_history": schema.StringAttribute{
+                MarkdownDescription: "The latest refreshes of the data it charts, each with how it went and a failed one's error, and how many ran and failed in the last seven days. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "data_assets": schema.SetAttribute{
@@ -198,6 +236,18 @@ func (d *BiDashboardDataSource) Read(ctx context.Context, req datasource.ReadReq
         filters["tableCount"] = lookupNumber(data.TableCount)
         filterNames = append(filterNames, "table_count = "+data.TableCount.ValueBigFloat().String())
     }
+    if !data.ViewCount.IsNull() && !data.ViewCount.IsUnknown() {
+        filters["viewCount"] = lookupNumber(data.ViewCount)
+        filterNames = append(filterNames, "view_count = "+data.ViewCount.ValueBigFloat().String())
+    }
+    if !data.ViewerCount.IsNull() && !data.ViewerCount.IsUnknown() {
+        filters["viewerCount"] = lookupNumber(data.ViewerCount)
+        filterNames = append(filterNames, "viewer_count = "+data.ViewerCount.ValueBigFloat().String())
+    }
+    if !data.LastRefreshStatus.IsNull() && !data.LastRefreshStatus.IsUnknown() {
+        filters["lastRefreshStatus"] = data.LastRefreshStatus.ValueString()
+        filterNames = append(filterNames, "last_refresh_status = "+fmt.Sprintf("%q", data.LastRefreshStatus.ValueString()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -231,6 +281,13 @@ func (d *BiDashboardDataSource) Read(ctx context.Context, req datasource.ReadReq
         "owner": true,
         "changedAt": true,
         "tableCount": true,
+        "viewCount": true,
+        "viewerCount": true,
+        "lastViewedAt": true,
+        "usageSummary": true,
+        "lastRefreshStatus": true,
+        "lastRefreshAt": true,
+        "refreshHistory": true,
         "dataAssets": true,
         "createdByUserId": true,
         "_id": true,
@@ -583,6 +640,128 @@ func (d *BiDashboardDataSource) Read(ctx context.Context, req datasource.ReadReq
         data.ChangedAt = types.StringNull()
     }
     data.TableCount = numberFromAPI(data.TableCount, item["tableCount"])
+    data.ViewCount = numberFromAPI(data.ViewCount, item["viewCount"])
+    data.ViewerCount = numberFromAPI(data.ViewerCount, item["viewerCount"])
+    if obj, ok := item["lastViewedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastViewedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastViewedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastViewedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastViewedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastViewedAt = types.StringNull()
+        }
+    } else if arr, ok := item["lastViewedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastViewedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastViewedAt = types.StringNull()
+        }
+    } else if val, ok := item["lastViewedAt"].(string); ok {
+        data.LastViewedAt = types.StringValue(val)
+    } else {
+        data.LastViewedAt = types.StringNull()
+    }
+    if obj, ok := item["usageSummary"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UsageSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.UsageSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.UsageSummary = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UsageSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.UsageSummary = types.StringNull()
+        }
+    } else if arr, ok := item["usageSummary"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UsageSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.UsageSummary = types.StringNull()
+        }
+    } else if val, ok := item["usageSummary"].(string); ok {
+        data.UsageSummary = types.StringValue(val)
+    } else {
+        data.UsageSummary = types.StringNull()
+    }
+    if obj, ok := item["lastRefreshStatus"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastRefreshStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastRefreshStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastRefreshStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastRefreshStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastRefreshStatus = types.StringNull()
+        }
+    } else if arr, ok := item["lastRefreshStatus"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastRefreshStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastRefreshStatus = types.StringNull()
+        }
+    } else if val, ok := item["lastRefreshStatus"].(string); ok {
+        data.LastRefreshStatus = types.StringValue(val)
+    } else {
+        data.LastRefreshStatus = types.StringNull()
+    }
+    if obj, ok := item["lastRefreshAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastRefreshAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastRefreshAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastRefreshAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastRefreshAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastRefreshAt = types.StringNull()
+        }
+    } else if arr, ok := item["lastRefreshAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastRefreshAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastRefreshAt = types.StringNull()
+        }
+    } else if val, ok := item["lastRefreshAt"].(string); ok {
+        data.LastRefreshAt = types.StringValue(val)
+    } else {
+        data.LastRefreshAt = types.StringNull()
+    }
+    if obj, ok := item["refreshHistory"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RefreshHistory = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RefreshHistory = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RefreshHistory = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RefreshHistory = types.StringValue(string(jsonBytes))
+        } else {
+            data.RefreshHistory = types.StringNull()
+        }
+    } else if arr, ok := item["refreshHistory"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RefreshHistory = types.StringValue(string(jsonBytes))
+        } else {
+            data.RefreshHistory = types.StringNull()
+        }
+    } else if val, ok := item["refreshHistory"].(string); ok {
+        data.RefreshHistory = types.StringValue(val)
+    } else {
+        data.RefreshHistory = types.StringNull()
+    }
     if val, ok := item["dataAssets"].([]interface{}); ok {
         var setItems []attr.Value
         for _, item := range val {

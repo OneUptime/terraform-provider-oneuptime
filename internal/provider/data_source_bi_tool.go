@@ -38,6 +38,9 @@ type BiToolDataSourceModel struct {
     LastSyncError types.String `tfsdk:"last_sync_error"`
     DashboardCount types.Number `tfsdk:"dashboard_count"`
     MatchedTableCount types.Number `tfsdk:"matched_table_count"`
+    LastSyncWarning types.String `tfsdk:"last_sync_warning"`
+    UsageReadFrom types.String `tfsdk:"usage_read_from"`
+    UsageReadUntil types.String `tfsdk:"usage_read_until"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -104,6 +107,19 @@ func (d *BiToolDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
             "matched_table_count": schema.NumberAttribute{
                 MarkdownDescription: "How many watched tables the last read found behind its dashboards.",
                 Optional: true,
+                Computed: true,
+            },
+            "last_sync_warning": schema.StringAttribute{
+                MarkdownDescription: "What the last read could not read while it read the dashboards - views or refreshes - and why; empty when it read everything.",
+                Optional: true,
+                Computed: true,
+            },
+            "usage_read_from": schema.StringAttribute{
+                MarkdownDescription: "The start of the hours of the tool's activity log read so far (Power BI): its dashboards' views are counted from them.",
+                Computed: true,
+            },
+            "usage_read_until": schema.StringAttribute{
+                MarkdownDescription: "The end of the hours of the tool's activity log read so far (Power BI): the next read goes on from here.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -179,6 +195,10 @@ func (d *BiToolDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         filters["matchedTableCount"] = lookupNumber(data.MatchedTableCount)
         filterNames = append(filterNames, "matched_table_count = "+data.MatchedTableCount.ValueBigFloat().String())
     }
+    if !data.LastSyncWarning.IsNull() && !data.LastSyncWarning.IsUnknown() {
+        filters["lastSyncWarning"] = data.LastSyncWarning.ValueString()
+        filterNames = append(filterNames, "last_sync_warning = "+fmt.Sprintf("%q", data.LastSyncWarning.ValueString()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -211,6 +231,9 @@ func (d *BiToolDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         "lastSyncError": true,
         "dashboardCount": true,
         "matchedTableCount": true,
+        "lastSyncWarning": true,
+        "usageReadFrom": true,
+        "usageReadUntil": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -496,6 +519,78 @@ func (d *BiToolDataSource) Read(ctx context.Context, req datasource.ReadRequest,
     }
     data.DashboardCount = numberFromAPI(data.DashboardCount, item["dashboardCount"])
     data.MatchedTableCount = numberFromAPI(data.MatchedTableCount, item["matchedTableCount"])
+    if obj, ok := item["lastSyncWarning"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastSyncWarning = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastSyncWarning = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastSyncWarning = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastSyncWarning = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSyncWarning = types.StringNull()
+        }
+    } else if arr, ok := item["lastSyncWarning"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastSyncWarning = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSyncWarning = types.StringNull()
+        }
+    } else if val, ok := item["lastSyncWarning"].(string); ok {
+        data.LastSyncWarning = types.StringValue(val)
+    } else {
+        data.LastSyncWarning = types.StringNull()
+    }
+    if obj, ok := item["usageReadFrom"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UsageReadFrom = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.UsageReadFrom = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.UsageReadFrom = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UsageReadFrom = types.StringValue(string(jsonBytes))
+        } else {
+            data.UsageReadFrom = types.StringNull()
+        }
+    } else if arr, ok := item["usageReadFrom"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UsageReadFrom = types.StringValue(string(jsonBytes))
+        } else {
+            data.UsageReadFrom = types.StringNull()
+        }
+    } else if val, ok := item["usageReadFrom"].(string); ok {
+        data.UsageReadFrom = types.StringValue(val)
+    } else {
+        data.UsageReadFrom = types.StringNull()
+    }
+    if obj, ok := item["usageReadUntil"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UsageReadUntil = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.UsageReadUntil = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.UsageReadUntil = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UsageReadUntil = types.StringValue(string(jsonBytes))
+        } else {
+            data.UsageReadUntil = types.StringNull()
+        }
+    } else if arr, ok := item["usageReadUntil"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UsageReadUntil = types.StringValue(string(jsonBytes))
+        } else {
+            data.UsageReadUntil = types.StringNull()
+        }
+    } else if val, ok := item["usageReadUntil"].(string); ok {
+        data.UsageReadUntil = types.StringValue(val)
+    } else {
+        data.UsageReadUntil = types.StringNull()
+    }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CreatedByUserId = types.StringValue(val)

@@ -104,7 +104,7 @@ func (r *WorkspaceNotificationRuleResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Event Type for the Workspace like Incident Created, Monitor Status Updated, etc.",
                 Required: true,
                 Validators: []validator.String{
-                    stringvalidator.OneOf("Incident", "Monitor", "Alert", "Alert Episode", "Incident Episode", "Scheduled Maintenance", "On-Call Duty Policy", "Security Case", "Security Hunt"),
+                    stringvalidator.OneOf("Incident", "Monitor", "Alert", "Alert Episode", "Incident Episode", "Scheduled Maintenance", "On-Call Duty Policy", "Security Case", "Security Hunt", "Service Level Objective"),
                 },
             },
             "workspace_type": schema.StringAttribute{

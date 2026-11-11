@@ -38,10 +38,13 @@ resource "oneuptime_bi_tool" "example" {
 - `dashboard_count` (Number) How many dashboards the last read found.
 - `id` (String) Unique identifier for the resource.
 - `last_sync_error` (String) Why the last read failed; empty when it did not.
+- `last_sync_warning` (String) What the last read could not read while it read the dashboards - views or refreshes - and why; empty when it read everything.
 - `last_synced_at` (String) When its dashboards were last read.
 - `matched_table_count` (Number) How many watched tables the last read found behind its dashboards.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.
+- `usage_read_from` (String) The start of the hours of the tool's activity log read so far (Power BI): its dashboards' views are counted from them.
+- `usage_read_until` (String) The end of the hours of the tool's activity log read so far (Power BI): the next read goes on from here.
 
 ## Import
 

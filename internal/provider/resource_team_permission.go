@@ -86,10 +86,8 @@ func (r *TeamPermissionResource) schemaDefinition() schema.Schema {
             },
             "team_id": schema.StringAttribute{
                 MarkdownDescription: "ID of Team this permission belongs in. The ID of a `oneuptime_team`.",
-                Optional: true,
-                Computed: true,
+                Required: true,
                 PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
                 },
                 Validators: recordIDValidators("oneuptime_team"),
@@ -1734,9 +1732,6 @@ func (r *TeamPermissionResource) ImportState(ctx context.Context, req resource.I
 // "Provider produced inconsistent result after apply". The next refresh reads
 // the server's value, which is never a diff for an attribute nobody configured.
 func (r *TeamPermissionResource) keepPlannedValues(data *TeamPermissionResourceModel, plan *TeamPermissionResourceModel, config *TeamPermissionResourceModel) {
-    if config.TeamId.IsNull() && !plan.TeamId.IsUnknown() {
-        data.TeamId = plan.TeamId
-    }
     if config.Permission.IsNull() && !plan.Permission.IsUnknown() {
         data.Permission = plan.Permission
     }

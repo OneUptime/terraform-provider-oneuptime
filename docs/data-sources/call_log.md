@@ -43,6 +43,7 @@ data "oneuptime_call_log" "by_id" {
 - `status_page_id` (String) ID of Status Page associated with this Call (if any). The ID of a `oneuptime_status_page`.
 - `team_id` (String) ID of Team associated with this Call (if any). The ID of a `oneuptime_team`.
 - `user_id` (String) ID of User who initiated this Call (if any). The ID of a `oneuptime_user` (see the data source).
+- `user_on_call_log_timeline_id` (String) ID of the on-call notification timeline entry this call was made for (if any). The ID of a `oneuptime_user_on_call_log_timeline` (see the data source).
 
 ### Read-Only
 

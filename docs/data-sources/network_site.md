@@ -30,6 +30,7 @@ data "oneuptime_network_site" "by_id" {
 
 - `address` (String) Street address of this site, shown on map views.
 - `alert_severity_id` (String) ID of the severity used for site-unhealthy alerts. The ID of a `oneuptime_alert_severity`.
+- `code` (String) A short code for this site, such as a store or unit number. Naming rules can put it in device names with {site.code}.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `current_active_alert_id` (String) ID of the currently open site-unhealthy alert, if any. Managed by the rollup engine.
 - `current_monitor_status_id` (String) Whats the current rolled-up status ID of this site? Computed from the devices and child sites below it. The ID of a `oneuptime_monitor_status`.

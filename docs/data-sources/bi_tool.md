@@ -34,6 +34,7 @@ data "oneuptime_bi_tool" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_enabled` (Boolean) Whether its dashboards are read every hour.
 - `last_sync_error` (String) Why the last read failed; empty when it did not.
+- `last_sync_warning` (String) What the last read could not read while it read the dashboards - views or refreshes - and why; empty when it read everything.
 - `matched_table_count` (Number) How many watched tables the last read found behind its dashboards.
 - `name` (String) What the BI tool is called here.
 - `tool` (String) Which BI tool it is.
@@ -44,3 +45,5 @@ data "oneuptime_bi_tool" "by_id" {
 - `last_synced_at` (String) When its dashboards were last read.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.
+- `usage_read_from` (String) The start of the hours of the tool's activity log read so far (Power BI): its dashboards' views are counted from them.
+- `usage_read_until` (String) The end of the hours of the tool's activity log read so far (Power BI): the next read goes on from here.

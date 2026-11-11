@@ -72,6 +72,8 @@ type RumApplicationResourceModel struct {
     SessionReplayRecordCanvas types.Bool `tfsdk:"session_replay_record_canvas"`
     SessionReplayRetentionInDays types.Number `tfsdk:"session_replay_retention_in_days"`
     SessionReplayMonthlyBudgetInGb types.Number `tfsdk:"session_replay_monthly_budget_in_gb"`
+    IsProductAnalyticsEnabled types.Bool `tfsdk:"is_product_analytics_enabled"`
+    ProductAnalyticsUserPropertyKeys JSONSubsetValue `tfsdk:"product_analytics_user_property_keys"`
     IsArchived types.Bool `tfsdk:"is_archived"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
@@ -388,6 +390,28 @@ func (r *RumApplicationResource) schemaDefinition() schema.Schema {
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
+            "is_product_analytics_enabled": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, the browser recorder sends product analytics events (session starts, page views and track() calls) and metric() points from every session, whether or not Session Replay records it, for the Events, Funnels and User Retention pages. On for applications created from now on; off for existing ones until it is switched on. Session Replay must be enabled for the application.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "product_analytics_user_property_keys": schema.StringAttribute{
+                MarkdownDescription: "The identify() trait keys product analytics keeps on each event, for breakdowns and segments (at most 20). Matched as written. Only kept while user-identity capture is on; every other trait is dropped before it leaves the page. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Is this RUM application archived? Archived RUM applications are hidden from lists but keep collecting telemetry.",
                 Optional: true,
@@ -626,6 +650,12 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
     if !data.SessionReplayMonthlyBudgetInGb.IsNull() && !data.SessionReplayMonthlyBudgetInGb.IsUnknown() {
         requestDataMap["sessionReplayMonthlyBudgetInGB"] = r.bigFloatToFloat64(data.SessionReplayMonthlyBudgetInGb.ValueBigFloat())
     }
+    if !data.IsProductAnalyticsEnabled.IsNull() && !data.IsProductAnalyticsEnabled.IsUnknown() {
+        requestDataMap["isProductAnalyticsEnabled"] = data.IsProductAnalyticsEnabled.ValueBool()
+    }
+    if parsedProductAnalyticsUserPropertyKeys := r.parseJSONField(data.ProductAnalyticsUserPropertyKeys); parsedProductAnalyticsUserPropertyKeys != nil {
+        requestDataMap["productAnalyticsUserPropertyKeys"] = parsedProductAnalyticsUserPropertyKeys
+    }
     if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
         requestDataMap["isArchived"] = data.IsArchived.ValueBool()
     }
@@ -701,6 +731,8 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         "sessionReplayRecordCanvas": true,
         "sessionReplayRetentionInDays": true,
         "sessionReplayMonthlyBudgetInGB": true,
+        "isProductAnalyticsEnabled": true,
+        "productAnalyticsUserPropertyKeys": true,
         "isArchived": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1388,6 +1420,53 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
     }
     data.SessionReplayRetentionInDays = numberFromAPI(data.SessionReplayRetentionInDays, dataMap["sessionReplayRetentionInDays"])
     data.SessionReplayMonthlyBudgetInGb = numberFromAPI(data.SessionReplayMonthlyBudgetInGb, dataMap["sessionReplayMonthlyBudgetInGB"])
+    if val, ok := dataMap["isProductAnalyticsEnabled"].(bool); ok {
+        data.IsProductAnalyticsEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["productAnalyticsUserPropertyKeys"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["productAnalyticsUserPropertyKeys"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["productAnalyticsUserPropertyKeys"].(string); ok {
+        data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(val)
+    } else {
+        data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetNull()
+    }
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
     }
@@ -1869,6 +1948,8 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         "sessionReplayRecordCanvas": true,
         "sessionReplayRetentionInDays": true,
         "sessionReplayMonthlyBudgetInGB": true,
+        "isProductAnalyticsEnabled": true,
+        "productAnalyticsUserPropertyKeys": true,
         "isArchived": true,
         "createdAt": true,
         "updatedAt": true,
@@ -2557,6 +2638,53 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
     }
     data.SessionReplayRetentionInDays = numberFromAPI(data.SessionReplayRetentionInDays, dataMap["sessionReplayRetentionInDays"])
     data.SessionReplayMonthlyBudgetInGb = numberFromAPI(data.SessionReplayMonthlyBudgetInGb, dataMap["sessionReplayMonthlyBudgetInGB"])
+    if val, ok := dataMap["isProductAnalyticsEnabled"].(bool); ok {
+        data.IsProductAnalyticsEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["productAnalyticsUserPropertyKeys"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["productAnalyticsUserPropertyKeys"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["productAnalyticsUserPropertyKeys"].(string); ok {
+        data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(val)
+    } else {
+        data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetNull()
+    }
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
     }
@@ -3009,6 +3137,7 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
 
     // The attributes this update writes from the configuration (see importsettle.go).
     writtenFromConfig := map[string]bool{
+        "product_analytics_user_property_keys": !data.ProductAnalyticsUserPropertyKeys.Equal(state.ProductAnalyticsUserPropertyKeys),
         "session_replay_allowed_origins": !data.SessionReplayAllowedOrigins.Equal(state.SessionReplayAllowedOrigins),
         "session_replay_block_selectors": !data.SessionReplayBlockSelectors.Equal(state.SessionReplayBlockSelectors),
         "session_replay_frustration_signals": !data.SessionReplayFrustrationSignals.Equal(state.SessionReplayFrustrationSignals),
@@ -3142,6 +3271,17 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
     if !data.SessionReplayMonthlyBudgetInGb.IsUnknown() && !state.SessionReplayMonthlyBudgetInGb.IsUnknown() && !data.SessionReplayMonthlyBudgetInGb.Equal(state.SessionReplayMonthlyBudgetInGb) {
         requestDataMap["sessionReplayMonthlyBudgetInGB"] = r.bigFloatToFloat64(data.SessionReplayMonthlyBudgetInGb.ValueBigFloat())
     }
+    if !data.IsProductAnalyticsEnabled.IsUnknown() && !state.IsProductAnalyticsEnabled.IsUnknown() && !data.IsProductAnalyticsEnabled.Equal(state.IsProductAnalyticsEnabled) {
+        requestDataMap["isProductAnalyticsEnabled"] = data.IsProductAnalyticsEnabled.ValueBool()
+    }
+    if !data.ProductAnalyticsUserPropertyKeys.IsUnknown() && !state.ProductAnalyticsUserPropertyKeys.IsUnknown() && !data.ProductAnalyticsUserPropertyKeys.Equal(state.ProductAnalyticsUserPropertyKeys) {
+        var productanalyticsuserpropertykeysData interface{}
+        if err := json.Unmarshal([]byte(data.ProductAnalyticsUserPropertyKeys.ValueString()), &productanalyticsuserpropertykeysData); err == nil {
+            requestDataMap["productAnalyticsUserPropertyKeys"] = productanalyticsuserpropertykeysData
+        } else {
+            requestDataMap["productAnalyticsUserPropertyKeys"] = data.ProductAnalyticsUserPropertyKeys.ValueString()
+        }
+    }
     if !data.IsArchived.IsUnknown() && !state.IsArchived.IsUnknown() && !data.IsArchived.Equal(state.IsArchived) {
         requestDataMap["isArchived"] = data.IsArchived.ValueBool()
     }
@@ -3195,6 +3335,8 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         "sessionReplayRecordCanvas": true,
         "sessionReplayRetentionInDays": true,
         "sessionReplayMonthlyBudgetInGB": true,
+        "isProductAnalyticsEnabled": true,
+        "productAnalyticsUserPropertyKeys": true,
         "isArchived": true,
         "createdAt": true,
         "updatedAt": true,
@@ -3877,6 +4019,53 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
     }
     data.SessionReplayRetentionInDays = numberFromAPI(data.SessionReplayRetentionInDays, dataMap["sessionReplayRetentionInDays"])
     data.SessionReplayMonthlyBudgetInGb = numberFromAPI(data.SessionReplayMonthlyBudgetInGb, dataMap["sessionReplayMonthlyBudgetInGB"])
+    if val, ok := dataMap["isProductAnalyticsEnabled"].(bool); ok {
+        data.IsProductAnalyticsEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["productAnalyticsUserPropertyKeys"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["productAnalyticsUserPropertyKeys"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["productAnalyticsUserPropertyKeys"].(string); ok {
+        data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetValue(val)
+    } else {
+        data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetNull()
+    }
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
     }
@@ -4349,7 +4538,7 @@ func (r *RumApplicationResource) ImportState(ctx context.Context, req resource.I
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
     // These hold the record as OneUptime keeps it, keys it fills in itself
     // included, until an update writes them (see importsettle.go).
-    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"session_replay_allowed_origins", "session_replay_block_selectors", "session_replay_frustration_signals", "session_replay_ignore_error_patterns", "session_replay_mask_selectors", "session_replay_trace_propagation_origins", "telemetry_retention_config"})...)
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"product_analytics_user_property_keys", "session_replay_allowed_origins", "session_replay_block_selectors", "session_replay_frustration_signals", "session_replay_ignore_error_patterns", "session_replay_mask_selectors", "session_replay_trace_propagation_origins", "telemetry_retention_config"})...)
 }
 
 
@@ -4432,6 +4621,12 @@ func (r *RumApplicationResource) keepPlannedValues(data *RumApplicationResourceM
     }
     if config.SessionReplayMonthlyBudgetInGb.IsNull() && !plan.SessionReplayMonthlyBudgetInGb.IsUnknown() {
         data.SessionReplayMonthlyBudgetInGb = plan.SessionReplayMonthlyBudgetInGb
+    }
+    if config.IsProductAnalyticsEnabled.IsNull() && !plan.IsProductAnalyticsEnabled.IsUnknown() {
+        data.IsProductAnalyticsEnabled = plan.IsProductAnalyticsEnabled
+    }
+    if config.ProductAnalyticsUserPropertyKeys.IsNull() && !plan.ProductAnalyticsUserPropertyKeys.IsUnknown() {
+        data.ProductAnalyticsUserPropertyKeys = plan.ProductAnalyticsUserPropertyKeys
     }
     if config.IsArchived.IsNull() && !plan.IsArchived.IsUnknown() {
         data.IsArchived = plan.IsArchived

@@ -50,6 +50,7 @@ type NetworkDeviceResourceModel struct {
     OtherAddresses types.String `tfsdk:"other_addresses"`
     DiscoveredName types.String `tfsdk:"discovered_name"`
     DiscoveredNameSource types.String `tfsdk:"discovered_name_source"`
+    RuleAssignedName types.String `tfsdk:"rule_assigned_name"`
     DiscoveredDetails JSONSubsetValue `tfsdk:"discovered_details"`
     MacAddress types.String `tfsdk:"mac_address"`
     IsMacAddressLearned types.Bool `tfsdk:"is_mac_address_learned"`
@@ -185,6 +186,15 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
             },
             "discovered_name_source": schema.StringAttribute{
                 MarkdownDescription: "Where the discovered name came from: system-name (the name the device reports over SNMP), netbios-name (the computer name a Windows or Samba host reports over NetBIOS), dns-name (its reverse-DNS record) or address (its IP address). Empty for devices discovery did not name.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
+            },
+            "rule_assigned_name": schema.StringAttribute{
+                MarkdownDescription: "The name a naming rule gave this device. While the device is still called exactly this, applying the naming rules again may rename it when the rules change. Rename the device yourself and the naming rules leave it alone unless you choose to rename it.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -838,6 +848,9 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     if !data.DiscoveredNameSource.IsNull() && !data.DiscoveredNameSource.IsUnknown() {
         requestDataMap["discoveredNameSource"] = data.DiscoveredNameSource.ValueString()
     }
+    if !data.RuleAssignedName.IsNull() && !data.RuleAssignedName.IsUnknown() {
+        requestDataMap["ruleAssignedName"] = data.RuleAssignedName.ValueString()
+    }
     if parsedDiscoveredDetails := r.parseJSONField(data.DiscoveredDetails); parsedDiscoveredDetails != nil {
         requestDataMap["discoveredDetails"] = parsedDiscoveredDetails
     }
@@ -981,6 +994,7 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         "otherAddresses": true,
         "discoveredName": true,
         "discoveredNameSource": true,
+        "ruleAssignedName": true,
         "discoveredDetails": true,
         "macAddress": true,
         "isMacAddressLearned": true,
@@ -1394,6 +1408,50 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         data.DiscoveredNameSource = types.StringValue(val)
     } else {
         data.DiscoveredNameSource = types.StringNull()
+    }
+    if obj, ok := dataMap["ruleAssignedName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RuleAssignedName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RuleAssignedName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RuleAssignedName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RuleAssignedName = types.StringValue(string(jsonBytes))
+            } else {
+                data.RuleAssignedName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RuleAssignedName = types.StringValue(string(jsonBytes))
+            } else {
+                data.RuleAssignedName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RuleAssignedName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RuleAssignedName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["ruleAssignedName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RuleAssignedName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RuleAssignedName = types.StringNull()
+        }
+    } else if val, ok := dataMap["ruleAssignedName"].(string); ok {
+        data.RuleAssignedName = types.StringValue(val)
+    } else {
+        data.RuleAssignedName = types.StringNull()
     }
     if obj, ok := dataMap["discoveredDetails"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
@@ -3360,6 +3418,7 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         "otherAddresses": true,
         "discoveredName": true,
         "discoveredNameSource": true,
+        "ruleAssignedName": true,
         "discoveredDetails": true,
         "macAddress": true,
         "isMacAddressLearned": true,
@@ -3774,6 +3833,50 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         data.DiscoveredNameSource = types.StringValue(val)
     } else {
         data.DiscoveredNameSource = types.StringNull()
+    }
+    if obj, ok := dataMap["ruleAssignedName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RuleAssignedName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RuleAssignedName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RuleAssignedName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RuleAssignedName = types.StringValue(string(jsonBytes))
+            } else {
+                data.RuleAssignedName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RuleAssignedName = types.StringValue(string(jsonBytes))
+            } else {
+                data.RuleAssignedName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RuleAssignedName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RuleAssignedName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["ruleAssignedName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RuleAssignedName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RuleAssignedName = types.StringNull()
+        }
+    } else if val, ok := dataMap["ruleAssignedName"].(string); ok {
+        data.RuleAssignedName = types.StringValue(val)
+    } else {
+        data.RuleAssignedName = types.StringNull()
     }
     if obj, ok := dataMap["discoveredDetails"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
@@ -5997,6 +6100,7 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         "otherAddresses": true,
         "discoveredName": true,
         "discoveredNameSource": true,
+        "ruleAssignedName": true,
         "discoveredDetails": true,
         "macAddress": true,
         "isMacAddressLearned": true,
@@ -6405,6 +6509,50 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         data.DiscoveredNameSource = types.StringValue(val)
     } else {
         data.DiscoveredNameSource = types.StringNull()
+    }
+    if obj, ok := dataMap["ruleAssignedName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RuleAssignedName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RuleAssignedName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RuleAssignedName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RuleAssignedName = types.StringValue(string(jsonBytes))
+            } else {
+                data.RuleAssignedName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RuleAssignedName = types.StringValue(string(jsonBytes))
+            } else {
+                data.RuleAssignedName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RuleAssignedName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RuleAssignedName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["ruleAssignedName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RuleAssignedName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RuleAssignedName = types.StringNull()
+        }
+    } else if val, ok := dataMap["ruleAssignedName"].(string); ok {
+        data.RuleAssignedName = types.StringValue(val)
+    } else {
+        data.RuleAssignedName = types.StringNull()
     }
     if obj, ok := dataMap["discoveredDetails"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
@@ -8407,6 +8555,9 @@ func (r *NetworkDeviceResource) keepPlannedValues(data *NetworkDeviceResourceMod
     }
     if config.DiscoveredNameSource.IsNull() && !plan.DiscoveredNameSource.IsUnknown() {
         data.DiscoveredNameSource = plan.DiscoveredNameSource
+    }
+    if config.RuleAssignedName.IsNull() && !plan.RuleAssignedName.IsUnknown() {
+        data.RuleAssignedName = plan.RuleAssignedName
     }
     if config.DiscoveredDetails.IsNull() && !plan.DiscoveredDetails.IsUnknown() {
         data.DiscoveredDetails = plan.DiscoveredDetails

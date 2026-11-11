@@ -36,6 +36,7 @@ data "oneuptime_rum_application" "by_id" {
 - `description` (String) Friendly description that will help you remember.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_archived` (Boolean) Is this RUM application archived? Archived RUM applications are hidden from lists but keep collecting telemetry.
+- `is_product_analytics_enabled` (Boolean) When enabled, the browser recorder sends product analytics events (session starts, page views and track() calls) and metric() points from every session, whether or not Session Replay records it, for the Events, Funnels and User Retention pages. On for applications created from now on; off for existing ones until it is switched on. Session Replay must be enabled for the application.
 - `is_session_replay_enabled` (Boolean) When enabled, the browser recorder may record and upload session replays for this application. On by default; Project.isSessionReplayAllowed must also be on. Turn it off here to stop recording for one application without affecting the rest of the project.
 - `name` (String) Friendly name for this application.
 - `otel_collector_status` (String) connected while data has arrived in the last 15 minutes, disconnected once nothing has for 15 minutes (normal while nobody uses the app), and empty until the first data arrives. The Dashboard shows these as Receiving data, No recent traffic and Waiting for data.
@@ -64,6 +65,7 @@ data "oneuptime_rum_application" "by_id" {
 - `last_seen_at` (String) When telemetry was last received for this application.
 - `logs_last_received_at` (String) When log records last arrived from this application.
 - `metrics_last_received_at` (String) When metrics, such as Core Web Vitals, last arrived from this application.
+- `product_analytics_user_property_keys` (String) The identify() trait keys product analytics keeps on each event, for breakdowns and segments (at most 20). Matched as written. Only kept while user-identity capture is on; every other trait is dropped before it leaves the page. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `session_replay_allowed_origins` (String) Browser origins (scheme + host + port) and exact React Native app identities (app:// followed by the Android package or iOS bundle id) allowed to upload replays for this application. Empty (the default) accepts any sender. Web origins may use one leading host wildcard; app:// identities never allow wildcards. Once populated, browsers must send a listed Origin and native recorders without Origin must send a listed app identity. A JSON value: read it with `jsondecode()`.
 - `session_replay_block_selectors` (String) CSS selectors the recorder excludes from the DOM snapshot entirely, so the subtree is never captured rather than captured and masked. A JSON value: read it with `jsondecode()`.
