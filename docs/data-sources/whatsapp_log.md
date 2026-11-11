@@ -45,6 +45,7 @@ data "oneuptime_whatsapp_log" "by_id" {
 - `status_page_id` (String) ID of Status Page associated with this message (if any). The ID of a `oneuptime_status_page`.
 - `team_id` (String) ID of Team associated with this message (if any). The ID of a `oneuptime_team`.
 - `user_id` (String) ID of User who initiated this message (if any). The ID of a `oneuptime_user` (see the data source).
+- `user_on_call_log_timeline_id` (String) ID of the on-call notification timeline entry this WhatsApp message was sent for (if any). The ID of a `oneuptime_user_on_call_log_timeline` (see the data source).
 - `whats_app_cost_in_usd_cents` (Number) WhatsApp Message Cost in USD Cents.
 - `whats_app_message_id` (String) Message ID returned by Meta's API.
 

@@ -32,7 +32,7 @@ resource "oneuptime_on_call_user_group" "example" {
 
 - `handle` (String) Slack only: the handle people type to mention the group, without the @, such as payments-oncall.
 - `name` (String) The group's name in the workspace, such as Payments on-call. Read from Slack or Microsoft Teams when the group is linked.
-- `workspace_team_id` (String) Microsoft Teams only: the team the tag is in (its Microsoft 365 group id).
+- `workspace_team_id` (String) Microsoft Teams: the team the tag is in (its Microsoft 365 group id). Slack installed for a whole Enterprise organization: the workspace the user group is in (T...). Empty for a Slack user group of a project connected to one workspace.
 
 ### Read-Only
 

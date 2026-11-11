@@ -498,6 +498,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewRumApplicationUserOwnerDataSource,
         NewRumApplicationLabelRuleDataSource,
         NewRumApplicationOwnerRuleDataSource,
+        NewSavedProductAnalyticsViewDataSource,
         NewLogDataSource,
         NewSpanDataSource,
         NewMetricDataSource,

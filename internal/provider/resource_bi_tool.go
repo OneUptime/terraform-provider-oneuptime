@@ -45,6 +45,7 @@ type BiToolResourceModel struct {
     BaseUrl types.String `tfsdk:"base_url"`
     Credentials types.String `tfsdk:"credentials"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
+    AlertOnFailedRefreshes types.Bool `tfsdk:"alert_on_failed_refreshes"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     LastSyncedAt RFC3339Value `tfsdk:"last_synced_at"`
@@ -54,6 +55,8 @@ type BiToolResourceModel struct {
     LastSyncWarning types.String `tfsdk:"last_sync_warning"`
     UsageReadFrom RFC3339Value `tfsdk:"usage_read_from"`
     UsageReadUntil RFC3339Value `tfsdk:"usage_read_until"`
+    RefreshMonitorId types.String `tfsdk:"refresh_monitor_id"`
+    FailedRefreshes JSONSubsetValue `tfsdk:"failed_refreshes"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -120,6 +123,15 @@ func (r *BiToolResource) schemaDefinition() schema.Schema {
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "alert_on_failed_refreshes": schema.BoolAttribute{
+                MarkdownDescription: "Whether OneUptime keeps a monitor that opens an alert for each dataset whose refresh failed (Power BI), resolved once a later refresh completes.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
@@ -162,6 +174,15 @@ func (r *BiToolResource) schemaDefinition() schema.Schema {
             "usage_read_until": schema.StringAttribute{
                 MarkdownDescription: "The end of the hours of the tool's activity log read so far (Power BI): the next read goes on from here.",
                 CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "refresh_monitor_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the Metrics monitor that alerts on the tool's failed refreshes.",
+                Computed: true,
+            },
+            "failed_refreshes": schema.StringAttribute{
+                MarkdownDescription: "The datasets whose last refresh failed or was cancelled (Power BI), each with its error, until a later refresh completes - and for an hour after that, marked recovered. A JSON value: read it with `jsondecode()`.",
+                CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -250,6 +271,9 @@ func (r *BiToolResource) Create(ctx context.Context, req resource.CreateRequest,
     if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
         requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
     }
+    if !data.AlertOnFailedRefreshes.IsNull() && !data.AlertOnFailedRefreshes.IsUnknown() {
+        requestDataMap["alertOnFailedRefreshes"] = data.AlertOnFailedRefreshes.ValueBool()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/data-bi-connection", biToolRequest)
@@ -300,6 +324,7 @@ func (r *BiToolResource) Create(ctx context.Context, req resource.CreateRequest,
         "tool": true,
         "baseUrl": true,
         "isEnabled": true,
+        "alertOnFailedRefreshes": true,
         "createdAt": true,
         "updatedAt": true,
         "lastSyncedAt": true,
@@ -309,6 +334,8 @@ func (r *BiToolResource) Create(ctx context.Context, req resource.CreateRequest,
         "lastSyncWarning": true,
         "usageReadFrom": true,
         "usageReadUntil": true,
+        "refreshMonitorId": true,
+        "failedRefreshes": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -488,6 +515,9 @@ func (r *BiToolResource) Create(ctx context.Context, req resource.CreateRequest,
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
+    if val, ok := dataMap["alertOnFailedRefreshes"].(bool); ok {
+        data.AlertOnFailedRefreshes = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -633,6 +663,94 @@ func (r *BiToolResource) Create(ctx context.Context, req resource.CreateRequest,
     } else {
         data.UsageReadUntil = NewRFC3339Null()
     }
+    if obj, ok := dataMap["refreshMonitorId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RefreshMonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RefreshMonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RefreshMonitorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RefreshMonitorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RefreshMonitorId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RefreshMonitorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RefreshMonitorId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RefreshMonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RefreshMonitorId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["refreshMonitorId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RefreshMonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RefreshMonitorId = types.StringNull()
+        }
+    } else if val, ok := dataMap["refreshMonitorId"].(string); ok {
+        data.RefreshMonitorId = types.StringValue(val)
+    } else {
+        data.RefreshMonitorId = types.StringNull()
+    }
+    if obj, ok := dataMap["failedRefreshes"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FailedRefreshes = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.FailedRefreshes = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.FailedRefreshes = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.FailedRefreshes = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.FailedRefreshes = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.FailedRefreshes = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.FailedRefreshes = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.FailedRefreshes = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.FailedRefreshes = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["failedRefreshes"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.FailedRefreshes = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.FailedRefreshes = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["failedRefreshes"].(string); ok {
+        data.FailedRefreshes = NewJSONSubsetValue(val)
+    } else {
+        data.FailedRefreshes = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -713,6 +831,7 @@ func (r *BiToolResource) Read(ctx context.Context, req resource.ReadRequest, res
         "tool": true,
         "baseUrl": true,
         "isEnabled": true,
+        "alertOnFailedRefreshes": true,
         "createdAt": true,
         "updatedAt": true,
         "lastSyncedAt": true,
@@ -722,6 +841,8 @@ func (r *BiToolResource) Read(ctx context.Context, req resource.ReadRequest, res
         "lastSyncWarning": true,
         "usageReadFrom": true,
         "usageReadUntil": true,
+        "refreshMonitorId": true,
+        "failedRefreshes": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -902,6 +1023,9 @@ func (r *BiToolResource) Read(ctx context.Context, req resource.ReadRequest, res
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
+    if val, ok := dataMap["alertOnFailedRefreshes"].(bool); ok {
+        data.AlertOnFailedRefreshes = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1047,6 +1171,94 @@ func (r *BiToolResource) Read(ctx context.Context, req resource.ReadRequest, res
     } else {
         data.UsageReadUntil = NewRFC3339Null()
     }
+    if obj, ok := dataMap["refreshMonitorId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RefreshMonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RefreshMonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RefreshMonitorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RefreshMonitorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RefreshMonitorId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RefreshMonitorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RefreshMonitorId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RefreshMonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RefreshMonitorId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["refreshMonitorId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RefreshMonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RefreshMonitorId = types.StringNull()
+        }
+    } else if val, ok := dataMap["refreshMonitorId"].(string); ok {
+        data.RefreshMonitorId = types.StringValue(val)
+    } else {
+        data.RefreshMonitorId = types.StringNull()
+    }
+    if obj, ok := dataMap["failedRefreshes"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FailedRefreshes = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.FailedRefreshes = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.FailedRefreshes = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.FailedRefreshes = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.FailedRefreshes = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.FailedRefreshes = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.FailedRefreshes = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.FailedRefreshes = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.FailedRefreshes = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["failedRefreshes"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.FailedRefreshes = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.FailedRefreshes = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["failedRefreshes"].(string); ok {
+        data.FailedRefreshes = NewJSONSubsetValue(val)
+    } else {
+        data.FailedRefreshes = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1146,6 +1358,9 @@ func (r *BiToolResource) Update(ctx context.Context, req resource.UpdateRequest,
     if !data.IsEnabled.IsUnknown() && !state.IsEnabled.IsUnknown() && !data.IsEnabled.Equal(state.IsEnabled) {
         requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
     }
+    if !data.AlertOnFailedRefreshes.IsUnknown() && !state.AlertOnFailedRefreshes.IsUnknown() && !data.AlertOnFailedRefreshes.Equal(state.AlertOnFailedRefreshes) {
+        requestDataMap["alertOnFailedRefreshes"] = data.AlertOnFailedRefreshes.ValueBool()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -1174,6 +1389,7 @@ func (r *BiToolResource) Update(ctx context.Context, req resource.UpdateRequest,
         "tool": true,
         "baseUrl": true,
         "isEnabled": true,
+        "alertOnFailedRefreshes": true,
         "createdAt": true,
         "updatedAt": true,
         "lastSyncedAt": true,
@@ -1183,6 +1399,8 @@ func (r *BiToolResource) Update(ctx context.Context, req resource.UpdateRequest,
         "lastSyncWarning": true,
         "usageReadFrom": true,
         "usageReadUntil": true,
+        "refreshMonitorId": true,
+        "failedRefreshes": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1357,6 +1575,9 @@ func (r *BiToolResource) Update(ctx context.Context, req resource.UpdateRequest,
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
+    if val, ok := dataMap["alertOnFailedRefreshes"].(bool); ok {
+        data.AlertOnFailedRefreshes = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1502,6 +1723,94 @@ func (r *BiToolResource) Update(ctx context.Context, req resource.UpdateRequest,
     } else {
         data.UsageReadUntil = NewRFC3339Null()
     }
+    if obj, ok := dataMap["refreshMonitorId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RefreshMonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RefreshMonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RefreshMonitorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RefreshMonitorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RefreshMonitorId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RefreshMonitorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RefreshMonitorId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RefreshMonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RefreshMonitorId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["refreshMonitorId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RefreshMonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RefreshMonitorId = types.StringNull()
+        }
+    } else if val, ok := dataMap["refreshMonitorId"].(string); ok {
+        data.RefreshMonitorId = types.StringValue(val)
+    } else {
+        data.RefreshMonitorId = types.StringNull()
+    }
+    if obj, ok := dataMap["failedRefreshes"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FailedRefreshes = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.FailedRefreshes = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.FailedRefreshes = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.FailedRefreshes = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.FailedRefreshes = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.FailedRefreshes = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.FailedRefreshes = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.FailedRefreshes = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.FailedRefreshes = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["failedRefreshes"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.FailedRefreshes = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.FailedRefreshes = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["failedRefreshes"].(string); ok {
+        data.FailedRefreshes = NewJSONSubsetValue(val)
+    } else {
+        data.FailedRefreshes = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1608,6 +1917,9 @@ func (r *BiToolResource) keepPlannedValues(data *BiToolResourceModel, plan *BiTo
     }
     if config.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
         data.IsEnabled = plan.IsEnabled
+    }
+    if config.AlertOnFailedRefreshes.IsNull() && !plan.AlertOnFailedRefreshes.IsUnknown() {
+        data.AlertOnFailedRefreshes = plan.AlertOnFailedRefreshes
     }
 }
 

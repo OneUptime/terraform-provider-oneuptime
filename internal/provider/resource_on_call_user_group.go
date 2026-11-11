@@ -99,7 +99,7 @@ func (r *OnCallUserGroupResource) schemaDefinition() schema.Schema {
                 },
             },
             "workspace_team_id": schema.StringAttribute{
-                MarkdownDescription: "Microsoft Teams only: the team the tag is in (its Microsoft 365 group id).",
+                MarkdownDescription: "Microsoft Teams: the team the tag is in (its Microsoft 365 group id). Slack installed for a whole Enterprise organization: the workspace the user group is in (T...). Empty for a Slack user group of a project connected to one workspace.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

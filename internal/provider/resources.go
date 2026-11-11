@@ -442,6 +442,7 @@ func GetResources() []func() resource.Resource {
         NewRumApplicationUserOwnerResource,
         NewRumApplicationLabelRuleResource,
         NewRumApplicationOwnerRuleResource,
+        NewSavedProductAnalyticsViewResource,
         // Deprecated aliases: the names these resources had before resource
         // type names kept mixed-case words whole.
         NewEscalationRuleTeamLegacyResource,

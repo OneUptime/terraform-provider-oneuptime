@@ -41,6 +41,9 @@ type BiToolDataSourceModel struct {
     LastSyncWarning types.String `tfsdk:"last_sync_warning"`
     UsageReadFrom types.String `tfsdk:"usage_read_from"`
     UsageReadUntil types.String `tfsdk:"usage_read_until"`
+    AlertOnFailedRefreshes types.Bool `tfsdk:"alert_on_failed_refreshes"`
+    RefreshMonitorId types.String `tfsdk:"refresh_monitor_id"`
+    FailedRefreshes types.String `tfsdk:"failed_refreshes"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -50,7 +53,7 @@ func (d *BiToolDataSource) Metadata(ctx context.Context, req datasource.Metadata
 
 func (d *BiToolDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A BI tool whose dashboards, and the tables behind them, Data Observability reads, so a table's alerts list the dashboards built on it. Look up an existing bi tool by `id`, or by any of its other arguments (`name`, `base_url`, `created_by_user_id`, ...): each one set must match, and exactly one bi tool may match them all.",
+        MarkdownDescription: "A BI tool whose dashboards, and the tables behind them, Data Observability reads, so a table's alerts list the dashboards built on it. Look up an existing bi tool by `id`, or by any of its other arguments (`name`, `alert_on_failed_refreshes`, `base_url`, ...): each one set must match, and exactly one bi tool may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -120,6 +123,20 @@ func (d *BiToolDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
             },
             "usage_read_until": schema.StringAttribute{
                 MarkdownDescription: "The end of the hours of the tool's activity log read so far (Power BI): the next read goes on from here.",
+                Computed: true,
+            },
+            "alert_on_failed_refreshes": schema.BoolAttribute{
+                MarkdownDescription: "Whether OneUptime keeps a monitor that opens an alert for each dataset whose refresh failed (Power BI), resolved once a later refresh completes.",
+                Optional: true,
+                Computed: true,
+            },
+            "refresh_monitor_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the Metrics monitor that alerts on the tool's failed refreshes.",
+                Optional: true,
+                Computed: true,
+            },
+            "failed_refreshes": schema.StringAttribute{
+                MarkdownDescription: "The datasets whose last refresh failed or was cancelled (Power BI), each with its error, until a later refresh completes - and for an hour after that, marked recovered. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -199,6 +216,14 @@ func (d *BiToolDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         filters["lastSyncWarning"] = data.LastSyncWarning.ValueString()
         filterNames = append(filterNames, "last_sync_warning = "+fmt.Sprintf("%q", data.LastSyncWarning.ValueString()))
     }
+    if !data.AlertOnFailedRefreshes.IsNull() && !data.AlertOnFailedRefreshes.IsUnknown() {
+        filters["alertOnFailedRefreshes"] = data.AlertOnFailedRefreshes.ValueBool()
+        filterNames = append(filterNames, "alert_on_failed_refreshes = "+fmt.Sprintf("%t", data.AlertOnFailedRefreshes.ValueBool()))
+    }
+    if !data.RefreshMonitorId.IsNull() && !data.RefreshMonitorId.IsUnknown() {
+        filters["refreshMonitorId"] = data.RefreshMonitorId.ValueString()
+        filterNames = append(filterNames, "refresh_monitor_id = "+fmt.Sprintf("%q", data.RefreshMonitorId.ValueString()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -234,6 +259,9 @@ func (d *BiToolDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         "lastSyncWarning": true,
         "usageReadFrom": true,
         "usageReadUntil": true,
+        "alertOnFailedRefreshes": true,
+        "refreshMonitorId": true,
+        "failedRefreshes": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -590,6 +618,59 @@ func (d *BiToolDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         data.UsageReadUntil = types.StringValue(val)
     } else {
         data.UsageReadUntil = types.StringNull()
+    }
+    if val, ok := item["alertOnFailedRefreshes"].(bool); ok {
+        data.AlertOnFailedRefreshes = types.BoolValue(val)
+    } else {
+        data.AlertOnFailedRefreshes = types.BoolNull()
+    }
+    if obj, ok := item["refreshMonitorId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RefreshMonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RefreshMonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RefreshMonitorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RefreshMonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RefreshMonitorId = types.StringNull()
+        }
+    } else if arr, ok := item["refreshMonitorId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RefreshMonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RefreshMonitorId = types.StringNull()
+        }
+    } else if val, ok := item["refreshMonitorId"].(string); ok {
+        data.RefreshMonitorId = types.StringValue(val)
+    } else {
+        data.RefreshMonitorId = types.StringNull()
+    }
+    if obj, ok := item["failedRefreshes"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FailedRefreshes = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.FailedRefreshes = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.FailedRefreshes = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FailedRefreshes = types.StringValue(string(jsonBytes))
+        } else {
+            data.FailedRefreshes = types.StringNull()
+        }
+    } else if arr, ok := item["failedRefreshes"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FailedRefreshes = types.StringValue(string(jsonBytes))
+        } else {
+            data.FailedRefreshes = types.StringNull()
+        }
+    } else if val, ok := item["failedRefreshes"].(string); ok {
+        data.FailedRefreshes = types.StringValue(val)
+    } else {
+        data.FailedRefreshes = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

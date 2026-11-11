@@ -33,7 +33,7 @@ data "oneuptime_on_call_user_group" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `name` (String) The group's name in the workspace, such as Payments on-call. Read from Slack or Microsoft Teams when the group is linked.
 - `workspace_group_id` (String) The group's id in the workspace: a Slack user group id, such as S0604QSJC, or a Microsoft Teams tag id.
-- `workspace_team_id` (String) Microsoft Teams only: the team the tag is in (its Microsoft 365 group id).
+- `workspace_team_id` (String) Microsoft Teams: the team the tag is in (its Microsoft 365 group id). Slack installed for a whole Enterprise organization: the workspace the user group is in (T...). Empty for a Slack user group of a project connected to one workspace.
 - `workspace_type` (String) Where the group is: Slack (a user group) or MicrosoftTeams (a tag in a team).
 
 ### Read-Only

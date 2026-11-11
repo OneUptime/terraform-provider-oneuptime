@@ -57,6 +57,7 @@ type WhatsappLogDataSourceModel struct {
     OnCallDutyPolicyId types.String `tfsdk:"on_call_duty_policy_id"`
     OnCallDutyPolicyEscalationRuleId types.String `tfsdk:"on_call_duty_policy_escalation_rule_id"`
     OnCallDutyPolicyScheduleId types.String `tfsdk:"on_call_duty_policy_schedule_id"`
+    UserOnCallLogTimelineId types.String `tfsdk:"user_on_call_log_timeline_id"`
 }
 
 func (d *WhatsappLogDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -188,6 +189,12 @@ func (d *WhatsappLogDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_on_call_policy_schedule"),
             },
+            "user_on_call_log_timeline_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the on-call notification timeline entry this WhatsApp message was sent for (if any). The ID of a `oneuptime_user_on_call_log_timeline` (see the data source).",
+                Optional: true,
+                Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user_on_call_log_timeline"),
+            },
         },
     }
     if d.isLegacyAlias {
@@ -294,6 +301,10 @@ func (d *WhatsappLogDataSource) Read(ctx context.Context, req datasource.ReadReq
         filters["onCallDutyPolicyScheduleId"] = data.OnCallDutyPolicyScheduleId.ValueString()
         filterNames = append(filterNames, "on_call_duty_policy_schedule_id = "+fmt.Sprintf("%q", data.OnCallDutyPolicyScheduleId.ValueString()))
     }
+    if !data.UserOnCallLogTimelineId.IsNull() && !data.UserOnCallLogTimelineId.IsUnknown() {
+        filters["userOnCallLogTimelineId"] = data.UserOnCallLogTimelineId.ValueString()
+        filterNames = append(filterNames, "user_on_call_log_timeline_id = "+fmt.Sprintf("%q", data.UserOnCallLogTimelineId.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -332,6 +343,7 @@ func (d *WhatsappLogDataSource) Read(ctx context.Context, req datasource.ReadReq
         "onCallDutyPolicyId": true,
         "onCallDutyPolicyEscalationRuleId": true,
         "onCallDutyPolicyScheduleId": true,
+        "userOnCallLogTimelineId": true,
         "_id": true,
     }
 
@@ -897,6 +909,30 @@ func (d *WhatsappLogDataSource) Read(ctx context.Context, req datasource.ReadReq
         data.OnCallDutyPolicyScheduleId = types.StringValue(val)
     } else {
         data.OnCallDutyPolicyScheduleId = types.StringNull()
+    }
+    if obj, ok := item["userOnCallLogTimelineId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UserOnCallLogTimelineId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.UserOnCallLogTimelineId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.UserOnCallLogTimelineId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UserOnCallLogTimelineId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserOnCallLogTimelineId = types.StringNull()
+        }
+    } else if arr, ok := item["userOnCallLogTimelineId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UserOnCallLogTimelineId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserOnCallLogTimelineId = types.StringNull()
+        }
+    } else if val, ok := item["userOnCallLogTimelineId"].(string); ok {
+        data.UserOnCallLogTimelineId = types.StringValue(val)
+    } else {
+        data.UserOnCallLogTimelineId = types.StringNull()
     }
 
     // Write logs using the tflog package
