@@ -114,6 +114,9 @@ type ProjectResourceModel struct {
     LimitAlertsToOneEpisode types.Bool `tfsdk:"limit_alerts_to_one_episode"`
     DefaultNetworkTopologyLayout types.String `tfsdk:"default_network_topology_layout"`
     DiscoveredDeviceRetentionInDays types.Number `tfsdk:"discovered_device_retention_in_days"`
+    IncidentRetentionInDays types.Number `tfsdk:"incident_retention_in_days"`
+    KeepIncidentsWithCompletedPostmortem types.Bool `tfsdk:"keep_incidents_with_completed_postmortem"`
+    AlertRetentionInDays types.Number `tfsdk:"alert_retention_in_days"`
     DefaultTableColumns JSONSubsetValue `tfsdk:"default_table_columns"`
     AlertInvestigationMinimumSeverityId types.String `tfsdk:"alert_investigation_minimum_severity_id"`
     AiDailyAutonomousTokenLimit types.Number `tfsdk:"ai_daily_autonomous_token_limit"`
@@ -169,6 +172,8 @@ type ProjectResourceModel struct {
     MetricsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"metrics_ingestion_rate_limit_in_mb_per_second"`
     ProfilesIngestionRateLimitInMbPerSecond types.Number `tfsdk:"profiles_ingestion_rate_limit_in_mb_per_second"`
     SecurityEventsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"security_events_ingestion_rate_limit_in_mb_per_second"`
+    Goals JSONSubsetValue `tfsdk:"goals"`
+    ProductSettings JSONSubsetValue `tfsdk:"product_settings"`
 }
 
 func (r *ProjectResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -827,6 +832,35 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
+            "incident_retention_in_days": schema.NumberAttribute{
+                MarkdownDescription: "Days a resolved incident is kept once resolved: 30, 60, 90, 180, 365, 730 or 1095, or 0 to keep every incident (the default). Incidents that are not resolved are never deleted.",
+                Optional: true,
+                Computed: true,
+                Default: numberdefault.StaticBigFloat(big.NewFloat(0)),
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "keep_incidents_with_completed_postmortem": schema.BoolAttribute{
+                MarkdownDescription: "When on (the default), an incident whose postmortem is completed is never deleted by the incident retention, however long ago it was resolved.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "alert_retention_in_days": schema.NumberAttribute{
+                MarkdownDescription: "Days a resolved alert is kept once resolved: 30, 60, 90, 180, 365, 730 or 1095, or 0 to keep every alert (the default). Alerts that are not resolved are never deleted.",
+                Optional: true,
+                Computed: true,
+                Default: numberdefault.StaticBigFloat(big.NewFloat(0)),
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
             "default_table_columns": schema.StringAttribute{
                 MarkdownDescription: "The columns each list shows, and their order, for everyone in the project who has not chosen their own: a list's key to its column ids in order and the ones hidden. Empty: every list shows its own columns. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
@@ -1191,6 +1225,16 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Set by the instance admin. The fastest this project may send security events, in MB per second; faster requests are answered 429 with Retry-After. Empty: the instance default. 0: no limit for this project.",
                 Computed: true,
             },
+            "goals": schema.StringAttribute{
+                MarkdownDescription: "What the project came to do, as its owner answered on Home: uptime, on_call, status_page, telemetry, infrastructure, import or explore. Empty: the question was skipped. Not set: never answered. A JSON value: read it with `jsondecode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "product_settings": schema.StringAttribute{
+                MarkdownDescription: "The products this project hides from its menu, Home and Search's list, and where that list came from (its goals, or a member). A hidden product still works and is found by Search. Not set: every product is shown. A JSON value: read it with `jsondecode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
         },
     }
 }
@@ -1504,6 +1548,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "limitAlertsToOneEpisode": true,
         "defaultNetworkTopologyLayout": true,
         "discoveredDeviceRetentionInDays": true,
+        "incidentRetentionInDays": true,
+        "keepIncidentsWithCompletedPostmortem": true,
+        "alertRetentionInDays": true,
         "defaultTableColumns": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
@@ -1559,6 +1606,8 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "metricsIngestionRateLimitInMBPerSecond": true,
         "profilesIngestionRateLimitInMBPerSecond": true,
         "securityEventsIngestionRateLimitInMBPerSecond": true,
+        "goals": true,
+        "productSettings": true,
         "_id": true,
     }
 
@@ -2375,6 +2424,11 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.DefaultNetworkTopologyLayout = types.StringNull()
     }
     data.DiscoveredDeviceRetentionInDays = numberFromAPI(data.DiscoveredDeviceRetentionInDays, dataMap["discoveredDeviceRetentionInDays"])
+    data.IncidentRetentionInDays = numberFromAPI(data.IncidentRetentionInDays, dataMap["incidentRetentionInDays"])
+    if val, ok := dataMap["keepIncidentsWithCompletedPostmortem"].(bool); ok {
+        data.KeepIncidentsWithCompletedPostmortem = types.BoolValue(val)
+    }
+    data.AlertRetentionInDays = numberFromAPI(data.AlertRetentionInDays, dataMap["alertRetentionInDays"])
     if obj, ok := dataMap["defaultTableColumns"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3244,6 +3298,94 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     data.MetricsIngestionRateLimitInMbPerSecond = numberFromAPI(data.MetricsIngestionRateLimitInMbPerSecond, dataMap["metricsIngestionRateLimitInMBPerSecond"])
     data.ProfilesIngestionRateLimitInMbPerSecond = numberFromAPI(data.ProfilesIngestionRateLimitInMbPerSecond, dataMap["profilesIngestionRateLimitInMBPerSecond"])
     data.SecurityEventsIngestionRateLimitInMbPerSecond = numberFromAPI(data.SecurityEventsIngestionRateLimitInMbPerSecond, dataMap["securityEventsIngestionRateLimitInMBPerSecond"])
+    if obj, ok := dataMap["goals"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Goals = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Goals = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Goals = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Goals = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Goals = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Goals = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Goals = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Goals = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Goals = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["goals"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Goals = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Goals = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["goals"].(string); ok {
+        data.Goals = NewJSONSubsetValue(val)
+    } else {
+        data.Goals = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["productSettings"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductSettings = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ProductSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ProductSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductSettings = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ProductSettings = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["productSettings"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ProductSettings = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ProductSettings = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["productSettings"].(string); ok {
+        data.ProductSettings = NewJSONSubsetValue(val)
+    } else {
+        data.ProductSettings = NewJSONSubsetNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -3346,6 +3488,9 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "limitAlertsToOneEpisode": true,
         "defaultNetworkTopologyLayout": true,
         "discoveredDeviceRetentionInDays": true,
+        "incidentRetentionInDays": true,
+        "keepIncidentsWithCompletedPostmortem": true,
+        "alertRetentionInDays": true,
         "defaultTableColumns": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
@@ -3401,6 +3546,8 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "metricsIngestionRateLimitInMBPerSecond": true,
         "profilesIngestionRateLimitInMBPerSecond": true,
         "securityEventsIngestionRateLimitInMBPerSecond": true,
+        "goals": true,
+        "productSettings": true,
         "_id": true,
     }
 
@@ -4218,6 +4365,11 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.DefaultNetworkTopologyLayout = types.StringNull()
     }
     data.DiscoveredDeviceRetentionInDays = numberFromAPI(data.DiscoveredDeviceRetentionInDays, dataMap["discoveredDeviceRetentionInDays"])
+    data.IncidentRetentionInDays = numberFromAPI(data.IncidentRetentionInDays, dataMap["incidentRetentionInDays"])
+    if val, ok := dataMap["keepIncidentsWithCompletedPostmortem"].(bool); ok {
+        data.KeepIncidentsWithCompletedPostmortem = types.BoolValue(val)
+    }
+    data.AlertRetentionInDays = numberFromAPI(data.AlertRetentionInDays, dataMap["alertRetentionInDays"])
     if obj, ok := dataMap["defaultTableColumns"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -5087,6 +5239,94 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     data.MetricsIngestionRateLimitInMbPerSecond = numberFromAPI(data.MetricsIngestionRateLimitInMbPerSecond, dataMap["metricsIngestionRateLimitInMBPerSecond"])
     data.ProfilesIngestionRateLimitInMbPerSecond = numberFromAPI(data.ProfilesIngestionRateLimitInMbPerSecond, dataMap["profilesIngestionRateLimitInMBPerSecond"])
     data.SecurityEventsIngestionRateLimitInMbPerSecond = numberFromAPI(data.SecurityEventsIngestionRateLimitInMbPerSecond, dataMap["securityEventsIngestionRateLimitInMBPerSecond"])
+    if obj, ok := dataMap["goals"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Goals = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Goals = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Goals = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Goals = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Goals = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Goals = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Goals = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Goals = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Goals = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["goals"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Goals = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Goals = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["goals"].(string); ok {
+        data.Goals = NewJSONSubsetValue(val)
+    } else {
+        data.Goals = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["productSettings"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductSettings = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ProductSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ProductSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductSettings = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ProductSettings = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["productSettings"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ProductSettings = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ProductSettings = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["productSettings"].(string); ok {
+        data.ProductSettings = NewJSONSubsetValue(val)
+    } else {
+        data.ProductSettings = NewJSONSubsetNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -5295,6 +5535,15 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if !data.DiscoveredDeviceRetentionInDays.IsUnknown() && !state.DiscoveredDeviceRetentionInDays.IsUnknown() && !data.DiscoveredDeviceRetentionInDays.Equal(state.DiscoveredDeviceRetentionInDays) {
         requestDataMap["discoveredDeviceRetentionInDays"] = r.bigFloatToFloat64(data.DiscoveredDeviceRetentionInDays.ValueBigFloat())
+    }
+    if !data.IncidentRetentionInDays.IsUnknown() && !state.IncidentRetentionInDays.IsUnknown() && !data.IncidentRetentionInDays.Equal(state.IncidentRetentionInDays) {
+        requestDataMap["incidentRetentionInDays"] = r.bigFloatToFloat64(data.IncidentRetentionInDays.ValueBigFloat())
+    }
+    if !data.KeepIncidentsWithCompletedPostmortem.IsUnknown() && !state.KeepIncidentsWithCompletedPostmortem.IsUnknown() && !data.KeepIncidentsWithCompletedPostmortem.Equal(state.KeepIncidentsWithCompletedPostmortem) {
+        requestDataMap["keepIncidentsWithCompletedPostmortem"] = data.KeepIncidentsWithCompletedPostmortem.ValueBool()
+    }
+    if !data.AlertRetentionInDays.IsUnknown() && !state.AlertRetentionInDays.IsUnknown() && !data.AlertRetentionInDays.Equal(state.AlertRetentionInDays) {
+        requestDataMap["alertRetentionInDays"] = r.bigFloatToFloat64(data.AlertRetentionInDays.ValueBigFloat())
     }
     if !data.DefaultTableColumns.IsUnknown() && !state.DefaultTableColumns.IsUnknown() && !data.DefaultTableColumns.Equal(state.DefaultTableColumns) {
         var defaulttablecolumnsData interface{}
@@ -5520,6 +5769,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "limitAlertsToOneEpisode": true,
         "defaultNetworkTopologyLayout": true,
         "discoveredDeviceRetentionInDays": true,
+        "incidentRetentionInDays": true,
+        "keepIncidentsWithCompletedPostmortem": true,
+        "alertRetentionInDays": true,
         "defaultTableColumns": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
@@ -5575,6 +5827,8 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "metricsIngestionRateLimitInMBPerSecond": true,
         "profilesIngestionRateLimitInMBPerSecond": true,
         "securityEventsIngestionRateLimitInMBPerSecond": true,
+        "goals": true,
+        "productSettings": true,
         "_id": true,
     }
 
@@ -6386,6 +6640,11 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.DefaultNetworkTopologyLayout = types.StringNull()
     }
     data.DiscoveredDeviceRetentionInDays = numberFromAPI(data.DiscoveredDeviceRetentionInDays, dataMap["discoveredDeviceRetentionInDays"])
+    data.IncidentRetentionInDays = numberFromAPI(data.IncidentRetentionInDays, dataMap["incidentRetentionInDays"])
+    if val, ok := dataMap["keepIncidentsWithCompletedPostmortem"].(bool); ok {
+        data.KeepIncidentsWithCompletedPostmortem = types.BoolValue(val)
+    }
+    data.AlertRetentionInDays = numberFromAPI(data.AlertRetentionInDays, dataMap["alertRetentionInDays"])
     if obj, ok := dataMap["defaultTableColumns"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -7255,6 +7514,94 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     data.MetricsIngestionRateLimitInMbPerSecond = numberFromAPI(data.MetricsIngestionRateLimitInMbPerSecond, dataMap["metricsIngestionRateLimitInMBPerSecond"])
     data.ProfilesIngestionRateLimitInMbPerSecond = numberFromAPI(data.ProfilesIngestionRateLimitInMbPerSecond, dataMap["profilesIngestionRateLimitInMBPerSecond"])
     data.SecurityEventsIngestionRateLimitInMbPerSecond = numberFromAPI(data.SecurityEventsIngestionRateLimitInMbPerSecond, dataMap["securityEventsIngestionRateLimitInMBPerSecond"])
+    if obj, ok := dataMap["goals"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Goals = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Goals = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Goals = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Goals = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Goals = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Goals = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Goals = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Goals = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Goals = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["goals"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Goals = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Goals = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["goals"].(string); ok {
+        data.Goals = NewJSONSubsetValue(val)
+    } else {
+        data.Goals = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["productSettings"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProductSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProductSettings = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProductSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ProductSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProductSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ProductSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProductSettings = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ProductSettings = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["productSettings"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ProductSettings = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ProductSettings = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["productSettings"].(string); ok {
+        data.ProductSettings = NewJSONSubsetValue(val)
+    } else {
+        data.ProductSettings = NewJSONSubsetNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -7521,6 +7868,15 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.DiscoveredDeviceRetentionInDays.IsNull() && !plan.DiscoveredDeviceRetentionInDays.IsUnknown() {
         data.DiscoveredDeviceRetentionInDays = plan.DiscoveredDeviceRetentionInDays
+    }
+    if config.IncidentRetentionInDays.IsNull() && !plan.IncidentRetentionInDays.IsUnknown() {
+        data.IncidentRetentionInDays = plan.IncidentRetentionInDays
+    }
+    if config.KeepIncidentsWithCompletedPostmortem.IsNull() && !plan.KeepIncidentsWithCompletedPostmortem.IsUnknown() {
+        data.KeepIncidentsWithCompletedPostmortem = plan.KeepIncidentsWithCompletedPostmortem
+    }
+    if config.AlertRetentionInDays.IsNull() && !plan.AlertRetentionInDays.IsUnknown() {
+        data.AlertRetentionInDays = plan.AlertRetentionInDays
     }
     if config.DefaultTableColumns.IsNull() && !plan.DefaultTableColumns.IsUnknown() {
         data.DefaultTableColumns = plan.DefaultTableColumns

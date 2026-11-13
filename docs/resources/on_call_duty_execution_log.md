@@ -25,7 +25,7 @@ resource "oneuptime_on_call_duty_execution_log" "example" {
 
 - `status` (String) Status of this execution. Allowed values: `Waiting`, `Scheduled`, `Started`, `Executing`, `Execution Completed`, `Execution Completed - No One Notified`, `Error`.
 - `status_message` (String) Status message of this execution.
-- `user_notification_event_type` (String) Type of event that triggered this on-call duty policy. Allowed values: `Incident Created`, `Alert Created`, `Alert Episode Created`, `Incident Episode Created`.
+- `user_notification_event_type` (String) Type of event that triggered this on-call duty policy. Allowed values: `Incident Created`, `Alert Created`, `Alert Episode Created`, `Incident Episode Created`, `Test Page`.
 
 ### Optional
 
@@ -57,6 +57,9 @@ resource "oneuptime_on_call_duty_execution_log" "example" {
 - `paging_starts_at` (String) When this run starts paging, when it waited to: an on-call rule that pages only during working hours held it until they began. Empty when it paged straight away.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `schedule_gap_retry_count` (Number) How many times the current escalation rule has been re-sampled because its target schedule(s) momentarily had no on-call user.
+- `test_page_record_kind` (String) For a test page: the kind of record it stands in for - Incident or Alert - whose On-Call Rules it runs. Empty for every other run.
+- `test_page_severity_id` (String) For a test page: the incident or alert severity whose On-Call Rules it runs. Empty for every other run.
+- `test_page_walks_escalation` (Boolean) For a test of an on-call policy: whether it walks every escalation level, each after a short wait, rather than paging the first level only.
 - `triggered_by_user_id` (String) User ID who triggered this on-call policy. The ID of a `oneuptime_user` (see the data source).
 - `triggered_by_workflow_id` (String) ID of the workflow whose step started this page, when a workflow did.
 - `triggered_by_workflow_name` (String) Name of the workflow whose step started this page, as it was then.

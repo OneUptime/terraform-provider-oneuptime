@@ -118,7 +118,7 @@ func (d *WorkspaceNotificationSummaryDataSource) Schema(ctx context.Context, req
                 Computed: true,
             },
             "team_name": schema.StringAttribute{
-                MarkdownDescription: "Microsoft Teams team name (only for Microsoft Teams).",
+                MarkdownDescription: "The team the summary's channels are in: for Microsoft Teams, the team's name; for Mattermost, the team's id - empty to look in the default team first, then in the bot's other teams. Not used for Slack.",
                 Optional: true,
                 Computed: true,
             },

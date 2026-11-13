@@ -44,6 +44,9 @@ data "oneuptime_on_call_duty_execution_log" "by_id" {
 - `schedule_gap_retry_count` (Number) How many times the current escalation rule has been re-sampled because its target schedule(s) momentarily had no on-call user.
 - `status` (String) Status of this execution.
 - `status_message` (String) Status message of this execution.
+- `test_page_record_kind` (String) For a test page: the kind of record it stands in for - Incident or Alert - whose On-Call Rules it runs. Empty for every other run.
+- `test_page_severity_id` (String) For a test page: the incident or alert severity whose On-Call Rules it runs. Empty for every other run.
+- `test_page_walks_escalation` (Boolean) For a test of an on-call policy: whether it walks every escalation level, each after a short wait, rather than paging the first level only.
 - `triggered_by_alert_episode_id` (String) ID of the alert episode which triggered this on-call escalation policy. The ID of a `oneuptime_alert_episode`.
 - `triggered_by_alert_id` (String) ID of the incident which triggered this on-call escalation policy. The ID of a `oneuptime_alert`.
 - `triggered_by_incident_episode_id` (String) ID of the incident episode which triggered this on-call escalation policy. The ID of a `oneuptime_incident_episode`.

@@ -45,6 +45,7 @@ type MonitorStatusEventResourceModel struct {
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
+    IsMonitoringOff types.Bool `tfsdk:"is_monitoring_off"`
     StatusChangeLog JSONSubsetValue `tfsdk:"status_change_log"`
 }
 
@@ -141,6 +142,10 @@ func (r *MonitorStatusEventResource) schemaDefinition() schema.Schema {
             },
             "is_owner_notified": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of status change?",
+                Computed: true,
+            },
+            "is_monitoring_off": schema.BoolAttribute{
+                MarkdownDescription: "Was the monitor's monitoring turned off for this status event? Uptime, status pages and SLOs leave this time out.",
                 Computed: true,
             },
             "status_change_log": schema.StringAttribute{
@@ -282,6 +287,7 @@ func (r *MonitorStatusEventResource) Create(ctx context.Context, req resource.Cr
         "updatedAt": true,
         "createdByUserId": true,
         "isOwnerNotified": true,
+        "isMonitoringOff": true,
         "statusChangeLog": true,
         "_id": true,
     }
@@ -549,6 +555,9 @@ func (r *MonitorStatusEventResource) Create(ctx context.Context, req resource.Cr
     if val, ok := dataMap["isOwnerNotified"].(bool); ok {
         data.IsOwnerNotified = types.BoolValue(val)
     }
+    if val, ok := dataMap["isMonitoringOff"].(bool); ok {
+        data.IsMonitoringOff = types.BoolValue(val)
+    }
     if obj, ok := dataMap["statusChangeLog"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -634,6 +643,7 @@ func (r *MonitorStatusEventResource) Read(ctx context.Context, req resource.Read
         "updatedAt": true,
         "createdByUserId": true,
         "isOwnerNotified": true,
+        "isMonitoringOff": true,
         "statusChangeLog": true,
         "_id": true,
     }
@@ -902,6 +912,9 @@ func (r *MonitorStatusEventResource) Read(ctx context.Context, req resource.Read
     if val, ok := dataMap["isOwnerNotified"].(bool); ok {
         data.IsOwnerNotified = types.BoolValue(val)
     }
+    if val, ok := dataMap["isMonitoringOff"].(bool); ok {
+        data.IsMonitoringOff = types.BoolValue(val)
+    }
     if obj, ok := dataMap["statusChangeLog"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1025,6 +1038,7 @@ func (r *MonitorStatusEventResource) Update(ctx context.Context, req resource.Up
         "updatedAt": true,
         "createdByUserId": true,
         "isOwnerNotified": true,
+        "isMonitoringOff": true,
         "statusChangeLog": true,
         "_id": true,
     }
@@ -1286,6 +1300,9 @@ func (r *MonitorStatusEventResource) Update(ctx context.Context, req resource.Up
     }
     if val, ok := dataMap["isOwnerNotified"].(bool); ok {
         data.IsOwnerNotified = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isMonitoringOff"].(bool); ok {
+        data.IsMonitoringOff = types.BoolValue(val)
     }
     if obj, ok := dataMap["statusChangeLog"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)

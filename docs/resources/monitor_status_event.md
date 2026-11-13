@@ -36,6 +36,7 @@ resource "oneuptime_monitor_status_event" "example" {
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
+- `is_monitoring_off` (Boolean) Was the monitor's monitoring turned off for this status event? Uptime, status pages and SLOs leave this time out.
 - `is_owner_notified` (Boolean) Are owners notified of status change?
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `status_change_log` (String) A JSON value: read it with `jsondecode()`.

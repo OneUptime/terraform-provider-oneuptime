@@ -95,6 +95,9 @@ type ProjectDataSourceModel struct {
     LimitAlertsToOneEpisode types.Bool `tfsdk:"limit_alerts_to_one_episode"`
     DefaultNetworkTopologyLayout types.String `tfsdk:"default_network_topology_layout"`
     DiscoveredDeviceRetentionInDays types.Number `tfsdk:"discovered_device_retention_in_days"`
+    IncidentRetentionInDays types.Number `tfsdk:"incident_retention_in_days"`
+    KeepIncidentsWithCompletedPostmortem types.Bool `tfsdk:"keep_incidents_with_completed_postmortem"`
+    AlertRetentionInDays types.Number `tfsdk:"alert_retention_in_days"`
     DefaultTableColumns types.String `tfsdk:"default_table_columns"`
     EnableAiInsights types.Bool `tfsdk:"enable_ai_insights"`
     EnableInsightFixTasks types.Bool `tfsdk:"enable_insight_fix_tasks"`
@@ -151,6 +154,8 @@ type ProjectDataSourceModel struct {
     MetricsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"metrics_ingestion_rate_limit_in_mb_per_second"`
     ProfilesIngestionRateLimitInMbPerSecond types.Number `tfsdk:"profiles_ingestion_rate_limit_in_mb_per_second"`
     SecurityEventsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"security_events_ingestion_rate_limit_in_mb_per_second"`
+    Goals types.String `tfsdk:"goals"`
+    ProductSettings types.String `tfsdk:"product_settings"`
 }
 
 func (d *ProjectDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -505,6 +510,21 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Optional: true,
                 Computed: true,
             },
+            "incident_retention_in_days": schema.NumberAttribute{
+                MarkdownDescription: "Days a resolved incident is kept once resolved: 30, 60, 90, 180, 365, 730 or 1095, or 0 to keep every incident (the default). Incidents that are not resolved are never deleted.",
+                Optional: true,
+                Computed: true,
+            },
+            "keep_incidents_with_completed_postmortem": schema.BoolAttribute{
+                MarkdownDescription: "When on (the default), an incident whose postmortem is completed is never deleted by the incident retention, however long ago it was resolved.",
+                Optional: true,
+                Computed: true,
+            },
+            "alert_retention_in_days": schema.NumberAttribute{
+                MarkdownDescription: "Days a resolved alert is kept once resolved: 30, 60, 90, 180, 365, 730 or 1095, or 0 to keep every alert (the default). Alerts that are not resolved are never deleted.",
+                Optional: true,
+                Computed: true,
+            },
             "default_table_columns": schema.StringAttribute{
                 MarkdownDescription: "The columns each list shows, and their order, for everyone in the project who has not chosen their own: a list's key to its column ids in order and the ones hidden. Empty: every list shows its own columns. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
@@ -782,6 +802,14 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             "security_events_ingestion_rate_limit_in_mb_per_second": schema.NumberAttribute{
                 MarkdownDescription: "Set by the instance admin. The fastest this project may send security events, in MB per second; faster requests are answered 429 with Retry-After. Empty: the instance default. 0: no limit for this project.",
                 Optional: true,
+                Computed: true,
+            },
+            "goals": schema.StringAttribute{
+                MarkdownDescription: "What the project came to do, as its owner answered on Home: uptime, on_call, status_page, telemetry, infrastructure, import or explore. Empty: the question was skipped. Not set: never answered. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "product_settings": schema.StringAttribute{
+                MarkdownDescription: "The products this project hides from its menu, Home and Search's list, and where that list came from (its goals, or a member). A hidden product still works and is found by Search. Not set: every product is shown. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
         },
@@ -1083,6 +1111,18 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["discoveredDeviceRetentionInDays"] = lookupNumber(data.DiscoveredDeviceRetentionInDays)
         filterNames = append(filterNames, "discovered_device_retention_in_days = "+data.DiscoveredDeviceRetentionInDays.ValueBigFloat().String())
     }
+    if !data.IncidentRetentionInDays.IsNull() && !data.IncidentRetentionInDays.IsUnknown() {
+        filters["incidentRetentionInDays"] = lookupNumber(data.IncidentRetentionInDays)
+        filterNames = append(filterNames, "incident_retention_in_days = "+data.IncidentRetentionInDays.ValueBigFloat().String())
+    }
+    if !data.KeepIncidentsWithCompletedPostmortem.IsNull() && !data.KeepIncidentsWithCompletedPostmortem.IsUnknown() {
+        filters["keepIncidentsWithCompletedPostmortem"] = data.KeepIncidentsWithCompletedPostmortem.ValueBool()
+        filterNames = append(filterNames, "keep_incidents_with_completed_postmortem = "+fmt.Sprintf("%t", data.KeepIncidentsWithCompletedPostmortem.ValueBool()))
+    }
+    if !data.AlertRetentionInDays.IsNull() && !data.AlertRetentionInDays.IsUnknown() {
+        filters["alertRetentionInDays"] = lookupNumber(data.AlertRetentionInDays)
+        filterNames = append(filterNames, "alert_retention_in_days = "+data.AlertRetentionInDays.ValueBigFloat().String())
+    }
     if !data.EnableAiInsights.IsNull() && !data.EnableAiInsights.IsUnknown() {
         filters["enableAiInsights"] = data.EnableAiInsights.ValueBool()
         filterNames = append(filterNames, "enable_ai_insights = "+fmt.Sprintf("%t", data.EnableAiInsights.ValueBool()))
@@ -1380,6 +1420,9 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "limitAlertsToOneEpisode": true,
         "defaultNetworkTopologyLayout": true,
         "discoveredDeviceRetentionInDays": true,
+        "incidentRetentionInDays": true,
+        "keepIncidentsWithCompletedPostmortem": true,
+        "alertRetentionInDays": true,
         "defaultTableColumns": true,
         "enableAiInsights": true,
         "enableInsightFixTasks": true,
@@ -1436,6 +1479,8 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "metricsIngestionRateLimitInMBPerSecond": true,
         "profilesIngestionRateLimitInMBPerSecond": true,
         "securityEventsIngestionRateLimitInMBPerSecond": true,
+        "goals": true,
+        "productSettings": true,
         "_id": true,
     }
 
@@ -2248,6 +2293,13 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.DefaultNetworkTopologyLayout = types.StringNull()
     }
     data.DiscoveredDeviceRetentionInDays = numberFromAPI(data.DiscoveredDeviceRetentionInDays, item["discoveredDeviceRetentionInDays"])
+    data.IncidentRetentionInDays = numberFromAPI(data.IncidentRetentionInDays, item["incidentRetentionInDays"])
+    if val, ok := item["keepIncidentsWithCompletedPostmortem"].(bool); ok {
+        data.KeepIncidentsWithCompletedPostmortem = types.BoolValue(val)
+    } else {
+        data.KeepIncidentsWithCompletedPostmortem = types.BoolNull()
+    }
+    data.AlertRetentionInDays = numberFromAPI(data.AlertRetentionInDays, item["alertRetentionInDays"])
     if obj, ok := item["defaultTableColumns"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.DefaultTableColumns = types.StringValue(val)
@@ -2633,6 +2685,54 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     data.MetricsIngestionRateLimitInMbPerSecond = numberFromAPI(data.MetricsIngestionRateLimitInMbPerSecond, item["metricsIngestionRateLimitInMBPerSecond"])
     data.ProfilesIngestionRateLimitInMbPerSecond = numberFromAPI(data.ProfilesIngestionRateLimitInMbPerSecond, item["profilesIngestionRateLimitInMBPerSecond"])
     data.SecurityEventsIngestionRateLimitInMbPerSecond = numberFromAPI(data.SecurityEventsIngestionRateLimitInMbPerSecond, item["securityEventsIngestionRateLimitInMBPerSecond"])
+    if obj, ok := item["goals"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Goals = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Goals = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Goals = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Goals = types.StringValue(string(jsonBytes))
+        } else {
+            data.Goals = types.StringNull()
+        }
+    } else if arr, ok := item["goals"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Goals = types.StringValue(string(jsonBytes))
+        } else {
+            data.Goals = types.StringNull()
+        }
+    } else if val, ok := item["goals"].(string); ok {
+        data.Goals = types.StringValue(val)
+    } else {
+        data.Goals = types.StringNull()
+    }
+    if obj, ok := item["productSettings"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductSettings = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProductSettings = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProductSettings = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProductSettings = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductSettings = types.StringNull()
+        }
+    } else if arr, ok := item["productSettings"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProductSettings = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductSettings = types.StringNull()
+        }
+    } else if val, ok := item["productSettings"].(string); ok {
+        data.ProductSettings = types.StringValue(val)
+    } else {
+        data.ProductSettings = types.StringNull()
+    }
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

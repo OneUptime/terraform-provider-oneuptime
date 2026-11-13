@@ -72,6 +72,9 @@ type OnCallDutyExecutionLogResourceModel struct {
     TriggeredByWorkflowId types.String `tfsdk:"triggered_by_workflow_id"`
     TriggeredByWorkflowName types.String `tfsdk:"triggered_by_workflow_name"`
     PageMessage types.String `tfsdk:"page_message"`
+    TestPageRecordKind types.String `tfsdk:"test_page_record_kind"`
+    TestPageSeverityId types.String `tfsdk:"test_page_severity_id"`
+    TestPageWalksEscalation types.Bool `tfsdk:"test_page_walks_escalation"`
 }
 
 func (r *OnCallDutyExecutionLogResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -161,7 +164,7 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Type of event that triggered this on-call duty policy.",
                 Required: true,
                 Validators: []validator.String{
-                    stringvalidator.OneOf("Incident Created", "Alert Created", "Alert Episode Created", "Incident Episode Created"),
+                    stringvalidator.OneOf("Incident Created", "Alert Created", "Alert Episode Created", "Incident Episode Created", "Test Page"),
                 },
             },
             "acknowledged_at": schema.StringAttribute{
@@ -299,6 +302,18 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
             },
             "page_message": schema.StringAttribute{
                 MarkdownDescription: "What the person who paged from Slack or Microsoft Teams wrote to the people this page reaches.",
+                Computed: true,
+            },
+            "test_page_record_kind": schema.StringAttribute{
+                MarkdownDescription: "For a test page: the kind of record it stands in for - Incident or Alert - whose On-Call Rules it runs. Empty for every other run.",
+                Computed: true,
+            },
+            "test_page_severity_id": schema.StringAttribute{
+                MarkdownDescription: "For a test page: the incident or alert severity whose On-Call Rules it runs. Empty for every other run.",
+                Computed: true,
+            },
+            "test_page_walks_escalation": schema.BoolAttribute{
+                MarkdownDescription: "For a test of an on-call policy: whether it walks every escalation level, each after a short wait, rather than paging the first level only.",
                 Computed: true,
             },
         },
@@ -487,6 +502,9 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
         "triggeredByWorkflowId": true,
         "triggeredByWorkflowName": true,
         "pageMessage": true,
+        "testPageRecordKind": true,
+        "testPageSeverityId": true,
+        "testPageWalksEscalation": true,
         "_id": true,
     }
 
@@ -1384,6 +1402,97 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
     } else {
         data.PageMessage = types.StringNull()
     }
+    if obj, ok := dataMap["testPageRecordKind"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TestPageRecordKind = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TestPageRecordKind = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TestPageRecordKind = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TestPageRecordKind = types.StringValue(string(jsonBytes))
+            } else {
+                data.TestPageRecordKind = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TestPageRecordKind = types.StringValue(string(jsonBytes))
+            } else {
+                data.TestPageRecordKind = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TestPageRecordKind = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageRecordKind = types.StringNull()
+        }
+    } else if arr, ok := dataMap["testPageRecordKind"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TestPageRecordKind = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageRecordKind = types.StringNull()
+        }
+    } else if val, ok := dataMap["testPageRecordKind"].(string); ok {
+        data.TestPageRecordKind = types.StringValue(val)
+    } else {
+        data.TestPageRecordKind = types.StringNull()
+    }
+    if obj, ok := dataMap["testPageSeverityId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TestPageSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TestPageSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TestPageSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TestPageSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TestPageSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TestPageSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TestPageSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TestPageSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageSeverityId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["testPageSeverityId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TestPageSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageSeverityId = types.StringNull()
+        }
+    } else if val, ok := dataMap["testPageSeverityId"].(string); ok {
+        data.TestPageSeverityId = types.StringValue(val)
+    } else {
+        data.TestPageSeverityId = types.StringNull()
+    }
+    if val, ok := dataMap["testPageWalksEscalation"].(bool); ok {
+        data.TestPageWalksEscalation = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1444,6 +1553,9 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
         "triggeredByWorkflowId": true,
         "triggeredByWorkflowName": true,
         "pageMessage": true,
+        "testPageRecordKind": true,
+        "testPageSeverityId": true,
+        "testPageWalksEscalation": true,
         "_id": true,
     }
 
@@ -2341,6 +2453,97 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
         data.PageMessage = types.StringValue(val)
     } else {
         data.PageMessage = types.StringNull()
+    }
+    if obj, ok := dataMap["testPageRecordKind"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TestPageRecordKind = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TestPageRecordKind = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TestPageRecordKind = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TestPageRecordKind = types.StringValue(string(jsonBytes))
+            } else {
+                data.TestPageRecordKind = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TestPageRecordKind = types.StringValue(string(jsonBytes))
+            } else {
+                data.TestPageRecordKind = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TestPageRecordKind = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageRecordKind = types.StringNull()
+        }
+    } else if arr, ok := dataMap["testPageRecordKind"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TestPageRecordKind = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageRecordKind = types.StringNull()
+        }
+    } else if val, ok := dataMap["testPageRecordKind"].(string); ok {
+        data.TestPageRecordKind = types.StringValue(val)
+    } else {
+        data.TestPageRecordKind = types.StringNull()
+    }
+    if obj, ok := dataMap["testPageSeverityId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TestPageSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TestPageSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TestPageSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TestPageSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TestPageSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TestPageSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TestPageSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TestPageSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageSeverityId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["testPageSeverityId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TestPageSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageSeverityId = types.StringNull()
+        }
+    } else if val, ok := dataMap["testPageSeverityId"].(string); ok {
+        data.TestPageSeverityId = types.StringValue(val)
+    } else {
+        data.TestPageSeverityId = types.StringNull()
+    }
+    if val, ok := dataMap["testPageWalksEscalation"].(bool); ok {
+        data.TestPageWalksEscalation = types.BoolValue(val)
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

@@ -34,6 +34,7 @@ type MonitorStatusEventDataSourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     MonitorStatusId types.String `tfsdk:"monitor_status_id"`
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
+    IsMonitoringOff types.Bool `tfsdk:"is_monitoring_off"`
     StatusChangeLog types.String `tfsdk:"status_change_log"`
     RootCause types.String `tfsdk:"root_cause"`
     EndsAt types.String `tfsdk:"ends_at"`
@@ -46,7 +47,7 @@ func (d *MonitorStatusEventDataSource) Metadata(ctx context.Context, req datasou
 
 func (d *MonitorStatusEventDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Change state of the monitor (Operational to Offline for example) Look up an existing monitor status event by `id`, or by any of its other arguments (`created_by_user_id`, `is_owner_notified`, `monitor_id`, ...): each one set must match, and exactly one monitor status event may match them all.",
+        MarkdownDescription: "Change state of the monitor (Operational to Offline for example) Look up an existing monitor status event by `id`, or by any of its other arguments (`created_by_user_id`, `is_monitoring_off`, `is_owner_notified`, ...): each one set must match, and exactly one monitor status event may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -86,6 +87,11 @@ func (d *MonitorStatusEventDataSource) Schema(ctx context.Context, req datasourc
             },
             "is_owner_notified": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of status change?",
+                Optional: true,
+                Computed: true,
+            },
+            "is_monitoring_off": schema.BoolAttribute{
+                MarkdownDescription: "Was the monitor's monitoring turned off for this status event? Uptime, status pages and SLOs leave this time out.",
                 Optional: true,
                 Computed: true,
             },
@@ -161,6 +167,10 @@ func (d *MonitorStatusEventDataSource) Read(ctx context.Context, req datasource.
         filters["isOwnerNotified"] = data.IsOwnerNotified.ValueBool()
         filterNames = append(filterNames, "is_owner_notified = "+fmt.Sprintf("%t", data.IsOwnerNotified.ValueBool()))
     }
+    if !data.IsMonitoringOff.IsNull() && !data.IsMonitoringOff.IsUnknown() {
+        filters["isMonitoringOff"] = data.IsMonitoringOff.ValueBool()
+        filterNames = append(filterNames, "is_monitoring_off = "+fmt.Sprintf("%t", data.IsMonitoringOff.ValueBool()))
+    }
     if !data.RootCause.IsNull() && !data.RootCause.IsUnknown() {
         filters["rootCause"] = data.RootCause.ValueString()
         filterNames = append(filterNames, "root_cause = "+fmt.Sprintf("%q", data.RootCause.ValueString()))
@@ -189,6 +199,7 @@ func (d *MonitorStatusEventDataSource) Read(ctx context.Context, req datasource.
         "createdByUserId": true,
         "monitorStatusId": true,
         "isOwnerNotified": true,
+        "isMonitoringOff": true,
         "statusChangeLog": true,
         "rootCause": true,
         "endsAt": true,
@@ -426,6 +437,11 @@ func (d *MonitorStatusEventDataSource) Read(ctx context.Context, req datasource.
         data.IsOwnerNotified = types.BoolValue(val)
     } else {
         data.IsOwnerNotified = types.BoolNull()
+    }
+    if val, ok := item["isMonitoringOff"].(bool); ok {
+        data.IsMonitoringOff = types.BoolValue(val)
+    } else {
+        data.IsMonitoringOff = types.BoolNull()
     }
     if obj, ok := item["statusChangeLog"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

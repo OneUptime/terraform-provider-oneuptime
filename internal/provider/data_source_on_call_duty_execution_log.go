@@ -56,6 +56,9 @@ type OnCallDutyExecutionLogDataSourceModel struct {
     TriggeredByWorkflowName types.String `tfsdk:"triggered_by_workflow_name"`
     PageMessage types.String `tfsdk:"page_message"`
     IsObserverPage types.Bool `tfsdk:"is_observer_page"`
+    TestPageRecordKind types.String `tfsdk:"test_page_record_kind"`
+    TestPageSeverityId types.String `tfsdk:"test_page_severity_id"`
+    TestPageWalksEscalation types.Bool `tfsdk:"test_page_walks_escalation"`
 }
 
 func (d *OnCallDutyExecutionLogDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -221,6 +224,21 @@ func (d *OnCallDutyExecutionLogDataSource) Schema(ctx context.Context, req datas
                 Optional: true,
                 Computed: true,
             },
+            "test_page_record_kind": schema.StringAttribute{
+                MarkdownDescription: "For a test page: the kind of record it stands in for - Incident or Alert - whose On-Call Rules it runs. Empty for every other run.",
+                Optional: true,
+                Computed: true,
+            },
+            "test_page_severity_id": schema.StringAttribute{
+                MarkdownDescription: "For a test page: the incident or alert severity whose On-Call Rules it runs. Empty for every other run.",
+                Optional: true,
+                Computed: true,
+            },
+            "test_page_walks_escalation": schema.BoolAttribute{
+                MarkdownDescription: "For a test of an on-call policy: whether it walks every escalation level, each after a short wait, rather than paging the first level only.",
+                Optional: true,
+                Computed: true,
+            },
         },
     }
 }
@@ -352,6 +370,18 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
         filters["isObserverPage"] = data.IsObserverPage.ValueBool()
         filterNames = append(filterNames, "is_observer_page = "+fmt.Sprintf("%t", data.IsObserverPage.ValueBool()))
     }
+    if !data.TestPageRecordKind.IsNull() && !data.TestPageRecordKind.IsUnknown() {
+        filters["testPageRecordKind"] = data.TestPageRecordKind.ValueString()
+        filterNames = append(filterNames, "test_page_record_kind = "+fmt.Sprintf("%q", data.TestPageRecordKind.ValueString()))
+    }
+    if !data.TestPageSeverityId.IsNull() && !data.TestPageSeverityId.IsUnknown() {
+        filters["testPageSeverityId"] = data.TestPageSeverityId.ValueString()
+        filterNames = append(filterNames, "test_page_severity_id = "+fmt.Sprintf("%q", data.TestPageSeverityId.ValueString()))
+    }
+    if !data.TestPageWalksEscalation.IsNull() && !data.TestPageWalksEscalation.IsUnknown() {
+        filters["testPageWalksEscalation"] = data.TestPageWalksEscalation.ValueBool()
+        filterNames = append(filterNames, "test_page_walks_escalation = "+fmt.Sprintf("%t", data.TestPageWalksEscalation.ValueBool()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -398,6 +428,9 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
         "triggeredByWorkflowName": true,
         "pageMessage": true,
         "isObserverPage": true,
+        "testPageRecordKind": true,
+        "testPageSeverityId": true,
+        "testPageWalksEscalation": true,
         "_id": true,
     }
 
@@ -1067,6 +1100,59 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
         data.IsObserverPage = types.BoolValue(val)
     } else {
         data.IsObserverPage = types.BoolNull()
+    }
+    if obj, ok := item["testPageRecordKind"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TestPageRecordKind = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TestPageRecordKind = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TestPageRecordKind = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TestPageRecordKind = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageRecordKind = types.StringNull()
+        }
+    } else if arr, ok := item["testPageRecordKind"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TestPageRecordKind = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageRecordKind = types.StringNull()
+        }
+    } else if val, ok := item["testPageRecordKind"].(string); ok {
+        data.TestPageRecordKind = types.StringValue(val)
+    } else {
+        data.TestPageRecordKind = types.StringNull()
+    }
+    if obj, ok := item["testPageSeverityId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TestPageSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TestPageSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TestPageSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TestPageSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageSeverityId = types.StringNull()
+        }
+    } else if arr, ok := item["testPageSeverityId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TestPageSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageSeverityId = types.StringNull()
+        }
+    } else if val, ok := item["testPageSeverityId"].(string); ok {
+        data.TestPageSeverityId = types.StringValue(val)
+    } else {
+        data.TestPageSeverityId = types.StringNull()
+    }
+    if val, ok := item["testPageWalksEscalation"].(bool); ok {
+        data.TestPageWalksEscalation = types.BoolValue(val)
+    } else {
+        data.TestPageWalksEscalation = types.BoolNull()
     }
 
     // Write logs using the tflog package

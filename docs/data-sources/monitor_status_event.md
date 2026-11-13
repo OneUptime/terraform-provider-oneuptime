@@ -30,6 +30,7 @@ data "oneuptime_monitor_status_event" "by_id" {
 
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_monitoring_off` (Boolean) Was the monitor's monitoring turned off for this status event? Uptime, status pages and SLOs leave this time out.
 - `is_owner_notified` (Boolean) Are owners notified of status change?
 - `monitor_id` (String) Relation to Monitor ID Resource in which this object belongs. The ID of a `oneuptime_monitor`.
 - `monitor_status_id` (String) Relation to Monitor Status ID Resource in which this object belongs. The ID of a `oneuptime_monitor_status`.
