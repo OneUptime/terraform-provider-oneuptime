@@ -30,7 +30,7 @@ data "oneuptime_scheduled_maintenance_measurement_value" "by_id" {
 
 - `end_scheduled_maintenance_state_timeline_id` (String) The state timeline entry the end anchor resolved to, when it resolved to one. Not a foreign key - the value survives the timeline entry being removed.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
-- `scheduled_maintenance_id` (String) ID of the Scheduled Maintenance Event this measurement value was computed for. The ID of a `oneuptime_scheduled_maintenance_event`.
+- `scheduled_maintenance_id` (String) ID of the Maintenance Event this measurement value was computed for. The ID of a `oneuptime_scheduled_maintenance_event`.
 - `scheduled_maintenance_measurement_id` (String) ID of the Scheduled Maintenance Measurement definition this value was computed from. The ID of a `oneuptime_scheduled_maintenance_measurement`.
 - `start_scheduled_maintenance_state_timeline_id` (String) The state timeline entry the start anchor resolved to, when it resolved to one. Not a foreign key - the value survives the timeline entry being removed.
 - `status` (String) Outcome of evaluating this measurement - Recorded, Pending, Not Applicable or Invalid.

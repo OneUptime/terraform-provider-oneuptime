@@ -42,7 +42,7 @@ data "oneuptime_ai_insight" "by_id" {
 - `severity` (String) How urgent this insight is (High, Medium or Low), assigned deterministically by the detector.
 - `status` (String) Lifecycle of the insight. Detected is the defensive initial state — the scanner routes to ActionRequired or FixOpened in the same tick; Resolved and Dismissed are human actions.
 - `telemetry_exception_id` (String) The telemetry exception behind this insight (for NewException and ExceptionSpike insights).
-- `telemetry_service_id` (String) ID of the telemetry service this insight is about.
+- `telemetry_service_id` (String) ID of the service this insight is about.
 - `title` (String) One-line human-readable summary of the finding.
 - `trace_id` (String) A representative slow trace (for TraceLatencyRegression insights).
 - `triage_ai_run_id` (String) The budgeted, read-only AI triage run enqueued for this insight (an Investigation AIRun).

@@ -2,12 +2,12 @@
 page_title: "oneuptime_scheduled_maintenance_event Resource - oneuptime"
 subcategory: "Scheduled Maintenance"
 description: |-
-  Manage scheduled maintenance event for your project
+  Manage maintenance events for your project
 ---
 
 # oneuptime_scheduled_maintenance_event (Resource)
 
-Manage scheduled maintenance event for your project
+Manage maintenance events for your project
 
 ## Example Usage
 

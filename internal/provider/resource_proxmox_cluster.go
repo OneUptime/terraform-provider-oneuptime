@@ -67,6 +67,7 @@ type ProxmoxClusterResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Slug types.String `tfsdk:"slug"`
+    AgentLastSeenAt RFC3339Value `tfsdk:"agent_last_seen_at"`
     IsQuorate types.Bool `tfsdk:"is_quorate"`
     LastNotificationAt RFC3339Value `tfsdk:"last_notification_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -168,7 +169,7 @@ func (r *ProxmoxClusterResource) schemaDefinition() schema.Schema {
                 },
             },
             "otel_collector_status": schema.StringAttribute{
-                MarkdownDescription: "Connection status of the OTel Collector agent (connected or disconnected).",
+                MarkdownDescription: "Whether the cluster is being read: connected while it was read in the last 15 minutes, disconnected once it was not (see Agent Last Seen At for whether the agent is still sending).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -192,7 +193,7 @@ func (r *ProxmoxClusterResource) schemaDefinition() schema.Schema {
                 },
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "When metrics were last received from this cluster.",
+                MarkdownDescription: "When the cluster was last read: when the agent last read its nodes, guests or storage from the Proxmox VE API, or a node last pushed its own status.",
                 CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
@@ -299,6 +300,11 @@ func (r *ProxmoxClusterResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+            },
+            "agent_last_seen_at": schema.StringAttribute{
+                MarkdownDescription: "When the OneUptime Proxmox agent last sent anything for this cluster, whether or not it could read the Proxmox VE API.",
+                CustomType: RFC3339Type{},
+                Computed: true,
             },
             "is_quorate": schema.BoolAttribute{
                 MarkdownDescription: "True while the cluster reports corosync quorum (pve_up for cluster/<name>). Null until it reports.",
@@ -497,6 +503,7 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
+        "agentLastSeenAt": true,
         "isQuorate": true,
         "lastNotificationAt": true,
         "createdByUserId": true,
@@ -1066,6 +1073,17 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
     } else {
         data.Slug = types.StringNull()
     }
+    if obj, ok := dataMap["agentLastSeenAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AgentLastSeenAt = NewRFC3339Value(val)
+        } else {
+            data.AgentLastSeenAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["agentLastSeenAt"].(string); ok && val != "" {
+        data.AgentLastSeenAt = NewRFC3339Value(val)
+    } else {
+        data.AgentLastSeenAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["isQuorate"].(bool); ok {
         data.IsQuorate = types.BoolValue(val)
     } else {
@@ -1314,6 +1332,7 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
+        "agentLastSeenAt": true,
         "isQuorate": true,
         "lastNotificationAt": true,
         "createdByUserId": true,
@@ -1884,6 +1903,17 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.Slug = types.StringNull()
     }
+    if obj, ok := dataMap["agentLastSeenAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AgentLastSeenAt = NewRFC3339Value(val)
+        } else {
+            data.AgentLastSeenAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["agentLastSeenAt"].(string); ok && val != "" {
+        data.AgentLastSeenAt = NewRFC3339Value(val)
+    } else {
+        data.AgentLastSeenAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["isQuorate"].(bool); ok {
         data.IsQuorate = types.BoolValue(val)
     } else {
@@ -2238,6 +2268,7 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
+        "agentLastSeenAt": true,
         "isQuorate": true,
         "lastNotificationAt": true,
         "createdByUserId": true,
@@ -2801,6 +2832,17 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
+    }
+    if obj, ok := dataMap["agentLastSeenAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AgentLastSeenAt = NewRFC3339Value(val)
+        } else {
+            data.AgentLastSeenAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["agentLastSeenAt"].(string); ok && val != "" {
+        data.AgentLastSeenAt = NewRFC3339Value(val)
+    } else {
+        data.AgentLastSeenAt = NewRFC3339Null()
     }
     if val, ok := dataMap["isQuorate"].(bool); ok {
         data.IsQuorate = types.BoolValue(val)

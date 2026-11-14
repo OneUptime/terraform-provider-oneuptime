@@ -59,7 +59,7 @@ func (d *IncidentOnCallRuleDataSource) Metadata(ctx context.Context, req datasou
 
 func (d *IncidentOnCallRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Configure rules for automatically executing on-call duty policies when matching incidents are created Look up an existing incident on call rule by `id`, or by any of its other arguments (`name`, `ai_hold_time_in_minutes`, `created_by_user_id`, ...): each one set must match, and exactly one incident on call rule may match them all.",
+        MarkdownDescription: "Configure rules for automatically executing on-call policies when matching incidents are created Look up an existing incident on call rule by `id`, or by any of its other arguments (`name`, `ai_hold_time_in_minutes`, `created_by_user_id`, ...): each one set must match, and exactly one incident on call rule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -163,7 +163,7 @@ func (d *IncidentOnCallRuleDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies to execute when an incident matches this rule. IDs of `oneuptime_on_call_policy` resources.",
+                MarkdownDescription: "On-call policies to execute when an incident matches this rule. IDs of `oneuptime_on_call_policy` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },

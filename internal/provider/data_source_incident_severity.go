@@ -47,7 +47,7 @@ func (d *IncidentSeverityDataSource) Metadata(ctx context.Context, req datasourc
 
 func (d *IncidentSeverityDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage incident severity for your project (Created, Acknowledged for example). Add / edit or remove severities. Look up an existing incident severity by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `created_by_user_id`, ...): each one set must match, and exactly one incident severity may match them all.",
+        MarkdownDescription: "How much an incident matters. A new project starts with Critical Incident, Major Incident and Minor Incident: rename them, recolor them or add your own. Look up an existing incident severity by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `created_by_user_id`, ...): each one set must match, and exactly one incident severity may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

@@ -74,7 +74,7 @@ func (r *IncidentEpisodeOnCallRuleResource) Schema(ctx context.Context, req reso
 
 func (r *IncidentEpisodeOnCallRuleResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Configure rules for automatically executing on-call duty policies when matching incident episodes are created",
+        MarkdownDescription: "Configure rules for automatically executing on-call policies when matching incident episodes are created",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -216,7 +216,7 @@ func (r *IncidentEpisodeOnCallRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies to execute when an incident episode matches this rule. IDs of `oneuptime_on_call_policy` resources.",
+                MarkdownDescription: "On-call policies to execute when an incident episode matches this rule. IDs of `oneuptime_on_call_policy` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

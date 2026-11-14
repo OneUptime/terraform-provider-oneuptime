@@ -39,6 +39,7 @@ type ProxmoxClusterDataSourceModel struct {
     AgentVersion types.String `tfsdk:"agent_version"`
     PveVersion types.String `tfsdk:"pve_version"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
+    AgentLastSeenAt types.String `tfsdk:"agent_last_seen_at"`
     NodeCount types.Number `tfsdk:"node_count"`
     OnlineNodeCount types.Number `tfsdk:"online_node_count"`
     GuestCount types.Number `tfsdk:"guest_count"`
@@ -105,7 +106,7 @@ func (d *ProxmoxClusterDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "otel_collector_status": schema.StringAttribute{
-                MarkdownDescription: "Connection status of the OTel Collector agent (connected or disconnected).",
+                MarkdownDescription: "Whether the cluster is being read: connected while it was read in the last 15 minutes, disconnected once it was not (see Agent Last Seen At for whether the agent is still sending).",
                 Optional: true,
                 Computed: true,
             },
@@ -120,7 +121,11 @@ func (d *ProxmoxClusterDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "When metrics were last received from this cluster.",
+                MarkdownDescription: "When the cluster was last read: when the agent last read its nodes, guests or storage from the Proxmox VE API, or a node last pushed its own status.",
+                Computed: true,
+            },
+            "agent_last_seen_at": schema.StringAttribute{
+                MarkdownDescription: "When the OneUptime Proxmox agent last sent anything for this cluster, whether or not it could read the Proxmox VE API.",
                 Computed: true,
             },
             "node_count": schema.NumberAttribute{
@@ -375,6 +380,7 @@ func (d *ProxmoxClusterDataSource) Read(ctx context.Context, req datasource.Read
         "agentVersion": true,
         "pveVersion": true,
         "lastSeenAt": true,
+        "agentLastSeenAt": true,
         "nodeCount": true,
         "onlineNodeCount": true,
         "guestCount": true,
@@ -721,6 +727,30 @@ func (d *ProxmoxClusterDataSource) Read(ctx context.Context, req datasource.Read
         data.LastSeenAt = types.StringValue(val)
     } else {
         data.LastSeenAt = types.StringNull()
+    }
+    if obj, ok := item["agentLastSeenAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AgentLastSeenAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AgentLastSeenAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AgentLastSeenAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AgentLastSeenAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AgentLastSeenAt = types.StringNull()
+        }
+    } else if arr, ok := item["agentLastSeenAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AgentLastSeenAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AgentLastSeenAt = types.StringNull()
+        }
+    } else if val, ok := item["agentLastSeenAt"].(string); ok {
+        data.AgentLastSeenAt = types.StringValue(val)
+    } else {
+        data.AgentLastSeenAt = types.StringNull()
     }
     data.NodeCount = numberFromAPI(data.NodeCount, item["nodeCount"])
     data.OnlineNodeCount = numberFromAPI(data.OnlineNodeCount, item["onlineNodeCount"])

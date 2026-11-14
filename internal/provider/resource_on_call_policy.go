@@ -70,7 +70,7 @@ func (r *OnCallPolicyResource) Schema(ctx context.Context, req resource.SchemaRe
 
 func (r *OnCallPolicyResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Manage on-call duty, schedules and roster for your project",
+        MarkdownDescription: "Who is paged about an incident, an alert or an episode, and who is paged next if nobody acknowledges. Its levels are escalation rules.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

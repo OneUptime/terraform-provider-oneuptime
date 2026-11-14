@@ -35,9 +35,9 @@ data "oneuptime_push_notification_log" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `incident_id` (String) ID of Incident associated with this Push (if any). The ID of a `oneuptime_incident`.
 - `monitor_id` (String) ID of Monitor associated with this Push (if any). The ID of a `oneuptime_monitor`.
-- `on_call_duty_policy_escalation_rule_id` (String) ID of On-Call Duty Policy Escalation Rule associated with this Push Notification (if any). The ID of a `oneuptime_escalation_rule`.
-- `on_call_duty_policy_id` (String) ID of On-Call Duty Policy associated with this Push Notification (if any). The ID of a `oneuptime_on_call_policy`.
-- `on_call_duty_policy_schedule_id` (String) ID of On-Call Duty Policy Schedule associated with this Push Notification (if any). The ID of a `oneuptime_on_call_policy_schedule`.
+- `on_call_duty_policy_escalation_rule_id` (String) ID of On-Call Policy Escalation Rule associated with this Push Notification (if any). The ID of a `oneuptime_escalation_rule`.
+- `on_call_duty_policy_id` (String) ID of On-Call Policy associated with this Push Notification (if any). The ID of a `oneuptime_on_call_policy`.
+- `on_call_duty_policy_schedule_id` (String) ID of On-Call Schedule associated with this Push Notification (if any). The ID of a `oneuptime_on_call_policy_schedule`.
 - `scheduled_maintenance_id` (String) ID of Scheduled Maintenance associated with this Push (if any). The ID of a `oneuptime_scheduled_maintenance_event`.
 - `status` (String) Status of the push notification.
 - `status_message` (String) Status Message (if any).

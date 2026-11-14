@@ -2,12 +2,12 @@
 page_title: "oneuptime_scheduled_event_public_note Data Source - oneuptime"
 subcategory: "Scheduled Maintenance"
 description: |-
-  Manage public notes for your scheduled event
+  Manage public notes for your maintenance event
 ---
 
 # oneuptime_scheduled_event_public_note (Data Source)
 
-Manage public notes for your scheduled event
+Manage public notes for your maintenance event
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one scheduled event public note may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 

@@ -2,12 +2,12 @@
 page_title: "oneuptime_telemetry_ingestion_key Data Source - oneuptime"
 subcategory: "Telemetry & Dashboards"
 description: |-
-  Manage Telemetry Ingestion Keys for your project
+  Manage ingestion keys for your project
 ---
 
 # oneuptime_telemetry_ingestion_key (Data Source)
 
-Manage Telemetry Ingestion Keys for your project
+Manage ingestion keys for your project
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one telemetry ingestion key may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
@@ -54,5 +54,5 @@ data "oneuptime_telemetry_ingestion_key" "by_id" {
 - `expires_at` (String) Date and time after which this key stops being accepted. Empty means it never expires, which is how every key behaved before this column existed. Setting one on a Browser key bounds how long a scraped copy stays useful.
 - `last_used_at` (String) The last time telemetry was accepted with this key. Empty means it has never been used since this was recorded. Use it to find keys that are safe to rotate or delete.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `secret_key` (String, Sensitive) Secret Telemetry Ingestion Key.
+- `secret_key` (String, Sensitive) Secret ingestion key.
 - `updated_at` (String) Date and Time when the object was updated.

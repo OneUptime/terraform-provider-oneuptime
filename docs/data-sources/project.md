@@ -65,6 +65,7 @@ data "oneuptime_project" "by_id" {
 - `default_metric_cardinality_budget` (Number) Project-wide default max distinct series per metric. Services without a per-service override use this value.
 - `default_network_topology_layout` (String) The layout network topology maps open on: force, tiered, radial, star or parentChild. Empty: Automatic for all devices, By network layer for a site.
 - `default_telemetry_retention_in_days` (Number) Project-wide default number of days to retain telemetry data (logs, traces, metrics). Services without a per-service override use this value.
+- `disable_dashboard_recording` (Boolean) When true, OneUptime never records how members use the dashboard while working in this project. Recording happens only on OneUptime Cloud, only for members who accepted analytics, and only on the setup pages, with what they type or store masked.
 - `disable_on_call_notification_fallback` (Boolean) When enabled, a page routed to a responder with no matching notification rule fails instead of falling back to their verified notification methods.
 - `discovered_device_retention_in_days` (Number) Days a discovered device stays once no longer seen: 7, 14, 30, 60, 90, 180 or 365, or 0 to keep all. Monitored and classified devices always stay.
 - `do_not_add_global_probes_by_default_on_new_monitors` (Boolean) If enabled, global probes will NOT be automatically added to new monitors. Enable this only if you are using ONLY custom probes to monitor your resources.
@@ -105,6 +106,7 @@ data "oneuptime_project" "by_id" {
 - `incident_numbers_start_at` (Number) Where incident numbers start: the next incident gets this number if no incident has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every incident number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing incidents keep their numbers.
 - `incident_retention_in_days` (Number) Days a resolved incident is kept once resolved: 30, 60, 90, 180, 365, 730 or 1095, or 0 to keep every incident (the default). Incidents that are not resolved are never deleted.
 - `is_feature_flag_monitor_groups_enabled` (Boolean) Is Feature Flag Monitor Groups Enabled.
+- `is_sample_project` (Boolean) A sample project made for looking around: nothing in it is real, it notifies nobody, its status page is never public and it is never billed. Set by OneUptime when the sample is made.
 - `is_session_replay_allowed` (Boolean) When enabled, RUM applications in this project may record session replays if they are individually enabled too. On by default; switch it off here to stop session replay across the entire project in one place.
 - `keep_incidents_with_completed_postmortem` (Boolean) When on (the default), an incident whose postmortem is completed is never deleted by the incident retention, however long ago it was resolved.
 - `let_customer_support_access_project` (Boolean) OneUptime customer support can access this project. This is used for debugging purposes.

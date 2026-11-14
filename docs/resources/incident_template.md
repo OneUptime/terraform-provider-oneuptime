@@ -41,7 +41,7 @@ resource "oneuptime_incident_template" "example" {
 - `kubernetes_clusters` (Set of String) List of Kubernetes clusters to pre-populate on incidents created from this template. IDs of `oneuptime_kubernetes_cluster` resources.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) List of monitors affected by this incident. IDs of `oneuptime_monitor` resources.
-- `on_call_duty_policies` (Set of String) List of on-call duty policies affected by this incident template. IDs of `oneuptime_on_call_policy` resources.
+- `on_call_duty_policies` (Set of String) List of on-call policies affected by this incident template. IDs of `oneuptime_on_call_policy` resources.
 - `podman_hosts` (Set of String) List of Podman hosts to pre-populate on incidents created from this template. IDs of `oneuptime_podman_host` resources.
 - `services` (Set of String) List of services to pre-populate on incidents created from this template. IDs of `oneuptime_service` resources.
 - `status_pages` (Set of String) Limit incidents declared from this template to these status pages. Leave empty to reach every status page that lists the incident's monitors. IDs of `oneuptime_status_page` resources.

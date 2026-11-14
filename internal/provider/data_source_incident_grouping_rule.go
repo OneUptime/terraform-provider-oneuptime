@@ -51,6 +51,7 @@ type IncidentGroupingRuleDataSourceModel struct {
     GroupByIncidentTitle types.Bool `tfsdk:"group_by_incident_title"`
     GroupByIncidentLabels types.Bool `tfsdk:"group_by_incident_labels"`
     GroupByMonitorLabels types.Bool `tfsdk:"group_by_monitor_labels"`
+    GroupByConnectedServices types.Bool `tfsdk:"group_by_connected_services"`
     EnableTimeWindow types.Bool `tfsdk:"enable_time_window"`
     TimeWindowMinutes types.Number `tfsdk:"time_window_minutes"`
     EnableMinimumIncidentCount types.Bool `tfsdk:"enable_minimum_incident_count"`
@@ -196,6 +197,11 @@ func (d *IncidentGroupingRuleDataSource) Schema(ctx context.Context, req datasou
                 Optional: true,
                 Computed: true,
             },
+            "group_by_connected_services": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, incidents on services that call each other on the Service Map are grouped into the same episode, and incidents on unconnected services into separate ones. Incidents on no service are grouped by monitor.",
+                Optional: true,
+                Computed: true,
+            },
             "enable_time_window": schema.BoolAttribute{
                 MarkdownDescription: "Enable time-based grouping. When enabled, incidents are grouped within the specified time window. When disabled, all matching incidents are grouped into a single ongoing episode regardless of time.",
                 Optional: true,
@@ -261,7 +267,7 @@ func (d *IncidentGroupingRuleDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies to execute for episodes created by this rule. IDs of `oneuptime_on_call_policy` resources.",
+                MarkdownDescription: "List of on-call policies to execute for episodes created by this rule. IDs of `oneuptime_on_call_policy` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -409,6 +415,10 @@ func (d *IncidentGroupingRuleDataSource) Read(ctx context.Context, req datasourc
         filters["groupByMonitorLabels"] = data.GroupByMonitorLabels.ValueBool()
         filterNames = append(filterNames, "group_by_monitor_labels = "+fmt.Sprintf("%t", data.GroupByMonitorLabels.ValueBool()))
     }
+    if !data.GroupByConnectedServices.IsNull() && !data.GroupByConnectedServices.IsUnknown() {
+        filters["groupByConnectedServices"] = data.GroupByConnectedServices.ValueBool()
+        filterNames = append(filterNames, "group_by_connected_services = "+fmt.Sprintf("%t", data.GroupByConnectedServices.ValueBool()))
+    }
     if !data.EnableTimeWindow.IsNull() && !data.EnableTimeWindow.IsUnknown() {
         filters["enableTimeWindow"] = data.EnableTimeWindow.ValueBool()
         filterNames = append(filterNames, "enable_time_window = "+fmt.Sprintf("%t", data.EnableTimeWindow.ValueBool()))
@@ -520,6 +530,7 @@ func (d *IncidentGroupingRuleDataSource) Read(ctx context.Context, req datasourc
         "groupByIncidentTitle": true,
         "groupByIncidentLabels": true,
         "groupByMonitorLabels": true,
+        "groupByConnectedServices": true,
         "enableTimeWindow": true,
         "timeWindowMinutes": true,
         "enableMinimumIncidentCount": true,
@@ -1018,6 +1029,11 @@ func (d *IncidentGroupingRuleDataSource) Read(ctx context.Context, req datasourc
         data.GroupByMonitorLabels = types.BoolValue(val)
     } else {
         data.GroupByMonitorLabels = types.BoolNull()
+    }
+    if val, ok := item["groupByConnectedServices"].(bool); ok {
+        data.GroupByConnectedServices = types.BoolValue(val)
+    } else {
+        data.GroupByConnectedServices = types.BoolNull()
     }
     if val, ok := item["enableTimeWindow"].(bool); ok {
         data.EnableTimeWindow = types.BoolValue(val)

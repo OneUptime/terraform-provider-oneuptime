@@ -265,7 +265,7 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "show_scheduled_event_labels_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Scheduled Event Labels on Status Page?",
+                MarkdownDescription: "Show Maintenance Event Labels on Status Page?",
                 Optional: true,
                 Computed: true,
             },
@@ -280,7 +280,7 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "allow_subscribers_to_choose_event_types": schema.BoolAttribute{
-                MarkdownDescription: "Can subscribers choose which event type like Announcements, Incidents, Scheduled Events to subscribe to?",
+                MarkdownDescription: "Can subscribers choose which event type like Announcements, Incidents, Maintenance Events to subscribe to?",
                 Optional: true,
                 Computed: true,
             },
@@ -494,7 +494,7 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "show_scheduled_maintenance_events_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Scheduled Maintenance Events on Status Page?",
+                MarkdownDescription: "Show Maintenance Events on Status Page?",
                 Optional: true,
                 Computed: true,
             },

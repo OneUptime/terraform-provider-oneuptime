@@ -35,7 +35,7 @@ data "oneuptime_monitor" "by_id" {
 - `description` (String) Friendly description that will help you remember.
 - `disable_active_monitoring` (Boolean) Disable active monitoring for this resource?
 - `disable_active_monitoring_because_of_manual_incident` (Boolean) Disable Monitoring because of Incident which is creeated manually by user.
-- `disable_active_monitoring_because_of_scheduled_maintenance_event` (Boolean) Disable Monitoring because of Ongoing Scheduled Maintenance Event.
+- `disable_active_monitoring_because_of_scheduled_maintenance_event` (Boolean) Disable Monitoring because of Ongoing Maintenance Event.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `incoming_email_custom_local_part` (String) This field is for Incoming Email Monitor only. A custom name for this monitor's inbound email address: the part before the @, on the server's inbound email domain. While set, it replaces the generated monitor-{secret key} address. Must be unique across all monitors. Set to null to go back to the generated address.
 - `is_all_probes_disconnected_from_this_monitor` (Boolean) All Probes Disconnected From This Monitor. Is this monitor not being monitored?
@@ -73,7 +73,7 @@ data "oneuptime_monitor" "by_id" {
 - `iot_fleets` (Set of String) IoT fleets this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_iot_fleet` resources.
 - `kubernetes_clusters` (Set of String) Kubernetes clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_kubernetes_cluster` resources.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
-- `monitor_steps` (String) What would you like to monitor and what is the criteria?
+- `monitor_steps` (String) What the monitor checks, and the criteria that judge each result. The Dashboard shows a step's criteria on the monitor's Criteria page.
 - `open_stack_clouds` (Set of String) OpenStack clouds this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_openstack_cloud` resources.
 - `podman_hosts` (Set of String) Podman hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_podman_host` resources.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

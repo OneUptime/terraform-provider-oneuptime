@@ -28,7 +28,7 @@ data "oneuptime_status_page" "by_id" {
 
 ### Optional
 
-- `allow_subscribers_to_choose_event_types` (Boolean) Can subscribers choose which event type like Announcements, Incidents, Scheduled Events to subscribe to?
+- `allow_subscribers_to_choose_event_types` (Boolean) Can subscribers choose which event type like Announcements, Incidents, Maintenance Events to subscribe to?
 - `allow_subscribers_to_choose_resources` (Boolean) Can subscribers choose which resources to subscribe to?
 - `allowed_subscriber_email_domains` (String) The domains an email subscriber's address may be at, one a line, such as acme.com. An address at a subdomain of one matches too. Sign-ups and additions at any other domain are refused, and an email subscriber at another domain is sent nothing. Empty: any domain.
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
@@ -88,8 +88,8 @@ data "oneuptime_status_page" "by_id" {
 - `show_incidents_on_status_page` (Boolean) Show Incidents on Status Page?
 - `show_overall_uptime_percent_on_status_page` (Boolean) Show Overall Uptime Percent on Status Page?
 - `show_scheduled_event_history_in_days` (Number) How many days of scheduled event history should be shown on the status page (in days)?
-- `show_scheduled_event_labels_on_status_page` (Boolean) Show Scheduled Event Labels on Status Page?
-- `show_scheduled_maintenance_events_on_status_page` (Boolean) Show Scheduled Maintenance Events on Status Page?
+- `show_scheduled_event_labels_on_status_page` (Boolean) Show Maintenance Event Labels on Status Page?
+- `show_scheduled_maintenance_events_on_status_page` (Boolean) Show Maintenance Events on Status Page?
 - `show_subscriber_page_on_status_page` (Boolean) Show Subscriber Page on Status Page?
 - `show_uptime_history_in_days` (Number) How many days of uptime history should be shown on the status page? Maximum is 90 days.
 - `slug` (String) Friendly globally unique name for your object.

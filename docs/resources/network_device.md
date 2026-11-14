@@ -97,6 +97,7 @@ resource "oneuptime_network_device" "example" {
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
+- `last_poll_received_at` (String) When OneUptime received the poll whose result this device shows (isReachable, isSnmpReachable and the interface counts). A poll received earlier never overwrites that result: a retried poll, or one that waited longer in the queue than the poll after it. Managed by OneUptime.
 - `last_walk_log` (String) The previous poll's interface counters. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls, and stores nothing else - the rest of the walk response has no reader and this column is rewritten on every poll of every device. Managed by the server. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `refresh_requested_at` (String) When someone last asked for this device to be read again now (Refresh). Its probe reads it within a minute. Managed by the server.

@@ -2,12 +2,12 @@
 page_title: "oneuptime_incident_state Resource - oneuptime"
 subcategory: "Incidents"
 description: |-
-  Manage incident states for your project (Created, Acknowledged for example). Add / edit or remove states.
+  Where an incident is in your response. A new project starts with Identified, Acknowledged and Resolved: rename them or add your own between them.
 ---
 
 # oneuptime_incident_state (Resource)
 
-Manage incident states for your project (Created, Acknowledged for example). Add / edit or remove states.
+Where an incident is in your response. A new project starts with Identified, Acknowledged and Resolved: rename them or add your own between them.
 
 ## Example Usage
 

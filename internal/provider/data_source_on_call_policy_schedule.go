@@ -53,7 +53,7 @@ func (d *OnCallPolicyScheduleDataSource) Metadata(ctx context.Context, req datas
 
 func (d *OnCallPolicyScheduleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage schedules and rotations for your on-call duty policy. Look up an existing on call policy schedule by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `current_user_id_on_roster`, ...): each one set must match, and exactly one on call policy schedule may match them all.",
+        MarkdownDescription: "Who is on call at any moment: people take turns in layers, and each one hands over to the next. Look up an existing on call policy schedule by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `current_user_id_on_roster`, ...): each one set must match, and exactly one on call policy schedule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

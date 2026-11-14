@@ -52,7 +52,7 @@ func (d *OnCallPolicyDataSource) Metadata(ctx context.Context, req datasource.Me
 
 func (d *OnCallPolicyDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage on-call duty, schedules and roster for your project Look up an existing on call policy by `id`, or by any of its other arguments (`name`, `acknowledgement_timeout_in_minutes`, `archived_by_user_id`, ...): each one set must match, and exactly one on call policy may match them all.",
+        MarkdownDescription: "Who is paged about an incident, an alert or an episode, and who is paged next if nobody acknowledges. Its levels are escalation rules. Look up an existing on call policy by `id`, or by any of its other arguments (`name`, `acknowledgement_timeout_in_minutes`, `archived_by_user_id`, ...): each one set must match, and exactly one on call policy may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

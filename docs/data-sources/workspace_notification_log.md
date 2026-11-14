@@ -38,9 +38,9 @@ data "oneuptime_workspace_notification_log" "by_id" {
 - `incident_id` (String) ID of Incident associated with this message (if any). The ID of a `oneuptime_incident`.
 - `message` (String) Content of the message.
 - `monitor_id` (String) ID of Monitor associated with this message (if any). The ID of a `oneuptime_monitor`.
-- `on_call_duty_policy_escalation_rule_id` (String) ID of On-Call Duty Policy Escalation Rule associated with this message (if any). The ID of a `oneuptime_escalation_rule`.
-- `on_call_duty_policy_id` (String) ID of On-Call Duty Policy associated with this message (if any). The ID of a `oneuptime_on_call_policy`.
-- `on_call_duty_policy_schedule_id` (String) ID of On-Call Duty Policy Schedule associated with this message (if any). The ID of a `oneuptime_on_call_policy_schedule`.
+- `on_call_duty_policy_escalation_rule_id` (String) ID of On-Call Policy Escalation Rule associated with this message (if any). The ID of a `oneuptime_escalation_rule`.
+- `on_call_duty_policy_id` (String) ID of On-Call Policy associated with this message (if any). The ID of a `oneuptime_on_call_policy`.
+- `on_call_duty_policy_schedule_id` (String) ID of On-Call Schedule associated with this message (if any). The ID of a `oneuptime_on_call_policy_schedule`.
 - `scheduled_maintenance_id` (String) ID of Scheduled Maintenance associated with this message (if any). The ID of a `oneuptime_scheduled_maintenance_event`.
 - `status` (String) Status of the message.
 - `status_message` (String) Status Message (if any).

@@ -158,7 +158,7 @@ func (r *AlertResource) schemaDefinition() schema.Schema {
                 Validators: recordIDValidators("oneuptime_monitor"),
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies affected by this alert. IDs of `oneuptime_on_call_policy` resources.",
+                MarkdownDescription: "List of on-call policies affected by this alert. IDs of `oneuptime_on_call_policy` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

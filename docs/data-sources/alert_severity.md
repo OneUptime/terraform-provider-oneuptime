@@ -2,12 +2,12 @@
 page_title: "oneuptime_alert_severity Data Source - oneuptime"
 subcategory: "Alerts"
 description: |-
-  Manage alert severity for your project (Created, Acknowledged for example). Add / edit or remove severities.
+  How much an alert matters. A new project starts with High and Low: rename them, recolor them or add your own.
 ---
 
 # oneuptime_alert_severity (Data Source)
 
-Manage alert severity for your project (Created, Acknowledged for example). Add / edit or remove severities.
+How much an alert matters. A new project starts with High and Low: rename them, recolor them or add your own.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one alert severity may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 

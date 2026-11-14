@@ -144,6 +144,7 @@ type ProjectDataSourceModel struct {
     RecordAndTranscribeIncidentCalls types.Bool `tfsdk:"record_and_transcribe_incident_calls"`
     RequireApprovalForIncidentPublicNotes types.Bool `tfsdk:"require_approval_for_incident_public_notes"`
     RequireApprovalForScheduledMaintenancePublicNotes types.Bool `tfsdk:"require_approval_for_scheduled_maintenance_public_notes"`
+    DisableDashboardRecording types.Bool `tfsdk:"disable_dashboard_recording"`
     LogsDailyIngestionBudgetInGb types.Number `tfsdk:"logs_daily_ingestion_budget_in_gb"`
     TracesDailyIngestionBudgetInGb types.Number `tfsdk:"traces_daily_ingestion_budget_in_gb"`
     MetricsDailyIngestionBudgetInGb types.Number `tfsdk:"metrics_daily_ingestion_budget_in_gb"`
@@ -156,6 +157,7 @@ type ProjectDataSourceModel struct {
     SecurityEventsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"security_events_ingestion_rate_limit_in_mb_per_second"`
     Goals types.String `tfsdk:"goals"`
     ProductSettings types.String `tfsdk:"product_settings"`
+    IsSampleProject types.Bool `tfsdk:"is_sample_project"`
 }
 
 func (d *ProjectDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -754,6 +756,11 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Optional: true,
                 Computed: true,
             },
+            "disable_dashboard_recording": schema.BoolAttribute{
+                MarkdownDescription: "When true, OneUptime never records how members use the dashboard while working in this project. Recording happens only on OneUptime Cloud, only for members who accepted analytics, and only on the setup pages, with what they type or store masked.",
+                Optional: true,
+                Computed: true,
+            },
             "logs_daily_ingestion_budget_in_gb": schema.NumberAttribute{
                 MarkdownDescription: "Set by the instance admin. The most logs this project may send in a budget day, in GB, counted decompressed as they arrive; once used up they are refused until the budget resets. Empty: the instance default. 0: no limit for this project.",
                 Optional: true,
@@ -810,6 +817,11 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "product_settings": schema.StringAttribute{
                 MarkdownDescription: "The products this project hides from its menu, Home and Search's list, and where that list came from (its goals, or a member). A hidden product still works and is found by Search. Not set: every product is shown. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "is_sample_project": schema.BoolAttribute{
+                MarkdownDescription: "A sample project made for looking around: nothing in it is real, it notifies nobody, its status page is never public and it is never billed. Set by OneUptime when the sample is made.",
+                Optional: true,
                 Computed: true,
             },
         },
@@ -1295,6 +1307,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["requireApprovalForScheduledMaintenancePublicNotes"] = data.RequireApprovalForScheduledMaintenancePublicNotes.ValueBool()
         filterNames = append(filterNames, "require_approval_for_scheduled_maintenance_public_notes = "+fmt.Sprintf("%t", data.RequireApprovalForScheduledMaintenancePublicNotes.ValueBool()))
     }
+    if !data.DisableDashboardRecording.IsNull() && !data.DisableDashboardRecording.IsUnknown() {
+        filters["disableDashboardRecording"] = data.DisableDashboardRecording.ValueBool()
+        filterNames = append(filterNames, "disable_dashboard_recording = "+fmt.Sprintf("%t", data.DisableDashboardRecording.ValueBool()))
+    }
     if !data.LogsDailyIngestionBudgetInGb.IsNull() && !data.LogsDailyIngestionBudgetInGb.IsUnknown() {
         filters["logsDailyIngestionBudgetInGB"] = lookupNumber(data.LogsDailyIngestionBudgetInGb)
         filterNames = append(filterNames, "logs_daily_ingestion_budget_in_gb = "+data.LogsDailyIngestionBudgetInGb.ValueBigFloat().String())
@@ -1334,6 +1350,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     if !data.SecurityEventsIngestionRateLimitInMbPerSecond.IsNull() && !data.SecurityEventsIngestionRateLimitInMbPerSecond.IsUnknown() {
         filters["securityEventsIngestionRateLimitInMBPerSecond"] = lookupNumber(data.SecurityEventsIngestionRateLimitInMbPerSecond)
         filterNames = append(filterNames, "security_events_ingestion_rate_limit_in_mb_per_second = "+data.SecurityEventsIngestionRateLimitInMbPerSecond.ValueBigFloat().String())
+    }
+    if !data.IsSampleProject.IsNull() && !data.IsSampleProject.IsUnknown() {
+        filters["isSampleProject"] = data.IsSampleProject.ValueBool()
+        filterNames = append(filterNames, "is_sample_project = "+fmt.Sprintf("%t", data.IsSampleProject.ValueBool()))
     }
 
     if hasId && len(filters) > 0 {
@@ -1469,6 +1489,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "recordAndTranscribeIncidentCalls": true,
         "requireApprovalForIncidentPublicNotes": true,
         "requireApprovalForScheduledMaintenancePublicNotes": true,
+        "disableDashboardRecording": true,
         "logsDailyIngestionBudgetInGB": true,
         "tracesDailyIngestionBudgetInGB": true,
         "metricsDailyIngestionBudgetInGB": true,
@@ -1481,6 +1502,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "securityEventsIngestionRateLimitInMBPerSecond": true,
         "goals": true,
         "productSettings": true,
+        "isSampleProject": true,
         "_id": true,
     }
 
@@ -2675,6 +2697,11 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.RequireApprovalForScheduledMaintenancePublicNotes = types.BoolNull()
     }
+    if val, ok := item["disableDashboardRecording"].(bool); ok {
+        data.DisableDashboardRecording = types.BoolValue(val)
+    } else {
+        data.DisableDashboardRecording = types.BoolNull()
+    }
     data.LogsDailyIngestionBudgetInGb = numberFromAPI(data.LogsDailyIngestionBudgetInGb, item["logsDailyIngestionBudgetInGB"])
     data.TracesDailyIngestionBudgetInGb = numberFromAPI(data.TracesDailyIngestionBudgetInGb, item["tracesDailyIngestionBudgetInGB"])
     data.MetricsDailyIngestionBudgetInGb = numberFromAPI(data.MetricsDailyIngestionBudgetInGb, item["metricsDailyIngestionBudgetInGB"])
@@ -2732,6 +2759,11 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.ProductSettings = types.StringValue(val)
     } else {
         data.ProductSettings = types.StringNull()
+    }
+    if val, ok := item["isSampleProject"].(bool); ok {
+        data.IsSampleProject = types.BoolValue(val)
+    } else {
+        data.IsSampleProject = types.BoolNull()
     }
 
     // Write logs using the tflog package

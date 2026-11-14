@@ -67,7 +67,7 @@ func (d *OnCallDutyExecutionLogDataSource) Metadata(ctx context.Context, req dat
 
 func (d *OnCallDutyExecutionLogDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Logs for on-call duty policy execution. Look up an existing on call duty execution log by `id`, or by any of its other arguments (`acknowledged_by_team_id`, `acknowledged_by_user_id`, `ai_hold_outcome`, ...): each one set must match, and exactly one on call duty execution log may match them all.",
+        MarkdownDescription: "Each time an on-call policy runs: what started it, how far it got, and who it paged. Look up an existing on call duty execution log by `id`, or by any of its other arguments (`acknowledged_by_team_id`, `acknowledged_by_user_id`, `ai_hold_outcome`, ...): each one set must match, and exactly one on call duty execution log may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -128,7 +128,7 @@ func (d *OnCallDutyExecutionLogDataSource) Schema(ctx context.Context, req datas
                 Computed: true,
             },
             "user_notification_event_type": schema.StringAttribute{
-                MarkdownDescription: "Type of event that triggered this on-call duty policy.",
+                MarkdownDescription: "Type of event that triggered this on-call policy.",
                 Optional: true,
                 Computed: true,
             },

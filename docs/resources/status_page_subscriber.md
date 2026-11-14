@@ -26,7 +26,7 @@ resource "oneuptime_status_page_subscriber" "example" {
 ### Optional
 
 - `internal_note` (String) Any notes or text you would like to add to this subscriber object. This is for internal use only.
-- `is_subscribed_to_all_event_types` (Boolean) Is Subscriber Subscribed to All Event Types (like Incidents, Scheduled Events, Announcements) on this status page? Defaults to `true`.
+- `is_subscribed_to_all_event_types` (Boolean) Is Subscriber Subscribed to All Event Types (like Incidents, Maintenance Events, Announcements) on this status page? Defaults to `true`.
 - `is_subscribed_to_all_resources` (Boolean) Is Subscriber Subscribed to All Resources on this status page? Defaults to `true`.
 - `is_subscription_confirmed` (Boolean) Has subscriber confirmed their subscription? (for example, by clicking on a confirmation link in an email). Defaults to `false`.
 - `is_unsubscribed` (Boolean) Is Subscriber Unsubscribed? Defaults to `false`.
@@ -36,7 +36,7 @@ resource "oneuptime_status_page_subscriber" "example" {
 - `send_you_have_subscribed_message` (Boolean) Send You Have Subscribed Message when subscriber is created? Defaults to `true`.
 - `slack_incoming_webhook_url` (String, Sensitive) Slack incoming webhook URL to send notifications to Slack channel.
 - `slack_workspace_name` (String) Name of the Slack workspace for validation and identification.
-- `status_page_event_types` (String) Which event types is the subscriber subscribed to (like Incidents, Scheduled Events, Announcements). A JSON value: write it with `jsonencode()`.
+- `status_page_event_types` (String) Which event types is the subscriber subscribed to (like Incidents, Maintenance Events, Announcements). A JSON value: write it with `jsonencode()`.
 - `status_page_resources` (Set of String) Relation to Status Page Resources where this subscriber is subscribed to. IDs of `oneuptime_status_page_resource` resources.
 - `subscriber_email` (String) Email address of the subscriber.
 - `subscriber_phone` (String) Phone number of subscriber.

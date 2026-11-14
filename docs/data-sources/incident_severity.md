@@ -2,12 +2,12 @@
 page_title: "oneuptime_incident_severity Data Source - oneuptime"
 subcategory: "Incidents"
 description: |-
-  Manage incident severity for your project (Created, Acknowledged for example). Add / edit or remove severities.
+  How much an incident matters. A new project starts with Critical Incident, Major Incident and Minor Incident: rename them, recolor them or add your own.
 ---
 
 # oneuptime_incident_severity (Data Source)
 
-Manage incident severity for your project (Created, Acknowledged for example). Add / edit or remove severities.
+How much an incident matters. A new project starts with Critical Incident, Major Incident and Minor Incident: rename them, recolor them or add your own.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one incident severity may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 

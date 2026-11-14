@@ -160,7 +160,7 @@ func (d *AlertEpisodeDataSource) Schema(ctx context.Context, req datasource.Sche
                 Validators: recordIDValidators("oneuptime_alert_grouping_rule"),
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.",
+                MarkdownDescription: "List of on-call policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },

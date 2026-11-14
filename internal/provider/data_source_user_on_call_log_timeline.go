@@ -104,7 +104,7 @@ func (d *UserOnCallLogTimelineDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "on_call_duty_policy_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime on-call duty policy in which this object belongs. Empty when the person was paged directly, without an on-call policy. The ID of a `oneuptime_on_call_policy`.",
+                MarkdownDescription: "ID of your OneUptime on-call policy in which this object belongs. Empty when the person was paged directly, without an on-call policy. The ID of a `oneuptime_on_call_policy`.",
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_on_call_policy"),

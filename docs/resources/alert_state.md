@@ -2,12 +2,12 @@
 page_title: "oneuptime_alert_state Resource - oneuptime"
 subcategory: "Alerts"
 description: |-
-  Manage alert states for your project (Created, Acknowledged for example). Add / edit or remove states.
+  Where an alert is in your response. A new project starts with Identified, Acknowledged and Resolved: rename them or add your own between them.
 ---
 
 # oneuptime_alert_state (Resource)
 
-Manage alert states for your project (Created, Acknowledged for example). Add / edit or remove states.
+Where an alert is in your response. A new project starts with Identified, Acknowledged and Resolved: rename them or add your own between them.
 
 ## Example Usage
 

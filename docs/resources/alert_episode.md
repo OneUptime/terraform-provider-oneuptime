@@ -40,7 +40,7 @@ resource "oneuptime_alert_episode" "example" {
 - `is_private` (Boolean) If true, this alert episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Defaults to `false`.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_alert_added_at` (String) When the last alert was added to this episode.
-- `on_call_duty_policies` (Set of String) List of on-call duty policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.
+- `on_call_duty_policies` (Set of String) List of on-call policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.
 - `post_updates_to_workspace_channels` (String) Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams). A JSON value: write it with `jsonencode()`.
 - `remediation_notes` (String) User-documented remediation steps and notes for this episode.
 - `resolved_at` (String) When this episode was resolved.

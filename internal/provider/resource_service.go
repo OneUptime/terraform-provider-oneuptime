@@ -84,7 +84,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
 
 func (r *ServiceResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Services is a collection of services that you have in your organization. It can be a collection of services that you are monitoring or services that you are providing to your customers. It can be anything that you want to keep track of.",
+        MarkdownDescription: "An application or microservice you run. OneUptime adds one the first time its telemetry arrives, named by its service.name, and brings its logs, traces, metrics, exceptions, incidents and owners together.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

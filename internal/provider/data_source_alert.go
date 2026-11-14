@@ -143,7 +143,7 @@ func (d *AlertDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Validators: recordIDValidators("oneuptime_monitor"),
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies affected by this alert. IDs of `oneuptime_on_call_policy` resources.",
+                MarkdownDescription: "List of on-call policies affected by this alert. IDs of `oneuptime_on_call_policy` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },

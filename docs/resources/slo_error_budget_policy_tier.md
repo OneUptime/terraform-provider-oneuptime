@@ -45,7 +45,7 @@ resource "oneuptime_slo_error_budget_policy_tier" "example" {
 - `freezes_deployments` (Boolean) While the SLO is in this tier, its deploymentsAllowed field is false, so CI/CD pipelines that check it hold back releases. Disabled by default. Defaults to `false`.
 - `incident_description_template` (String) Description (in Markdown) of the incident declared when the SLO enters this tier. Supports template variables. Leave empty to use the default description.
 - `incident_labels` (Set of String) Labels added to incidents declared by this tier. IDs of `oneuptime_label` resources.
-- `incident_on_call_duty_policies` (Set of String) On-call duty policies attached to incidents declared by this tier. IDs of `oneuptime_on_call_policy` resources.
+- `incident_on_call_duty_policies` (Set of String) On-call policies attached to incidents declared by this tier. IDs of `oneuptime_on_call_policy` resources.
 - `incident_owner_teams` (Set of String) Teams added as owners of incidents declared by this tier. IDs of `oneuptime_team` resources.
 - `incident_owner_user_emails` (Set of String) The email addresses of the people in `incident_owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
 - `incident_owner_users` (Set of String) Users added as owners of incidents declared by this tier. IDs of `oneuptime_user` records. Or name them by email address, in `incident_owner_user_emails`.
@@ -55,7 +55,7 @@ resource "oneuptime_slo_error_budget_policy_tier" "example" {
 - `is_alert_private` (Boolean) Make the alert raised by this tier private, so only its owners, project admins and project owners can see it. Disabled by default. Defaults to `false`.
 - `is_enabled` (Boolean) Whether this tier is part of the policy. A disabled tier never applies, and anything it raised is resolved. Defaults to `true`.
 - `is_incident_private` (Boolean) Make the incident declared by this tier private, so only its owners, project admins and project owners can see it. Disabled by default. Defaults to `false`.
-- `on_call_duty_policies` (Set of String) On-call duty policies attached to alerts raised by this tier. Incidents have their own list. IDs of `oneuptime_on_call_policy` resources.
+- `on_call_duty_policies` (Set of String) On-call policies attached to alerts raised by this tier. Incidents have their own list. IDs of `oneuptime_on_call_policy` resources.
 - `should_create_alert` (Boolean) Raise an Alert when the SLO enters this tier. Disabled by default. Defaults to `false`.
 - `should_create_incident` (Boolean) Declare an Incident when the SLO enters this tier. Disabled by default. Defaults to `false`.
 

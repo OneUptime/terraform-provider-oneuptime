@@ -65,7 +65,7 @@ func (r *AlertStateResource) Schema(ctx context.Context, req resource.SchemaRequ
 
 func (r *AlertStateResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Manage alert states for your project (Created, Acknowledged for example). Add / edit or remove states.",
+        MarkdownDescription: "Where an alert is in your response. A new project starts with Identified, Acknowledged and Resolved: rename them or add your own between them.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

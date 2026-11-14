@@ -57,7 +57,7 @@ func (r *EscalationRuleResource) Schema(ctx context.Context, req resource.Schema
 
 func (r *EscalationRuleResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Manage on-call duty escalation rule for the on-call policy.",
+        MarkdownDescription: "Manage on-call escalation rule for the on-call policy.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

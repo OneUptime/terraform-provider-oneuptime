@@ -66,7 +66,7 @@ func (r *OnCallPolicyScheduleResource) Schema(ctx context.Context, req resource.
 
 func (r *OnCallPolicyScheduleResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Manage schedules and rotations for your on-call duty policy.",
+        MarkdownDescription: "Who is on call at any moment: people take turns in layers, and each one hands over to the next.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

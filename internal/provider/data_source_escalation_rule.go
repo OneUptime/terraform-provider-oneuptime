@@ -44,7 +44,7 @@ func (d *EscalationRuleDataSource) Metadata(ctx context.Context, req datasource.
 
 func (d *EscalationRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage on-call duty escalation rule for the on-call policy. Look up an existing escalation rule by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one escalation rule may match them all.",
+        MarkdownDescription: "Manage on-call escalation rule for the on-call policy. Look up an existing escalation rule by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one escalation rule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

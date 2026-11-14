@@ -2,12 +2,12 @@
 page_title: "oneuptime_on_call_policy Data Source - oneuptime"
 subcategory: "On-Call & Escalation"
 description: |-
-  Manage on-call duty, schedules and roster for your project
+  Who is paged about an incident, an alert or an episode, and who is paged next if nobody acknowledges. Its levels are escalation rules.
 ---
 
 # oneuptime_on_call_policy (Data Source)
 
-Manage on-call duty, schedules and roster for your project
+Who is paged about an incident, an alert or an episode, and who is paged next if nobody acknowledges. Its levels are escalation rules.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one on call policy may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 

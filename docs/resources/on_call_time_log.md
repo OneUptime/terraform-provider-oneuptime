@@ -2,12 +2,12 @@
 page_title: "oneuptime_on_call_time_log Resource - oneuptime"
 subcategory: "On-Call & Escalation"
 description: |-
-  Manage on-call duty user overrides, for example if the user is on leave you can override the on-call duty policy for that user so all the alerts will be routed to the other user.
+  When each person was on call for an on-call policy, from when their shift started to when it ended: what the User On-Call Time report adds up.
 ---
 
 # oneuptime_on_call_time_log (Resource)
 
-Manage on-call duty user overrides, for example if the user is on leave you can override the on-call duty policy for that user so all the alerts will be routed to the other user.
+When each person was on call for an on-call policy, from when their shift started to when it ended: what the User On-Call Time report adds up.
 
 ## Example Usage
 
@@ -30,8 +30,8 @@ resource "oneuptime_on_call_time_log" "example" {
 - `more_info` (String) More information about this log record.
 - `on_call_duty_policy_escalation_rule_id` (String) ID of your On-Call Policy Escalation Rule ID where this escalation rule belongs.
 - `on_call_duty_policy_id` (String) ID of your On-Call Policy where this escalation rule belongs.
-- `on_call_duty_policy_schedule_id` (String) ID of your On-Call Policy Schedule where this escalation rule belongs.
-- `team_id` (String) ID of your On-Call Policy Team ID where this escalation rule belongs.
+- `on_call_duty_policy_schedule_id` (String) ID of your On-Call Schedule where this escalation rule belongs.
+- `team_id` (String) ID of the team this log belongs to.
 - `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
 - `user_id` (String) User ID for which this log belongs. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 

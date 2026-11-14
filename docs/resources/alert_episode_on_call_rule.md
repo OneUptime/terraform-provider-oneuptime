@@ -2,12 +2,12 @@
 page_title: "oneuptime_alert_episode_on_call_rule Resource - oneuptime"
 subcategory: "Alerts"
 description: |-
-  Configure rules for automatically executing on-call duty policies when matching alert episodes are created
+  Configure rules for automatically executing on-call policies when matching alert episodes are created
 ---
 
 # oneuptime_alert_episode_on_call_rule (Resource)
 
-Configure rules for automatically executing on-call duty policies when matching alert episodes are created
+Configure rules for automatically executing on-call policies when matching alert episodes are created
 
 ## Example Usage
 
@@ -34,7 +34,7 @@ resource "oneuptime_alert_episode_on_call_rule" "example" {
 - `episode_labels` (Set of String) Only trigger for episodes that have at least one of these labels. IDs of `oneuptime_label` resources.
 - `episode_title_pattern` (String) Regex (case-insensitive) matched against the episode title.
 - `is_enabled` (Boolean) Whether this rule is enabled. Defaults to `true`.
-- `on_call_duty_policies` (Set of String) On-call duty policies to execute when an alert episode matches this rule. IDs of `oneuptime_on_call_policy` resources.
+- `on_call_duty_policies` (Set of String) On-call policies to execute when an alert episode matches this rule. IDs of `oneuptime_on_call_policy` resources.
 - `page_as` (String) What the people this rule's on-call policies page are asked to do: Responders take the record on - acknowledging their page acknowledges it and stops every other page about it; Observers are kept informed while somebody else responds - acknowledging their page only says they have seen it, and the record is not acknowledged. Allowed values: `Responders`, `Observers`. Defaults to `Responders`.
 - `when_to_page` (String) When the on-call policies of this rule page: Right Away, as soon as a record matches it; Working Hours, only during the working hours of this rule - a record that matches it outside them is paged about when they begin; or After OneUptime AI, for alert and incident rules - when OneUptime AI may fix what the record is about, it responds first, and the policies page only if it has not resolved the record within the hold time. Allowed values: `Right Away`, `Working Hours`, `After OneUptime AI`. Defaults to `Right Away`.
 - `working_hours` (String) When this rule may page, when When to Page is Working Hours: the same daily or weekly windows as an on-call schedule layer's restriction times, read in the time zone of this rule. A JSON value: write it with `jsonencode()`.

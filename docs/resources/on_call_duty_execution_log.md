@@ -2,12 +2,12 @@
 page_title: "oneuptime_on_call_duty_execution_log Resource - oneuptime"
 subcategory: "On-Call & Escalation"
 description: |-
-  Logs for on-call duty policy execution.
+  Each time an on-call policy runs: what started it, how far it got, and who it paged.
 ---
 
 # oneuptime_on_call_duty_execution_log (Resource)
 
-Logs for on-call duty policy execution.
+Each time an on-call policy runs: what started it, how far it got, and who it paged.
 
 ## Example Usage
 
@@ -25,7 +25,7 @@ resource "oneuptime_on_call_duty_execution_log" "example" {
 
 - `status` (String) Status of this execution. Allowed values: `Waiting`, `Scheduled`, `Started`, `Executing`, `Execution Completed`, `Execution Completed - No One Notified`, `Error`.
 - `status_message` (String) Status message of this execution.
-- `user_notification_event_type` (String) Type of event that triggered this on-call duty policy. Allowed values: `Incident Created`, `Alert Created`, `Alert Episode Created`, `Incident Episode Created`, `Test Page`.
+- `user_notification_event_type` (String) Type of event that triggered this on-call policy. Allowed values: `Incident Created`, `Alert Created`, `Alert Episode Created`, `Incident Episode Created`, `Test Page`.
 
 ### Optional
 

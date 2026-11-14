@@ -2,12 +2,12 @@
 page_title: "oneuptime_on_call_duty_policy_feed Resource - oneuptime"
 subcategory: "On-Call & Escalation"
 description: |-
-  Log of the entire onCallDutyPolicy state change. This is a log of all the on call duty policy changes.
+  What happened to an on-call policy, in order: every change to it and every time it ran.
 ---
 
 # oneuptime_on_call_duty_policy_feed (Resource)
 
-Log of the entire onCallDutyPolicy state change. This is a log of all the on call duty policy changes.
+What happened to an on-call policy, in order: every change to it and every time it ran.
 
 ## Example Usage
 
@@ -24,10 +24,10 @@ resource "oneuptime_on_call_duty_policy_feed" "example" {
 
 ### Required
 
-- `display_color` (String) Display color for the onCallDutyPolicy log.
-- `feed_info_in_markdown` (String) Log of the entire onCallDutyPolicy state change in Markdown.
-- `on_call_duty_policy_feed_event_type` (String) On Call Duty Policy Feed Event. Allowed values: `UserAdded`, `UserRemoved`, `TeamAdded`, `TeamRemoved`, `OnCallDutyScheduleAdded`, `OnCallDutyScheduleRemoved`, `OnCallDutyPolicyCreated`, `RosterHandoff`, `OwnerUserAdded`, `OwnerUserRemoved`, `OwnerTeamAdded`, `OwnerTeamRemoved`, `UserOverrideAdded`, `UserOverrideRemoved`, `CoverageGapStarted`.
-- `on_call_duty_policy_id` (String) Relation to OnCallDutyPolicy ID in which this resource belongs. The ID of a `oneuptime_on_call_policy`.
+- `display_color` (String) Display color for the on-call policy's feed entry.
+- `feed_info_in_markdown` (String) What happened to the on-call policy, in Markdown.
+- `on_call_duty_policy_feed_event_type` (String) On-Call Policy Feed Event. Allowed values: `UserAdded`, `UserRemoved`, `TeamAdded`, `TeamRemoved`, `OnCallDutyScheduleAdded`, `OnCallDutyScheduleRemoved`, `OnCallDutyPolicyCreated`, `RosterHandoff`, `OwnerUserAdded`, `OwnerUserRemoved`, `OwnerTeamAdded`, `OwnerTeamRemoved`, `UserOverrideAdded`, `UserOverrideRemoved`, `CoverageGapStarted`.
+- `on_call_duty_policy_id` (String) ID of the on-call policy this resource belongs to. The ID of a `oneuptime_on_call_policy`.
 
 ### Optional
 

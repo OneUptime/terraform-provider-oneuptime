@@ -66,7 +66,7 @@ func (d *ServiceDataSource) Metadata(ctx context.Context, req datasource.Metadat
 
 func (d *ServiceDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Services is a collection of services that you have in your organization. It can be a collection of services that you are monitoring or services that you are providing to your customers. It can be anything that you want to keep track of. Look up an existing service by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `cloud_account_id`, ...): each one set must match, and exactly one service may match them all.",
+        MarkdownDescription: "An application or microservice you run. OneUptime adds one the first time its telemetry arrives, named by its service.name, and brings its logs, traces, metrics, exceptions, incidents and owners together. Look up an existing service by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `cloud_account_id`, ...): each one set must match, and exactly one service may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

@@ -2,12 +2,12 @@
 page_title: "oneuptime_scheduled_event_public_note Resource - oneuptime"
 subcategory: "Scheduled Maintenance"
 description: |-
-  Manage public notes for your scheduled event
+  Manage public notes for your maintenance event
 ---
 
 # oneuptime_scheduled_event_public_note (Resource)
 
-Manage public notes for your scheduled event
+Manage public notes for your maintenance event
 
 ## Example Usage
 

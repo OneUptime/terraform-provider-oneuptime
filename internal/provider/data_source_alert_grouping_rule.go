@@ -51,6 +51,7 @@ type AlertGroupingRuleDataSourceModel struct {
     GroupByAlertTitle types.Bool `tfsdk:"group_by_alert_title"`
     GroupByAlertLabels types.Bool `tfsdk:"group_by_alert_labels"`
     GroupByMonitorLabels types.Bool `tfsdk:"group_by_monitor_labels"`
+    GroupByConnectedServices types.Bool `tfsdk:"group_by_connected_services"`
     EnableTimeWindow types.Bool `tfsdk:"enable_time_window"`
     TimeWindowMinutes types.Number `tfsdk:"time_window_minutes"`
     EnableMinimumAlertCount types.Bool `tfsdk:"enable_minimum_alert_count"`
@@ -193,6 +194,11 @@ func (d *AlertGroupingRuleDataSource) Schema(ctx context.Context, req datasource
                 Optional: true,
                 Computed: true,
             },
+            "group_by_connected_services": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, alerts on services that call each other on the Service Map are grouped into the same episode, and alerts on unconnected services into separate ones. Alerts on no service are grouped by monitor.",
+                Optional: true,
+                Computed: true,
+            },
             "enable_time_window": schema.BoolAttribute{
                 MarkdownDescription: "Enable time-based grouping. When enabled, alerts are grouped within the specified time window. When disabled, all matching alerts are grouped into a single ongoing episode regardless of time.",
                 Optional: true,
@@ -258,7 +264,7 @@ func (d *AlertGroupingRuleDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies to execute for episodes created by this rule. IDs of `oneuptime_on_call_policy` resources.",
+                MarkdownDescription: "List of on-call policies to execute for episodes created by this rule. IDs of `oneuptime_on_call_policy` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -392,6 +398,10 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         filters["groupByMonitorLabels"] = data.GroupByMonitorLabels.ValueBool()
         filterNames = append(filterNames, "group_by_monitor_labels = "+fmt.Sprintf("%t", data.GroupByMonitorLabels.ValueBool()))
     }
+    if !data.GroupByConnectedServices.IsNull() && !data.GroupByConnectedServices.IsUnknown() {
+        filters["groupByConnectedServices"] = data.GroupByConnectedServices.ValueBool()
+        filterNames = append(filterNames, "group_by_connected_services = "+fmt.Sprintf("%t", data.GroupByConnectedServices.ValueBool()))
+    }
     if !data.EnableTimeWindow.IsNull() && !data.EnableTimeWindow.IsUnknown() {
         filters["enableTimeWindow"] = data.EnableTimeWindow.ValueBool()
         filterNames = append(filterNames, "enable_time_window = "+fmt.Sprintf("%t", data.EnableTimeWindow.ValueBool()))
@@ -499,6 +509,7 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         "groupByAlertTitle": true,
         "groupByAlertLabels": true,
         "groupByMonitorLabels": true,
+        "groupByConnectedServices": true,
         "enableTimeWindow": true,
         "timeWindowMinutes": true,
         "enableMinimumAlertCount": true,
@@ -994,6 +1005,11 @@ func (d *AlertGroupingRuleDataSource) Read(ctx context.Context, req datasource.R
         data.GroupByMonitorLabels = types.BoolValue(val)
     } else {
         data.GroupByMonitorLabels = types.BoolNull()
+    }
+    if val, ok := item["groupByConnectedServices"].(bool); ok {
+        data.GroupByConnectedServices = types.BoolValue(val)
+    } else {
+        data.GroupByConnectedServices = types.BoolNull()
     }
     if val, ok := item["enableTimeWindow"].(bool); ok {
         data.EnableTimeWindow = types.BoolValue(val)

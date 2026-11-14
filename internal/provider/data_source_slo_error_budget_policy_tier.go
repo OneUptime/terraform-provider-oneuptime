@@ -142,7 +142,7 @@ func (d *SloErrorBudgetPolicyTierDataSource) Schema(ctx context.Context, req dat
                 Validators: recordIDValidators("oneuptime_alert_severity"),
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies attached to alerts raised by this tier. Incidents have their own list. IDs of `oneuptime_on_call_policy` resources.",
+                MarkdownDescription: "On-call policies attached to alerts raised by this tier. Incidents have their own list. IDs of `oneuptime_on_call_policy` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -193,7 +193,7 @@ func (d *SloErrorBudgetPolicyTierDataSource) Schema(ctx context.Context, req dat
                 Validators: recordIDValidators("oneuptime_incident_severity"),
             },
             "incident_on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies attached to incidents declared by this tier. IDs of `oneuptime_on_call_policy` resources.",
+                MarkdownDescription: "On-call policies attached to incidents declared by this tier. IDs of `oneuptime_on_call_policy` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },

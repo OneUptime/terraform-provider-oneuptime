@@ -221,7 +221,7 @@ func (r *StatusPageSubscriberResource) schemaDefinition() schema.Schema {
                 },
             },
             "is_subscribed_to_all_event_types": schema.BoolAttribute{
-                MarkdownDescription: "Is Subscriber Subscribed to All Event Types (like Incidents, Scheduled Events, Announcements) on this status page?",
+                MarkdownDescription: "Is Subscriber Subscribed to All Event Types (like Incidents, Maintenance Events, Announcements) on this status page?",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -240,7 +240,7 @@ func (r *StatusPageSubscriberResource) schemaDefinition() schema.Schema {
                 Validators: recordIDSetValidators("oneuptime_status_page_resource"),
             },
             "status_page_event_types": schema.StringAttribute{
-                MarkdownDescription: "Which event types is the subscriber subscribed to (like Incidents, Scheduled Events, Announcements). A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Which event types is the subscriber subscribed to (like Incidents, Maintenance Events, Announcements). A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,

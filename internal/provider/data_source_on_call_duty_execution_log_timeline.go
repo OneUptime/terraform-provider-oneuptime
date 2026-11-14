@@ -57,7 +57,7 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Metadata(ctx context.Context,
 
 func (d *OnCallDutyExecutionLogTimelineDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Timeline events for on-call duty policy execution log. Look up an existing on call duty execution log timeline by `id`, or by any of its other arguments (`alert_sent_to_user_id`, `created_by_user_id`, `is_acknowledged`, ...): each one set must match, and exactly one on call duty execution log timeline may match them all.",
+        MarkdownDescription: "Timeline events for on-call policy execution log. Look up an existing on call duty execution log timeline by `id`, or by any of its other arguments (`alert_sent_to_user_id`, `created_by_user_id`, `is_acknowledged`, ...): each one set must match, and exactly one on call duty execution log timeline may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -78,7 +78,7 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Schema(ctx context.Context, r
                 Computed: true,
             },
             "on_call_duty_policy_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your OneUptime on-call duty policy in which this object belongs. Empty for a step of a direct page, which has no on-call policy. The ID of a `oneuptime_on_call_policy`.",
+                MarkdownDescription: "ID of your OneUptime on-call policy in which this object belongs. Empty for a step of a direct page, which has no on-call policy. The ID of a `oneuptime_on_call_policy`.",
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_on_call_policy"),
@@ -120,7 +120,7 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Schema(ctx context.Context, r
                 Validators: recordIDValidators("oneuptime_escalation_rule"),
             },
             "user_notification_event_type": schema.StringAttribute{
-                MarkdownDescription: "Type of event that triggered this on-call duty policy.",
+                MarkdownDescription: "Type of event that triggered this on-call policy.",
                 Optional: true,
                 Computed: true,
             },
@@ -168,12 +168,12 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Schema(ctx context.Context, r
                 Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "is_acknowledged": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
             },
             "acknowledged_at": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "overrided_by_user_id": schema.StringAttribute{

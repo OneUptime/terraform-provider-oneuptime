@@ -44,6 +44,7 @@ resource "oneuptime_incident_grouping_rule" "example" {
 - `episode_owner_user_emails` (Set of String) The email addresses of the people in `episode_owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
 - `episode_owner_users` (Set of String) Users added as owners of every episode this rule opens, and notified like any owner. Each must be a member of the project. IDs of `oneuptime_user` records. Or name them by email address, in `episode_owner_user_emails`.
 - `episode_title_template` (String) Template for generating episode titles. Supports placeholders like {{incidentSeverity}}, {{monitorName}}, {{incidentTitle}}, {{incidentDescription}}.
+- `group_by_connected_services` (Boolean) When enabled, incidents on services that call each other on the Service Map are grouped into the same episode, and incidents on unconnected services into separate ones. Incidents on no service are grouped by monitor. Defaults to `false`.
 - `group_by_fields` (String) JSON object defining the fields to group incidents by (e.g., monitorId, severity). A JSON value: write it with `jsonencode()`.
 - `group_by_incident_labels` (Boolean) When enabled, incidents with different sets of labels will be grouped into separate episodes (exact set match). When disabled, incident labels are ignored for grouping. Defaults to `false`.
 - `group_by_incident_title` (Boolean) When enabled, incidents with different titles will be grouped into separate episodes. When disabled, incidents with any title can be grouped together. Defaults to `false`.
@@ -62,7 +63,7 @@ resource "oneuptime_incident_grouping_rule" "example" {
 - `monitor_labels` (Set of String) Only group incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels. IDs of `oneuptime_label` resources.
 - `monitor_name_pattern` (String) Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.
 - `monitors` (Set of String) Only group incidents from these monitors. Leave empty to match incidents from any monitor. IDs of `oneuptime_monitor` resources.
-- `on_call_duty_policies` (Set of String) List of on-call duty policies to execute for episodes created by this rule. IDs of `oneuptime_on_call_policy` resources.
+- `on_call_duty_policies` (Set of String) List of on-call policies to execute for episodes created by this rule. IDs of `oneuptime_on_call_policy` resources.
 - `priority` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
 - `reopen_window_minutes` (Number) Time window in minutes to reopen a recently resolved episode instead of creating a new one. Defaults to `0`.
 - `resolve_delay_minutes` (Number) Grace period in minutes before auto-resolving an episode after all incidents are resolved. Defaults to `0`.

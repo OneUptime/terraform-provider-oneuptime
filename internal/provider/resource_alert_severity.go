@@ -63,7 +63,7 @@ func (r *AlertSeverityResource) Schema(ctx context.Context, req resource.SchemaR
 
 func (r *AlertSeverityResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Manage alert severity for your project (Created, Acknowledged for example). Add / edit or remove severities.",
+        MarkdownDescription: "How much an alert matters. A new project starts with High and Low: rename them, recolor them or add your own.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

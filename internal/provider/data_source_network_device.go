@@ -89,6 +89,7 @@ type NetworkDeviceDataSourceModel struct {
     TransceiverSnapshot types.String `tfsdk:"transceiver_snapshot"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
     LastPolledAt types.String `tfsdk:"last_polled_at"`
+    LastPollReceivedAt types.String `tfsdk:"last_poll_received_at"`
     IsReachable types.Bool `tfsdk:"is_reachable"`
     IsSnmpReachable types.Bool `tfsdk:"is_snmp_reachable"`
     LastSnmpSeenAt types.String `tfsdk:"last_snmp_seen_at"`
@@ -407,6 +408,10 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "last_polled_at": schema.StringAttribute{
                 MarkdownDescription: "When the assigned probe last ATTEMPTED an SNMP walk of this device, whether or not the device answered. Paired with lastSeenAt (which only moves on a successful walk) this is what separates \"the device did not answer\" from \"we have not asked recently\". Managed by the probe.",
+                Computed: true,
+            },
+            "last_poll_received_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime received the poll whose result this device shows (isReachable, isSnmpReachable and the interface counts). A poll received earlier never overwrites that result: a retried poll, or one that waited longer in the queue than the poll after it. Managed by OneUptime.",
                 Computed: true,
             },
             "is_reachable": schema.BoolAttribute{
@@ -780,6 +785,7 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "transceiverSnapshot": true,
         "lastSeenAt": true,
         "lastPolledAt": true,
+        "lastPollReceivedAt": true,
         "isReachable": true,
         "isSnmpReachable": true,
         "lastSnmpSeenAt": true,
@@ -2175,6 +2181,30 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.LastPolledAt = types.StringValue(val)
     } else {
         data.LastPolledAt = types.StringNull()
+    }
+    if obj, ok := item["lastPollReceivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastPollReceivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastPollReceivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastPollReceivedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastPollReceivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastPollReceivedAt = types.StringNull()
+        }
+    } else if arr, ok := item["lastPollReceivedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastPollReceivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastPollReceivedAt = types.StringNull()
+        }
+    } else if val, ok := item["lastPollReceivedAt"].(string); ok {
+        data.LastPollReceivedAt = types.StringValue(val)
+    } else {
+        data.LastPollReceivedAt = types.StringNull()
     }
     if val, ok := item["isReachable"].(bool); ok {
         data.IsReachable = types.BoolValue(val)

@@ -61,7 +61,7 @@ func (r *OnCallDutyPolicyFeedResource) Schema(ctx context.Context, req resource.
 
 func (r *OnCallDutyPolicyFeedResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Log of the entire onCallDutyPolicy state change. This is a log of all the on call duty policy changes.",
+        MarkdownDescription: "What happened to an on-call policy, in order: every change to it and every time it ran.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -79,12 +79,12 @@ func (r *OnCallDutyPolicyFeedResource) schemaDefinition() schema.Schema {
                 },
             },
             "on_call_duty_policy_id": schema.StringAttribute{
-                MarkdownDescription: "Relation to OnCallDutyPolicy ID in which this resource belongs. The ID of a `oneuptime_on_call_policy`.",
+                MarkdownDescription: "ID of the on-call policy this resource belongs to. The ID of a `oneuptime_on_call_policy`.",
                 Required: true,
                 Validators: recordIDValidators("oneuptime_on_call_policy"),
             },
             "feed_info_in_markdown": schema.StringAttribute{
-                MarkdownDescription: "Log of the entire onCallDutyPolicy state change in Markdown.",
+                MarkdownDescription: "What happened to the on-call policy, in Markdown.",
                 Required: true,
             },
             "more_information_in_markdown": schema.StringAttribute{
@@ -96,14 +96,14 @@ func (r *OnCallDutyPolicyFeedResource) schemaDefinition() schema.Schema {
                 },
             },
             "on_call_duty_policy_feed_event_type": schema.StringAttribute{
-                MarkdownDescription: "On Call Duty Policy Feed Event.",
+                MarkdownDescription: "On-Call Policy Feed Event.",
                 Required: true,
                 Validators: []validator.String{
                     stringvalidator.OneOf("UserAdded", "UserRemoved", "TeamAdded", "TeamRemoved", "OnCallDutyScheduleAdded", "OnCallDutyScheduleRemoved", "OnCallDutyPolicyCreated", "RosterHandoff", "OwnerUserAdded", "OwnerUserRemoved", "OwnerTeamAdded", "OwnerTeamRemoved", "UserOverrideAdded", "UserOverrideRemoved", "CoverageGapStarted"),
                 },
             },
             "display_color": schema.StringAttribute{
-                MarkdownDescription: "Display color for the onCallDutyPolicy log.",
+                MarkdownDescription: "Display color for the on-call policy's feed entry.",
                 CustomType: JSONSubsetType{},
                 Required: true,
                 Validators: []validator.String{

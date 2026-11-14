@@ -86,6 +86,7 @@ data "oneuptime_network_device" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `discovered_details` (String) What discovery found out about this device and has not been saved on it: the SNMP system information and the reverse-DNS and NetBIOS names a discovery scan read at its address, the MAC address a walked router's ARP table gave it, and the IP address its probe resolved its DNS name to - each with how it was read, by which scan, device or probe, and when. Managed by the server; it never changes the device's own details. A JSON value: read it with `jsondecode()`.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `last_poll_received_at` (String) When OneUptime received the poll whose result this device shows (isReachable, isSnmpReachable and the interface counts). A poll received earlier never overwrites that result: a retried poll, or one that waited longer in the queue than the poll after it. Managed by OneUptime.
 - `last_polled_at` (String) When the assigned probe last ATTEMPTED an SNMP walk of this device, whether or not the device answered. Paired with lastSeenAt (which only moves on a successful walk) this is what separates "the device did not answer" from "we have not asked recently". Managed by the probe.
 - `last_rebooted_at` (String) Device boot time computed from sysUpTime on each walk. Managed by the probe.
 - `last_seen_at` (String) When SNMP data was last received from this device.

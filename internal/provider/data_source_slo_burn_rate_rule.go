@@ -154,7 +154,7 @@ func (d *SloBurnRateRuleDataSource) Schema(ctx context.Context, req datasource.S
                 Validators: recordIDValidators("oneuptime_alert_severity"),
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies attached to alerts created by this burn rate rule. Incidents have their own list. IDs of `oneuptime_on_call_policy` resources.",
+                MarkdownDescription: "On-call policies attached to alerts created by this burn rate rule. Incidents have their own list. IDs of `oneuptime_on_call_policy` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -205,7 +205,7 @@ func (d *SloBurnRateRuleDataSource) Schema(ctx context.Context, req datasource.S
                 Validators: recordIDValidators("oneuptime_incident_severity"),
             },
             "incident_on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies attached to incidents declared by this burn rate rule. IDs of `oneuptime_on_call_policy` resources.",
+                MarkdownDescription: "On-call policies attached to incidents declared by this burn rate rule. IDs of `oneuptime_on_call_policy` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },

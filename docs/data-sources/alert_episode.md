@@ -59,7 +59,7 @@ data "oneuptime_alert_episode" "by_id" {
 - `first_paged_at` (String) When an on-call policy or a direct page first notified someone about this episode. Empty until someone is paged. Set by OneUptime.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_alert_added_at` (String) When the last alert was added to this episode.
-- `on_call_duty_policies` (Set of String) List of on-call duty policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.
+- `on_call_duty_policies` (Set of String) List of on-call policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.
 - `post_updates_to_workspace_channels` (String) Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams). A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `resolved_at` (String) When this episode was resolved.

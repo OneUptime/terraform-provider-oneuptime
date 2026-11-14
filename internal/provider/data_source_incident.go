@@ -270,7 +270,7 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 ElementType: types.StringType,
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies affected by this incident. IDs of `oneuptime_on_call_policy` resources.",
+                MarkdownDescription: "List of on-call policies affected by this incident. IDs of `oneuptime_on_call_policy` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },

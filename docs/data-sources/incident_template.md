@@ -50,7 +50,7 @@ data "oneuptime_incident_template" "by_id" {
 - `kubernetes_clusters` (Set of String) List of Kubernetes clusters to pre-populate on incidents created from this template. IDs of `oneuptime_kubernetes_cluster` resources.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) List of monitors affected by this incident. IDs of `oneuptime_monitor` resources.
-- `on_call_duty_policies` (Set of String) List of on-call duty policies affected by this incident template. IDs of `oneuptime_on_call_policy` resources.
+- `on_call_duty_policies` (Set of String) List of on-call policies affected by this incident template. IDs of `oneuptime_on_call_policy` resources.
 - `podman_hosts` (Set of String) List of Podman hosts to pre-populate on incidents created from this template. IDs of `oneuptime_podman_host` resources.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `services` (Set of String) List of services to pre-populate on incidents created from this template. IDs of `oneuptime_service` resources.

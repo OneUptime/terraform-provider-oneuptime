@@ -2,12 +2,12 @@
 page_title: "oneuptime_alert_severity Resource - oneuptime"
 subcategory: "Alerts"
 description: |-
-  Manage alert severity for your project (Created, Acknowledged for example). Add / edit or remove severities.
+  How much an alert matters. A new project starts with High and Low: rename them, recolor them or add your own.
 ---
 
 # oneuptime_alert_severity (Resource)
 
-Manage alert severity for your project (Created, Acknowledged for example). Add / edit or remove severities.
+How much an alert matters. A new project starts with High and Low: rename them, recolor them or add your own.
 
 ## Example Usage
 

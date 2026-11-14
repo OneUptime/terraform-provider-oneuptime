@@ -2,12 +2,12 @@
 page_title: "oneuptime_on_call_policy_schedule Data Source - oneuptime"
 subcategory: "On-Call & Escalation"
 description: |-
-  Manage schedules and rotations for your on-call duty policy.
+  Who is on call at any moment: people take turns in layers, and each one hands over to the next.
 ---
 
 # oneuptime_on_call_policy_schedule (Data Source)
 
-Manage schedules and rotations for your on-call duty policy.
+Who is on call at any moment: people take turns in layers, and each one hands over to the next.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one on call policy schedule may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 

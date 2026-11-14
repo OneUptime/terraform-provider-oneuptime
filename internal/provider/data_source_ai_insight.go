@@ -122,7 +122,7 @@ func (d *AiInsightDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "telemetry_service_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the telemetry service this insight is about.",
+                MarkdownDescription: "ID of the service this insight is about.",
                 Optional: true,
                 Computed: true,
             },

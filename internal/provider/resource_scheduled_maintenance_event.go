@@ -101,7 +101,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
 
 func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Manage scheduled maintenance event for your project",
+        MarkdownDescription: "Manage maintenance events for your project",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

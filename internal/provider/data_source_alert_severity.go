@@ -47,7 +47,7 @@ func (d *AlertSeverityDataSource) Metadata(ctx context.Context, req datasource.M
 
 func (d *AlertSeverityDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage alert severity for your project (Created, Acknowledged for example). Add / edit or remove severities. Look up an existing alert severity by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `created_by_user_id`, ...): each one set must match, and exactly one alert severity may match them all.",
+        MarkdownDescription: "How much an alert matters. A new project starts with High and Low: rename them, recolor them or add your own. Look up an existing alert severity by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `created_by_user_id`, ...): each one set must match, and exactly one alert severity may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

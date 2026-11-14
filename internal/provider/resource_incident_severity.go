@@ -63,7 +63,7 @@ func (r *IncidentSeverityResource) Schema(ctx context.Context, req resource.Sche
 
 func (r *IncidentSeverityResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Manage incident severity for your project (Created, Acknowledged for example). Add / edit or remove severities.",
+        MarkdownDescription: "How much an incident matters. A new project starts with Critical Incident, Major Incident and Minor Incident: rename them, recolor them or add your own.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

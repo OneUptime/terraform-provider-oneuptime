@@ -42,7 +42,7 @@ resource "oneuptime_incident_episode" "example" {
 - `is_visible_on_status_page` (Boolean) Should this episode be visible on the status page? Defaults to `false`.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_incident_added_at` (String) When the last incident was added to this episode.
-- `on_call_duty_policies` (Set of String) List of on-call duty policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.
+- `on_call_duty_policies` (Set of String) List of on-call policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.
 - `post_updates_to_workspace_channels` (String) Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams). A JSON value: write it with `jsonencode()`.
 - `postmortem_note` (String) User-documented postmortem summary for this episode.
 - `remediation_notes` (String) User-documented remediation steps and notes for this episode.

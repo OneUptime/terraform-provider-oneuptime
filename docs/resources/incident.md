@@ -52,7 +52,7 @@ resource "oneuptime_incident" "example" {
 - `monitors` (Set of String) List of monitors affected by this incident. IDs of `oneuptime_monitor` resources.
 - `network_devices` (Set of String) List of network devices affected by this incident. IDs of `oneuptime_network_device` resources.
 - `notify_subscribers_on_postmortem_published` (Boolean) Should subscribers be notified when the postmortem is published? Defaults to `true`.
-- `on_call_duty_policies` (Set of String) List of on-call duty policies affected by this incident. IDs of `oneuptime_on_call_policy` resources.
+- `on_call_duty_policies` (Set of String) List of on-call policies affected by this incident. IDs of `oneuptime_on_call_policy` resources.
 - `open_stack_clouds` (Set of String) List of OpenStack clouds affected by this incident. IDs of `oneuptime_openstack_cloud` resources.
 - `podman_hosts` (Set of String) List of Podman hosts affected by this incident. IDs of `oneuptime_podman_host` resources.
 - `podman_resources` (Set of String) List of Podman resources (containers, images, networks, volumes) affected by this incident.

@@ -61,13 +61,13 @@ data "oneuptime_slo_burn_rate_rule" "by_id" {
 - `alert_owner_users` (Set of String) Users added as owners of alerts raised by this burn rate rule. IDs of `oneuptime_user` records.
 - `created_at` (String) Date and Time when the object was created.
 - `incident_labels` (Set of String) Labels added to incidents declared by this burn rate rule. IDs of `oneuptime_label` resources.
-- `incident_on_call_duty_policies` (Set of String) On-call duty policies attached to incidents declared by this burn rate rule. IDs of `oneuptime_on_call_policy` resources.
+- `incident_on_call_duty_policies` (Set of String) On-call policies attached to incidents declared by this burn rate rule. IDs of `oneuptime_on_call_policy` resources.
 - `incident_owner_teams` (Set of String) Teams added as owners of incidents declared by this burn rate rule. IDs of `oneuptime_team` resources.
 - `incident_owner_users` (Set of String) Users added as owners of incidents declared by this burn rate rule. IDs of `oneuptime_user` records.
 - `last_alert_created_at` (String) The last time an alert was created by this burn rate rule. Computed by the worker.
 - `last_alert_resolved_at` (String) The last time an alert created by this burn rate rule was resolved. Computed by the worker.
 - `last_incident_created_at` (String) The last time an incident was declared by this burn rate rule. Computed by the worker.
 - `last_incident_resolved_at` (String) The last time an incident declared by this burn rate rule was resolved. Computed by the worker.
-- `on_call_duty_policies` (Set of String) On-call duty policies attached to alerts created by this burn rate rule. Incidents have their own list. IDs of `oneuptime_on_call_policy` resources.
+- `on_call_duty_policies` (Set of String) On-call policies attached to alerts created by this burn rate rule. Incidents have their own list. IDs of `oneuptime_on_call_policy` resources.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

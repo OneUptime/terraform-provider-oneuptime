@@ -2,12 +2,12 @@
 page_title: "oneuptime_telemetry_ingestion_key Resource - oneuptime"
 subcategory: "Telemetry & Dashboards"
 description: |-
-  Manage Telemetry Ingestion Keys for your project
+  Manage ingestion keys for your project
 ---
 
 # oneuptime_telemetry_ingestion_key (Resource)
 
-Manage Telemetry Ingestion Keys for your project
+Manage ingestion keys for your project
 
 ## Example Usage
 
@@ -51,7 +51,7 @@ resource "oneuptime_telemetry_ingestion_key" "example" {
 - `id` (String) Unique identifier for the resource.
 - `last_used_at` (String) The last time telemetry was accepted with this key. Empty means it has never been used since this was recorded. Use it to find keys that are safe to rotate or delete.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `secret_key` (String, Sensitive) Secret Telemetry Ingestion Key.
+- `secret_key` (String, Sensitive) Secret ingestion key.
 - `updated_at` (String) Date and Time when the object was updated.
 
 ## Import

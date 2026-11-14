@@ -2,12 +2,12 @@
 page_title: "oneuptime_on_call_duty_execution_log Data Source - oneuptime"
 subcategory: "On-Call & Escalation"
 description: |-
-  Logs for on-call duty policy execution.
+  Each time an on-call policy runs: what started it, how far it got, and who it paged.
 ---
 
 # oneuptime_on_call_duty_execution_log (Data Source)
 
-Logs for on-call duty policy execution.
+Each time an on-call policy runs: what started it, how far it got, and who it paged.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one on call duty execution log may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
@@ -54,7 +54,7 @@ data "oneuptime_on_call_duty_execution_log" "by_id" {
 - `triggered_by_user_id` (String) User ID who triggered this on-call policy. The ID of a `oneuptime_user` (see the data source).
 - `triggered_by_workflow_id` (String) ID of the workflow whose step started this page, when a workflow did.
 - `triggered_by_workflow_name` (String) Name of the workflow whose step started this page, as it was then.
-- `user_notification_event_type` (String) Type of event that triggered this on-call duty policy.
+- `user_notification_event_type` (String) Type of event that triggered this on-call policy.
 
 ### Read-Only
 

@@ -63,6 +63,7 @@ type AlertGroupingRuleResourceModel struct {
     GroupByAlertTitle types.Bool `tfsdk:"group_by_alert_title"`
     GroupByAlertLabels types.Bool `tfsdk:"group_by_alert_labels"`
     GroupByMonitorLabels types.Bool `tfsdk:"group_by_monitor_labels"`
+    GroupByConnectedServices types.Bool `tfsdk:"group_by_connected_services"`
     EnableTimeWindow types.Bool `tfsdk:"enable_time_window"`
     TimeWindowMinutes types.Number `tfsdk:"time_window_minutes"`
     EnableMinimumAlertCount types.Bool `tfsdk:"enable_minimum_alert_count"`
@@ -289,6 +290,15 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "group_by_connected_services": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, alerts on services that call each other on the Service Map are grouped into the same episode, and alerts on unconnected services into separate ones. Alerts on no service are grouped by monitor.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "enable_time_window": schema.BoolAttribute{
                 MarkdownDescription: "Enable time-based grouping. When enabled, alerts are grouped within the specified time window. When disabled, all matching alerts are grouped into a single ongoing episode regardless of time.",
                 Optional: true,
@@ -414,7 +424,7 @@ func (r *AlertGroupingRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies to execute for episodes created by this rule. IDs of `oneuptime_on_call_policy` resources.",
+                MarkdownDescription: "List of on-call policies to execute for episodes created by this rule. IDs of `oneuptime_on_call_policy` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -643,6 +653,9 @@ func (r *AlertGroupingRuleResource) Create(ctx context.Context, req resource.Cre
     if !data.GroupByMonitorLabels.IsNull() && !data.GroupByMonitorLabels.IsUnknown() {
         requestDataMap["groupByMonitorLabels"] = data.GroupByMonitorLabels.ValueBool()
     }
+    if !data.GroupByConnectedServices.IsNull() && !data.GroupByConnectedServices.IsUnknown() {
+        requestDataMap["groupByConnectedServices"] = data.GroupByConnectedServices.ValueBool()
+    }
     if !data.EnableTimeWindow.IsNull() && !data.EnableTimeWindow.IsUnknown() {
         requestDataMap["enableTimeWindow"] = data.EnableTimeWindow.ValueBool()
     }
@@ -778,6 +791,7 @@ func (r *AlertGroupingRuleResource) Create(ctx context.Context, req resource.Cre
         "groupByAlertTitle": true,
         "groupByAlertLabels": true,
         "groupByMonitorLabels": true,
+        "groupByConnectedServices": true,
         "enableTimeWindow": true,
         "timeWindowMinutes": true,
         "enableMinimumAlertCount": true,
@@ -1342,6 +1356,9 @@ func (r *AlertGroupingRuleResource) Create(ctx context.Context, req resource.Cre
     if val, ok := dataMap["groupByMonitorLabels"].(bool); ok {
         data.GroupByMonitorLabels = types.BoolValue(val)
     }
+    if val, ok := dataMap["groupByConnectedServices"].(bool); ok {
+        data.GroupByConnectedServices = types.BoolValue(val)
+    }
     if val, ok := dataMap["enableTimeWindow"].(bool); ok {
         data.EnableTimeWindow = types.BoolValue(val)
     }
@@ -1832,6 +1849,7 @@ func (r *AlertGroupingRuleResource) Read(ctx context.Context, req resource.ReadR
         "groupByAlertTitle": true,
         "groupByAlertLabels": true,
         "groupByMonitorLabels": true,
+        "groupByConnectedServices": true,
         "enableTimeWindow": true,
         "timeWindowMinutes": true,
         "enableMinimumAlertCount": true,
@@ -2403,6 +2421,9 @@ func (r *AlertGroupingRuleResource) Read(ctx context.Context, req resource.ReadR
     if val, ok := dataMap["groupByMonitorLabels"].(bool); ok {
         data.GroupByMonitorLabels = types.BoolValue(val)
     }
+    if val, ok := dataMap["groupByConnectedServices"].(bool); ok {
+        data.GroupByConnectedServices = types.BoolValue(val)
+    }
     if val, ok := dataMap["enableTimeWindow"].(bool); ok {
         data.EnableTimeWindow = types.BoolValue(val)
     }
@@ -2965,6 +2986,9 @@ func (r *AlertGroupingRuleResource) Update(ctx context.Context, req resource.Upd
     if !data.GroupByMonitorLabels.IsUnknown() && !state.GroupByMonitorLabels.IsUnknown() && !data.GroupByMonitorLabels.Equal(state.GroupByMonitorLabels) {
         requestDataMap["groupByMonitorLabels"] = data.GroupByMonitorLabels.ValueBool()
     }
+    if !data.GroupByConnectedServices.IsUnknown() && !state.GroupByConnectedServices.IsUnknown() && !data.GroupByConnectedServices.Equal(state.GroupByConnectedServices) {
+        requestDataMap["groupByConnectedServices"] = data.GroupByConnectedServices.ValueBool()
+    }
     if !data.EnableTimeWindow.IsUnknown() && !state.EnableTimeWindow.IsUnknown() && !data.EnableTimeWindow.Equal(state.EnableTimeWindow) {
         requestDataMap["enableTimeWindow"] = data.EnableTimeWindow.ValueBool()
     }
@@ -3070,6 +3094,7 @@ func (r *AlertGroupingRuleResource) Update(ctx context.Context, req resource.Upd
         "groupByAlertTitle": true,
         "groupByAlertLabels": true,
         "groupByMonitorLabels": true,
+        "groupByConnectedServices": true,
         "enableTimeWindow": true,
         "timeWindowMinutes": true,
         "enableMinimumAlertCount": true,
@@ -3629,6 +3654,9 @@ func (r *AlertGroupingRuleResource) Update(ctx context.Context, req resource.Upd
     if val, ok := dataMap["groupByMonitorLabels"].(bool); ok {
         data.GroupByMonitorLabels = types.BoolValue(val)
     }
+    if val, ok := dataMap["groupByConnectedServices"].(bool); ok {
+        data.GroupByConnectedServices = types.BoolValue(val)
+    }
     if val, ok := dataMap["enableTimeWindow"].(bool); ok {
         data.EnableTimeWindow = types.BoolValue(val)
     }
@@ -4182,6 +4210,9 @@ func (r *AlertGroupingRuleResource) keepPlannedValues(data *AlertGroupingRuleRes
     }
     if config.GroupByMonitorLabels.IsNull() && !plan.GroupByMonitorLabels.IsUnknown() {
         data.GroupByMonitorLabels = plan.GroupByMonitorLabels
+    }
+    if config.GroupByConnectedServices.IsNull() && !plan.GroupByConnectedServices.IsUnknown() {
+        data.GroupByConnectedServices = plan.GroupByConnectedServices
     }
     if config.EnableTimeWindow.IsNull() && !plan.EnableTimeWindow.IsUnknown() {
         data.EnableTimeWindow = plan.EnableTimeWindow

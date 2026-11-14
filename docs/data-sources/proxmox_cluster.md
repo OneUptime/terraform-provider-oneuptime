@@ -44,7 +44,7 @@ data "oneuptime_proxmox_cluster" "by_id" {
 - `name` (String) Name of this Proxmox cluster. This is the join key — it must match the proxmox.cluster.name OTel resource attribute stamped by the OneUptime Proxmox Agent.
 - `node_count` (Number) Cached count of nodes in this cluster.
 - `online_node_count` (Number) Cached count of nodes currently online (pve_up == 1) in this cluster. Rendered as 'Nodes X/Y online' next to nodeCount.
-- `otel_collector_status` (String) Connection status of the OTel Collector agent (connected or disconnected).
+- `otel_collector_status` (String) Whether the cluster is being read: connected while it was read in the last 15 minutes, disconnected once it was not (see Agent Last Seen At for whether the agent is still sending).
 - `pve_version` (String) Proxmox VE version reported by this cluster.
 - `retain_telemetry_data_for_days` (Number) Number of days to retain telemetry data for this Proxmox cluster. Leave blank to use the project-wide default.
 - `slug` (String) Friendly globally unique name for your object.
@@ -52,6 +52,7 @@ data "oneuptime_proxmox_cluster" "by_id" {
 
 ### Read-Only
 
+- `agent_last_seen_at` (String) When the OneUptime Proxmox agent last sent anything for this cluster, whether or not it could read the Proxmox VE API.
 - `ai_access_configured_at` (String) When OneUptime AI access to this Proxmox cluster was first configured by anyone saving an AI access setting. Set by the server; never cleared, so a Proxmox AI agent that registers later never overwrites a setting an operator chose.
 - `ai_access_last_verified_at` (String) When a command from OneUptime AI last succeeded on this Proxmox cluster through its Proxmox AI agent. Set by the server.
 - `ai_agent_reset_at` (String) When this Proxmox cluster's AI agent was last reset: its key stopped working at once, and it registers again by itself. Set by the server.
@@ -60,7 +61,7 @@ data "oneuptime_proxmox_cluster" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_notification_at` (String) When Proxmox VE last sent one of its notifications (backups, replication, fencing, updates) to OneUptime.
-- `last_seen_at` (String) When metrics were last received from this cluster.
+- `last_seen_at` (String) When the cluster was last read: when the agent last read its nodes, guests or storage from the Proxmox VE API, or a node last pushed its own status.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `telemetry_retention_config` (String) Per-pillar retention overrides for this Proxmox cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the Proxmox cluster default, then the project's retention settings. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

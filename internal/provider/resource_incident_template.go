@@ -173,7 +173,7 @@ func (r *IncidentTemplateResource) schemaDefinition() schema.Schema {
                 Validators: recordIDSetValidators("oneuptime_service"),
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies affected by this incident template. IDs of `oneuptime_on_call_policy` resources.",
+                MarkdownDescription: "List of on-call policies affected by this incident template. IDs of `oneuptime_on_call_policy` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

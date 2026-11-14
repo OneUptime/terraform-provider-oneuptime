@@ -58,7 +58,7 @@ func (d *ScheduledEventPublicNoteDataSource) Metadata(ctx context.Context, req d
 
 func (d *ScheduledEventPublicNoteDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage public notes for your scheduled event Look up an existing scheduled event public note by `id`, or by any of its other arguments (`approval_status`, `created_by_user_id`, `is_owner_notified`, ...): each one set must match, and exactly one scheduled event public note may match them all.",
+        MarkdownDescription: "Manage public notes for your maintenance event Look up an existing scheduled event public note by `id`, or by any of its other arguments (`approval_status`, `created_by_user_id`, `is_owner_notified`, ...): each one set must match, and exactly one scheduled event public note may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

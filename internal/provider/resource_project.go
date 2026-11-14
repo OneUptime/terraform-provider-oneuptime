@@ -141,6 +141,7 @@ type ProjectResourceModel struct {
     DefaultMetricDownsamplingRetentionDays JSONSubsetValue `tfsdk:"default_metric_downsampling_retention_days"`
     RequireApprovalForIncidentPublicNotes types.Bool `tfsdk:"require_approval_for_incident_public_notes"`
     RequireApprovalForScheduledMaintenancePublicNotes types.Bool `tfsdk:"require_approval_for_scheduled_maintenance_public_notes"`
+    DisableDashboardRecording types.Bool `tfsdk:"disable_dashboard_recording"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Slug types.String `tfsdk:"slug"`
@@ -174,6 +175,7 @@ type ProjectResourceModel struct {
     SecurityEventsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"security_events_ingestion_rate_limit_in_mb_per_second"`
     Goals JSONSubsetValue `tfsdk:"goals"`
     ProductSettings JSONSubsetValue `tfsdk:"product_settings"`
+    IsSampleProject types.Bool `tfsdk:"is_sample_project"`
 }
 
 func (r *ProjectResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -1089,6 +1091,15 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "disable_dashboard_recording": schema.BoolAttribute{
+                MarkdownDescription: "When true, OneUptime never records how members use the dashboard while working in this project. Recording happens only on OneUptime Cloud, only for members who accepted analytics, and only on the setup pages, with what they type or store masked.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
                 CustomType: RFC3339Type{},
@@ -1233,6 +1244,10 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
             "product_settings": schema.StringAttribute{
                 MarkdownDescription: "The products this project hides from its menu, Home and Search's list, and where that list came from (its goals, or a member). A hidden product still works and is found by Search. Not set: every product is shown. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "is_sample_project": schema.BoolAttribute{
+                MarkdownDescription: "A sample project made for looking around: nothing in it is real, it notifies nobody, its status page is never public and it is never billed. Set by OneUptime when the sample is made.",
                 Computed: true,
             },
         },
@@ -1575,6 +1590,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "defaultMetricDownsamplingRetentionDays": true,
         "requireApprovalForIncidentPublicNotes": true,
         "requireApprovalForScheduledMaintenancePublicNotes": true,
+        "disableDashboardRecording": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
@@ -1608,6 +1624,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "securityEventsIngestionRateLimitInMBPerSecond": true,
         "goals": true,
         "productSettings": true,
+        "isSampleProject": true,
         "_id": true,
     }
 
@@ -2676,6 +2693,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if val, ok := dataMap["requireApprovalForScheduledMaintenancePublicNotes"].(bool); ok {
         data.RequireApprovalForScheduledMaintenancePublicNotes = types.BoolValue(val)
     }
+    if val, ok := dataMap["disableDashboardRecording"].(bool); ok {
+        data.DisableDashboardRecording = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -3386,6 +3406,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.ProductSettings = NewJSONSubsetNull()
     }
+    if val, ok := dataMap["isSampleProject"].(bool); ok {
+        data.IsSampleProject = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -3515,6 +3538,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "defaultMetricDownsamplingRetentionDays": true,
         "requireApprovalForIncidentPublicNotes": true,
         "requireApprovalForScheduledMaintenancePublicNotes": true,
+        "disableDashboardRecording": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
@@ -3548,6 +3572,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "securityEventsIngestionRateLimitInMBPerSecond": true,
         "goals": true,
         "productSettings": true,
+        "isSampleProject": true,
         "_id": true,
     }
 
@@ -4617,6 +4642,9 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     if val, ok := dataMap["requireApprovalForScheduledMaintenancePublicNotes"].(bool); ok {
         data.RequireApprovalForScheduledMaintenancePublicNotes = types.BoolValue(val)
     }
+    if val, ok := dataMap["disableDashboardRecording"].(bool); ok {
+        data.DisableDashboardRecording = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -5327,6 +5355,9 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.ProductSettings = NewJSONSubsetNull()
     }
+    if val, ok := dataMap["isSampleProject"].(bool); ok {
+        data.IsSampleProject = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -5677,6 +5708,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.RequireApprovalForScheduledMaintenancePublicNotes.IsUnknown() && !state.RequireApprovalForScheduledMaintenancePublicNotes.IsUnknown() && !data.RequireApprovalForScheduledMaintenancePublicNotes.Equal(state.RequireApprovalForScheduledMaintenancePublicNotes) {
         requestDataMap["requireApprovalForScheduledMaintenancePublicNotes"] = data.RequireApprovalForScheduledMaintenancePublicNotes.ValueBool()
     }
+    if !data.DisableDashboardRecording.IsUnknown() && !state.DisableDashboardRecording.IsUnknown() && !data.DisableDashboardRecording.Equal(state.DisableDashboardRecording) {
+        requestDataMap["disableDashboardRecording"] = data.DisableDashboardRecording.ValueBool()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -5796,6 +5830,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "defaultMetricDownsamplingRetentionDays": true,
         "requireApprovalForIncidentPublicNotes": true,
         "requireApprovalForScheduledMaintenancePublicNotes": true,
+        "disableDashboardRecording": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
@@ -5829,6 +5864,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "securityEventsIngestionRateLimitInMBPerSecond": true,
         "goals": true,
         "productSettings": true,
+        "isSampleProject": true,
         "_id": true,
     }
 
@@ -6892,6 +6928,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if val, ok := dataMap["requireApprovalForScheduledMaintenancePublicNotes"].(bool); ok {
         data.RequireApprovalForScheduledMaintenancePublicNotes = types.BoolValue(val)
     }
+    if val, ok := dataMap["disableDashboardRecording"].(bool); ok {
+        data.DisableDashboardRecording = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -7602,6 +7641,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.ProductSettings = NewJSONSubsetNull()
     }
+    if val, ok := dataMap["isSampleProject"].(bool); ok {
+        data.IsSampleProject = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -7949,6 +7991,9 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.RequireApprovalForScheduledMaintenancePublicNotes.IsNull() && !plan.RequireApprovalForScheduledMaintenancePublicNotes.IsUnknown() {
         data.RequireApprovalForScheduledMaintenancePublicNotes = plan.RequireApprovalForScheduledMaintenancePublicNotes
+    }
+    if config.DisableDashboardRecording.IsNull() && !plan.DisableDashboardRecording.IsUnknown() {
+        data.DisableDashboardRecording = plan.DisableDashboardRecording
     }
 }
 

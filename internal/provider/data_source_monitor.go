@@ -264,7 +264,7 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Validators: recordIDValidators("oneuptime_monitor_status"),
             },
             "monitor_steps": schema.StringAttribute{
-                MarkdownDescription: "What would you like to monitor and what is the criteria?",
+                MarkdownDescription: "What the monitor checks, and the criteria that judge each result. The Dashboard shows a step's criteria on the monitor's Criteria page.",
                 Computed: true,
             },
             "monitoring_interval": schema.StringAttribute{
@@ -304,7 +304,7 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "disable_active_monitoring_because_of_scheduled_maintenance_event": schema.BoolAttribute{
-                MarkdownDescription: "Disable Monitoring because of Ongoing Scheduled Maintenance Event.",
+                MarkdownDescription: "Disable Monitoring because of Ongoing Maintenance Event.",
                 Optional: true,
                 Computed: true,
             },

@@ -87,7 +87,7 @@ func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resourc
 
 func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Logs for on-call duty policy execution.",
+        MarkdownDescription: "Each time an on-call policy runs: what started it, how far it got, and who it paged.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -161,7 +161,7 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
                 Required: true,
             },
             "user_notification_event_type": schema.StringAttribute{
-                MarkdownDescription: "Type of event that triggered this on-call duty policy.",
+                MarkdownDescription: "Type of event that triggered this on-call policy.",
                 Required: true,
                 Validators: []validator.String{
                     stringvalidator.OneOf("Incident Created", "Alert Created", "Alert Episode Created", "Incident Episode Created", "Test Page"),

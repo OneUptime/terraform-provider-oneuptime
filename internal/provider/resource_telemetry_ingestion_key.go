@@ -77,7 +77,7 @@ func (r *TelemetryIngestionKeyResource) Schema(ctx context.Context, req resource
 
 func (r *TelemetryIngestionKeyResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Manage Telemetry Ingestion Keys for your project",
+        MarkdownDescription: "Manage ingestion keys for your project",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -279,7 +279,7 @@ func (r *TelemetryIngestionKeyResource) schemaDefinition() schema.Schema {
                 },
             },
             "secret_key": schema.StringAttribute{
-                MarkdownDescription: "Secret Telemetry Ingestion Key.",
+                MarkdownDescription: "Secret ingestion key.",
                 Computed: true,
                 Sensitive: true,
             },

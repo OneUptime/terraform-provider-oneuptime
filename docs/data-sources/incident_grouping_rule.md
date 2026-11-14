@@ -41,6 +41,7 @@ data "oneuptime_incident_grouping_rule" "by_id" {
 - `enable_time_window` (Boolean) Enable time-based grouping. When enabled, incidents are grouped within the specified time window. When disabled, all matching incidents are grouped into a single ongoing episode regardless of time.
 - `episode_description_template` (String) Template for generating episode descriptions. Supports placeholders like {{incidentSeverity}}, {{monitorName}}, {{incidentTitle}}, {{incidentDescription}}.
 - `episode_title_template` (String) Template for generating episode titles. Supports placeholders like {{incidentSeverity}}, {{monitorName}}, {{incidentTitle}}, {{incidentDescription}}.
+- `group_by_connected_services` (Boolean) When enabled, incidents on services that call each other on the Service Map are grouped into the same episode, and incidents on unconnected services into separate ones. Incidents on no service are grouped by monitor.
 - `group_by_incident_labels` (Boolean) When enabled, incidents with different sets of labels will be grouped into separate episodes (exact set match). When disabled, incident labels are ignored for grouping.
 - `group_by_incident_title` (Boolean) When enabled, incidents with different titles will be grouped into separate episodes. When disabled, incidents with any title can be grouped together.
 - `group_by_monitor` (Boolean) When enabled, incidents from different monitors will be grouped into separate episodes. When disabled, incidents from any monitor can be grouped together.
@@ -76,6 +77,6 @@ data "oneuptime_incident_grouping_rule" "by_id" {
 - `match_criteria` (String) JSON object defining the criteria for matching incidents to this rule. A JSON value: read it with `jsondecode()`.
 - `monitor_labels` (Set of String) Only group incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) Only group incidents from these monitors. Leave empty to match incidents from any monitor. IDs of `oneuptime_monitor` resources.
-- `on_call_duty_policies` (Set of String) List of on-call duty policies to execute for episodes created by this rule. IDs of `oneuptime_on_call_policy` resources.
+- `on_call_duty_policies` (Set of String) List of on-call policies to execute for episodes created by this rule. IDs of `oneuptime_on_call_policy` resources.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

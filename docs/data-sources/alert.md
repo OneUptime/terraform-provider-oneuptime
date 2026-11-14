@@ -74,7 +74,7 @@ data "oneuptime_alert" "by_id" {
 - `network_devices` (Set of String) List of network devices affected by this alert. IDs of `oneuptime_network_device` resources.
 - `next_incident_rule_check_at` (String) When OneUptime next checks whether an incident should be declared from this alert: set while an alert incident rule that matched it waits for the alert to stay unresolved, and empty otherwise. Set by OneUptime; it cannot be written.
 - `next_reminder_notification_at` (String) When will the next reminder notification be sent to owners of this alert? This is set automatically based on the reminder rules configured for this project.
-- `on_call_duty_policies` (Set of String) List of on-call duty policies affected by this alert. IDs of `oneuptime_on_call_policy` resources.
+- `on_call_duty_policies` (Set of String) List of on-call policies affected by this alert. IDs of `oneuptime_on_call_policy` resources.
 - `open_stack_clouds` (Set of String) List of OpenStack clouds affected by this alert. IDs of `oneuptime_openstack_cloud` resources.
 - `podman_hosts` (Set of String) List of Podman hosts affected by this alert. IDs of `oneuptime_podman_host` resources.
 - `podman_resources` (Set of String) List of Podman resources (containers, images, networks, volumes) affected by this alert.

@@ -59,7 +59,7 @@ func (d *TelemetryIngestionKeyDataSource) Metadata(ctx context.Context, req data
 
 func (d *TelemetryIngestionKeyDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage Telemetry Ingestion Keys for your project Look up an existing telemetry ingestion key by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one telemetry ingestion key may match them all.",
+        MarkdownDescription: "Manage ingestion keys for your project Look up an existing telemetry ingestion key by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one telemetry ingestion key may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -96,7 +96,7 @@ func (d *TelemetryIngestionKeyDataSource) Schema(ctx context.Context, req dataso
                 Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "secret_key": schema.StringAttribute{
-                MarkdownDescription: "Secret Telemetry Ingestion Key.",
+                MarkdownDescription: "Secret ingestion key.",
                 Computed: true,
                 Sensitive: true,
             },

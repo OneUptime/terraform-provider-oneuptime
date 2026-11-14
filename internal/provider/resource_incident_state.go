@@ -66,7 +66,7 @@ func (r *IncidentStateResource) Schema(ctx context.Context, req resource.SchemaR
 
 func (r *IncidentStateResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Manage incident states for your project (Created, Acknowledged for example). Add / edit or remove states.",
+        MarkdownDescription: "Where an incident is in your response. A new project starts with Identified, Acknowledged and Resolved: rename them or add your own between them.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

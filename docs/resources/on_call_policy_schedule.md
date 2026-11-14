@@ -2,12 +2,12 @@
 page_title: "oneuptime_on_call_policy_schedule Resource - oneuptime"
 subcategory: "On-Call & Escalation"
 description: |-
-  Manage schedules and rotations for your on-call duty policy.
+  Who is on call at any moment: people take turns in layers, and each one hands over to the next.
 ---
 
 # oneuptime_on_call_policy_schedule (Resource)
 
-Manage schedules and rotations for your on-call duty policy.
+Who is on call at any moment: people take turns in layers, and each one hands over to the next.
 
 ## Example Usage
 

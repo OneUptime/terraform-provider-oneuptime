@@ -46,7 +46,7 @@ resource "oneuptime_slo_burn_rate_rule" "example" {
 - `auto_resolve_incident` (Boolean) Resolve the incident automatically when the burn rate over the long window drops back below the threshold. Enabled by default. When disabled, the incident stays open until someone resolves it. Defaults to `true`.
 - `incident_description_template` (String) Description (in Markdown) of the incident declared when this burn rate rule fires. Supports template variables. Leave empty to use the default description.
 - `incident_labels` (Set of String) Labels added to incidents declared by this burn rate rule. IDs of `oneuptime_label` resources.
-- `incident_on_call_duty_policies` (Set of String) On-call duty policies attached to incidents declared by this burn rate rule. IDs of `oneuptime_on_call_policy` resources.
+- `incident_on_call_duty_policies` (Set of String) On-call policies attached to incidents declared by this burn rate rule. IDs of `oneuptime_on_call_policy` resources.
 - `incident_owner_teams` (Set of String) Teams added as owners of incidents declared by this burn rate rule. IDs of `oneuptime_team` resources.
 - `incident_owner_user_emails` (Set of String) The email addresses of the people in `incident_owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
 - `incident_owner_users` (Set of String) Users added as owners of incidents declared by this burn rate rule. IDs of `oneuptime_user` records. Or name them by email address, in `incident_owner_user_emails`.
@@ -57,7 +57,7 @@ resource "oneuptime_slo_burn_rate_rule" "example" {
 - `is_enabled` (Boolean) Whether this burn rate rule is enabled. Defaults to `true`.
 - `is_incident_private` (Boolean) Make the incident declared by this burn rate rule private, so only its owners, project admins and project owners can see it. Disabled by default. Defaults to `false`.
 - `minimum_sample_count` (Number) For event-based SLIs only: skip this rule when the long window has fewer than this many total events. Prevents noisy alerts on low traffic.
-- `on_call_duty_policies` (Set of String) On-call duty policies attached to alerts created by this burn rate rule. Incidents have their own list. IDs of `oneuptime_on_call_policy` resources.
+- `on_call_duty_policies` (Set of String) On-call policies attached to alerts created by this burn rate rule. Incidents have their own list. IDs of `oneuptime_on_call_policy` resources.
 - `refire_suppression_minutes` (Number) Minimum number of minutes after an alert or incident resolves before this rule can declare that same record again. Each output is suppressed independently, from its own resolve. Defaults to the long window length when not set.
 - `should_create_alert` (Boolean) Raise an Alert when this burn rate rule fires. Enabled by default. Defaults to `true`.
 - `should_create_incident` (Boolean) Declare an Incident when this burn rate rule fires. Disabled by default. Defaults to `false`.

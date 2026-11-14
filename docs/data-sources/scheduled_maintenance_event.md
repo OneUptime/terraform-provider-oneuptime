@@ -2,12 +2,12 @@
 page_title: "oneuptime_scheduled_maintenance_event Data Source - oneuptime"
 subcategory: "Scheduled Maintenance"
 description: |-
-  Manage scheduled maintenance event for your project
+  Manage maintenance events for your project
 ---
 
 # oneuptime_scheduled_maintenance_event (Data Source)
 
-Manage scheduled maintenance event for your project
+Manage maintenance events for your project
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one scheduled maintenance event may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 

@@ -2,12 +2,12 @@
 page_title: "oneuptime_alert_state Data Source - oneuptime"
 subcategory: "Alerts"
 description: |-
-  Manage alert states for your project (Created, Acknowledged for example). Add / edit or remove states.
+  Where an alert is in your response. A new project starts with Identified, Acknowledged and Resolved: rename them or add your own between them.
 ---
 
 # oneuptime_alert_state (Data Source)
 
-Manage alert states for your project (Created, Acknowledged for example). Add / edit or remove states.
+Where an alert is in your response. A new project starts with Identified, Acknowledged and Resolved: rename them or add your own between them.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one alert state may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 

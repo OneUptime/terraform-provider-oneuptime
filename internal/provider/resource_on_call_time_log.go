@@ -60,7 +60,7 @@ func (r *OnCallTimeLogResource) Schema(ctx context.Context, req resource.SchemaR
 
 func (r *OnCallTimeLogResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Manage on-call duty user overrides, for example if the user is on leave you can override the on-call duty policy for that user so all the alerts will be routed to the other user.",
+        MarkdownDescription: "When each person was on call for an on-call policy, from when their shift started to when it ended: what the User On-Call Time report adds up.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -87,7 +87,7 @@ func (r *OnCallTimeLogResource) schemaDefinition() schema.Schema {
                 },
             },
             "on_call_duty_policy_schedule_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy Schedule where this escalation rule belongs.",
+                MarkdownDescription: "ID of your On-Call Schedule where this escalation rule belongs.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -105,7 +105,7 @@ func (r *OnCallTimeLogResource) schemaDefinition() schema.Schema {
                 },
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy Team ID where this escalation rule belongs.",
+                MarkdownDescription: "ID of the team this log belongs to.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

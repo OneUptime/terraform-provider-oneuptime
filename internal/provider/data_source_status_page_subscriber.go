@@ -148,7 +148,7 @@ func (d *StatusPageSubscriberDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "is_subscribed_to_all_event_types": schema.BoolAttribute{
-                MarkdownDescription: "Is Subscriber Subscribed to All Event Types (like Incidents, Scheduled Events, Announcements) on this status page?",
+                MarkdownDescription: "Is Subscriber Subscribed to All Event Types (like Incidents, Maintenance Events, Announcements) on this status page?",
                 Optional: true,
                 Computed: true,
             },
@@ -158,7 +158,7 @@ func (d *StatusPageSubscriberDataSource) Schema(ctx context.Context, req datasou
                 ElementType: types.StringType,
             },
             "status_page_event_types": schema.StringAttribute{
-                MarkdownDescription: "Which event types is the subscriber subscribed to (like Incidents, Scheduled Events, Announcements). A JSON value: read it with `jsondecode()`.",
+                MarkdownDescription: "Which event types is the subscriber subscribed to (like Incidents, Maintenance Events, Announcements). A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "internal_note": schema.StringAttribute{

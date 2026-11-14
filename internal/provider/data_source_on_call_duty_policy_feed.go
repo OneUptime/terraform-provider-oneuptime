@@ -47,7 +47,7 @@ func (d *OnCallDutyPolicyFeedDataSource) Metadata(ctx context.Context, req datas
 
 func (d *OnCallDutyPolicyFeedDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Log of the entire onCallDutyPolicy state change. This is a log of all the on call duty policy changes. Look up an existing on call duty policy feed by `id`, or by any of its other arguments (`created_by_user_id`, `feed_info_in_markdown`, `more_information_in_markdown`, ...): each one set must match, and exactly one on call duty policy feed may match them all.",
+        MarkdownDescription: "What happened to an on-call policy, in order: every change to it and every time it ran. Look up an existing on call duty policy feed by `id`, or by any of its other arguments (`created_by_user_id`, `feed_info_in_markdown`, `more_information_in_markdown`, ...): each one set must match, and exactly one on call duty policy feed may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -68,7 +68,7 @@ func (d *OnCallDutyPolicyFeedDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "on_call_duty_policy_id": schema.StringAttribute{
-                MarkdownDescription: "Relation to OnCallDutyPolicy ID in which this resource belongs. The ID of a `oneuptime_on_call_policy`.",
+                MarkdownDescription: "ID of the on-call policy this resource belongs to. The ID of a `oneuptime_on_call_policy`.",
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_on_call_policy"),
@@ -80,7 +80,7 @@ func (d *OnCallDutyPolicyFeedDataSource) Schema(ctx context.Context, req datasou
                 Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "feed_info_in_markdown": schema.StringAttribute{
-                MarkdownDescription: "Log of the entire onCallDutyPolicy state change in Markdown.",
+                MarkdownDescription: "What happened to the on-call policy, in Markdown.",
                 Optional: true,
                 Computed: true,
             },
@@ -90,12 +90,12 @@ func (d *OnCallDutyPolicyFeedDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "on_call_duty_policy_feed_event_type": schema.StringAttribute{
-                MarkdownDescription: "On Call Duty Policy Feed Event.",
+                MarkdownDescription: "On-Call Policy Feed Event.",
                 Optional: true,
                 Computed: true,
             },
             "display_color": schema.StringAttribute{
-                MarkdownDescription: "Display color for the onCallDutyPolicy log.",
+                MarkdownDescription: "Display color for the on-call policy's feed entry.",
                 Computed: true,
             },
             "user_id": schema.StringAttribute{

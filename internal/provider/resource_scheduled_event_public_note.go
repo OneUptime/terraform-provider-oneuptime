@@ -72,7 +72,7 @@ func (r *ScheduledEventPublicNoteResource) Schema(ctx context.Context, req resou
 
 func (r *ScheduledEventPublicNoteResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Manage public notes for your scheduled event",
+        MarkdownDescription: "Manage public notes for your maintenance event",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

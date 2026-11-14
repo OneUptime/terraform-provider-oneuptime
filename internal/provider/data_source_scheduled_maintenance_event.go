@@ -84,7 +84,7 @@ func (d *ScheduledMaintenanceEventDataSource) Metadata(ctx context.Context, req 
 
 func (d *ScheduledMaintenanceEventDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage scheduled maintenance event for your project Look up an existing scheduled maintenance event by `id`, or by any of its other arguments (`change_monitor_status_to_id`, `created_by_user_id`, `current_scheduled_maintenance_state_id`, ...): each one set must match, and exactly one scheduled maintenance event may match them all.",
+        MarkdownDescription: "Manage maintenance events for your project Look up an existing scheduled maintenance event by `id`, or by any of its other arguments (`change_monitor_status_to_id`, `created_by_user_id`, `current_scheduled_maintenance_state_id`, ...): each one set must match, and exactly one scheduled maintenance event may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

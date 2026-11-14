@@ -50,7 +50,7 @@ func (d *IncidentStateDataSource) Metadata(ctx context.Context, req datasource.M
 
 func (d *IncidentStateDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage incident states for your project (Created, Acknowledged for example). Add / edit or remove states. Look up an existing incident state by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `created_by_user_id`, ...): each one set must match, and exactly one incident state may match them all.",
+        MarkdownDescription: "Where an incident is in your response. A new project starts with Identified, Acknowledged and Resolved: rename them or add your own between them. Look up an existing incident state by `id`, or by any of its other arguments (`name`, `archived_by_user_id`, `created_by_user_id`, ...): each one set must match, and exactly one incident state may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

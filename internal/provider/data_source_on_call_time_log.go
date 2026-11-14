@@ -48,7 +48,7 @@ func (d *OnCallTimeLogDataSource) Metadata(ctx context.Context, req datasource.M
 
 func (d *OnCallTimeLogDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage on-call duty user overrides, for example if the user is on leave you can override the on-call duty policy for that user so all the alerts will be routed to the other user. Look up an existing on call time log by `id`, or by any of its other arguments (`created_by_user_id`, `more_info`, `on_call_duty_policy_escalation_rule_id`, ...): each one set must match, and exactly one on call time log may match them all.",
+        MarkdownDescription: "When each person was on call for an on-call policy, from when their shift started to when it ended: what the User On-Call Time report adds up. Look up an existing on call time log by `id`, or by any of its other arguments (`created_by_user_id`, `more_info`, `on_call_duty_policy_escalation_rule_id`, ...): each one set must match, and exactly one on call time log may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -74,7 +74,7 @@ func (d *OnCallTimeLogDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "on_call_duty_policy_schedule_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy Schedule where this escalation rule belongs.",
+                MarkdownDescription: "ID of your On-Call Schedule where this escalation rule belongs.",
                 Optional: true,
                 Computed: true,
             },
@@ -84,7 +84,7 @@ func (d *OnCallTimeLogDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your On-Call Policy Team ID where this escalation rule belongs.",
+                MarkdownDescription: "ID of the team this log belongs to.",
                 Optional: true,
                 Computed: true,
             },

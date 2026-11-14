@@ -347,7 +347,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 },
                 Validators: recordIDValidators("oneuptime_monitor_status"),
             },
-            "monitor_steps": MonitorStepsSchemaAttribute("What would you like to monitor and what is the criteria?"),
+            "monitor_steps": MonitorStepsSchemaAttribute("What the monitor checks, and the criteria that judge each result. The Dashboard shows a step's criteria on the monitor's Criteria page."),
             "monitoring_interval": schema.StringAttribute{
                 MarkdownDescription: "How often would you like OneUptime to monitor this resource? A 5-field cron expression, not a label: \"*/5 * * * *\" is every five minutes.",
                 Optional: true,
@@ -525,7 +525,7 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "disable_active_monitoring_because_of_scheduled_maintenance_event": schema.BoolAttribute{
-                MarkdownDescription: "Disable Monitoring because of Ongoing Scheduled Maintenance Event.",
+                MarkdownDescription: "Disable Monitoring because of Ongoing Maintenance Event.",
                 Computed: true,
             },
             "disable_active_monitoring_because_of_manual_incident": schema.BoolAttribute{

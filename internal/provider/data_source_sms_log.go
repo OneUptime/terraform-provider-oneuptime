@@ -153,19 +153,19 @@ func (d *SmsLogDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 Validators: recordIDValidators("oneuptime_status_page_announcement"),
             },
             "on_call_duty_policy_id": schema.StringAttribute{
-                MarkdownDescription: "ID of On-Call Duty Policy associated with this SMS (if any). The ID of a `oneuptime_on_call_policy`.",
+                MarkdownDescription: "ID of On-Call Policy associated with this SMS (if any). The ID of a `oneuptime_on_call_policy`.",
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_on_call_policy"),
             },
             "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
-                MarkdownDescription: "ID of On-Call Duty Policy Escalation Rule associated with this SMS (if any). The ID of a `oneuptime_escalation_rule`.",
+                MarkdownDescription: "ID of On-Call Policy Escalation Rule associated with this SMS (if any). The ID of a `oneuptime_escalation_rule`.",
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_escalation_rule"),
             },
             "on_call_duty_policy_schedule_id": schema.StringAttribute{
-                MarkdownDescription: "ID of On-Call Duty Policy Schedule associated with this SMS (if any). The ID of a `oneuptime_on_call_policy_schedule`.",
+                MarkdownDescription: "ID of On-Call Schedule associated with this SMS (if any). The ID of a `oneuptime_on_call_policy_schedule`.",
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_on_call_policy_schedule"),

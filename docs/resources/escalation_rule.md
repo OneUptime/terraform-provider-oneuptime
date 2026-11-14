@@ -2,12 +2,12 @@
 page_title: "oneuptime_escalation_rule Resource - oneuptime"
 subcategory: "On-Call & Escalation"
 description: |-
-  Manage on-call duty escalation rule for the on-call policy.
+  Manage on-call escalation rule for the on-call policy.
 ---
 
 # oneuptime_escalation_rule (Resource)
 
-Manage on-call duty escalation rule for the on-call policy.
+Manage on-call escalation rule for the on-call policy.
 
 ## Example Usage
 

@@ -48,6 +48,7 @@ resource "oneuptime_alert_grouping_rule" "example" {
 - `episode_title_template` (String) Template for generating episode titles. Supports placeholders like {{alertSeverity}}, {{monitorName}}, {{alertTitle}}, {{alertDescription}}.
 - `group_by_alert_labels` (Boolean) When enabled, alerts with different sets of labels will be grouped into separate episodes (exact set match). When disabled, alert labels are ignored for grouping. Defaults to `false`.
 - `group_by_alert_title` (Boolean) When enabled, alerts with different titles will be grouped into separate episodes. When disabled, alerts with any title can be grouped together. Defaults to `false`.
+- `group_by_connected_services` (Boolean) When enabled, alerts on services that call each other on the Service Map are grouped into the same episode, and alerts on unconnected services into separate ones. Alerts on no service are grouped by monitor. Defaults to `false`.
 - `group_by_fields` (String) JSON object defining the fields to group alerts by (e.g., monitorId, severity). A JSON value: write it with `jsonencode()`.
 - `group_by_monitor` (Boolean) When enabled, alerts from different monitors will be grouped into separate episodes. When disabled, alerts from any monitor can be grouped together. Defaults to `false`.
 - `group_by_monitor_labels` (Boolean) When enabled, alerts whose monitors have different sets of labels will be grouped into separate episodes (exact set match). When disabled, monitor labels are ignored for grouping. Defaults to `false`.
@@ -60,7 +61,7 @@ resource "oneuptime_alert_grouping_rule" "example" {
 - `monitor_labels` (Set of String) Only group alerts from monitors that have at least one of these labels. Leave empty to match alerts regardless of monitor labels. IDs of `oneuptime_label` resources.
 - `monitor_name_pattern` (String) Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.
 - `monitors` (Set of String) Only group alerts from these monitors. Leave empty to match alerts from any monitor. IDs of `oneuptime_monitor` resources.
-- `on_call_duty_policies` (Set of String) List of on-call duty policies to execute for episodes created by this rule. IDs of `oneuptime_on_call_policy` resources.
+- `on_call_duty_policies` (Set of String) List of on-call policies to execute for episodes created by this rule. IDs of `oneuptime_on_call_policy` resources.
 - `priority` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
 - `reopen_window_minutes` (Number) Time window in minutes to reopen a recently resolved episode instead of creating a new one. Defaults to `0`.
 - `resolve_delay_minutes` (Number) Grace period in minutes before auto-resolving an episode after all alerts are resolved. Defaults to `0`.

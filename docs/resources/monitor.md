@@ -102,7 +102,7 @@ resource "oneuptime_monitor" "example" {
 - `kubernetes_clusters` (Set of String) Kubernetes clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_kubernetes_cluster` resources.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `minimum_probe_agreement` (Number) Minimum number of probes that must agree on a status before the monitor status changes. If null, all enabled and connected probes must agree.
-- `monitor_steps` (Attributes List) What would you like to monitor and what is the criteria? (see [below for nested schema](#nestedatt--monitor_steps))
+- `monitor_steps` (Attributes List) What the monitor checks, and the criteria that judge each result. The Dashboard shows a step's criteria on the monitor's Criteria page. (see [below for nested schema](#nestedatt--monitor_steps))
 - `monitor_template_id` (String) ID of the Monitor Template this monitor was created from. Null for monitors not created from a template. The ID of a `oneuptime_monitor_template`.
 - `monitoring_interval` (String) How often would you like OneUptime to monitor this resource? A 5-field cron expression, not a label: "*/5 * * * *" is every five minutes.
 - `open_stack_clouds` (Set of String) OpenStack clouds this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_openstack_cloud` resources.
@@ -125,7 +125,7 @@ resource "oneuptime_monitor" "example" {
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `disable_active_monitoring_because_of_manual_incident` (Boolean) Disable Monitoring because of Incident which is creeated manually by user.
-- `disable_active_monitoring_because_of_scheduled_maintenance_event` (Boolean) Disable Monitoring because of Ongoing Scheduled Maintenance Event.
+- `disable_active_monitoring_because_of_scheduled_maintenance_event` (Boolean) Disable Monitoring because of Ongoing Maintenance Event.
 - `id` (String) Unique identifier for the resource.
 - `incoming_email_monitor_heartbeat_checked_at` (String) This field is for Incoming Email monitor only. When was the last time we checked the heartbeat?
 - `incoming_email_monitor_last_email_received_at` (String) This field is for Incoming Email Monitor only. When was the last email received?
