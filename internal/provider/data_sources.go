@@ -144,6 +144,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewIncidentNoteTemplateDataSource,
         NewIncidentPostmortemTemplateDataSource,
         NewPostmortemStatusDataSource,
+        NewPostmortemActionItemDataSource,
         NewFormDataSource,
         NewFormSubmissionDataSource,
         NewFormDomainDataSource,

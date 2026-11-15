@@ -48,6 +48,7 @@ data "oneuptime_auto_remediation_suggestion" "by_id" {
 - `runbook_execution_id` (String) The runbook execution started when this suggestion was approved or auto-executed.
 - `runbook_id` (String) ID of the proposed runbook. The ID of a `oneuptime_runbook`.
 - `runbook_name_snapshot` (String) Name of the proposed runbook when this suggestion was created — survives runbook deletion.
+- `saved_as_runbook_id` (String) ID of the runbook this fix was saved as. Empty until someone saves the verified fix as a runbook. The ID of a `oneuptime_runbook`.
 - `status` (String) Lifecycle status: Planning, Suggested, Approved, AutoExecuted, Dismissed or NoneApplicable.
 - `suggestion_type` (String) Runbook suggestions propose starting a pre-authored runbook; CommandPlan suggestions carry an AI-composed command plan; McpToolCalls suggestions carry the tool calls OneUptime AI makes, or proposes, through the project's external MCP servers.
 - `verification_note` (String) Why verification ended the way it did.

@@ -121,6 +121,7 @@ func GetResources() []func() resource.Resource {
         NewIncidentNoteTemplateResource,
         NewIncidentPostmortemTemplateResource,
         NewPostmortemStatusResource,
+        NewPostmortemActionItemResource,
         NewFormResource,
         NewFormDomainResource,
         NewAlertStateResource,

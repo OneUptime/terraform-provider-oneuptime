@@ -39,6 +39,7 @@ type AutoRemediationSuggestionDataSourceModel struct {
     AlertId types.String `tfsdk:"alert_id"`
     RunbookId types.String `tfsdk:"runbook_id"`
     RunbookNameSnapshot types.String `tfsdk:"runbook_name_snapshot"`
+    SavedAsRunbookId types.String `tfsdk:"saved_as_runbook_id"`
     RunbookTrackRecord types.String `tfsdk:"runbook_track_record"`
     Status types.String `tfsdk:"status"`
     ExecutionMode types.String `tfsdk:"execution_mode"`
@@ -139,6 +140,12 @@ func (d *AutoRemediationSuggestionDataSource) Schema(ctx context.Context, req da
                 MarkdownDescription: "Name of the proposed runbook when this suggestion was created — survives runbook deletion.",
                 Optional: true,
                 Computed: true,
+            },
+            "saved_as_runbook_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the runbook this fix was saved as. Empty until someone saves the verified fix as a runbook. The ID of a `oneuptime_runbook`.",
+                Optional: true,
+                Computed: true,
+                Validators: recordIDValidators("oneuptime_runbook"),
             },
             "runbook_track_record": schema.StringAttribute{
                 MarkdownDescription: "How the proposed runbook went the last times OneUptime AI ran it for other incidents and alerts, when it was proposed. A JSON value: read it with `jsondecode()`.",
@@ -325,6 +332,10 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         filters["runbookNameSnapshot"] = data.RunbookNameSnapshot.ValueString()
         filterNames = append(filterNames, "runbook_name_snapshot = "+fmt.Sprintf("%q", data.RunbookNameSnapshot.ValueString()))
     }
+    if !data.SavedAsRunbookId.IsNull() && !data.SavedAsRunbookId.IsUnknown() {
+        filters["savedAsRunbookId"] = data.SavedAsRunbookId.ValueString()
+        filterNames = append(filterNames, "saved_as_runbook_id = "+fmt.Sprintf("%q", data.SavedAsRunbookId.ValueString()))
+    }
     if !data.Status.IsNull() && !data.Status.IsUnknown() {
         filters["status"] = data.Status.ValueString()
         filterNames = append(filterNames, "status = "+fmt.Sprintf("%q", data.Status.ValueString()))
@@ -414,6 +425,7 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         "alertId": true,
         "runbookId": true,
         "runbookNameSnapshot": true,
+        "savedAsRunbookId": true,
         "runbookTrackRecord": true,
         "status": true,
         "executionMode": true,
@@ -809,6 +821,30 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         data.RunbookNameSnapshot = types.StringValue(val)
     } else {
         data.RunbookNameSnapshot = types.StringNull()
+    }
+    if obj, ok := item["savedAsRunbookId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SavedAsRunbookId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SavedAsRunbookId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SavedAsRunbookId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SavedAsRunbookId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SavedAsRunbookId = types.StringNull()
+        }
+    } else if arr, ok := item["savedAsRunbookId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SavedAsRunbookId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SavedAsRunbookId = types.StringNull()
+        }
+    } else if val, ok := item["savedAsRunbookId"].(string); ok {
+        data.SavedAsRunbookId = types.StringValue(val)
+    } else {
+        data.SavedAsRunbookId = types.StringNull()
     }
     if obj, ok := item["runbookTrackRecord"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
