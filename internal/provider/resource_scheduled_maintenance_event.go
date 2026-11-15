@@ -456,7 +456,7 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 },
             },
             "enable_reminders": schema.BoolAttribute{
-                MarkdownDescription: "Should reminder notifications be sent to owners while this scheduled maintenance event is still not complete? Reminders are sent based on the reminder rules configured for this project.",
+                MarkdownDescription: "Should reminder notifications be sent to owners while this maintenance event is still not complete? Reminders are sent based on the reminder rules configured for this project.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -518,12 +518,12 @@ func (r *ScheduledMaintenanceEventResource) schemaDefinition() schema.Schema {
                 },
             },
             "next_reminder_notification_at": schema.StringAttribute{
-                MarkdownDescription: "When will the next reminder notification be sent to owners of this scheduled maintenance event? This is set automatically based on the reminder rules configured for this project.",
+                MarkdownDescription: "When will the next reminder notification be sent to owners of this maintenance event? This is set automatically based on the reminder rules configured for this project.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "reminder_notification_sent_count": schema.NumberAttribute{
-                MarkdownDescription: "How many reminder notifications have been sent to owners of this scheduled maintenance event so far.",
+                MarkdownDescription: "How many reminder notifications have been sent to owners of this maintenance event so far.",
                 Computed: true,
             },
         },

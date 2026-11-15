@@ -72,9 +72,10 @@ func (d *IncomingCallPolicyPhoneNumberDataSource) Schema(ctx context.Context, re
                 Validators: recordIDValidators("oneuptime_incoming_call_policy"),
             },
             "project_call_sms_config_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the call provider configuration that owns this number.",
+                MarkdownDescription: "ID of the call provider configuration that owns this number. The ID of a `oneuptime_call_and_sms_config`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_call_and_sms_config"),
             },
             "phone_number": schema.StringAttribute{
                 MarkdownDescription: "Phone number that routes calls to the policy.",

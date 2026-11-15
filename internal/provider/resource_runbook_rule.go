@@ -73,7 +73,7 @@ func (r *RunbookRuleResource) Schema(ctx context.Context, req resource.SchemaReq
 
 func (r *RunbookRuleResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Auto-attach runbooks to incidents, alerts, or scheduled maintenance events when they are created.",
+        MarkdownDescription: "Auto-attach runbooks to incidents, alerts, or maintenance events when they are created.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -135,7 +135,7 @@ func (r *RunbookRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only match incidents and scheduled maintenance events that affect, and alerts raised by, at least one of these monitors. Leave empty to match any monitor. IDs of `oneuptime_monitor` resources.",
+                MarkdownDescription: "Only match incidents and maintenance events that affect, and alerts raised by, at least one of these monitors. Leave empty to match any monitor. IDs of `oneuptime_monitor` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -165,7 +165,7 @@ func (r *RunbookRuleResource) schemaDefinition() schema.Schema {
                 Validators: recordIDSetValidators("oneuptime_alert_severity"),
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Only match incidents, alerts or scheduled maintenance events that carry at least one of these labels. Leave empty to match regardless of their labels. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Only match incidents, alerts or maintenance events that carry at least one of these labels. Leave empty to match regardless of their labels. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -175,7 +175,7 @@ func (r *RunbookRuleResource) schemaDefinition() schema.Schema {
                 Validators: recordIDSetValidators("oneuptime_label"),
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only match when a monitor of the incident, alert or scheduled maintenance event carries at least one of these labels. Leave empty to match regardless of monitor labels. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Only match when a monitor of the incident, alert or maintenance event carries at least one of these labels. Leave empty to match regardless of monitor labels. IDs of `oneuptime_label` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -201,7 +201,7 @@ func (r *RunbookRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Case-insensitive regex matched against the names of the monitors of the incident, alert or scheduled maintenance event. Leave empty to match any monitor name.",
+                MarkdownDescription: "Case-insensitive regex matched against the names of the monitors of the incident, alert or maintenance event. Leave empty to match any monitor name.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -209,7 +209,7 @@ func (r *RunbookRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Case-insensitive regex matched against the descriptions of the monitors of the incident, alert or scheduled maintenance event. Leave empty to match any monitor description.",
+                MarkdownDescription: "Case-insensitive regex matched against the descriptions of the monitors of the incident, alert or maintenance event. Leave empty to match any monitor description.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

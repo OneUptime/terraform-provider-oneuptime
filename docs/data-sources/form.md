@@ -2,12 +2,12 @@
 page_title: "oneuptime_form Data Source - oneuptime"
 subcategory: "Forms"
 description: |-
-  Forms anyone with the link can fill in, without a OneUptime account. Each submission creates an incident or a scheduled maintenance event in this project.
+  Forms anyone with the link can fill in, without a OneUptime account. Each submission creates an incident or a maintenance event in this project.
 ---
 
 # oneuptime_form (Data Source)
 
-Forms anyone with the link can fill in, without a OneUptime account. Each submission creates an incident or a scheduled maintenance event in this project.
+Forms anyone with the link can fill in, without a OneUptime account. Each submission creates an incident or a maintenance event in this project.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one form may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
@@ -39,13 +39,13 @@ data "oneuptime_form" "by_id" {
 - `name` (String) The form's name, shown as the heading of its public page. Unique within the project.
 - `share_key` (String) The key in the form's public link, /accounts/form/<shareKey>. Generated when the form is created. Resetting the link in the dashboard replaces it, and the old link stops working.
 - `success_message` (String) Shown after the form is submitted, together with the number of what the submission created. Markdown.
-- `target_type` (String) What each submission creates: Incident, or ScheduledMaintenance (a scheduled maintenance event).
+- `target_type` (String) What each submission creates: Incident, or ScheduledMaintenance (a maintenance event).
 
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
 - `fields` (String) The questions the form asks, in order. Each has an id, a source (Question: one of the form's own, answered by type; TargetField: a built-in field of what the form creates, by targetField; TargetCustomField: one of its custom fields, by customFieldId; Submitter: the submitter's Name or Email), a label, optional help text, isRequired and isHidden (not shown on the public form unless the template a submission starts from asks it, and otherwise answered only from the template a submission started from; never required, and never a field the target cannot be created without). isRequired and isHidden are the form's default: each template can make a question Required, Optional or Hidden (its fieldSettings). A new form starts with a title, a description and the submitter's name and email. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `target_settings` (String) What every submission starts with besides the answers. For incidents: defaultTitle, incidentSeverityId, incidentTemplateId, monitorIds, labelIds, onCallDutyPolicyIds, ownerUserIds and ownerTeamIds. For scheduled maintenance events: defaultTitle, monitorIds, statusPageIds, labelIds, ownerUserIds, ownerTeamIds, showOnStatusPages and notifySubscribers. A JSON value: read it with `jsondecode()`.
+- `target_settings` (String) What every submission starts with besides the answers. For incidents: defaultTitle, incidentSeverityId, incidentTemplateId, monitorIds, labelIds, onCallDutyPolicyIds, ownerUserIds and ownerTeamIds. For maintenance events: defaultTitle, monitorIds, statusPageIds, labelIds, ownerUserIds, ownerTeamIds, showOnStatusPages and notifySubscribers. A JSON value: read it with `jsondecode()`.
 - `templates` (String) Named sets of answers a submission can start from, in the order the form lists them. Each has an id, a name (unique within the form), isDefault (the form opens with it; at most one template), answers: an object keyed by question id, each answer as a submission sends it - text, a number, true or false, an option's value, or a list of values for a multi-select - and fieldSettings: an object keyed by question id that makes a question Required, Optional or Hidden when a submission starts from the template; a question it does not list is asked as the form asks it, and a question the form cannot create its record without is always asked and required. The public form lists the templates above its questions and fills in a template's answers when one is chosen, or when its link names one (?template=<id>). A question the submission was not asked - hidden by the form or by the template - is answered only from the template a submission started from. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

@@ -2,12 +2,12 @@
 page_title: "oneuptime_scheduled_maintenance_label_rule Data Source - oneuptime"
 subcategory: "Scheduled Maintenance"
 description: |-
-  Configure rules for automatically attaching labels to scheduled maintenance events — including labels inherited from the event's monitors — when matching events are created
+  Configure rules for automatically attaching labels to maintenance events — including labels inherited from the event's monitors — when matching events are created
 ---
 
 # oneuptime_scheduled_maintenance_label_rule (Data Source)
 
-Configure rules for automatically attaching labels to scheduled maintenance events — including labels inherited from the event's monitors — when matching events are created
+Configure rules for automatically attaching labels to maintenance events — including labels inherited from the event's monitors — when matching events are created
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one scheduled maintenance label rule may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 

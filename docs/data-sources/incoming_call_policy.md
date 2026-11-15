@@ -39,7 +39,7 @@ data "oneuptime_incoming_call_policy" "by_id" {
 - `no_one_available_message` (String) Message when no one is on-call or reachable.
 - `phone_number_area_code` (String) Area code of the phone number.
 - `phone_number_country_code` (String) Country code of the phone number (US, GB, etc.).
-- `project_call_sms_config_id` (String) ID of the project-level Twilio configuration. If set, uses this config instead of global config and billing does not apply.
+- `project_call_sms_config_id` (String) ID of the project-level Twilio configuration. If set, uses this config instead of global config and billing does not apply. The ID of a `oneuptime_call_and_sms_config`.
 - `repeat_policy_if_no_one_answers` (Boolean) Restart from first rule if all fail.
 - `repeat_policy_if_no_one_answers_times` (Number) How many more times the escalation rules ring again from the first when nobody answers: a whole number of 1 or more while Repeat Policy If No One Answers is on.
 - `slug` (String) Friendly globally unique name for your object.

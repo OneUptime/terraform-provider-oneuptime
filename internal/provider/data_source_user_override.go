@@ -46,7 +46,7 @@ func (d *UserOverrideDataSource) Metadata(ctx context.Context, req datasource.Me
 
 func (d *UserOverrideDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. With nobody named to cover, it skips them instead: each of their turns in an on-call schedule goes to the next person in the rotation. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy. Look up an existing user override by `id`, or by any of its other arguments (`created_by_user_id`, `on_call_duty_policy_id`, `override_user_email`, ...): each one set must match, and exactly one user override may match them all.",
+        MarkdownDescription: "While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. With nobody named to cover, it skips them instead: each of their turns in an on-call schedule goes to the next person in the rotation. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy. One person's overrides on the same policy, or their global ones, may not overlap in time. Look up an existing user override by `id`, or by any of its other arguments (`created_by_user_id`, `on_call_duty_policy_id`, `override_user_email`, ...): each one set must match, and exactly one user override may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -91,11 +91,11 @@ func (d *UserOverrideDataSource) Schema(ctx context.Context, req datasource.Sche
                 Validators: personIDValidators("route_alerts_to_user_email", false),
             },
             "starts_at": schema.StringAttribute{
-                MarkdownDescription: "When the override starts sending the Override User's alerts to the Route Alerts To User - or, with none, skipping their turns.",
+                MarkdownDescription: "When the override starts sending the Override User's alerts to the Route Alerts To User - or, with none, skipping their turns. It can be changed until the override starts, to a time from now on.",
                 Computed: true,
             },
             "ends_at": schema.StringAttribute{
-                MarkdownDescription: "When the override ends, which has to be after it starts. From then on, alerts page the Override User again, and their turns in each rotation are theirs again.",
+                MarkdownDescription: "When the override ends, which has to be after it starts. From then on, alerts page the Override User again, and their turns in each rotation are theirs again. It can be changed until the override ends, to a time from now on: an end of now ends it now.",
                 Computed: true,
             },
             "override_user_email": schema.StringAttribute{

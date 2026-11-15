@@ -130,7 +130,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 Validators: recordIDSetValidators("oneuptime_monitor"),
             },
             "hosts": schema.SetAttribute{
-                MarkdownDescription: "List of hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_host` resources.",
+                MarkdownDescription: "List of hosts to pre-populate on maintenance events created from this template. IDs of `oneuptime_host` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -140,7 +140,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 Validators: recordIDSetValidators("oneuptime_host"),
             },
             "kubernetes_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Kubernetes clusters to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_kubernetes_cluster` resources.",
+                MarkdownDescription: "List of Kubernetes clusters to pre-populate on maintenance events created from this template. IDs of `oneuptime_kubernetes_cluster` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -150,7 +150,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 Validators: recordIDSetValidators("oneuptime_kubernetes_cluster"),
             },
             "docker_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Docker hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_docker_host` resources.",
+                MarkdownDescription: "List of Docker hosts to pre-populate on maintenance events created from this template. IDs of `oneuptime_docker_host` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -160,7 +160,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 Validators: recordIDSetValidators("oneuptime_docker_host"),
             },
             "podman_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Podman hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_podman_host` resources.",
+                MarkdownDescription: "List of Podman hosts to pre-populate on maintenance events created from this template. IDs of `oneuptime_podman_host` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -170,7 +170,7 @@ func (r *ScheduledMaintenanceTemplateResource) schemaDefinition() schema.Schema 
                 Validators: recordIDSetValidators("oneuptime_podman_host"),
             },
             "services": schema.SetAttribute{
-                MarkdownDescription: "List of services to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_service` resources.",
+                MarkdownDescription: "List of services to pre-populate on maintenance events created from this template. IDs of `oneuptime_service` resources.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

@@ -48,7 +48,7 @@ func (d *ScheduledMaintenanceMeasurementValueDataSource) Metadata(ctx context.Co
 
 func (d *ScheduledMaintenanceMeasurementValueDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "The computed value of one measurement for one scheduled maintenance event. Written by OneUptime, never edited by hand. Look up an existing scheduled maintenance measurement value by `id`, or by any of its other arguments (`end_scheduled_maintenance_state_timeline_id`, `scheduled_maintenance_id`, `scheduled_maintenance_measurement_id`, ...): each one set must match, and exactly one scheduled maintenance measurement value may match them all.",
+        MarkdownDescription: "The computed value of one measurement for one maintenance event. Written by OneUptime, never edited by hand. Look up an existing scheduled maintenance measurement value by `id`, or by any of its other arguments (`end_scheduled_maintenance_state_timeline_id`, `scheduled_maintenance_id`, `scheduled_maintenance_measurement_id`, ...): each one set must match, and exactly one scheduled maintenance measurement value may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

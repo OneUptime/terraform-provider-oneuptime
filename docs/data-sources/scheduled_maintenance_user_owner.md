@@ -2,12 +2,12 @@
 page_title: "oneuptime_scheduled_maintenance_user_owner Data Source - oneuptime"
 subcategory: "Scheduled Maintenance"
 description: |-
-  Add users as owners to your scheduled maintenance event.
+  Add users as owners to your maintenance event.
 ---
 
 # oneuptime_scheduled_maintenance_user_owner (Data Source)
 
-Add users as owners to your scheduled maintenance event.
+Add users as owners to your maintenance event.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one scheduled maintenance user owner may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
@@ -32,9 +32,9 @@ data "oneuptime_scheduled_maintenance_user_owner" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `scheduled_maintenance_id` (String) ID of the scheduled maintenance event the user owns. The ID of a `oneuptime_scheduled_maintenance_event`.
+- `scheduled_maintenance_id` (String) ID of the maintenance event the user owns. The ID of a `oneuptime_scheduled_maintenance_event`.
 - `user_email` (String) Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
-- `user_id` (String) ID of the user who owns the scheduled maintenance event. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.
+- `user_id` (String) ID of the user who owns the maintenance event. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.
 
 ### Read-Only
 

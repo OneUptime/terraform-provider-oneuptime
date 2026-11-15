@@ -354,14 +354,16 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "smtp_config_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your SMTP Config Resource which is used to send email to subscribers.",
+                MarkdownDescription: "ID of your SMTP Config Resource which is used to send email to subscribers. The ID of a `oneuptime_smtp_config`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_smtp_config"),
             },
             "call_sms_config_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your Call/SMS Config Resource which is used to send SMS to subscribers.",
+                MarkdownDescription: "ID of your Call/SMS Config Resource which is used to send SMS to subscribers. The ID of a `oneuptime_call_and_sms_config`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_call_and_sms_config"),
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of when this resource is created?",

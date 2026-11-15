@@ -43,7 +43,7 @@ func (d *ScheduledMaintenanceUserOwnerDataSource) Metadata(ctx context.Context, 
 
 func (d *ScheduledMaintenanceUserOwnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Add users as owners to your scheduled maintenance event. Look up an existing scheduled maintenance user owner by `id`, or by any of its other arguments (`created_by_user_id`, `is_owner_notified`, `scheduled_maintenance_id`, ...): each one set must match, and exactly one scheduled maintenance user owner may match them all.",
+        MarkdownDescription: "Add users as owners to your maintenance event. Look up an existing scheduled maintenance user owner by `id`, or by any of its other arguments (`created_by_user_id`, `is_owner_notified`, `scheduled_maintenance_id`, ...): each one set must match, and exactly one scheduled maintenance user owner may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -64,13 +64,13 @@ func (d *ScheduledMaintenanceUserOwnerDataSource) Schema(ctx context.Context, re
                 Computed: true,
             },
             "user_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the user who owns the scheduled maintenance event. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.",
+                MarkdownDescription: "ID of the user who owns the maintenance event. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.",
                 Optional: true,
                 Computed: true,
                 Validators: personIDValidators("user_email", false),
             },
             "scheduled_maintenance_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the scheduled maintenance event the user owns. The ID of a `oneuptime_scheduled_maintenance_event`.",
+                MarkdownDescription: "ID of the maintenance event the user owns. The ID of a `oneuptime_scheduled_maintenance_event`.",
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_scheduled_maintenance_event"),

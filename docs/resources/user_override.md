@@ -2,12 +2,12 @@
 page_title: "oneuptime_user_override Resource - oneuptime"
 subcategory: "On-Call & Escalation"
 description: |-
-  While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. With nobody named to cover, it skips them instead: each of their turns in an on-call schedule goes to the next person in the rotation. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy.
+  While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. With nobody named to cover, it skips them instead: each of their turns in an on-call schedule goes to the next person in the rotation. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy. One person's overrides on the same policy, or their global ones, may not overlap in time.
 ---
 
 # oneuptime_user_override (Resource)
 
-While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. With nobody named to cover, it skips them instead: each of their turns in an on-call schedule goes to the next person in the rotation. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy.
+While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. With nobody named to cover, it skips them instead: each of their turns in an on-call schedule goes to the next person in the rotation. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy. One person's overrides on the same policy, or their global ones, may not overlap in time.
 
 ## Example Usage
 
@@ -23,8 +23,8 @@ resource "oneuptime_user_override" "example" {
 
 ### Required
 
-- `ends_at` (String) When the override ends, which has to be after it starts. From then on, alerts page the Override User again, and their turns in each rotation are theirs again.
-- `starts_at` (String) When the override starts sending the Override User's alerts to the Route Alerts To User - or, with none, skipping their turns.
+- `ends_at` (String) When the override ends, which has to be after it starts. From then on, alerts page the Override User again, and their turns in each rotation are theirs again. It can be changed until the override ends, to a time from now on: an end of now ends it now.
+- `starts_at` (String) When the override starts sending the Override User's alerts to the Route Alerts To User - or, with none, skipping their turns. It can be changed until the override starts, to a time from now on.
 
 ### Optional
 

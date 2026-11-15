@@ -151,9 +151,10 @@ func (d *IncomingCallPolicyDataSource) Schema(ctx context.Context, req datasourc
                 ElementType: types.StringType,
             },
             "project_call_sms_config_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the project-level Twilio configuration. If set, uses this config instead of global config and billing does not apply.",
+                MarkdownDescription: "ID of the project-level Twilio configuration. If set, uses this config instead of global config and billing does not apply. The ID of a `oneuptime_call_and_sms_config`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_call_and_sms_config"),
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",

@@ -26,7 +26,7 @@ resource "oneuptime_on_call_duty_policy_feed" "example" {
 
 - `display_color` (String) Display color for the on-call policy's feed entry.
 - `feed_info_in_markdown` (String) What happened to the on-call policy, in Markdown.
-- `on_call_duty_policy_feed_event_type` (String) On-Call Policy Feed Event. Allowed values: `UserAdded`, `UserRemoved`, `TeamAdded`, `TeamRemoved`, `OnCallDutyScheduleAdded`, `OnCallDutyScheduleRemoved`, `OnCallDutyPolicyCreated`, `RosterHandoff`, `OwnerUserAdded`, `OwnerUserRemoved`, `OwnerTeamAdded`, `OwnerTeamRemoved`, `UserOverrideAdded`, `UserOverrideRemoved`, `CoverageGapStarted`.
+- `on_call_duty_policy_feed_event_type` (String) On-Call Policy Feed Event. Allowed values: `UserAdded`, `UserRemoved`, `TeamAdded`, `TeamRemoved`, `OnCallDutyScheduleAdded`, `OnCallDutyScheduleRemoved`, `OnCallDutyPolicyCreated`, `RosterHandoff`, `OwnerUserAdded`, `OwnerUserRemoved`, `OwnerTeamAdded`, `OwnerTeamRemoved`, `UserOverrideAdded`, `UserOverrideChanged`, `UserOverrideRemoved`, `CoverageGapStarted`.
 - `on_call_duty_policy_id` (String) ID of the on-call policy this resource belongs to. The ID of a `oneuptime_on_call_policy`.
 
 ### Optional

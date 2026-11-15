@@ -2,12 +2,12 @@
 page_title: "oneuptime_scheduled_maintenance_measurement_value Data Source - oneuptime"
 subcategory: "Scheduled Maintenance"
 description: |-
-  The computed value of one measurement for one scheduled maintenance event. Written by OneUptime, never edited by hand.
+  The computed value of one measurement for one maintenance event. Written by OneUptime, never edited by hand.
 ---
 
 # oneuptime_scheduled_maintenance_measurement_value (Data Source)
 
-The computed value of one measurement for one scheduled maintenance event. Written by OneUptime, never edited by hand.
+The computed value of one measurement for one maintenance event. Written by OneUptime, never edited by hand.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one scheduled maintenance measurement value may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 

@@ -59,7 +59,7 @@ func (d *ScheduledMaintenanceLabelRuleDataSource) Metadata(ctx context.Context, 
 
 func (d *ScheduledMaintenanceLabelRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Configure rules for automatically attaching labels to scheduled maintenance events — including labels inherited from the event's monitors — when matching events are created Look up an existing scheduled maintenance label rule by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one scheduled maintenance label rule may match them all.",
+        MarkdownDescription: "Configure rules for automatically attaching labels to maintenance events — including labels inherited from the event's monitors — when matching events are created Look up an existing scheduled maintenance label rule by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one scheduled maintenance label rule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

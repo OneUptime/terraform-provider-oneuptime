@@ -2,12 +2,12 @@
 page_title: "oneuptime_user_override Data Source - oneuptime"
 subcategory: "On-Call & Escalation"
 description: |-
-  While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. With nobody named to cover, it skips them instead: each of their turns in an on-call schedule goes to the next person in the rotation. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy.
+  While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. With nobody named to cover, it skips them instead: each of their turns in an on-call schedule goes to the next person in the rotation. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy. One person's overrides on the same policy, or their global ones, may not overlap in time.
 ---
 
 # oneuptime_user_override (Data Source)
 
-While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. With nobody named to cover, it skips them instead: each of their turns in an on-call schedule goes to the next person in the rotation. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy.
+While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. With nobody named to cover, it skips them instead: each of their turns in an on-call schedule goes to the next person in the rotation. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy. One person's overrides on the same policy, or their global ones, may not overlap in time.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one user override may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
@@ -40,7 +40,7 @@ data "oneuptime_user_override" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
-- `ends_at` (String) When the override ends, which has to be after it starts. From then on, alerts page the Override User again, and their turns in each rotation are theirs again.
+- `ends_at` (String) When the override ends, which has to be after it starts. From then on, alerts page the Override User again, and their turns in each rotation are theirs again. It can be changed until the override ends, to a time from now on: an end of now ends it now.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `starts_at` (String) When the override starts sending the Override User's alerts to the Route Alerts To User - or, with none, skipping their turns.
+- `starts_at` (String) When the override starts sending the Override User's alerts to the Route Alerts To User - or, with none, skipping their turns. It can be changed until the override starts, to a time from now on.
 - `updated_at` (String) Date and Time when the object was updated.

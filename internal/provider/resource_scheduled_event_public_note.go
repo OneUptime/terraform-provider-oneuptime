@@ -116,7 +116,7 @@ func (r *ScheduledEventPublicNoteResource) schemaDefinition() schema.Schema {
                 Validators: recordIDSetValidators("oneuptime_file"),
             },
             "should_status_page_subscribers_be_notified_on_note_created": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this note? If left out, this follows the scheduled maintenance event: true when subscribers were notified that the event was created, false when it was created without notifying them.",
+                MarkdownDescription: "Should subscribers be notified about this note? If left out, this follows the maintenance event: true when subscribers were notified that the event was created, false when it was created without notifying them.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Bool{
@@ -184,7 +184,7 @@ func (r *ScheduledEventPublicNoteResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "posted_with_scheduled_maintenance_state_id": schema.StringAttribute{
-                MarkdownDescription: "The state the scheduled maintenance event moved to when this note was posted with that state change. Subscribers are told this state with the note. Empty for a note posted on its own. The ID of a `oneuptime_scheduled_maintenance_state`.",
+                MarkdownDescription: "The state the maintenance event moved to when this note was posted with that state change. Subscribers are told this state with the note. Empty for a note posted on its own. The ID of a `oneuptime_scheduled_maintenance_state`.",
                 Computed: true,
             },
             "saved_from_chat_message": schema.StringAttribute{

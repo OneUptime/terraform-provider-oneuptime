@@ -123,27 +123,27 @@ func (d *ScheduledMaintenanceTemplateDataSource) Schema(ctx context.Context, req
                 ElementType: types.StringType,
             },
             "hosts": schema.SetAttribute{
-                MarkdownDescription: "List of hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_host` resources.",
+                MarkdownDescription: "List of hosts to pre-populate on maintenance events created from this template. IDs of `oneuptime_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "kubernetes_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Kubernetes clusters to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_kubernetes_cluster` resources.",
+                MarkdownDescription: "List of Kubernetes clusters to pre-populate on maintenance events created from this template. IDs of `oneuptime_kubernetes_cluster` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "docker_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Docker hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_docker_host` resources.",
+                MarkdownDescription: "List of Docker hosts to pre-populate on maintenance events created from this template. IDs of `oneuptime_docker_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "podman_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Podman hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_podman_host` resources.",
+                MarkdownDescription: "List of Podman hosts to pre-populate on maintenance events created from this template. IDs of `oneuptime_podman_host` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "services": schema.SetAttribute{
-                MarkdownDescription: "List of services to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_service` resources.",
+                MarkdownDescription: "List of services to pre-populate on maintenance events created from this template. IDs of `oneuptime_service` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },

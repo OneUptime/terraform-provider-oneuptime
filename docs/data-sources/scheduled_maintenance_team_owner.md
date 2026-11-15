@@ -2,12 +2,12 @@
 page_title: "oneuptime_scheduled_maintenance_team_owner Data Source - oneuptime"
 subcategory: "Scheduled Maintenance"
 description: |-
-  Add teams as owners to your Scheduled Maintenance event.
+  Add teams as owners to your maintenance event.
 ---
 
 # oneuptime_scheduled_maintenance_team_owner (Data Source)
 
-Add teams as owners to your Scheduled Maintenance event.
+Add teams as owners to your maintenance event.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one scheduled maintenance team owner may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
@@ -31,8 +31,8 @@ data "oneuptime_scheduled_maintenance_team_owner" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
-- `scheduled_maintenance_id` (String) ID of the scheduled maintenance event the team owns. The ID of a `oneuptime_scheduled_maintenance_event`.
-- `team_id` (String) ID of the team that owns the scheduled maintenance event. The ID of a `oneuptime_team`.
+- `scheduled_maintenance_id` (String) ID of the maintenance event the team owns. The ID of a `oneuptime_scheduled_maintenance_event`.
+- `team_id` (String) ID of the team that owns the maintenance event. The ID of a `oneuptime_team`.
 
 ### Read-Only
 

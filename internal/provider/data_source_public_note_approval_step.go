@@ -67,7 +67,7 @@ func (d *PublicNoteApprovalStepDataSource) Schema(ctx context.Context, req datas
                 Computed: true,
             },
             "event_type": schema.StringAttribute{
-                MarkdownDescription: "Whose public notes this step approves: Incident (the public notes of incidents and incident episodes) or ScheduledMaintenance (the public notes of scheduled maintenance events).",
+                MarkdownDescription: "Whose public notes this step approves: Incident (the public notes of incidents and incident episodes) or ScheduledMaintenance (the public notes of maintenance events).",
                 Optional: true,
                 Computed: true,
             },

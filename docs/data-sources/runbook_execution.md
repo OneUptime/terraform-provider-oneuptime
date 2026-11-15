@@ -34,7 +34,7 @@ data "oneuptime_runbook_execution" "by_id" {
 - `incident_id` (String) ID of the incident that triggered or hosts this runbook execution. The ID of a `oneuptime_incident`.
 - `runbook_id` (String) ID of the Runbook this execution belongs to. The ID of a `oneuptime_runbook`.
 - `runbook_name_snapshot` (String) Name of the runbook at the time this execution was created (preserved even if the runbook is later renamed or deleted).
-- `scheduled_maintenance_id` (String) ID of the scheduled maintenance event that triggered this runbook execution. The ID of a `oneuptime_scheduled_maintenance_event`.
+- `scheduled_maintenance_id` (String) ID of the maintenance event that triggered this runbook execution. The ID of a `oneuptime_scheduled_maintenance_event`.
 - `status` (String) Current status of this runbook execution.
 - `trigger_type` (String) What started this run: "Manual" (a person, or the API), "Rule" (a runbook rule), "AutoRemediation", "AI" (OneUptime AI), "Schedule" (the runbook's schedule) or "Webhook" (a call to the runbook's webhook URL). Empty for runs started before it was recorded.
 - `triggered_by_user_id` (String) ID of the User who triggered this runbook execution. The ID of a `oneuptime_user` (see the data source).

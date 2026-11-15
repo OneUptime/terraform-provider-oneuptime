@@ -69,7 +69,7 @@ func (r *FormResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 
 func (r *FormResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Forms anyone with the link can fill in, without a OneUptime account. Each submission creates an incident or a scheduled maintenance event in this project.",
+        MarkdownDescription: "Forms anyone with the link can fill in, without a OneUptime account. Each submission creates an incident or a maintenance event in this project.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -108,7 +108,7 @@ func (r *FormResource) schemaDefinition() schema.Schema {
                 },
             },
             "target_type": schema.StringAttribute{
-                MarkdownDescription: "What each submission creates: Incident, or ScheduledMaintenance (a scheduled maintenance event).",
+                MarkdownDescription: "What each submission creates: Incident, or ScheduledMaintenance (a maintenance event).",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("Incident"),
@@ -146,7 +146,7 @@ func (r *FormResource) schemaDefinition() schema.Schema {
                 },
             },
             "target_settings": schema.StringAttribute{
-                MarkdownDescription: "What every submission starts with besides the answers. For incidents: defaultTitle, incidentSeverityId, incidentTemplateId, monitorIds, labelIds, onCallDutyPolicyIds, ownerUserIds and ownerTeamIds. For scheduled maintenance events: defaultTitle, monitorIds, statusPageIds, labelIds, ownerUserIds, ownerTeamIds, showOnStatusPages and notifySubscribers. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "What every submission starts with besides the answers. For incidents: defaultTitle, incidentSeverityId, incidentTemplateId, monitorIds, labelIds, onCallDutyPolicyIds, ownerUserIds and ownerTeamIds. For maintenance events: defaultTitle, monitorIds, statusPageIds, labelIds, ownerUserIds, ownerTeamIds, showOnStatusPages and notifySubscribers. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,

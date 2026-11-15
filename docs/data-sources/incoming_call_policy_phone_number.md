@@ -33,7 +33,7 @@ data "oneuptime_incoming_call_policy_phone_number" "by_id" {
 - `country_code` (String) Country code associated with this phone number.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `incoming_call_policy_id` (String) ID of the policy that receives calls to this number. The ID of a `oneuptime_incoming_call_policy`.
-- `project_call_sms_config_id` (String) ID of the call provider configuration that owns this number.
+- `project_call_sms_config_id` (String) ID of the call provider configuration that owns this number. The ID of a `oneuptime_call_and_sms_config`.
 
 ### Read-Only
 

@@ -127,7 +127,7 @@ func (d *WorkspaceNotificationSummaryDataSource) Schema(ctx context.Context, req
                 Computed: true,
             },
             "filters": schema.StringAttribute{
-                MarkdownDescription: "Filter conditions for which items to include in the summary. A JSON value: read it with `jsondecode()`.",
+                MarkdownDescription: "Which items the summary includes. An owner condition, such as Incident Owner, names people and teams of this project by ID. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "filter_condition": schema.StringAttribute{

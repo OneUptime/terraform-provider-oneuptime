@@ -2,12 +2,12 @@
 page_title: "oneuptime_scheduled_maintenance_state_timeline Resource - oneuptime"
 subcategory: "Scheduled Maintenance"
 description: |-
-  Change state of your scheduled maintenance event.
+  Change state of your maintenance event.
 ---
 
 # oneuptime_scheduled_maintenance_state_timeline (Resource)
 
-Change state of your scheduled maintenance event.
+Change state of your maintenance event.
 
 ## Example Usage
 
@@ -23,7 +23,7 @@ resource "oneuptime_scheduled_maintenance_state_timeline" "example" {
 ### Required
 
 - `scheduled_maintenance_id` (String) ID of Scheduled Maintenance this resource belongs to. The ID of a `oneuptime_scheduled_maintenance_event`.
-- `scheduled_maintenance_state_id` (String) ID of the state the scheduled maintenance event changes to. The ID of a `oneuptime_scheduled_maintenance_state`.
+- `scheduled_maintenance_state_id` (String) ID of the state the maintenance event changes to. The ID of a `oneuptime_scheduled_maintenance_state`.
 
 ### Optional
 

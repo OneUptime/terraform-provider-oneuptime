@@ -60,7 +60,7 @@ func (r *ScheduledMaintenanceStateTimelineResource) Schema(ctx context.Context, 
 
 func (r *ScheduledMaintenanceStateTimelineResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Change state of your scheduled maintenance event.",
+        MarkdownDescription: "Change state of your maintenance event.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -86,7 +86,7 @@ func (r *ScheduledMaintenanceStateTimelineResource) schemaDefinition() schema.Sc
                 Validators: recordIDValidators("oneuptime_scheduled_maintenance_event"),
             },
             "scheduled_maintenance_state_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the state the scheduled maintenance event changes to. The ID of a `oneuptime_scheduled_maintenance_state`.",
+                MarkdownDescription: "ID of the state the maintenance event changes to. The ID of a `oneuptime_scheduled_maintenance_state`.",
                 Required: true,
                 Validators: recordIDValidators("oneuptime_scheduled_maintenance_state"),
             },

@@ -29,7 +29,7 @@ resource "oneuptime_status_page" "example" {
 - `allow_subscribers_to_choose_event_types` (Boolean) Can subscribers choose which event type like Announcements, Incidents, Maintenance Events to subscribe to? Defaults to `false`.
 - `allow_subscribers_to_choose_resources` (Boolean) Can subscribers choose which resources to subscribe to? Defaults to `false`.
 - `allowed_subscriber_email_domains` (String) The domains an email subscriber's address may be at, one a line, such as acme.com. An address at a subdomain of one matches too. Sign-ups and additions at any other domain are refused, and an email subscriber at another domain is sent nothing. Empty: any domain.
-- `call_sms_config_id` (String) ID of your Call/SMS Config Resource which is used to send SMS to subscribers.
+- `call_sms_config_id` (String) ID of your Call/SMS Config Resource which is used to send SMS to subscribers. The ID of a `oneuptime_call_and_sms_config`.
 - `copyright_text` (String) Copyright Text.
 - `cover_image_alt_text` (String) Alternative text for the cover image, read by screen readers for accessibility. Leave blank if the cover image is purely decorative.
 - `cover_image_file_id` (String) Status Page Cover Image ID. The ID of a `oneuptime_file`.
@@ -94,7 +94,7 @@ resource "oneuptime_status_page" "example" {
 - `show_scheduled_maintenance_events_on_status_page` (Boolean) Show Maintenance Events on Status Page? Defaults to `true`.
 - `show_subscriber_page_on_status_page` (Boolean) Show Subscriber Page on Status Page? Defaults to `true`.
 - `show_uptime_history_in_days` (Number) How many days of uptime history should be shown on the status page? Maximum is 90 days. Defaults to `90`.
-- `smtp_config_id` (String) ID of your SMTP Config Resource which is used to send email to subscribers.
+- `smtp_config_id` (String) ID of your SMTP Config Resource which is used to send email to subscribers. The ID of a `oneuptime_smtp_config`.
 - `subscriber_email_notification_footer_text` (String) Text to send to subscribers in the footer of the email.
 - `subscriber_timezones` (String) Timezones of subscribers to this status page. A JSON value: write it with `jsonencode()`.
 - `theme` (String) How the status page looks to visitors: Light, Dark, or System (light or dark, as each visitor's device is set). A status page created without a theme starts with System. Allowed values: `Light`, `Dark`, `System`. Defaults to `Light`.

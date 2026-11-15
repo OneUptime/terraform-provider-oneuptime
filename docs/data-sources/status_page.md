@@ -32,7 +32,7 @@ data "oneuptime_status_page" "by_id" {
 - `allow_subscribers_to_choose_resources` (Boolean) Can subscribers choose which resources to subscribe to?
 - `allowed_subscriber_email_domains` (String) The domains an email subscriber's address may be at, one a line, such as acme.com. An address at a subdomain of one matches too. Sign-ups and additions at any other domain are refused, and an email subscriber at another domain is sent nothing. Empty: any domain.
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
-- `call_sms_config_id` (String) ID of your Call/SMS Config Resource which is used to send SMS to subscribers.
+- `call_sms_config_id` (String) ID of your Call/SMS Config Resource which is used to send SMS to subscribers. The ID of a `oneuptime_call_and_sms_config`.
 - `copyright_text` (String) Copyright Text.
 - `cover_image_alt_text` (String) Alternative text for the cover image, read by screen readers for accessibility. Leave blank if the cover image is purely decorative.
 - `cover_image_file_id` (String) Status Page Cover Image ID. The ID of a `oneuptime_file`.
@@ -93,7 +93,7 @@ data "oneuptime_status_page" "by_id" {
 - `show_subscriber_page_on_status_page` (Boolean) Show Subscriber Page on Status Page?
 - `show_uptime_history_in_days` (Number) How many days of uptime history should be shown on the status page? Maximum is 90 days.
 - `slug` (String) Friendly globally unique name for your object.
-- `smtp_config_id` (String) ID of your SMTP Config Resource which is used to send email to subscribers.
+- `smtp_config_id` (String) ID of your SMTP Config Resource which is used to send email to subscribers. The ID of a `oneuptime_smtp_config`.
 - `subscriber_email_notification_footer_text` (String) Text to send to subscribers in the footer of the email.
 - `theme` (String) How the status page looks to visitors: Light, Dark, or System (light or dark, as each visitor's device is set). A status page created without a theme starts with System.
 

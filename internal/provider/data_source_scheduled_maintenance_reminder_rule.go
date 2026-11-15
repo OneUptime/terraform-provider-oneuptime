@@ -50,7 +50,7 @@ func (d *ScheduledMaintenanceReminderRuleDataSource) Metadata(ctx context.Contex
 
 func (d *ScheduledMaintenanceReminderRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Configure reminder rules to periodically notify scheduled maintenance event owners while an event is still not complete Look up an existing scheduled maintenance reminder rule by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one scheduled maintenance reminder rule may match them all.",
+        MarkdownDescription: "Configure reminder rules to periodically notify maintenance event owners while an event is still not complete Look up an existing scheduled maintenance reminder rule by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one scheduled maintenance reminder rule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -95,12 +95,12 @@ func (d *ScheduledMaintenanceReminderRuleDataSource) Schema(ctx context.Context,
                 Computed: true,
             },
             "reminder_interval_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How often (in minutes) to remind scheduled maintenance event owners while the event is still not complete. For example, set to 30 to remind owners every 30 minutes.",
+                MarkdownDescription: "How often (in minutes) to remind maintenance event owners while the event is still not complete. For example, set to 30 to remind owners every 30 minutes.",
                 Optional: true,
                 Computed: true,
             },
             "stop_reminders_on_state": schema.StringAttribute{
-                MarkdownDescription: "Stop sending reminders once the scheduled maintenance event reaches this state. Select Ongoing to stop reminders when the event starts, or Completed to keep reminding until the event is completed. Ongoing needs Remind While Event is Scheduled on: a rule that waits for the event to start and stops when it starts would never remind, so it is refused.",
+                MarkdownDescription: "Stop sending reminders once the maintenance event reaches this state. Select Ongoing to stop reminders when the event starts, or Completed to keep reminding until the event is completed. Ongoing needs Remind While Event is Scheduled on: a rule that waits for the event to start and stops when it starts would never remind, so it is refused.",
                 Optional: true,
                 Computed: true,
             },
@@ -110,7 +110,7 @@ func (d *ScheduledMaintenanceReminderRuleDataSource) Schema(ctx context.Context,
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Only apply this reminder rule to scheduled maintenance events with these labels. Leave empty to match all events. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Only apply this reminder rule to maintenance events with these labels. Leave empty to match all events. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },

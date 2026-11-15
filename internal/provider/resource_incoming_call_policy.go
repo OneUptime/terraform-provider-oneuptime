@@ -56,7 +56,7 @@ type IncomingCallPolicyResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Slug types.String `tfsdk:"slug"`
-    RoutingPhoneNumber JSONSubsetValue `tfsdk:"routing_phone_number"`
+    RoutingPhoneNumber PhoneValue `tfsdk:"routing_phone_number"`
     CallProviderPhoneNumberId types.String `tfsdk:"call_provider_phone_number_id"`
     PhoneNumberCountryCode types.String `tfsdk:"phone_number_country_code"`
     PhoneNumberAreaCode types.String `tfsdk:"phone_number_area_code"`
@@ -166,12 +166,13 @@ func (r *IncomingCallPolicyResource) schemaDefinition() schema.Schema {
                 Validators: recordIDSetValidators("oneuptime_label"),
             },
             "project_call_sms_config_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the project-level Twilio configuration. If set, uses this config instead of global config and billing does not apply.",
+                MarkdownDescription: "ID of the project-level Twilio configuration. If set, uses this config instead of global config and billing does not apply. The ID of a `oneuptime_call_and_sms_config`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_call_and_sms_config"),
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -195,7 +196,7 @@ func (r *IncomingCallPolicyResource) schemaDefinition() schema.Schema {
             },
             "routing_phone_number": schema.StringAttribute{
                 MarkdownDescription: "The phone number for incoming calls to this policy.",
-                CustomType: JSONSubsetType{},
+                CustomType: PhoneType{},
                 Computed: true,
             },
             "call_provider_phone_number_id": schema.StringAttribute{
@@ -794,48 +795,15 @@ func (r *IncomingCallPolicyResource) Create(ctx context.Context, req resource.Cr
         data.Slug = types.StringNull()
     }
     if obj, ok := dataMap["routingPhoneNumber"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RoutingPhoneNumber = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.RoutingPhoneNumber = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.RoutingPhoneNumber = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.RoutingPhoneNumber = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.RoutingPhoneNumber = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.RoutingPhoneNumber = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.RoutingPhoneNumber = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.RoutingPhoneNumber = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.RoutingPhoneNumber = NewPhoneValue(val)
         } else {
-            data.RoutingPhoneNumber = NewJSONSubsetNull()
+            data.RoutingPhoneNumber = NewPhoneNull()
         }
-    } else if arr, ok := dataMap["routingPhoneNumber"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.RoutingPhoneNumber = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.RoutingPhoneNumber = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["routingPhoneNumber"].(string); ok {
-        data.RoutingPhoneNumber = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["routingPhoneNumber"].(string); ok && val != "" {
+        data.RoutingPhoneNumber = NewPhoneValue(val)
     } else {
-        data.RoutingPhoneNumber = NewJSONSubsetNull()
+        data.RoutingPhoneNumber = NewPhoneNull()
     }
     if obj, ok := dataMap["callProviderPhoneNumberId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1489,48 +1457,15 @@ func (r *IncomingCallPolicyResource) Read(ctx context.Context, req resource.Read
         data.Slug = types.StringNull()
     }
     if obj, ok := dataMap["routingPhoneNumber"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RoutingPhoneNumber = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.RoutingPhoneNumber = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.RoutingPhoneNumber = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.RoutingPhoneNumber = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.RoutingPhoneNumber = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.RoutingPhoneNumber = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.RoutingPhoneNumber = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.RoutingPhoneNumber = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.RoutingPhoneNumber = NewPhoneValue(val)
         } else {
-            data.RoutingPhoneNumber = NewJSONSubsetNull()
+            data.RoutingPhoneNumber = NewPhoneNull()
         }
-    } else if arr, ok := dataMap["routingPhoneNumber"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.RoutingPhoneNumber = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.RoutingPhoneNumber = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["routingPhoneNumber"].(string); ok {
-        data.RoutingPhoneNumber = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["routingPhoneNumber"].(string); ok && val != "" {
+        data.RoutingPhoneNumber = NewPhoneValue(val)
     } else {
-        data.RoutingPhoneNumber = NewJSONSubsetNull()
+        data.RoutingPhoneNumber = NewPhoneNull()
     }
     if obj, ok := dataMap["callProviderPhoneNumberId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2243,48 +2178,15 @@ func (r *IncomingCallPolicyResource) Update(ctx context.Context, req resource.Up
         data.Slug = types.StringNull()
     }
     if obj, ok := dataMap["routingPhoneNumber"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RoutingPhoneNumber = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.RoutingPhoneNumber = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.RoutingPhoneNumber = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.RoutingPhoneNumber = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.RoutingPhoneNumber = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.RoutingPhoneNumber = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.RoutingPhoneNumber = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.RoutingPhoneNumber = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.RoutingPhoneNumber = NewPhoneValue(val)
         } else {
-            data.RoutingPhoneNumber = NewJSONSubsetNull()
+            data.RoutingPhoneNumber = NewPhoneNull()
         }
-    } else if arr, ok := dataMap["routingPhoneNumber"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.RoutingPhoneNumber = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.RoutingPhoneNumber = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["routingPhoneNumber"].(string); ok {
-        data.RoutingPhoneNumber = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["routingPhoneNumber"].(string); ok && val != "" {
+        data.RoutingPhoneNumber = NewPhoneValue(val)
     } else {
-        data.RoutingPhoneNumber = NewJSONSubsetNull()
+        data.RoutingPhoneNumber = NewPhoneNull()
     }
     if obj, ok := dataMap["callProviderPhoneNumberId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

@@ -2,12 +2,12 @@
 page_title: "oneuptime_scheduled_maintenance_owner_rule Resource - oneuptime"
 subcategory: "Scheduled Maintenance"
 description: |-
-  Configure rules for automatically assigning owner users and teams when matching scheduled maintenance events are created
+  Configure rules for automatically assigning owner users and teams when matching maintenance events are created
 ---
 
 # oneuptime_scheduled_maintenance_owner_rule (Resource)
 
-Configure rules for automatically assigning owner users and teams when matching scheduled maintenance events are created
+Configure rules for automatically assigning owner users and teams when matching maintenance events are created
 
 ## Example Usage
 
@@ -28,7 +28,7 @@ resource "oneuptime_scheduled_maintenance_owner_rule" "example" {
 
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
 - `description` (String) Description of this scheduled maintenance owner rule.
-- `description_pattern` (String) Regex (case-insensitive) matched against the scheduled maintenance event description. Leave empty to match any description.
+- `description_pattern` (String) Regex (case-insensitive) matched against the maintenance event description. Leave empty to match any description.
 - `inherit_owners_from_docker_hosts` (Boolean) When this rule matches, also assign every owner of the event's affected Docker hosts to the event. Defaults to `false`.
 - `inherit_owners_from_hosts` (Boolean) When this rule matches, also assign every owner of the event's affected hosts to the event. Defaults to `false`.
 - `inherit_owners_from_kubernetes_clusters` (Boolean) When this rule matches, also assign every owner of the event's affected Kubernetes clusters to the event. Defaults to `false`.
@@ -39,13 +39,13 @@ resource "oneuptime_scheduled_maintenance_owner_rule" "example" {
 - `monitor_description_pattern` (String) Regex (case-insensitive) matched against any of the event's monitor descriptions. Leave empty to match any description.
 - `monitor_labels` (Set of String) Only trigger for events on monitors that have at least one of these labels. Leave empty to match regardless of monitor labels. IDs of `oneuptime_label` resources.
 - `monitor_name_pattern` (String) Regex (case-insensitive) matched against any of the event's monitor names. Leave empty to match any monitor.
-- `monitors` (Set of String) Only trigger for scheduled maintenance events on these monitors. Leave empty to match events on any monitor. IDs of `oneuptime_monitor` resources.
+- `monitors` (Set of String) Only trigger for maintenance events on these monitors. Leave empty to match events on any monitor. IDs of `oneuptime_monitor` resources.
 - `notify_owners` (Boolean) Send notifications to owner users and teams when they are added by this rule. Defaults to `true`.
-- `owner_teams` (Set of String) Teams to add as owners on the scheduled maintenance event when this rule matches. IDs of `oneuptime_team` resources.
+- `owner_teams` (Set of String) Teams to add as owners on the maintenance event when this rule matches. IDs of `oneuptime_team` resources.
 - `owner_user_emails` (Set of String) The email addresses of the people in `owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
-- `owner_users` (Set of String) Users to add as owners on the scheduled maintenance event when this rule matches. IDs of `oneuptime_user` records. Or name them by email address, in `owner_user_emails`.
+- `owner_users` (Set of String) Users to add as owners on the maintenance event when this rule matches. IDs of `oneuptime_user` records. Or name them by email address, in `owner_user_emails`.
 - `scheduled_maintenance_labels` (Set of String) Only trigger for events that have at least one of these labels. Leave empty to match regardless of event labels. IDs of `oneuptime_label` resources.
-- `title_pattern` (String) Regex (case-insensitive) matched against the scheduled maintenance event title. Leave empty to match any title.
+- `title_pattern` (String) Regex (case-insensitive) matched against the maintenance event title. Leave empty to match any title.
 
 ### Read-Only
 

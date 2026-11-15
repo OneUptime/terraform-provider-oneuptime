@@ -45,7 +45,7 @@ func (d *FormSubmissionDataSource) Metadata(ctx context.Context, req datasource.
 
 func (d *FormSubmissionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "The submissions made through this project's forms: every answer, the name and email the submitter gave, and the incident or scheduled maintenance event each one created. Look up an existing form submission by `id`, or by any of its other arguments (`form_id`, `incident_id`, `scheduled_maintenance_id`, ...): each one set must match, and exactly one form submission may match them all.",
+        MarkdownDescription: "The submissions made through this project's forms: every answer, the name and email the submitter gave, and the incident or maintenance event each one created. Look up an existing form submission by `id`, or by any of its other arguments (`form_id`, `incident_id`, `scheduled_maintenance_id`, ...): each one set must match, and exactly one form submission may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -85,7 +85,7 @@ func (d *FormSubmissionDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "target_type": schema.StringAttribute{
-                MarkdownDescription: "What the submission created: Incident, or ScheduledMaintenance (a scheduled maintenance event).",
+                MarkdownDescription: "What the submission created: Incident, or ScheduledMaintenance (a maintenance event).",
                 Optional: true,
                 Computed: true,
             },
@@ -96,7 +96,7 @@ func (d *FormSubmissionDataSource) Schema(ctx context.Context, req datasource.Sc
                 Validators: recordIDValidators("oneuptime_incident"),
             },
             "scheduled_maintenance_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the scheduled maintenance event this submission created. Empty for a form that creates incidents, and once that event is deleted. The ID of a `oneuptime_scheduled_maintenance_event`.",
+                MarkdownDescription: "ID of the maintenance event this submission created. Empty for a form that creates incidents, and once that event is deleted. The ID of a `oneuptime_scheduled_maintenance_event`.",
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_scheduled_maintenance_event"),

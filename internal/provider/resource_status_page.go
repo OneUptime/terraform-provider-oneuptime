@@ -488,20 +488,22 @@ func (r *StatusPageResource) schemaDefinition() schema.Schema {
                 },
             },
             "smtp_config_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your SMTP Config Resource which is used to send email to subscribers.",
+                MarkdownDescription: "ID of your SMTP Config Resource which is used to send email to subscribers. The ID of a `oneuptime_smtp_config`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_smtp_config"),
             },
             "call_sms_config_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your Call/SMS Config Resource which is used to send SMS to subscribers.",
+                MarkdownDescription: "ID of your Call/SMS Config Resource which is used to send SMS to subscribers. The ID of a `oneuptime_call_and_sms_config`.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: recordIDValidators("oneuptime_call_and_sms_config"),
             },
             "show_incident_history_in_days": schema.NumberAttribute{
                 MarkdownDescription: "How many days of incident history should be shown on the status page (in days)?",

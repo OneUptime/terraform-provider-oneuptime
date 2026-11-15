@@ -88,7 +88,7 @@ func (r *WorkspaceNotificationRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "notification_rule": schema.StringAttribute{
-                MarkdownDescription: "Notification Rules for the Workspace. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "The rule, as JSON: the events it is for (filters, filterCondition), where it posts, and for incident, alert, incident episode, alert episode, scheduled maintenance and on-call policy rules, updatesToPost: the updates it posts after the record's first message, any of ResolvedAndReopened, StateChanges, SeverityChanges, PublicNotes, PrivateNotes, Owners, Paging, EpisodeMembers, Postmortem, AI, Edits and Other - for an on-call policy rule, any of OnCallNow, OnCallNext, NobodyOnCall, Overrides, PolicyChanges and Owners - as its kind of rule allows. Left out, the rule posts every update. The first message, and a video call's Join button, are posted whatever it lists. Owner and On-Call Policy conditions in filters name people, teams and policies of this project by ID. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,

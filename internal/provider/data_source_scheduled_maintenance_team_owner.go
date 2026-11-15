@@ -42,7 +42,7 @@ func (d *ScheduledMaintenanceTeamOwnerDataSource) Metadata(ctx context.Context, 
 
 func (d *ScheduledMaintenanceTeamOwnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Add teams as owners to your Scheduled Maintenance event. Look up an existing scheduled maintenance team owner by `id`, or by any of its other arguments (`created_by_user_id`, `is_owner_notified`, `scheduled_maintenance_id`, ...): each one set must match, and exactly one scheduled maintenance team owner may match them all.",
+        MarkdownDescription: "Add teams as owners to your maintenance event. Look up an existing scheduled maintenance team owner by `id`, or by any of its other arguments (`created_by_user_id`, `is_owner_notified`, `scheduled_maintenance_id`, ...): each one set must match, and exactly one scheduled maintenance team owner may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -63,13 +63,13 @@ func (d *ScheduledMaintenanceTeamOwnerDataSource) Schema(ctx context.Context, re
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the team that owns the scheduled maintenance event. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the maintenance event. The ID of a `oneuptime_team`.",
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_team"),
             },
             "scheduled_maintenance_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the scheduled maintenance event the team owns. The ID of a `oneuptime_scheduled_maintenance_event`.",
+                MarkdownDescription: "ID of the maintenance event the team owns. The ID of a `oneuptime_scheduled_maintenance_event`.",
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_scheduled_maintenance_event"),

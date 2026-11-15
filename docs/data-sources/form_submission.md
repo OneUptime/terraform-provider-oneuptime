@@ -2,12 +2,12 @@
 page_title: "oneuptime_form_submission Data Source - oneuptime"
 subcategory: "Forms"
 description: |-
-  The submissions made through this project's forms: every answer, the name and email the submitter gave, and the incident or scheduled maintenance event each one created.
+  The submissions made through this project's forms: every answer, the name and email the submitter gave, and the incident or maintenance event each one created.
 ---
 
 # oneuptime_form_submission (Data Source)
 
-The submissions made through this project's forms: every answer, the name and email the submitter gave, and the incident or scheduled maintenance event each one created.
+The submissions made through this project's forms: every answer, the name and email the submitter gave, and the incident or maintenance event each one created.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one form submission may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 
@@ -31,9 +31,9 @@ data "oneuptime_form_submission" "by_id" {
 - `form_id` (String) ID of the form this submission was made through. The ID of a `oneuptime_form`.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `incident_id` (String) ID of the incident this submission created. Empty for a form that schedules maintenance, and once that incident is deleted. The ID of a `oneuptime_incident`.
-- `scheduled_maintenance_id` (String) ID of the scheduled maintenance event this submission created. Empty for a form that creates incidents, and once that event is deleted. The ID of a `oneuptime_scheduled_maintenance_event`.
+- `scheduled_maintenance_id` (String) ID of the maintenance event this submission created. Empty for a form that creates incidents, and once that event is deleted. The ID of a `oneuptime_scheduled_maintenance_event`.
 - `submitter_name` (String) The name the submitter gave, as they typed it. Empty when the form does not ask for it, or lets people leave it out and they did.
-- `target_type` (String) What the submission created: Incident, or ScheduledMaintenance (a scheduled maintenance event).
+- `target_type` (String) What the submission created: Incident, or ScheduledMaintenance (a maintenance event).
 
 ### Read-Only
 

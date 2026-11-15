@@ -34,8 +34,8 @@ data "oneuptime_incident_sla_rule" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `incident_description_pattern` (String) Regular expression pattern to match incident descriptions. Leave empty to match any description.
 - `incident_title_pattern` (String) Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.
-- `internal_note_reminder_interval_in_minutes` (Number) How often (in minutes) to automatically post internal notes to unresolved incidents. Internal notes are only visible to your team. For example, set to 30 to remind your team every 30 minutes to provide an update. Leave empty to disable.
-- `internal_note_reminder_template` (String) The content of the automatic internal note posted to your team. Use variables like {{incidentTitle}}, {{elapsedTime}}, {{slaStatus}}, {{timeToResolutionDeadline}} to include dynamic incident data. If left empty, a default template will be used.
+- `internal_note_reminder_interval_in_minutes` (Number) How often (in minutes) to automatically post internal notes to unresolved incidents. Only the people who can see an incident can read its internal notes. For example, set to 30 to remind your team every 30 minutes to provide an update. Leave empty to disable.
+- `internal_note_reminder_template` (String) The content of the automatic internal note posted on the incident. Use variables like {{incidentTitle}}, {{elapsedTime}}, {{slaStatus}}, {{timeToResolutionDeadline}} to include dynamic incident data. If left empty, a default template will be used.
 - `is_enabled` (Boolean) Whether this SLA rule is enabled.
 - `name` (String) Name of this SLA rule.
 - `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.

@@ -61,7 +61,7 @@ func (d *ScheduledMaintenanceOwnerRuleDataSource) Metadata(ctx context.Context, 
 
 func (d *ScheduledMaintenanceOwnerRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Configure rules for automatically assigning owner users and teams when matching scheduled maintenance events are created Look up an existing scheduled maintenance owner rule by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one scheduled maintenance owner rule may match them all.",
+        MarkdownDescription: "Configure rules for automatically assigning owner users and teams when matching maintenance events are created Look up an existing scheduled maintenance owner rule by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one scheduled maintenance owner rule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -106,7 +106,7 @@ func (d *ScheduledMaintenanceOwnerRuleDataSource) Schema(ctx context.Context, re
                 Computed: true,
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for scheduled maintenance events on these monitors. Leave empty to match events on any monitor. IDs of `oneuptime_monitor` resources.",
+                MarkdownDescription: "Only trigger for maintenance events on these monitors. Leave empty to match events on any monitor. IDs of `oneuptime_monitor` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -121,12 +121,12 @@ func (d *ScheduledMaintenanceOwnerRuleDataSource) Schema(ctx context.Context, re
                 ElementType: types.StringType,
             },
             "title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the scheduled maintenance event title. Leave empty to match any title.",
+                MarkdownDescription: "Regex (case-insensitive) matched against the maintenance event title. Leave empty to match any title.",
                 Optional: true,
                 Computed: true,
             },
             "description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the scheduled maintenance event description. Leave empty to match any description.",
+                MarkdownDescription: "Regex (case-insensitive) matched against the maintenance event description. Leave empty to match any description.",
                 Optional: true,
                 Computed: true,
             },
@@ -141,12 +141,12 @@ func (d *ScheduledMaintenanceOwnerRuleDataSource) Schema(ctx context.Context, re
                 Computed: true,
             },
             "owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to add as owners on the scheduled maintenance event when this rule matches. IDs of `oneuptime_user` records.",
+                MarkdownDescription: "Users to add as owners on the maintenance event when this rule matches. IDs of `oneuptime_user` records.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to add as owners on the scheduled maintenance event when this rule matches. IDs of `oneuptime_team` resources.",
+                MarkdownDescription: "Teams to add as owners on the maintenance event when this rule matches. IDs of `oneuptime_team` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },

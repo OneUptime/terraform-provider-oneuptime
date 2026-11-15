@@ -22,7 +22,7 @@ resource "oneuptime_public_note_approval_step" "example" {
 
 ### Required
 
-- `event_type` (String) Whose public notes this step approves: Incident (the public notes of incidents and incident episodes) or ScheduledMaintenance (the public notes of scheduled maintenance events). Allowed values: `Incident`, `ScheduledMaintenance`.
+- `event_type` (String) Whose public notes this step approves: Incident (the public notes of incidents and incident episodes) or ScheduledMaintenance (the public notes of maintenance events). Allowed values: `Incident`, `ScheduledMaintenance`.
 
 ### Optional
 

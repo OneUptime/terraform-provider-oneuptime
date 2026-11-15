@@ -33,19 +33,19 @@ resource "oneuptime_scheduled_maintenance_template" "example" {
 - `change_monitor_status_to_id` (String) Relation to Monitor Status Object ID. All monitors connected to this incident will be changed to this status when the event is ongoing. The ID of a `oneuptime_monitor_status`.
 - `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
 - `description` (String) Description of this scheduled event that will show up on Status Page. This is a markdown field.
-- `docker_hosts` (Set of String) List of Docker hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_docker_host` resources.
+- `docker_hosts` (Set of String) List of Docker hosts to pre-populate on maintenance events created from this template. IDs of `oneuptime_docker_host` resources.
 - `first_event_ends_at` (String) When does the first event end?
 - `first_event_scheduled_at` (String) When would you like to schedule the first event?
 - `first_event_starts_at` (String) When does the first event start?
-- `hosts` (Set of String) List of hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_host` resources.
+- `hosts` (Set of String) List of hosts to pre-populate on maintenance events created from this template. IDs of `oneuptime_host` resources.
 - `is_recurring_event` (Boolean) Is this a recurring event?
-- `kubernetes_clusters` (Set of String) List of Kubernetes clusters to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_kubernetes_cluster` resources.
+- `kubernetes_clusters` (Set of String) List of Kubernetes clusters to pre-populate on maintenance events created from this template. IDs of `oneuptime_kubernetes_cluster` resources.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) List of monitors attached to this event. IDs of `oneuptime_monitor` resources.
-- `podman_hosts` (Set of String) List of Podman hosts to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_podman_host` resources.
+- `podman_hosts` (Set of String) List of Podman hosts to pre-populate on maintenance events created from this template. IDs of `oneuptime_podman_host` resources.
 - `recurring_interval` (String) How often should this event recur? A JSON value: write it with `jsonencode()`.
 - `send_subscriber_notifications_on_before_the_event` (String) Should subscribers be notified before the event? A JSON value: write it with `jsonencode()`.
-- `services` (Set of String) List of services to pre-populate on scheduled maintenance events created from this template. IDs of `oneuptime_service` resources.
+- `services` (Set of String) List of services to pre-populate on maintenance events created from this template. IDs of `oneuptime_service` resources.
 - `should_status_page_subscribers_be_notified_on_event_created` (Boolean) Should subscribers be notified about this event creation? Defaults to `true`.
 - `should_status_page_subscribers_be_notified_when_event_changed_to_ended` (Boolean) Should subscribers be notified about this event event is changed to ended? Defaults to `true`.
 - `should_status_page_subscribers_be_notified_when_event_changed_to_ongoing` (Boolean) Should subscribers be notified about this event event is changed to ongoing? Defaults to `true`.

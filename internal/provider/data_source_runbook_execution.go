@@ -105,7 +105,7 @@ func (d *RunbookExecutionDataSource) Schema(ctx context.Context, req datasource.
                 Validators: recordIDValidators("oneuptime_alert"),
             },
             "scheduled_maintenance_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the scheduled maintenance event that triggered this runbook execution. The ID of a `oneuptime_scheduled_maintenance_event`.",
+                MarkdownDescription: "ID of the maintenance event that triggered this runbook execution. The ID of a `oneuptime_scheduled_maintenance_event`.",
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_scheduled_maintenance_event"),

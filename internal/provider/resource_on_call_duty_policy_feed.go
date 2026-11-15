@@ -99,7 +99,7 @@ func (r *OnCallDutyPolicyFeedResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "On-Call Policy Feed Event.",
                 Required: true,
                 Validators: []validator.String{
-                    stringvalidator.OneOf("UserAdded", "UserRemoved", "TeamAdded", "TeamRemoved", "OnCallDutyScheduleAdded", "OnCallDutyScheduleRemoved", "OnCallDutyPolicyCreated", "RosterHandoff", "OwnerUserAdded", "OwnerUserRemoved", "OwnerTeamAdded", "OwnerTeamRemoved", "UserOverrideAdded", "UserOverrideRemoved", "CoverageGapStarted"),
+                    stringvalidator.OneOf("UserAdded", "UserRemoved", "TeamAdded", "TeamRemoved", "OnCallDutyScheduleAdded", "OnCallDutyScheduleRemoved", "OnCallDutyPolicyCreated", "RosterHandoff", "OwnerUserAdded", "OwnerUserRemoved", "OwnerTeamAdded", "OwnerTeamRemoved", "UserOverrideAdded", "UserOverrideChanged", "UserOverrideRemoved", "CoverageGapStarted"),
                 },
             },
             "display_color": schema.StringAttribute{

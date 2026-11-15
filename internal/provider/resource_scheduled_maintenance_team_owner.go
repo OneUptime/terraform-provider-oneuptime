@@ -54,7 +54,7 @@ func (r *ScheduledMaintenanceTeamOwnerResource) Schema(ctx context.Context, req 
 
 func (r *ScheduledMaintenanceTeamOwnerResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Add teams as owners to your Scheduled Maintenance event.",
+        MarkdownDescription: "Add teams as owners to your maintenance event.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -72,7 +72,7 @@ func (r *ScheduledMaintenanceTeamOwnerResource) schemaDefinition() schema.Schema
                 },
             },
             "team_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the team that owns the scheduled maintenance event. The ID of a `oneuptime_team`.",
+                MarkdownDescription: "ID of the team that owns the maintenance event. The ID of a `oneuptime_team`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
@@ -80,7 +80,7 @@ func (r *ScheduledMaintenanceTeamOwnerResource) schemaDefinition() schema.Schema
                 Validators: recordIDValidators("oneuptime_team"),
             },
             "scheduled_maintenance_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the scheduled maintenance event the team owns. The ID of a `oneuptime_scheduled_maintenance_event`.",
+                MarkdownDescription: "ID of the maintenance event the team owns. The ID of a `oneuptime_scheduled_maintenance_event`.",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),

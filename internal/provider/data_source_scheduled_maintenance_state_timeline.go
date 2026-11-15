@@ -47,7 +47,7 @@ func (d *ScheduledMaintenanceStateTimelineDataSource) Metadata(ctx context.Conte
 
 func (d *ScheduledMaintenanceStateTimelineDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Change state of your scheduled maintenance event. Look up an existing scheduled maintenance state timeline by `id`, or by any of its other arguments (`created_by_user_id`, `is_owner_notified`, `scheduled_maintenance_id`, ...): each one set must match, and exactly one scheduled maintenance state timeline may match them all.",
+        MarkdownDescription: "Change state of your maintenance event. Look up an existing scheduled maintenance state timeline by `id`, or by any of its other arguments (`created_by_user_id`, `is_owner_notified`, `scheduled_maintenance_id`, ...): each one set must match, and exactly one scheduled maintenance state timeline may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -80,7 +80,7 @@ func (d *ScheduledMaintenanceStateTimelineDataSource) Schema(ctx context.Context
                 Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "scheduled_maintenance_state_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the state the scheduled maintenance event changes to. The ID of a `oneuptime_scheduled_maintenance_state`.",
+                MarkdownDescription: "ID of the state the maintenance event changes to. The ID of a `oneuptime_scheduled_maintenance_state`.",
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_scheduled_maintenance_state"),

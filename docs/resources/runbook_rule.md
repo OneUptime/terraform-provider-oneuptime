@@ -2,12 +2,12 @@
 page_title: "oneuptime_runbook_rule Resource - oneuptime"
 subcategory: "Runbooks & Runners"
 description: |-
-  Auto-attach runbooks to incidents, alerts, or scheduled maintenance events when they are created.
+  Auto-attach runbooks to incidents, alerts, or maintenance events when they are created.
 ---
 
 # oneuptime_runbook_rule (Resource)
 
-Auto-attach runbooks to incidents, alerts, or scheduled maintenance events when they are created.
+Auto-attach runbooks to incidents, alerts, or maintenance events when they are created.
 
 ## Example Usage
 
@@ -34,11 +34,11 @@ resource "oneuptime_runbook_rule" "example" {
 - `description_pattern` (String) Case-insensitive regex matched against the entity's description. Leave empty to match any description.
 - `incident_severities` (Set of String) Only match incidents with one of these severities. Incident rules only. Leave empty to match any severity. IDs of `oneuptime_incident_severity` resources.
 - `is_enabled` (Boolean) Whether this rule is enabled. Defaults to `true`.
-- `labels` (Set of String) Only match incidents, alerts or scheduled maintenance events that carry at least one of these labels. Leave empty to match regardless of their labels. IDs of `oneuptime_label` resources.
-- `monitor_description_pattern` (String) Case-insensitive regex matched against the descriptions of the monitors of the incident, alert or scheduled maintenance event. Leave empty to match any monitor description.
-- `monitor_labels` (Set of String) Only match when a monitor of the incident, alert or scheduled maintenance event carries at least one of these labels. Leave empty to match regardless of monitor labels. IDs of `oneuptime_label` resources.
-- `monitor_name_pattern` (String) Case-insensitive regex matched against the names of the monitors of the incident, alert or scheduled maintenance event. Leave empty to match any monitor name.
-- `monitors` (Set of String) Only match incidents and scheduled maintenance events that affect, and alerts raised by, at least one of these monitors. Leave empty to match any monitor. IDs of `oneuptime_monitor` resources.
+- `labels` (Set of String) Only match incidents, alerts or maintenance events that carry at least one of these labels. Leave empty to match regardless of their labels. IDs of `oneuptime_label` resources.
+- `monitor_description_pattern` (String) Case-insensitive regex matched against the descriptions of the monitors of the incident, alert or maintenance event. Leave empty to match any monitor description.
+- `monitor_labels` (Set of String) Only match when a monitor of the incident, alert or maintenance event carries at least one of these labels. Leave empty to match regardless of monitor labels. IDs of `oneuptime_label` resources.
+- `monitor_name_pattern` (String) Case-insensitive regex matched against the names of the monitors of the incident, alert or maintenance event. Leave empty to match any monitor name.
+- `monitors` (Set of String) Only match incidents and maintenance events that affect, and alerts raised by, at least one of these monitors. Leave empty to match any monitor. IDs of `oneuptime_monitor` resources.
 - `runbooks` (Set of String) Runbooks to start when this rule matches. Each runbook produces its own execution. IDs of `oneuptime_runbook` resources.
 - `title_pattern` (String) Case-insensitive regex matched against the entity's title. Leave empty to match any title.
 

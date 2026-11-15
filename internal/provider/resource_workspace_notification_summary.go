@@ -185,7 +185,7 @@ func (r *WorkspaceNotificationSummaryResource) schemaDefinition() schema.Schema 
                 },
             },
             "filters": schema.StringAttribute{
-                MarkdownDescription: "Filter conditions for which items to include in the summary. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Which items the summary includes. An owner condition, such as Incident Owner, names people and teams of this project by ID. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,

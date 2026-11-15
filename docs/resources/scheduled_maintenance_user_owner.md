@@ -2,12 +2,12 @@
 page_title: "oneuptime_scheduled_maintenance_user_owner Resource - oneuptime"
 subcategory: "Scheduled Maintenance"
 description: |-
-  Add users as owners to your scheduled maintenance event.
+  Add users as owners to your maintenance event.
 ---
 
 # oneuptime_scheduled_maintenance_user_owner (Resource)
 
-Add users as owners to your scheduled maintenance event.
+Add users as owners to your maintenance event.
 
 ## Example Usage
 
@@ -22,12 +22,12 @@ resource "oneuptime_scheduled_maintenance_user_owner" "example" {
 
 ### Required
 
-- `scheduled_maintenance_id` (String) ID of the scheduled maintenance event the user owns. The ID of a `oneuptime_scheduled_maintenance_event`.
+- `scheduled_maintenance_id` (String) ID of the maintenance event the user owns. The ID of a `oneuptime_scheduled_maintenance_event`.
 
 ### Optional
 
 - `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
-- `user_id` (String) ID of the user who owns the scheduled maintenance event. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
+- `user_id` (String) ID of the user who owns the maintenance event. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 
 ### Read-Only
 

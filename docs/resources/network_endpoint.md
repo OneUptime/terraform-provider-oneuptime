@@ -42,7 +42,7 @@ resource "oneuptime_network_endpoint" "example" {
 - `first_seen_at` (String) When this endpoint was first discovered on the network.
 - `hostname` (String) What a network controller calls this endpoint, such as the name in its Meraki client list. Managed by the server.
 - `id` (String) Unique identifier for the resource.
-- `last_seen_at` (String) When this endpoint was last seen in an ARP or FDB walk.
+- `last_seen_at` (String) When this endpoint was last seen in an ARP or FDB walk, or in a network controller's client list. While a walk keeps seeing it unchanged, this is refreshed every 15 minutes, so it is accurate to within 15 minutes and one poll.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.
 - `vlan_id` (Number) VLAN this endpoint was last seen on, from the FDB walk. Managed by the server.

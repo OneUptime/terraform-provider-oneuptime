@@ -52,7 +52,7 @@ func (d *FormDataSource) Metadata(ctx context.Context, req datasource.MetadataRe
 
 func (d *FormDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Forms anyone with the link can fill in, without a OneUptime account. Each submission creates an incident or a scheduled maintenance event in this project. Look up an existing form by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one form may match them all.",
+        MarkdownDescription: "Forms anyone with the link can fill in, without a OneUptime account. Each submission creates an incident or a maintenance event in this project. Look up an existing form by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one form may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -93,7 +93,7 @@ func (d *FormDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 Computed: true,
             },
             "target_type": schema.StringAttribute{
-                MarkdownDescription: "What each submission creates: Incident, or ScheduledMaintenance (a scheduled maintenance event).",
+                MarkdownDescription: "What each submission creates: Incident, or ScheduledMaintenance (a maintenance event).",
                 Optional: true,
                 Computed: true,
             },
@@ -106,7 +106,7 @@ func (d *FormDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 Computed: true,
             },
             "target_settings": schema.StringAttribute{
-                MarkdownDescription: "What every submission starts with besides the answers. For incidents: defaultTitle, incidentSeverityId, incidentTemplateId, monitorIds, labelIds, onCallDutyPolicyIds, ownerUserIds and ownerTeamIds. For scheduled maintenance events: defaultTitle, monitorIds, statusPageIds, labelIds, ownerUserIds, ownerTeamIds, showOnStatusPages and notifySubscribers. A JSON value: read it with `jsondecode()`.",
+                MarkdownDescription: "What every submission starts with besides the answers. For incidents: defaultTitle, incidentSeverityId, incidentTemplateId, monitorIds, labelIds, onCallDutyPolicyIds, ownerUserIds and ownerTeamIds. For maintenance events: defaultTitle, monitorIds, statusPageIds, labelIds, ownerUserIds, ownerTeamIds, showOnStatusPages and notifySubscribers. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "success_message": schema.StringAttribute{

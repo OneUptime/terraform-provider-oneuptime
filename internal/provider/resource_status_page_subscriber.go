@@ -44,7 +44,7 @@ type StatusPageSubscriberResourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     StatusPageId types.String `tfsdk:"status_page_id"`
     SubscriberEmail JSONSubsetValue `tfsdk:"subscriber_email"`
-    SubscriberPhone JSONSubsetValue `tfsdk:"subscriber_phone"`
+    SubscriberPhone PhoneValue `tfsdk:"subscriber_phone"`
     SubscriberWebhook types.String `tfsdk:"subscriber_webhook"`
     SlackIncomingWebhookUrl types.String `tfsdk:"slack_incoming_webhook_url"`
     SlackWorkspaceName types.String `tfsdk:"slack_workspace_name"`
@@ -116,14 +116,15 @@ func (r *StatusPageSubscriberResource) schemaDefinition() schema.Schema {
             },
             "subscriber_phone": schema.StringAttribute{
                 MarkdownDescription: "Phone number of subscriber.",
-                CustomType: JSONSubsetType{},
+                CustomType: PhoneType{},
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
+                    PhoneKeepSameNumber(),
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
-                    JSONEnvelopeValidator(),
+                    PhoneValidator(),
                 },
             },
             "subscriber_webhook": schema.StringAttribute{
@@ -359,8 +360,8 @@ func (r *StatusPageSubscriberResource) Create(ctx context.Context, req resource.
     if parsedSubscriberEmail := r.parseJSONField(data.SubscriberEmail); parsedSubscriberEmail != nil {
         requestDataMap["subscriberEmail"] = parsedSubscriberEmail
     }
-    if parsedSubscriberPhone := r.parseJSONField(data.SubscriberPhone); parsedSubscriberPhone != nil {
-        requestDataMap["subscriberPhone"] = parsedSubscriberPhone
+    if !data.SubscriberPhone.IsNull() && !data.SubscriberPhone.IsUnknown() {
+        requestDataMap["subscriberPhone"] = data.SubscriberPhone.ValueString()
     }
     if !data.SubscriberWebhook.IsNull() && !data.SubscriberWebhook.IsUnknown() {
         requestDataMap["subscriberWebhook"] = data.SubscriberWebhook.ValueString()
@@ -605,48 +606,15 @@ func (r *StatusPageSubscriberResource) Create(ctx context.Context, req resource.
         data.SubscriberEmail = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["subscriberPhone"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SubscriberPhone = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.SubscriberPhone = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.SubscriberPhone = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.SubscriberPhone = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.SubscriberPhone = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.SubscriberPhone = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.SubscriberPhone = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.SubscriberPhone = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.SubscriberPhone = NewPhoneValue(val)
         } else {
-            data.SubscriberPhone = NewJSONSubsetNull()
+            data.SubscriberPhone = NewPhoneNull()
         }
-    } else if arr, ok := dataMap["subscriberPhone"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.SubscriberPhone = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.SubscriberPhone = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["subscriberPhone"].(string); ok {
-        data.SubscriberPhone = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["subscriberPhone"].(string); ok && val != "" {
+        data.SubscriberPhone = NewPhoneValue(val)
     } else {
-        data.SubscriberPhone = NewJSONSubsetNull()
+        data.SubscriberPhone = NewPhoneNull()
     }
     if obj, ok := dataMap["subscriberWebhook"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1226,48 +1194,15 @@ func (r *StatusPageSubscriberResource) Read(ctx context.Context, req resource.Re
         data.SubscriberEmail = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["subscriberPhone"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SubscriberPhone = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.SubscriberPhone = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.SubscriberPhone = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.SubscriberPhone = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.SubscriberPhone = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.SubscriberPhone = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.SubscriberPhone = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.SubscriberPhone = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.SubscriberPhone = NewPhoneValue(val)
         } else {
-            data.SubscriberPhone = NewJSONSubsetNull()
+            data.SubscriberPhone = NewPhoneNull()
         }
-    } else if arr, ok := dataMap["subscriberPhone"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.SubscriberPhone = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.SubscriberPhone = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["subscriberPhone"].(string); ok {
-        data.SubscriberPhone = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["subscriberPhone"].(string); ok && val != "" {
+        data.SubscriberPhone = NewPhoneValue(val)
     } else {
-        data.SubscriberPhone = NewJSONSubsetNull()
+        data.SubscriberPhone = NewPhoneNull()
     }
     if obj, ok := dataMap["subscriberWebhook"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1717,12 +1652,7 @@ func (r *StatusPageSubscriberResource) Update(ctx context.Context, req resource.
         }
     }
     if !data.SubscriberPhone.IsUnknown() && !state.SubscriberPhone.IsUnknown() && !data.SubscriberPhone.Equal(state.SubscriberPhone) {
-        var subscriberphoneData interface{}
-        if err := json.Unmarshal([]byte(data.SubscriberPhone.ValueString()), &subscriberphoneData); err == nil {
-            requestDataMap["subscriberPhone"] = subscriberphoneData
-        } else {
-            requestDataMap["subscriberPhone"] = data.SubscriberPhone.ValueString()
-        }
+        requestDataMap["subscriberPhone"] = data.SubscriberPhone.ValueString()
     }
     if !data.SubscriberWebhook.IsUnknown() && !state.SubscriberWebhook.IsUnknown() && !data.SubscriberWebhook.Equal(state.SubscriberWebhook) {
         requestDataMap["subscriberWebhook"] = data.SubscriberWebhook.ValueString()
@@ -1933,48 +1863,15 @@ func (r *StatusPageSubscriberResource) Update(ctx context.Context, req resource.
         data.SubscriberEmail = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["subscriberPhone"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SubscriberPhone = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.SubscriberPhone = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.SubscriberPhone = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.SubscriberPhone = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.SubscriberPhone = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.SubscriberPhone = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.SubscriberPhone = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.SubscriberPhone = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.SubscriberPhone = NewPhoneValue(val)
         } else {
-            data.SubscriberPhone = NewJSONSubsetNull()
+            data.SubscriberPhone = NewPhoneNull()
         }
-    } else if arr, ok := dataMap["subscriberPhone"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.SubscriberPhone = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.SubscriberPhone = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["subscriberPhone"].(string); ok {
-        data.SubscriberPhone = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["subscriberPhone"].(string); ok && val != "" {
+        data.SubscriberPhone = NewPhoneValue(val)
     } else {
-        data.SubscriberPhone = NewJSONSubsetNull()
+        data.SubscriberPhone = NewPhoneNull()
     }
     if obj, ok := dataMap["subscriberWebhook"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

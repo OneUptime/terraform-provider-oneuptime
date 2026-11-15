@@ -166,7 +166,7 @@ func (r *IncidentSlaRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "internal_note_reminder_interval_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How often (in minutes) to automatically post internal notes to unresolved incidents. Internal notes are only visible to your team. For example, set to 30 to remind your team every 30 minutes to provide an update. Leave empty to disable.",
+                MarkdownDescription: "How often (in minutes) to automatically post internal notes to unresolved incidents. Only the people who can see an incident can read its internal notes. For example, set to 30 to remind your team every 30 minutes to provide an update. Leave empty to disable.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -184,7 +184,7 @@ func (r *IncidentSlaRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "internal_note_reminder_template": schema.StringAttribute{
-                MarkdownDescription: "The content of the automatic internal note posted to your team. Use variables like {{incidentTitle}}, {{elapsedTime}}, {{slaStatus}}, {{timeToResolutionDeadline}} to include dynamic incident data. If left empty, a default template will be used.",
+                MarkdownDescription: "The content of the automatic internal note posted on the incident. Use variables like {{incidentTitle}}, {{elapsedTime}}, {{slaStatus}}, {{timeToResolutionDeadline}} to include dynamic incident data. If left empty, a default template will be used.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

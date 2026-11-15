@@ -112,6 +112,7 @@ type ProjectResourceModel struct {
     ResolveLinkedAlertsWhenIncidentResolved types.Bool `tfsdk:"resolve_linked_alerts_when_incident_resolved"`
     LimitIncidentsToOneEpisode types.Bool `tfsdk:"limit_incidents_to_one_episode"`
     LimitAlertsToOneEpisode types.Bool `tfsdk:"limit_alerts_to_one_episode"`
+    NotifyStatusPageSubscribersOfNewIncidentsByDefault types.Bool `tfsdk:"notify_status_page_subscribers_of_new_incidents_by_default"`
     DefaultNetworkTopologyLayout types.String `tfsdk:"default_network_topology_layout"`
     DiscoveredDeviceRetentionInDays types.Number `tfsdk:"discovered_device_retention_in_days"`
     IncidentRetentionInDays types.Number `tfsdk:"incident_retention_in_days"`
@@ -284,7 +285,7 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                 },
             },
             "scheduled_maintenance_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for scheduled maintenance numbers (e.g., 'SM-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber scheduled maintenance events that already exist.",
+                MarkdownDescription: "Custom prefix for scheduled maintenance numbers (e.g., 'SM-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber maintenance events that already exist.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -353,7 +354,7 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                 },
             },
             "scheduled_maintenance_numbers_start_at": schema.NumberAttribute{
-                MarkdownDescription: "Where scheduled maintenance event numbers start: the next scheduled maintenance event gets this number if no scheduled maintenance event has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every scheduled maintenance event number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing scheduled maintenance events keep their numbers.",
+                MarkdownDescription: "Where maintenance event numbers start: the next maintenance event gets this number if no maintenance event has reached it yet, and later ones count up from it. Use it to carry on from another tool's numbers. A new value must be higher than every maintenance event number used so far, so a number is never used twice. Empty: numbers carry on from the highest one used. Existing maintenance events keep their numbers.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -813,6 +814,15 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "notify_status_page_subscribers_of_new_incidents_by_default": schema.BoolAttribute{
+                MarkdownDescription: "Whether the Notify Status Page Subscribers box starts ticked when someone declares an incident in the dashboard. When enabled, status page subscribers are notified of a new incident unless the person declaring it unticks the box. When disabled, the box starts unticked and subscribers are notified only if it is ticked. Incidents declared from Slack or Microsoft Teams, or by OneUptime AI, follow it too: while it is disabled they are declared without notifying. Incidents created by monitors, the API and workflows are not affected: each keeps its own Notify Status Page Subscribers value. On by default.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "default_network_topology_layout": schema.StringAttribute{
                 MarkdownDescription: "The layout network topology maps open on: force, tiered, radial, star or parentChild. Empty: Automatic for all devices, By network layer for a site.",
                 Optional: true,
@@ -1083,7 +1093,7 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                 },
             },
             "require_approval_for_scheduled_maintenance_public_notes": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, a public note on a scheduled maintenance event is published - shown on status pages, sent to subscribers and posted to chat channels - only once the project's scheduled maintenance approvers approve it (PublicNoteApprovalStep). Edits of published notes wait for approval too. Off by default. Turning it on needs at least one approval step.",
+                MarkdownDescription: "When enabled, a public note on a maintenance event is published - shown on status pages, sent to subscribers and posted to chat channels - only once the project's scheduled maintenance approvers approve it (PublicNoteApprovalStep). Edits of published notes wait for approval too. Off by default. Turning it on needs at least one approval step.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -1561,6 +1571,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "limitIncidentsToOneEpisode": true,
         "limitAlertsToOneEpisode": true,
+        "notifyStatusPageSubscribersOfNewIncidentsByDefault": true,
         "defaultNetworkTopologyLayout": true,
         "discoveredDeviceRetentionInDays": true,
         "incidentRetentionInDays": true,
@@ -2395,6 +2406,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if val, ok := dataMap["limitAlertsToOneEpisode"].(bool); ok {
         data.LimitAlertsToOneEpisode = types.BoolValue(val)
+    }
+    if val, ok := dataMap["notifyStatusPageSubscribersOfNewIncidentsByDefault"].(bool); ok {
+        data.NotifyStatusPageSubscribersOfNewIncidentsByDefault = types.BoolValue(val)
     }
     if obj, ok := dataMap["defaultNetworkTopologyLayout"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -3509,6 +3523,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "limitIncidentsToOneEpisode": true,
         "limitAlertsToOneEpisode": true,
+        "notifyStatusPageSubscribersOfNewIncidentsByDefault": true,
         "defaultNetworkTopologyLayout": true,
         "discoveredDeviceRetentionInDays": true,
         "incidentRetentionInDays": true,
@@ -4344,6 +4359,9 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     if val, ok := dataMap["limitAlertsToOneEpisode"].(bool); ok {
         data.LimitAlertsToOneEpisode = types.BoolValue(val)
+    }
+    if val, ok := dataMap["notifyStatusPageSubscribersOfNewIncidentsByDefault"].(bool); ok {
+        data.NotifyStatusPageSubscribersOfNewIncidentsByDefault = types.BoolValue(val)
     }
     if obj, ok := dataMap["defaultNetworkTopologyLayout"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -5561,6 +5579,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.LimitAlertsToOneEpisode.IsUnknown() && !state.LimitAlertsToOneEpisode.IsUnknown() && !data.LimitAlertsToOneEpisode.Equal(state.LimitAlertsToOneEpisode) {
         requestDataMap["limitAlertsToOneEpisode"] = data.LimitAlertsToOneEpisode.ValueBool()
     }
+    if !data.NotifyStatusPageSubscribersOfNewIncidentsByDefault.IsUnknown() && !state.NotifyStatusPageSubscribersOfNewIncidentsByDefault.IsUnknown() && !data.NotifyStatusPageSubscribersOfNewIncidentsByDefault.Equal(state.NotifyStatusPageSubscribersOfNewIncidentsByDefault) {
+        requestDataMap["notifyStatusPageSubscribersOfNewIncidentsByDefault"] = data.NotifyStatusPageSubscribersOfNewIncidentsByDefault.ValueBool()
+    }
     if !data.DefaultNetworkTopologyLayout.IsUnknown() && !state.DefaultNetworkTopologyLayout.IsUnknown() && !data.DefaultNetworkTopologyLayout.Equal(state.DefaultNetworkTopologyLayout) {
         requestDataMap["defaultNetworkTopologyLayout"] = data.DefaultNetworkTopologyLayout.ValueString()
     }
@@ -5801,6 +5822,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "limitIncidentsToOneEpisode": true,
         "limitAlertsToOneEpisode": true,
+        "notifyStatusPageSubscribersOfNewIncidentsByDefault": true,
         "defaultNetworkTopologyLayout": true,
         "discoveredDeviceRetentionInDays": true,
         "incidentRetentionInDays": true,
@@ -6630,6 +6652,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if val, ok := dataMap["limitAlertsToOneEpisode"].(bool); ok {
         data.LimitAlertsToOneEpisode = types.BoolValue(val)
+    }
+    if val, ok := dataMap["notifyStatusPageSubscribersOfNewIncidentsByDefault"].(bool); ok {
+        data.NotifyStatusPageSubscribersOfNewIncidentsByDefault = types.BoolValue(val)
     }
     if obj, ok := dataMap["defaultNetworkTopologyLayout"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -7904,6 +7929,9 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.LimitAlertsToOneEpisode.IsNull() && !plan.LimitAlertsToOneEpisode.IsUnknown() {
         data.LimitAlertsToOneEpisode = plan.LimitAlertsToOneEpisode
+    }
+    if config.NotifyStatusPageSubscribersOfNewIncidentsByDefault.IsNull() && !plan.NotifyStatusPageSubscribersOfNewIncidentsByDefault.IsUnknown() {
+        data.NotifyStatusPageSubscribersOfNewIncidentsByDefault = plan.NotifyStatusPageSubscribersOfNewIncidentsByDefault
     }
     if config.DefaultNetworkTopologyLayout.IsNull() && !plan.DefaultNetworkTopologyLayout.IsUnknown() {
         data.DefaultNetworkTopologyLayout = plan.DefaultNetworkTopologyLayout

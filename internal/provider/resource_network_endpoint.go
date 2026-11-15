@@ -165,7 +165,7 @@ func (r *NetworkEndpointResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "When this endpoint was last seen in an ARP or FDB walk.",
+                MarkdownDescription: "When this endpoint was last seen in an ARP or FDB walk, or in a network controller's client list. While a walk keeps seeing it unchanged, this is refreshed every 15 minutes, so it is accurate to within 15 minutes and one poll.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },

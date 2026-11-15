@@ -125,27 +125,27 @@ func (d *NetworkInterfaceDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "in_rate_mbps": schema.NumberAttribute{
-                MarkdownDescription: "Most recent inbound throughput in Mbps, computed from SNMP counters.",
+                MarkdownDescription: "Inbound throughput in Mbps, computed from SNMP counters between two polls. Written again when it moves by a tenth or more (and by more than 1% of the link speed), and at least every 15 minutes.",
                 Optional: true,
                 Computed: true,
             },
             "out_rate_mbps": schema.NumberAttribute{
-                MarkdownDescription: "Most recent outbound throughput in Mbps, computed from SNMP counters.",
+                MarkdownDescription: "Outbound throughput in Mbps, computed from SNMP counters between two polls. Written again when it moves by a tenth or more (and by more than 1% of the link speed), and at least every 15 minutes.",
                 Optional: true,
                 Computed: true,
             },
             "utilization_percent": schema.NumberAttribute{
-                MarkdownDescription: "Most recent utilization as a percent of interface speed (max of in/out).",
+                MarkdownDescription: "Utilization as a percent of interface speed (max of in/out) between two polls. Written again when it moves by a tenth or more (and by more than a point), crosses 80%, and at least every 15 minutes.",
                 Optional: true,
                 Computed: true,
             },
             "errors_per_second": schema.NumberAttribute{
-                MarkdownDescription: "Most recent error rate (in + out errors per second) computed from SNMP counters.",
+                MarkdownDescription: "Error rate (in + out errors per second) computed from SNMP counters between two polls. Written again when errors start or stop, when it moves by a tenth or more, and at least every 15 minutes.",
                 Optional: true,
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "When this interface was last seen in an SNMP walk.",
+                MarkdownDescription: "When an SNMP walk last saw this interface, to within 15 minutes: a walk that finds an interface unchanged writes it again only every 15 minutes.",
                 Computed: true,
             },
         },

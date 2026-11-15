@@ -44,7 +44,7 @@ data "oneuptime_workspace_notification_summary" "by_id" {
 
 - `channel_names` (String) List of channel names to post the summary to. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
-- `filters` (String) Filter conditions for which items to include in the summary. A JSON value: read it with `jsondecode()`.
+- `filters` (String) Which items the summary includes. An owner condition, such as Incident Owner, names people and teams of this project by ID. A JSON value: read it with `jsondecode()`.
 - `last_sent_at` (String) When the last summary was sent.
 - `next_send_at` (String) When the next summary should be sent.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

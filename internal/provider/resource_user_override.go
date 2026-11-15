@@ -58,7 +58,7 @@ func (r *UserOverrideResource) Schema(ctx context.Context, req resource.SchemaRe
 
 func (r *UserOverrideResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. With nobody named to cover, it skips them instead: each of their turns in an on-call schedule goes to the next person in the rotation. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy.",
+        MarkdownDescription: "While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. With nobody named to cover, it skips them instead: each of their turns in an on-call schedule goes to the next person in the rotation. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy. One person's overrides on the same policy, or their global ones, may not overlap in time.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -98,21 +98,19 @@ func (r *UserOverrideResource) schemaDefinition() schema.Schema {
                 Validators: personIDValidators("route_alerts_to_user_email", false),
             },
             "starts_at": schema.StringAttribute{
-                MarkdownDescription: "When the override starts sending the Override User's alerts to the Route Alerts To User - or, with none, skipping their turns.",
+                MarkdownDescription: "When the override starts sending the Override User's alerts to the Route Alerts To User - or, with none, skipping their turns. It can be changed until the override starts, to a time from now on.",
                 CustomType: RFC3339Type{},
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     RFC3339KeepSameInstant(),
-                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "ends_at": schema.StringAttribute{
-                MarkdownDescription: "When the override ends, which has to be after it starts. From then on, alerts page the Override User again, and their turns in each rotation are theirs again.",
+                MarkdownDescription: "When the override ends, which has to be after it starts. From then on, alerts page the Override User again, and their turns in each rotation are theirs again. It can be changed until the override ends, to a time from now on: an end of now ends it now.",
                 CustomType: RFC3339Type{},
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     RFC3339KeepSameInstant(),
-                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -172,7 +170,7 @@ func (r *UserOverrideResource) ModifyPlan(ctx context.Context, req resource.Modi
         id:       "route_alerts_to_user_id",
         email:    "route_alerts_to_user_email",
         invites:  false,
-        replaces: true,
+        replaces: false,
     })
 
     keepStateWhenNothingChanges(ctx, req, resp)
@@ -956,7 +954,17 @@ func (r *UserOverrideResource) Update(ctx context.Context, req resource.UpdateRe
     userOverrideRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
+    requestDataMap := userOverrideRequest["data"].(map[string]interface{})
 
+    if !data.RouteAlertsToUserId.IsUnknown() && !state.RouteAlertsToUserId.IsUnknown() && !data.RouteAlertsToUserId.Equal(state.RouteAlertsToUserId) {
+        requestDataMap["routeAlertsToUserId"] = data.RouteAlertsToUserId.ValueString()
+    }
+    if !data.StartsAt.IsUnknown() && !state.StartsAt.IsUnknown() && !data.StartsAt.Equal(state.StartsAt) {
+        requestDataMap["startsAt"] = data.StartsAt.ValueString()
+    }
+    if !data.EndsAt.IsUnknown() && !state.EndsAt.IsUnknown() && !data.EndsAt.Equal(state.EndsAt) {
+        requestDataMap["endsAt"] = data.EndsAt.ValueString()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so

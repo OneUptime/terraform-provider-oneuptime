@@ -75,7 +75,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) Schema(ctx context.Context, req 
 
 func (r *ScheduledMaintenanceLabelRuleResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Configure rules for automatically attaching labels to scheduled maintenance events — including labels inherited from the event's monitors — when matching events are created",
+        MarkdownDescription: "Configure rules for automatically attaching labels to maintenance events — including labels inherited from the event's monitors — when matching events are created",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

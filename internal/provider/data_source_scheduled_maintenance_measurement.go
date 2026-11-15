@@ -60,7 +60,7 @@ func (d *ScheduledMaintenanceMeasurementDataSource) Metadata(ctx context.Context
 
 func (d *ScheduledMaintenanceMeasurementDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A named duration between two points in a scheduled maintenance event's life, computed automatically for every event Look up an existing scheduled maintenance measurement by `id`, or by any of its other arguments (`name`, `aggregation_type`, `created_by_user_id`, ...): each one set must match, and exactly one scheduled maintenance measurement may match them all.",
+        MarkdownDescription: "A named duration between two points in a maintenance event's life, computed automatically for every event Look up an existing scheduled maintenance measurement by `id`, or by any of its other arguments (`name`, `aggregation_type`, `created_by_user_id`, ...): each one set must match, and exactly one scheduled maintenance measurement may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -143,22 +143,22 @@ func (d *ScheduledMaintenanceMeasurementDataSource) Schema(ctx context.Context, 
                 Computed: true,
             },
             "unit": schema.StringAttribute{
-                MarkdownDescription: "The unit this measurement's charts are in: seconds (the default), minutes, hours or days. Every value is worked out in seconds and stored that way on the scheduled maintenance event; each chart point is written in this unit, so a chart in hours reads 1.5 for an hour and a half. With seconds, charts show seconds, minutes, hours or days as the numbers grow. Changing it rewrites the measurement's chart points in the new unit. A value that is not a time unit charts in seconds.",
+                MarkdownDescription: "The unit this measurement's charts are in: seconds (the default), minutes, hours or days. Every value is worked out in seconds and stored that way on the maintenance event; each chart point is written in this unit, so a chart in hours reads 1.5 for an hour and a half. With seconds, charts show seconds, minutes, hours or days as the numbers grow. Changing it rewrites the measurement's chart points in the new unit. A value that is not a time unit charts in seconds.",
                 Optional: true,
                 Computed: true,
             },
             "aggregation_type": schema.StringAttribute{
-                MarkdownDescription: "How this measurement's chart sums up many scheduled maintenance events by default - Avg (the default), P50, P90, P95, P99, Max or Min. View Chart in the dashboard opens the chart this way. Sum is deliberately absent: adding durations up across scheduled maintenance events produces a number with no meaning.",
+                MarkdownDescription: "How this measurement's chart sums up many maintenance events by default - Avg (the default), P50, P90, P95, P99, Max or Min. View Chart in the dashboard opens the chart this way. Sum is deliberately absent: adding durations up across maintenance events produces a number with no meaning.",
                 Optional: true,
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this measurement is computed for scheduled maintenance events.",
+                MarkdownDescription: "Whether this measurement is computed for maintenance events.",
                 Optional: true,
                 Computed: true,
             },
             "show_on_scheduled_maintenance_view": schema.BoolAttribute{
-                MarkdownDescription: "Whether this measurement is shown on the scheduled maintenance event page.",
+                MarkdownDescription: "Whether this measurement is shown on the maintenance event page.",
                 Optional: true,
                 Computed: true,
             },
@@ -173,7 +173,7 @@ func (d *ScheduledMaintenanceMeasurementDataSource) Schema(ctx context.Context, 
                 Computed: true,
             },
             "backfill_requested_at": schema.StringAttribute{
-                MarkdownDescription: "When a backfill of this measurement over existing scheduled maintenance events was requested.",
+                MarkdownDescription: "When a backfill of this measurement over existing maintenance events was requested.",
                 Computed: true,
             },
             "backfill_cursor_created_at": schema.StringAttribute{
@@ -181,7 +181,7 @@ func (d *ScheduledMaintenanceMeasurementDataSource) Schema(ctx context.Context, 
                 Computed: true,
             },
             "backfill_completed_at": schema.StringAttribute{
-                MarkdownDescription: "When the backfill of this measurement over existing scheduled maintenance events finished.",
+                MarkdownDescription: "When the backfill of this measurement over existing maintenance events finished.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

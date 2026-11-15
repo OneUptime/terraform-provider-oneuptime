@@ -40,7 +40,7 @@ resource "oneuptime_scheduled_maintenance_event" "example" {
 - `description` (String) Description of this scheduled event that will show up on Status Page. This is in markdown.
 - `docker_hosts` (Set of String) List of Docker hosts affected by this event. IDs of `oneuptime_docker_host` resources.
 - `docker_swarm_clusters` (Set of String) List of Docker Swarm clusters affected by this event. IDs of `oneuptime_docker_swarm_cluster` resources.
-- `enable_reminders` (Boolean) Should reminder notifications be sent to owners while this scheduled maintenance event is still not complete? Reminders are sent based on the reminder rules configured for this project. Defaults to `true`.
+- `enable_reminders` (Boolean) Should reminder notifications be sent to owners while this maintenance event is still not complete? Reminders are sent based on the reminder rules configured for this project. Defaults to `true`.
 - `hosts` (Set of String) List of hosts affected by this event. IDs of `oneuptime_host` resources.
 - `iot_fleets` (Set of String) List of IoT fleets affected by this event. IDs of `oneuptime_iot_fleet` resources.
 - `is_visible_on_status_page` (Boolean) Should this incident be visible on the status page? Defaults to `true`.
@@ -69,9 +69,9 @@ resource "oneuptime_scheduled_maintenance_event" "example" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
 - `is_owner_notified_of_resource_creation` (Boolean) Are owners notified of when this resource is created?
-- `next_reminder_notification_at` (String) When will the next reminder notification be sent to owners of this scheduled maintenance event? This is set automatically based on the reminder rules configured for this project.
+- `next_reminder_notification_at` (String) When will the next reminder notification be sent to owners of this maintenance event? This is set automatically based on the reminder rules configured for this project.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `reminder_notification_sent_count` (Number) How many reminder notifications have been sent to owners of this scheduled maintenance event so far.
+- `reminder_notification_sent_count` (Number) How many reminder notifications have been sent to owners of this maintenance event so far.
 - `scheduled_maintenance_number` (Number) Scheduled Maintenance Number.
 - `scheduled_maintenance_number_with_prefix` (String) Scheduled maintenance number with prefix (e.g., 'SM-42' or '#42').
 - `slug` (String) Friendly globally unique name for your object.

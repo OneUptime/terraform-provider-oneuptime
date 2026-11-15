@@ -94,14 +94,15 @@ func (d *EmailLogDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Status of the SMS sent.",
+                MarkdownDescription: "Status of the email sent.",
                 Optional: true,
                 Computed: true,
             },
             "project_smtp_config_id": schema.StringAttribute{
-                MarkdownDescription: "ID of your Project Smtp Config in which this object belongs.",
+                MarkdownDescription: "ID of your Project Smtp Config in which this object belongs. The ID of a `oneuptime_smtp_config`.",
                 Optional: true,
                 Computed: true,
+                Validators: recordIDValidators("oneuptime_smtp_config"),
             },
             "incident_id": schema.StringAttribute{
                 MarkdownDescription: "ID of Incident associated with this email (if any). The ID of a `oneuptime_incident`.",

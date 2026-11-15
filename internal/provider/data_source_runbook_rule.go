@@ -56,7 +56,7 @@ func (d *RunbookRuleDataSource) Metadata(ctx context.Context, req datasource.Met
 
 func (d *RunbookRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Auto-attach runbooks to incidents, alerts, or scheduled maintenance events when they are created. Look up an existing runbook rule by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one runbook rule may match them all.",
+        MarkdownDescription: "Auto-attach runbooks to incidents, alerts, or maintenance events when they are created. Look up an existing runbook rule by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one runbook rule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -101,7 +101,7 @@ func (d *RunbookRuleDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only match incidents and scheduled maintenance events that affect, and alerts raised by, at least one of these monitors. Leave empty to match any monitor. IDs of `oneuptime_monitor` resources.",
+                MarkdownDescription: "Only match incidents and maintenance events that affect, and alerts raised by, at least one of these monitors. Leave empty to match any monitor. IDs of `oneuptime_monitor` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -116,12 +116,12 @@ func (d *RunbookRuleDataSource) Schema(ctx context.Context, req datasource.Schem
                 ElementType: types.StringType,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Only match incidents, alerts or scheduled maintenance events that carry at least one of these labels. Leave empty to match regardless of their labels. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Only match incidents, alerts or maintenance events that carry at least one of these labels. Leave empty to match regardless of their labels. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only match when a monitor of the incident, alert or scheduled maintenance event carries at least one of these labels. Leave empty to match regardless of monitor labels. IDs of `oneuptime_label` resources.",
+                MarkdownDescription: "Only match when a monitor of the incident, alert or maintenance event carries at least one of these labels. Leave empty to match regardless of monitor labels. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -136,12 +136,12 @@ func (d *RunbookRuleDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Case-insensitive regex matched against the names of the monitors of the incident, alert or scheduled maintenance event. Leave empty to match any monitor name.",
+                MarkdownDescription: "Case-insensitive regex matched against the names of the monitors of the incident, alert or maintenance event. Leave empty to match any monitor name.",
                 Optional: true,
                 Computed: true,
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Case-insensitive regex matched against the descriptions of the monitors of the incident, alert or scheduled maintenance event. Leave empty to match any monitor description.",
+                MarkdownDescription: "Case-insensitive regex matched against the descriptions of the monitors of the incident, alert or maintenance event. Leave empty to match any monitor description.",
                 Optional: true,
                 Computed: true,
             },

@@ -35,9 +35,9 @@ data "oneuptime_email_log" "by_id" {
 - `on_call_duty_policy_escalation_rule_id` (String) ID of On-Call Policy Escalation Rule associated with this email (if any). The ID of a `oneuptime_escalation_rule`.
 - `on_call_duty_policy_id` (String) ID of On-Call Policy associated with this email (if any). The ID of a `oneuptime_on_call_policy`.
 - `on_call_duty_policy_schedule_id` (String) ID of On-Call Schedule associated with this email (if any). The ID of a `oneuptime_on_call_policy_schedule`.
-- `project_smtp_config_id` (String) ID of your Project Smtp Config in which this object belongs.
+- `project_smtp_config_id` (String) ID of your Project Smtp Config in which this object belongs. The ID of a `oneuptime_smtp_config`.
 - `scheduled_maintenance_id` (String) ID of Scheduled Maintenance associated with this email (if any). The ID of a `oneuptime_scheduled_maintenance_event`.
-- `status` (String) Status of the SMS sent.
+- `status` (String) Status of the email sent.
 - `status_message` (String) Status Message (if any).
 - `status_page_announcement_id` (String) ID of Status Page Announcement associated with this email (if any). The ID of a `oneuptime_status_page_announcement`.
 - `status_page_id` (String) ID of Status Page associated with this email (if any). The ID of a `oneuptime_status_page`.

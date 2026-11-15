@@ -37,7 +37,7 @@ resource "oneuptime_workspace_notification_summary" "example" {
 - `channel_names` (String) List of channel names to post the summary to. A JSON value: write it with `jsonencode()`.
 - `description` (String) Description of the Summary Rule.
 - `filter_condition` (String) How to combine filters - Any or All. Allowed values: `All`, `Any`.
-- `filters` (String) Filter conditions for which items to include in the summary. A JSON value: write it with `jsonencode()`.
+- `filters` (String) Which items the summary includes. An owner condition, such as Incident Owner, names people and teams of this project by ID. A JSON value: write it with `jsonencode()`.
 - `last_sent_at` (String) When the last summary was sent.
 - `next_send_at` (String) When the next summary should be sent.
 - `recurring_interval` (String) How often should the summary be sent? A JSON value: write it with `jsonencode()`.

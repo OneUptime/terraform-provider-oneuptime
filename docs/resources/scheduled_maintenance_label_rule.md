@@ -2,12 +2,12 @@
 page_title: "oneuptime_scheduled_maintenance_label_rule Resource - oneuptime"
 subcategory: "Scheduled Maintenance"
 description: |-
-  Configure rules for automatically attaching labels to scheduled maintenance events — including labels inherited from the event's monitors — when matching events are created
+  Configure rules for automatically attaching labels to maintenance events — including labels inherited from the event's monitors — when matching events are created
 ---
 
 # oneuptime_scheduled_maintenance_label_rule (Resource)
 
-Configure rules for automatically attaching labels to scheduled maintenance events — including labels inherited from the event's monitors — when matching events are created
+Configure rules for automatically attaching labels to maintenance events — including labels inherited from the event's monitors — when matching events are created
 
 ## Example Usage
 

@@ -31,7 +31,7 @@ resource "oneuptime_runbook_execution" "example" {
 - `completed_at` (String) Time at which this runbook execution completed.
 - `failure_reason` (String) Reason this runbook execution failed (if it did).
 - `incident_id` (String) ID of the incident that triggered or hosts this runbook execution. The ID of a `oneuptime_incident`.
-- `scheduled_maintenance_id` (String) ID of the scheduled maintenance event that triggered this runbook execution. The ID of a `oneuptime_scheduled_maintenance_event`.
+- `scheduled_maintenance_id` (String) ID of the maintenance event that triggered this runbook execution. The ID of a `oneuptime_scheduled_maintenance_event`.
 - `started_at` (String) Time at which this runbook execution started.
 - `step_executions` (String) Per-step execution state. Each entry mirrors a step from the runbook with status, output, and timestamps. A JSON value: write it with `jsonencode()`.
 

@@ -2,12 +2,12 @@
 page_title: "oneuptime_scheduled_maintenance_team_owner Resource - oneuptime"
 subcategory: "Scheduled Maintenance"
 description: |-
-  Add teams as owners to your Scheduled Maintenance event.
+  Add teams as owners to your maintenance event.
 ---
 
 # oneuptime_scheduled_maintenance_team_owner (Resource)
 
-Add teams as owners to your Scheduled Maintenance event.
+Add teams as owners to your maintenance event.
 
 ## Example Usage
 
@@ -22,8 +22,8 @@ resource "oneuptime_scheduled_maintenance_team_owner" "example" {
 
 ### Required
 
-- `scheduled_maintenance_id` (String) ID of the scheduled maintenance event the team owns. The ID of a `oneuptime_scheduled_maintenance_event`.
-- `team_id` (String) ID of the team that owns the scheduled maintenance event. The ID of a `oneuptime_team`.
+- `scheduled_maintenance_id` (String) ID of the maintenance event the team owns. The ID of a `oneuptime_scheduled_maintenance_event`.
+- `team_id` (String) ID of the team that owns the maintenance event. The ID of a `oneuptime_team`.
 
 ### Read-Only
 
