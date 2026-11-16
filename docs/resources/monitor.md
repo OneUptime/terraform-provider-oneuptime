@@ -132,6 +132,9 @@ resource "oneuptime_monitor" "example" {
 - `incoming_email_monitor_request` (String) This field is for Incoming Email Monitor only. Last email data received. A JSON value: read it with `jsondecode()`.
 - `incoming_email_secret_key` (String, Sensitive) This field is for Incoming Email Monitor only. Secret Key used to generate unique email address.
 - `incoming_request_secret_key` (String, Sensitive) This field is for Incoming Request Monitor only. Secret Key to authenticate the request.
+- `incoming_request_with_secret_at` (String) About when this Incoming Request monitor last received a request that sent one of its project's incoming request secrets, to the nearest five minutes. Empty until one does.
+- `incoming_request_without_secret_at` (String) About when this Incoming Request monitor last received a request without a valid incoming request secret, to the nearest five minutes - refused if its project requires one. Recorded only while the project has a secret.
+- `incoming_request_without_secret_reason` (String) Why the request in Last Request Without Secret At had no valid secret: it sent none, or one that is not one of the project's.
 - `is_all_probes_disconnected_from_this_monitor` (Boolean) All Probes Disconnected From This Monitor. Is this monitor not being monitored?
 - `is_no_probe_enabled_on_this_monitor` (Boolean) No Probe Enabled On This Monitor. Is this monitor not being monitored?
 - `is_owner_notified_of_resource_creation` (Boolean) Are owners notified of when this resource is created?

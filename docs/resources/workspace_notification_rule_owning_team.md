@@ -2,12 +2,12 @@
 page_title: "oneuptime_workspace_notification_rule_owning_team Resource - oneuptime"
 subcategory: "Slack, Teams & Video Calls"
 description: |-
-  Teams that own a workspace notification rule: only their members, and project admins, can change or delete it.
+  Teams that own a workspace notification rule: only their members, and Project Admins, can change or delete it.
 ---
 
 # oneuptime_workspace_notification_rule_owning_team (Resource)
 
-Teams that own a workspace notification rule: only their members, and project admins, can change or delete it.
+Teams that own a workspace notification rule: only their members, and Project Admins, can change or delete it.
 
 ## Example Usage
 

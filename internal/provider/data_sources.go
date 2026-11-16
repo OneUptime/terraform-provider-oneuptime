@@ -123,6 +123,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewIncomingCallLogItemDataSource,
         NewMonitorDataSource,
         NewMonitorSecretDataSource,
+        NewIncomingRequestSecretDataSource,
         NewMonitorStatusDataSource,
         NewMonitorCustomFieldDataSource,
         NewMonitorTemplateDataSource,

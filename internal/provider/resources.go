@@ -100,6 +100,7 @@ func GetResources() []func() resource.Resource {
         NewIncomingCallLogItemResource,
         NewMonitorResource,
         NewMonitorSecretResource,
+        NewIncomingRequestSecretResource,
         NewMonitorStatusResource,
         NewMonitorCustomFieldResource,
         NewMonitorTemplateResource,

@@ -33,11 +33,14 @@ resource "oneuptime_service_level_objective" "example" {
 - `is_archived` (Boolean) Archived SLOs are hidden from lists and are not evaluated. Defaults to `false`.
 - `is_enabled` (Boolean) Whether this Service Level Objective is enabled. Disabled SLOs are not evaluated. Defaults to `true`.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `latency_threshold_in_milliseconds` (Number) For the Request Latency SLI type: a request served in this many milliseconds or less counts as good. A whole number from 1 to 3600000.
 - `metric_query_config` (String) Query configuration for Metric SLIs: metric name, good-event predicate and optional attribute filters. A JSON value: write it with `jsonencode()`.
 - `monitor_labels` (Set of String) Deprecated: superseded by SLO Monitor Rules and no longer read by the SLO engine. Existing labels were migrated into a monitor rule named "Auto-add monitors with labels". Kept only for compatibility during upgrades: labels written here to an SLO with no monitor rules are turned into that rule, and are ignored once the SLO has monitor rules. Use SLO Monitor Rules instead. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) Monitors whose uptime is measured by this Service Level Objective (for Monitor Uptime SLIs). IDs of `oneuptime_monitor` resources.
 - `multi_monitor_mode` (String) How downtime is counted when multiple monitors are attached. 'Any Monitor Down' counts time when any monitor is down. 'Monitor Seconds Average' averages downtime across monitors. Allowed values: `Any Monitor Down`, `Monitor Seconds Average`. Defaults to `Any Monitor Down`.
-- `sli_type` (String) Type of Service Level Indicator this objective measures (Monitor Uptime or Metric). Allowed values: `Monitor Uptime`, `Metric`. Defaults to `Monitor Uptime`.
+- `request_filter` (String) For request SLI types: count only the requests that match this traces search of span attributes and the span's name, such as @http.route:/checkout* -@http.route:/health. Empty counts every request of the SLO's services.
+- `services` (Set of String) Services whose requests this Service Level Objective measures, for the Request Success and Request Latency SLI types. Their requests are counted from their traces. IDs of `oneuptime_service` resources.
+- `sli_type` (String) What this objective measures: Monitor Uptime (the share of time its monitors are up), Request Success (the share of its services' requests that did not fail) or Request Latency (the share of its services' requests served within the latency threshold). Metric is reserved and not measured yet. Allowed values: `Monitor Uptime`, `Request Success`, `Request Latency`, `Metric`. Defaults to `Monitor Uptime`.
 - `timezone` (String) IANA timezone (e.g. America/New_York) used for Calendar Month window boundaries. Defaults to UTC when not set.
 - `window_days` (Number) Length of the rolling compliance window in days (e.g. 7, 28, 30 or 90). Ignored for Calendar Month windows. Defaults to `30`.
 - `window_type` (String) Type of compliance window for this objective (Rolling or Calendar Month). Allowed values: `Rolling`, `Calendar Month`. Defaults to `Rolling`.
@@ -57,17 +60,22 @@ resource "oneuptime_service_level_objective" "example" {
 - `deployments_allowed` (Boolean) False while this Service Level Objective is in a tier of its error budget policy that freezes deployments, and true otherwise, so a CI/CD pipeline can check it before it releases. Kept as it is while the SLO is not measured. Computed by the worker.
 - `deployments_frozen_at` (String) When deployments of this Service Level Objective were frozen: when it entered a tier of its error budget policy that freezes deployments, or the tier it is in started freezing them. Empty while deployments are allowed. Computed by the worker.
 - `downtime_monitor_statuses` (Set of String) List of monitor statuses that are considered as "down" for this Service Level Objective. IDs of `oneuptime_monitor_status` resources.
+- `error_budget_remaining_events` (Number) For request SLIs: how many more bad requests the target allows in the compliance window. Negative when the budget is exhausted. Computed by the worker.
 - `error_budget_remaining_percentage` (Number) Percentage of the error budget that remains. Can be negative when the budget is exhausted. Computed by the worker.
 - `error_budget_remaining_seconds` (Number) Seconds of error budget that remain. Can be negative when the budget is exhausted. Computed by the worker.
+- `error_budget_total_events` (Number) For request SLIs: how many bad requests the target allows in the compliance window. Computed by the worker.
 - `error_budget_total_seconds` (Number) Total seconds of error budget for the compliance window. Computed by the worker.
+- `first_accumulated_bucket_start_at` (String) For request SLIs: the start of the oldest 5-minute step whose good and total requests were counted, so the time this objective's numbers cover. Computed by the worker.
+- `good_event_count` (Number) For request SLIs: the requests in the compliance window that counted as good (did not fail, or were fast enough). Computed by the worker.
 - `id` (String) Unique identifier for the resource.
-- `last_accumulated_bucket_end_at` (String) Accumulation cursor for Metric SLIs: end of the last bucket whose good/total counts were persisted. Computed by the worker.
+- `last_accumulated_bucket_end_at` (String) For request SLIs: the end of the newest 5-minute step whose good and total requests were counted. Computed by the worker.
 - `last_evaluated_at` (String) The last time this Service Level Objective was evaluated. Computed by the worker.
 - `next_evaluation_at` (String) When this Service Level Objective is next due for evaluation. Computed by the worker.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `slo_status` (String) Current status of this Service Level Objective (Healthy, At Risk, Budget Exhausted, Misconfigured, Paused). Computed by the worker.
 - `slug` (String) Friendly globally unique name for your object.
 - `status_change_notification_sent_at` (String) The last time a status-change notification was sent to owners. Computed by the worker.
+- `total_event_count` (Number) For request SLIs: every request in the compliance window that this Service Level Objective measures. Computed by the worker.
 - `updated_at` (String) Date and Time when the object was updated.
 
 ## Import

@@ -37,7 +37,7 @@ resource "oneuptime_alert_episode" "example" {
 - `episode_number` (Number) Auto-incrementing episode number per project.
 - `grouping_key` (String) Key used for grouping alerts into this episode. Generated from groupByFields of the matching rule. When a private alert opened the episode, its title is in the key only as a keyed hash.
 - `is_manually_created` (Boolean) Whether this episode was manually created vs auto-created by a rule. Defaults to `false`.
-- `is_private` (Boolean) If true, this alert episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Defaults to `false`.
+- `is_private` (Boolean) If true, this alert episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), Project Admins, and Project Owners. Defaults to `false`.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_alert_added_at` (String) When the last alert was added to this episode.
 - `on_call_duty_policies` (Set of String) List of on-call policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.

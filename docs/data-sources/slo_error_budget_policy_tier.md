@@ -42,9 +42,9 @@ data "oneuptime_slo_error_budget_policy_tier" "by_id" {
 - `incident_remediation_notes` (String) Remediation notes (in Markdown) attached to the incident declared when the SLO enters this tier. Supports template variables.
 - `incident_severity_id` (String) ID of the Incident Severity of the incident declared when the SLO enters this tier. The ID of a `oneuptime_incident_severity`.
 - `incident_title_template` (String) Title of the incident declared when the SLO enters this tier. Supports template variables such as {{sloName}} and {{policyTier}}. Leave empty to use the default title.
-- `is_alert_private` (Boolean) Make the alert raised by this tier private, so only its owners, project admins and project owners can see it. Disabled by default.
+- `is_alert_private` (Boolean) Make the alert raised by this tier private, so only its owners, Project Admins and Project Owners can see it. Disabled by default.
 - `is_enabled` (Boolean) Whether this tier is part of the policy. A disabled tier never applies, and anything it raised is resolved.
-- `is_incident_private` (Boolean) Make the incident declared by this tier private, so only its owners, project admins and project owners can see it. Disabled by default.
+- `is_incident_private` (Boolean) Make the incident declared by this tier private, so only its owners, Project Admins and Project Owners can see it. Disabled by default.
 - `name` (String) Name of this tier, for example "Reliability first". Shown on the SLO's Overview, in its feed and as {{policyTier}} in alert and incident templates.
 - `service_level_objective_id` (String) ID of the Service Level Objective whose error budget policy this tier belongs to. The ID of a `oneuptime_service_level_objective`.
 - `should_create_alert` (Boolean) Raise an Alert when the SLO enters this tier. Disabled by default.

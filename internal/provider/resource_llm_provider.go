@@ -115,7 +115,7 @@ func (r *LlmProviderResource) schemaDefinition() schema.Schema {
                 },
             },
             "base_url": schema.StringAttribute{
-                MarkdownDescription: "The base URL for the LLM API. Required for Azure OpenAI / Microsoft Foundry (the resource's endpoint, such as https://<resource>.openai.azure.com/openai/v1), Ollama and OpenAI-compatible servers, optional for others. The API key and the Additional Parameters are sent to it, so only project owners and admins can change it. Everyone who may read the project's settings can read it, so never put a key, a token or a password in it: use the API Key.",
+                MarkdownDescription: "The base URL for the LLM API. Required for Azure OpenAI / Microsoft Foundry (the resource's endpoint, such as https://<resource>.openai.azure.com/openai/v1), Ollama and OpenAI-compatible servers, optional for others. The API key and the Additional Parameters are sent to it, so only Project Owners and Project Admins can change it. Everyone who may read the project's settings can read it, so never put a key, a token or a password in it: use the API Key.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -123,7 +123,7 @@ func (r *LlmProviderResource) schemaDefinition() schema.Schema {
                 },
             },
             "additional_params": schema.StringAttribute{
-                MarkdownDescription: "Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults. Read only by project owners and admins, like the API key. A JSON value: write it with `jsonencode()`.",
+                MarkdownDescription: "Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults. Read only by Project Owners and Project Admins, like the API key. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,

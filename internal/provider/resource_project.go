@@ -136,6 +136,7 @@ type ProjectResourceModel struct {
     AlertAiInvestigationTimeLimitInMinutes types.Number `tfsdk:"alert_ai_investigation_time_limit_in_minutes"`
     EnableAutoRechargeAiBalance types.Bool `tfsdk:"enable_auto_recharge_ai_balance"`
     DoNotAddGlobalProbesByDefaultOnNewMonitors types.Bool `tfsdk:"do_not_add_global_probes_by_default_on_new_monitors"`
+    RequireIncomingRequestSecret types.Bool `tfsdk:"require_incoming_request_secret"`
     DefaultMetricCardinalityBudget types.Number `tfsdk:"default_metric_cardinality_budget"`
     DefaultTelemetryRetentionInDays types.Number `tfsdk:"default_telemetry_retention_in_days"`
     TelemetryRetentionConfig JSONSubsetValue `tfsdk:"telemetry_retention_config"`
@@ -227,7 +228,7 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                 },
             },
             "finance_accounting_email": schema.StringAttribute{
-                MarkdownDescription: "Invoices, receipts and billing related notifications will be sent to these emails in addition to project owner. Separate multiple emails with a comma.",
+                MarkdownDescription: "Invoices, receipts and billing related notifications will be sent to these emails in addition to Project Owner. Separate multiple emails with a comma.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -1039,6 +1040,15 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "require_incoming_request_secret": schema.BoolAttribute{
+                MarkdownDescription: "When on, requests to this project's Incoming Request monitors are refused with 401 unless they send one of the project's incoming request secrets, in the X-OneUptime-Secret header or as a Bearer token. Needs at least one incoming request secret to turn on.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "default_metric_cardinality_budget": schema.NumberAttribute{
                 MarkdownDescription: "Project-wide default max distinct series per metric. Services without a per-service override use this value.",
                 Optional: true,
@@ -1595,6 +1605,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "alertAiInvestigationTimeLimitInMinutes": true,
         "enableAutoRechargeAiBalance": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
+        "requireIncomingRequestSecret": true,
         "defaultMetricCardinalityBudget": true,
         "defaultTelemetryRetentionInDays": true,
         "telemetryRetentionConfig": true,
@@ -2611,6 +2622,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if val, ok := dataMap["doNotAddGlobalProbesByDefaultOnNewMonitors"].(bool); ok {
         data.DoNotAddGlobalProbesByDefaultOnNewMonitors = types.BoolValue(val)
     }
+    if val, ok := dataMap["requireIncomingRequestSecret"].(bool); ok {
+        data.RequireIncomingRequestSecret = types.BoolValue(val)
+    }
     data.DefaultMetricCardinalityBudget = numberFromAPI(data.DefaultMetricCardinalityBudget, dataMap["defaultMetricCardinalityBudget"])
     data.DefaultTelemetryRetentionInDays = numberFromAPI(data.DefaultTelemetryRetentionInDays, dataMap["defaultTelemetryRetentionInDays"])
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
@@ -3547,6 +3561,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "alertAiInvestigationTimeLimitInMinutes": true,
         "enableAutoRechargeAiBalance": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
+        "requireIncomingRequestSecret": true,
         "defaultMetricCardinalityBudget": true,
         "defaultTelemetryRetentionInDays": true,
         "telemetryRetentionConfig": true,
@@ -4563,6 +4578,9 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     if val, ok := dataMap["doNotAddGlobalProbesByDefaultOnNewMonitors"].(bool); ok {
         data.DoNotAddGlobalProbesByDefaultOnNewMonitors = types.BoolValue(val)
+    }
+    if val, ok := dataMap["requireIncomingRequestSecret"].(bool); ok {
+        data.RequireIncomingRequestSecret = types.BoolValue(val)
     }
     data.DefaultMetricCardinalityBudget = numberFromAPI(data.DefaultMetricCardinalityBudget, dataMap["defaultMetricCardinalityBudget"])
     data.DefaultTelemetryRetentionInDays = numberFromAPI(data.DefaultTelemetryRetentionInDays, dataMap["defaultTelemetryRetentionInDays"])
@@ -5683,6 +5701,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.DoNotAddGlobalProbesByDefaultOnNewMonitors.IsUnknown() && !state.DoNotAddGlobalProbesByDefaultOnNewMonitors.IsUnknown() && !data.DoNotAddGlobalProbesByDefaultOnNewMonitors.Equal(state.DoNotAddGlobalProbesByDefaultOnNewMonitors) {
         requestDataMap["doNotAddGlobalProbesByDefaultOnNewMonitors"] = data.DoNotAddGlobalProbesByDefaultOnNewMonitors.ValueBool()
     }
+    if !data.RequireIncomingRequestSecret.IsUnknown() && !state.RequireIncomingRequestSecret.IsUnknown() && !data.RequireIncomingRequestSecret.Equal(state.RequireIncomingRequestSecret) {
+        requestDataMap["requireIncomingRequestSecret"] = data.RequireIncomingRequestSecret.ValueBool()
+    }
     if !data.UseGlobalRunners.IsUnknown() && !state.UseGlobalRunners.IsUnknown() && !data.UseGlobalRunners.Equal(state.UseGlobalRunners) {
         requestDataMap["useGlobalRunners"] = data.UseGlobalRunners.ValueBool()
     }
@@ -5846,6 +5867,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "alertAiInvestigationTimeLimitInMinutes": true,
         "enableAutoRechargeAiBalance": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
+        "requireIncomingRequestSecret": true,
         "defaultMetricCardinalityBudget": true,
         "defaultTelemetryRetentionInDays": true,
         "telemetryRetentionConfig": true,
@@ -6856,6 +6878,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if val, ok := dataMap["doNotAddGlobalProbesByDefaultOnNewMonitors"].(bool); ok {
         data.DoNotAddGlobalProbesByDefaultOnNewMonitors = types.BoolValue(val)
+    }
+    if val, ok := dataMap["requireIncomingRequestSecret"].(bool); ok {
+        data.RequireIncomingRequestSecret = types.BoolValue(val)
     }
     data.DefaultMetricCardinalityBudget = numberFromAPI(data.DefaultMetricCardinalityBudget, dataMap["defaultMetricCardinalityBudget"])
     data.DefaultTelemetryRetentionInDays = numberFromAPI(data.DefaultTelemetryRetentionInDays, dataMap["defaultTelemetryRetentionInDays"])
@@ -8001,6 +8026,9 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.DoNotAddGlobalProbesByDefaultOnNewMonitors.IsNull() && !plan.DoNotAddGlobalProbesByDefaultOnNewMonitors.IsUnknown() {
         data.DoNotAddGlobalProbesByDefaultOnNewMonitors = plan.DoNotAddGlobalProbesByDefaultOnNewMonitors
+    }
+    if config.RequireIncomingRequestSecret.IsNull() && !plan.RequireIncomingRequestSecret.IsUnknown() {
+        data.RequireIncomingRequestSecret = plan.RequireIncomingRequestSecret
     }
     if config.DefaultMetricCardinalityBudget.IsNull() && !plan.DefaultMetricCardinalityBudget.IsUnknown() {
         data.DefaultMetricCardinalityBudget = plan.DefaultMetricCardinalityBudget

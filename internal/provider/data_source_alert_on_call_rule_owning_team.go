@@ -41,7 +41,7 @@ func (d *AlertOnCallRuleOwningTeamDataSource) Metadata(ctx context.Context, req 
 
 func (d *AlertOnCallRuleOwningTeamDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Teams that own an alert on-call rule: only their members, and project admins, can change or delete it. Look up an existing alert on call rule owning team by `id`, or by any of its other arguments (`alert_on_call_rule_id`, `created_by_user_id`, `team_id`): each one set must match, and exactly one alert on call rule owning team may match them all.",
+        MarkdownDescription: "Teams that own an alert on-call rule: only their members, and Project Admins, can change or delete it. Look up an existing alert on call rule owning team by `id`, or by any of its other arguments (`alert_on_call_rule_id`, `created_by_user_id`, `team_id`): each one set must match, and exactly one alert on call rule owning team may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

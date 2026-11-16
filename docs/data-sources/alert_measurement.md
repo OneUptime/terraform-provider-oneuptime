@@ -29,6 +29,7 @@ data "oneuptime_alert_measurement" "by_id" {
 ### Optional
 
 - `aggregation_type` (String) How this measurement's chart sums up many alerts by default - Avg (the default), P50, P90, P95, P99, Max or Min. View Chart in the dashboard opens the chart this way. Sum is deliberately absent: adding durations up across alerts produces a number with no meaning.
+- `backfill_cursor_id` (String) The ID of the last alert the backfill worked out, which orders the alerts created at the same moment.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Description of what this measurement means to your team.
 - `end_alert_state_id` (String) ID of the alert state this measurement ends at. Required only when the End Anchor Type is State Entered. Cleared if that state is deleted, at which point the measurement reports Not Applicable rather than a wrong number. The ID of a `oneuptime_alert_state`.

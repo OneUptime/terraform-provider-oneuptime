@@ -38,7 +38,7 @@ resource "oneuptime_incident_episode" "example" {
 - `incident_grouping_rule_id` (String) ID of the Incident Grouping Rule that created this episode (if applicable). The ID of a `oneuptime_incident_grouping_rule`.
 - `incident_severity_id` (String) Incident Severity ID. The ID of a `oneuptime_incident_severity`.
 - `is_manually_created` (Boolean) Whether this episode was manually created vs auto-created by a rule. Defaults to `false`.
-- `is_private` (Boolean) If true, this incident episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Defaults to `false`.
+- `is_private` (Boolean) If true, this incident episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), Project Admins, and Project Owners. Defaults to `false`.
 - `is_visible_on_status_page` (Boolean) Should this episode be visible on the status page? Defaults to `false`.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_incident_added_at` (String) When the last incident was added to this episode.

@@ -131,7 +131,7 @@ func (d *EntityRiskDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "risk_history": schema.StringAttribute{
-                MarkdownDescription: "Its risk score at the end of each of the last 30 days. A JSON value: read it with `jsondecode()`.",
+                MarkdownDescription: "When its risk score changed over the last 30 days, and to what: each day's score is read from it in the reader's time zone. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
         },

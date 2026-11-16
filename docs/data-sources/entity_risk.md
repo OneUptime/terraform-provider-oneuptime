@@ -47,5 +47,5 @@ data "oneuptime_entity_risk" "by_id" {
 - `project_id` (String) ID of the project this entity's risk belongs to. The ID of a `oneuptime_project`.
 - `risk_case_at` (String) When its risk last reached the threshold and opened a case, or joined the open case about it.
 - `risk_expires_at` (String) When its score next falls, as the first of its sources stops counting.
-- `risk_history` (String) Its risk score at the end of each of the last 30 days. A JSON value: read it with `jsondecode()`.
+- `risk_history` (String) When its risk score changed over the last 30 days, and to what: each day's score is read from it in the reader's time zone. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

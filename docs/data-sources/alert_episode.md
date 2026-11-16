@@ -46,7 +46,7 @@ data "oneuptime_alert_episode" "by_id" {
 - `is_manually_created` (Boolean) Whether this episode was manually created vs auto-created by a rule.
 - `is_on_call_policy_executed` (Boolean) Whether the on-call policy has been executed for this episode.
 - `is_owner_notified_of_episode_creation` (Boolean) Are owners notified when this episode is created?
-- `is_private` (Boolean) If true, this alert episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.
+- `is_private` (Boolean) If true, this alert episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), Project Admins, and Project Owners.
 - `remediation_notes` (String) User-documented remediation steps and notes for this episode.
 - `root_cause` (String) User-documented root cause of this episode.
 - `title` (String) Title of this alert episode.

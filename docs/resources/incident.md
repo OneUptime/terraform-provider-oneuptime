@@ -43,7 +43,7 @@ resource "oneuptime_incident" "example" {
 - `hosts` (Set of String) List of hosts affected by this incident. IDs of `oneuptime_host` resources.
 - `impact_started_at` (String) When customer impact actually began. Left blank until someone records it - never inferred, because a guessed value is worse than no value.
 - `iot_fleets` (Set of String) List of IoT fleets affected by this incident. IDs of `oneuptime_iot_fleet` resources.
-- `is_private` (Boolean) If true, this incident is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Private incidents are hidden from status pages. Defaults to `false`.
+- `is_private` (Boolean) If true, this incident is only visible to its owners (users in 'owner users' and members of 'owner teams'), Project Admins, and Project Owners. Private incidents are hidden from status pages. Defaults to `false`.
 - `is_visible_on_status_page` (Boolean) Should this incident be visible on the status page? Defaults to `true`.
 - `kubernetes_clusters` (Set of String) List of Kubernetes clusters affected by this incident. IDs of `oneuptime_kubernetes_cluster` resources.
 - `kubernetes_containers` (Set of String) List of Kubernetes containers affected by this incident.

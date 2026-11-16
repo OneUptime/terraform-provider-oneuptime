@@ -64,6 +64,7 @@ type IncidentMeasurementResourceModel struct {
     IsSystemDefined types.Bool `tfsdk:"is_system_defined"`
     BackfillRequestedAt RFC3339Value `tfsdk:"backfill_requested_at"`
     BackfillCursorCreatedAt RFC3339Value `tfsdk:"backfill_cursor_created_at"`
+    BackfillCursorId types.String `tfsdk:"backfill_cursor_id"`
     BackfillCompletedAt RFC3339Value `tfsdk:"backfill_completed_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -273,6 +274,10 @@ func (r *IncidentMeasurementResource) schemaDefinition() schema.Schema {
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
+            "backfill_cursor_id": schema.StringAttribute{
+                MarkdownDescription: "The ID of the last incident the backfill worked out, which orders the incidents created at the same moment.",
+                Computed: true,
+            },
             "backfill_completed_at": schema.StringAttribute{
                 MarkdownDescription: "When the backfill of this measurement over existing incidents finished.",
                 CustomType: RFC3339Type{},
@@ -465,6 +470,7 @@ func (r *IncidentMeasurementResource) Create(ctx context.Context, req resource.C
         "isSystemDefined": true,
         "backfillRequestedAt": true,
         "backfillCursorCreatedAt": true,
+        "backfillCursorId": true,
         "backfillCompletedAt": true,
         "createdByUserId": true,
         "_id": true,
@@ -1180,6 +1186,50 @@ func (r *IncidentMeasurementResource) Create(ctx context.Context, req resource.C
     } else {
         data.BackfillCursorCreatedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["backfillCursorId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.BackfillCursorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.BackfillCursorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.BackfillCursorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.BackfillCursorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.BackfillCursorId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.BackfillCursorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.BackfillCursorId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.BackfillCursorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.BackfillCursorId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["backfillCursorId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.BackfillCursorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.BackfillCursorId = types.StringNull()
+        }
+    } else if val, ok := dataMap["backfillCursorId"].(string); ok {
+        data.BackfillCursorId = types.StringValue(val)
+    } else {
+        data.BackfillCursorId = types.StringNull()
+    }
     if obj, ok := dataMap["backfillCompletedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.BackfillCompletedAt = NewRFC3339Value(val)
@@ -1289,6 +1339,7 @@ func (r *IncidentMeasurementResource) Read(ctx context.Context, req resource.Rea
         "isSystemDefined": true,
         "backfillRequestedAt": true,
         "backfillCursorCreatedAt": true,
+        "backfillCursorId": true,
         "backfillCompletedAt": true,
         "createdByUserId": true,
         "_id": true,
@@ -2005,6 +2056,50 @@ func (r *IncidentMeasurementResource) Read(ctx context.Context, req resource.Rea
     } else {
         data.BackfillCursorCreatedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["backfillCursorId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.BackfillCursorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.BackfillCursorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.BackfillCursorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.BackfillCursorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.BackfillCursorId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.BackfillCursorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.BackfillCursorId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.BackfillCursorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.BackfillCursorId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["backfillCursorId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.BackfillCursorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.BackfillCursorId = types.StringNull()
+        }
+    } else if val, ok := dataMap["backfillCursorId"].(string); ok {
+        data.BackfillCursorId = types.StringValue(val)
+    } else {
+        data.BackfillCursorId = types.StringNull()
+    }
     if obj, ok := dataMap["backfillCompletedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.BackfillCompletedAt = NewRFC3339Value(val)
@@ -2194,6 +2289,7 @@ func (r *IncidentMeasurementResource) Update(ctx context.Context, req resource.U
         "isSystemDefined": true,
         "backfillRequestedAt": true,
         "backfillCursorCreatedAt": true,
+        "backfillCursorId": true,
         "backfillCompletedAt": true,
         "createdByUserId": true,
         "_id": true,
@@ -2903,6 +2999,50 @@ func (r *IncidentMeasurementResource) Update(ctx context.Context, req resource.U
         data.BackfillCursorCreatedAt = NewRFC3339Value(val)
     } else {
         data.BackfillCursorCreatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["backfillCursorId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.BackfillCursorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.BackfillCursorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.BackfillCursorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.BackfillCursorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.BackfillCursorId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.BackfillCursorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.BackfillCursorId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.BackfillCursorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.BackfillCursorId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["backfillCursorId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.BackfillCursorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.BackfillCursorId = types.StringNull()
+        }
+    } else if val, ok := dataMap["backfillCursorId"].(string); ok {
+        data.BackfillCursorId = types.StringValue(val)
+    } else {
+        data.BackfillCursorId = types.StringNull()
     }
     if obj, ok := dataMap["backfillCompletedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {

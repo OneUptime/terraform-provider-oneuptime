@@ -132,6 +132,7 @@ type ProjectDataSourceModel struct {
     BillingMarketplace types.String `tfsdk:"billing_marketplace"`
     LetCustomerSupportAccessProject types.Bool `tfsdk:"let_customer_support_access_project"`
     DoNotAddGlobalProbesByDefaultOnNewMonitors types.Bool `tfsdk:"do_not_add_global_probes_by_default_on_new_monitors"`
+    RequireIncomingRequestSecret types.Bool `tfsdk:"require_incoming_request_secret"`
     UseGlobalRunners types.Bool `tfsdk:"use_global_runners"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
     DefaultMetricCardinalityBudget types.Number `tfsdk:"default_metric_cardinality_budget"`
@@ -233,7 +234,7 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "finance_accounting_email": schema.StringAttribute{
-                MarkdownDescription: "Invoices, receipts and billing related notifications will be sent to these emails in addition to project owner. Separate multiple emails with a comma.",
+                MarkdownDescription: "Invoices, receipts and billing related notifications will be sent to these emails in addition to Project Owner. Separate multiple emails with a comma.",
                 Optional: true,
                 Computed: true,
             },
@@ -696,6 +697,11 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "do_not_add_global_probes_by_default_on_new_monitors": schema.BoolAttribute{
                 MarkdownDescription: "If enabled, global probes will NOT be automatically added to new monitors. Enable this only if you are using ONLY custom probes to monitor your resources.",
+                Optional: true,
+                Computed: true,
+            },
+            "require_incoming_request_secret": schema.BoolAttribute{
+                MarkdownDescription: "When on, requests to this project's Incoming Request monitors are refused with 401 unless they send one of the project's incoming request secrets, in the X-OneUptime-Secret header or as a Bearer token. Needs at least one incoming request secret to turn on.",
                 Optional: true,
                 Computed: true,
             },
@@ -1273,6 +1279,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["doNotAddGlobalProbesByDefaultOnNewMonitors"] = data.DoNotAddGlobalProbesByDefaultOnNewMonitors.ValueBool()
         filterNames = append(filterNames, "do_not_add_global_probes_by_default_on_new_monitors = "+fmt.Sprintf("%t", data.DoNotAddGlobalProbesByDefaultOnNewMonitors.ValueBool()))
     }
+    if !data.RequireIncomingRequestSecret.IsNull() && !data.RequireIncomingRequestSecret.IsUnknown() {
+        filters["requireIncomingRequestSecret"] = data.RequireIncomingRequestSecret.ValueBool()
+        filterNames = append(filterNames, "require_incoming_request_secret = "+fmt.Sprintf("%t", data.RequireIncomingRequestSecret.ValueBool()))
+    }
     if !data.UseGlobalRunners.IsNull() && !data.UseGlobalRunners.IsUnknown() {
         filters["useGlobalRunners"] = data.UseGlobalRunners.ValueBool()
         filterNames = append(filterNames, "use_global_runners = "+fmt.Sprintf("%t", data.UseGlobalRunners.ValueBool()))
@@ -1487,6 +1497,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "billingMarketplace": true,
         "letCustomerSupportAccessProject": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
+        "requireIncomingRequestSecret": true,
         "useGlobalRunners": true,
         "gitHubAppInstallationId": true,
         "defaultMetricCardinalityBudget": true,
@@ -2602,6 +2613,11 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.DoNotAddGlobalProbesByDefaultOnNewMonitors = types.BoolValue(val)
     } else {
         data.DoNotAddGlobalProbesByDefaultOnNewMonitors = types.BoolNull()
+    }
+    if val, ok := item["requireIncomingRequestSecret"].(bool); ok {
+        data.RequireIncomingRequestSecret = types.BoolValue(val)
+    } else {
+        data.RequireIncomingRequestSecret = types.BoolNull()
     }
     if val, ok := item["useGlobalRunners"].(bool); ok {
         data.UseGlobalRunners = types.BoolValue(val)

@@ -2,12 +2,12 @@
 page_title: "oneuptime_incident_owner_rule_owning_team Resource - oneuptime"
 subcategory: "Incidents"
 description: |-
-  Teams that own an incident owner rule: only their members, and project admins, can change or delete it.
+  Teams that own an incident owner rule: only their members, and Project Admins, can change or delete it.
 ---
 
 # oneuptime_incident_owner_rule_owning_team (Resource)
 
-Teams that own an incident owner rule: only their members, and project admins, can change or delete it.
+Teams that own an incident owner rule: only their members, and Project Admins, can change or delete it.
 
 ## Example Usage
 

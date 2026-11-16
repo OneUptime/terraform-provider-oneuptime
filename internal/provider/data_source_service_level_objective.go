@@ -43,6 +43,9 @@ type ServiceLevelObjectiveDataSourceModel struct {
     SliType types.String `tfsdk:"sli_type"`
     MultiMonitorMode types.String `tfsdk:"multi_monitor_mode"`
     Monitors types.Set `tfsdk:"monitors"`
+    Services types.Set `tfsdk:"services"`
+    LatencyThresholdInMilliseconds types.Number `tfsdk:"latency_threshold_in_milliseconds"`
+    RequestFilter types.String `tfsdk:"request_filter"`
     MonitorLabels types.Set `tfsdk:"monitor_labels"`
     AutoAddedMonitors types.Set `tfsdk:"auto_added_monitors"`
     DowntimeMonitorStatuses types.Set `tfsdk:"downtime_monitor_statuses"`
@@ -56,6 +59,10 @@ type ServiceLevelObjectiveDataSourceModel struct {
     ErrorBudgetRemainingPercentage types.Number `tfsdk:"error_budget_remaining_percentage"`
     ErrorBudgetRemainingSeconds types.Number `tfsdk:"error_budget_remaining_seconds"`
     ErrorBudgetTotalSeconds types.Number `tfsdk:"error_budget_total_seconds"`
+    GoodEventCount types.Number `tfsdk:"good_event_count"`
+    TotalEventCount types.Number `tfsdk:"total_event_count"`
+    ErrorBudgetTotalEvents types.Number `tfsdk:"error_budget_total_events"`
+    ErrorBudgetRemainingEvents types.Number `tfsdk:"error_budget_remaining_events"`
     CurrentBurnRate types.Number `tfsdk:"current_burn_rate"`
     SloStatus types.String `tfsdk:"slo_status"`
     StatusChangeNotificationSentAt types.String `tfsdk:"status_change_notification_sent_at"`
@@ -67,6 +74,7 @@ type ServiceLevelObjectiveDataSourceModel struct {
     LastEvaluatedAt types.String `tfsdk:"last_evaluated_at"`
     NextEvaluationAt types.String `tfsdk:"next_evaluation_at"`
     LastAccumulatedBucketEndAt types.String `tfsdk:"last_accumulated_bucket_end_at"`
+    FirstAccumulatedBucketStartAt types.String `tfsdk:"first_accumulated_bucket_start_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -137,7 +145,7 @@ func (d *ServiceLevelObjectiveDataSource) Schema(ctx context.Context, req dataso
                 Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "sli_type": schema.StringAttribute{
-                MarkdownDescription: "Type of Service Level Indicator this objective measures (Monitor Uptime or Metric).",
+                MarkdownDescription: "What this objective measures: Monitor Uptime (the share of time its monitors are up), Request Success (the share of its services' requests that did not fail) or Request Latency (the share of its services' requests served within the latency threshold). Metric is reserved and not measured yet.",
                 Optional: true,
                 Computed: true,
             },
@@ -150,6 +158,21 @@ func (d *ServiceLevelObjectiveDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "Monitors whose uptime is measured by this Service Level Objective (for Monitor Uptime SLIs). IDs of `oneuptime_monitor` resources.",
                 Computed: true,
                 ElementType: types.StringType,
+            },
+            "services": schema.SetAttribute{
+                MarkdownDescription: "Services whose requests this Service Level Objective measures, for the Request Success and Request Latency SLI types. Their requests are counted from their traces. IDs of `oneuptime_service` resources.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "latency_threshold_in_milliseconds": schema.NumberAttribute{
+                MarkdownDescription: "For the Request Latency SLI type: a request served in this many milliseconds or less counts as good. A whole number from 1 to 3600000.",
+                Optional: true,
+                Computed: true,
+            },
+            "request_filter": schema.StringAttribute{
+                MarkdownDescription: "For request SLI types: count only the requests that match this traces search of span attributes and the span's name, such as @http.route:/checkout* -@http.route:/health. Empty counts every request of the SLO's services.",
+                Optional: true,
+                Computed: true,
             },
             "monitor_labels": schema.SetAttribute{
                 MarkdownDescription: "Deprecated: superseded by SLO Monitor Rules and no longer read by the SLO engine. Existing labels were migrated into a monitor rule named \"Auto-add monitors with labels\". Kept only for compatibility during upgrades: labels written here to an SLO with no monitor rules are turned into that rule, and are ignored once the SLO has monitor rules. Use SLO Monitor Rules instead. IDs of `oneuptime_label` resources.",
@@ -215,6 +238,26 @@ func (d *ServiceLevelObjectiveDataSource) Schema(ctx context.Context, req dataso
                 Optional: true,
                 Computed: true,
             },
+            "good_event_count": schema.NumberAttribute{
+                MarkdownDescription: "For request SLIs: the requests in the compliance window that counted as good (did not fail, or were fast enough). Computed by the worker.",
+                Optional: true,
+                Computed: true,
+            },
+            "total_event_count": schema.NumberAttribute{
+                MarkdownDescription: "For request SLIs: every request in the compliance window that this Service Level Objective measures. Computed by the worker.",
+                Optional: true,
+                Computed: true,
+            },
+            "error_budget_total_events": schema.NumberAttribute{
+                MarkdownDescription: "For request SLIs: how many bad requests the target allows in the compliance window. Computed by the worker.",
+                Optional: true,
+                Computed: true,
+            },
+            "error_budget_remaining_events": schema.NumberAttribute{
+                MarkdownDescription: "For request SLIs: how many more bad requests the target allows in the compliance window. Negative when the budget is exhausted. Computed by the worker.",
+                Optional: true,
+                Computed: true,
+            },
             "current_burn_rate": schema.NumberAttribute{
                 MarkdownDescription: "Rate at which the error budget is currently being consumed. A burn rate of 1 exhausts the budget exactly at the end of the window. Computed by the worker.",
                 Optional: true,
@@ -261,7 +304,11 @@ func (d *ServiceLevelObjectiveDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "last_accumulated_bucket_end_at": schema.StringAttribute{
-                MarkdownDescription: "Accumulation cursor for Metric SLIs: end of the last bucket whose good/total counts were persisted. Computed by the worker.",
+                MarkdownDescription: "For request SLIs: the end of the newest 5-minute step whose good and total requests were counted. Computed by the worker.",
+                Computed: true,
+            },
+            "first_accumulated_bucket_start_at": schema.StringAttribute{
+                MarkdownDescription: "For request SLIs: the start of the oldest 5-minute step whose good and total requests were counted, so the time this objective's numbers cover. Computed by the worker.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -341,6 +388,14 @@ func (d *ServiceLevelObjectiveDataSource) Read(ctx context.Context, req datasour
         filters["multiMonitorMode"] = data.MultiMonitorMode.ValueString()
         filterNames = append(filterNames, "multi_monitor_mode = "+fmt.Sprintf("%q", data.MultiMonitorMode.ValueString()))
     }
+    if !data.LatencyThresholdInMilliseconds.IsNull() && !data.LatencyThresholdInMilliseconds.IsUnknown() {
+        filters["latencyThresholdInMilliseconds"] = lookupNumber(data.LatencyThresholdInMilliseconds)
+        filterNames = append(filterNames, "latency_threshold_in_milliseconds = "+data.LatencyThresholdInMilliseconds.ValueBigFloat().String())
+    }
+    if !data.RequestFilter.IsNull() && !data.RequestFilter.IsUnknown() {
+        filters["requestFilter"] = data.RequestFilter.ValueString()
+        filterNames = append(filterNames, "request_filter = "+fmt.Sprintf("%q", data.RequestFilter.ValueString()))
+    }
     if !data.TargetPercentage.IsNull() && !data.TargetPercentage.IsUnknown() {
         filters["targetPercentage"] = lookupNumber(data.TargetPercentage)
         filterNames = append(filterNames, "target_percentage = "+data.TargetPercentage.ValueBigFloat().String())
@@ -376,6 +431,22 @@ func (d *ServiceLevelObjectiveDataSource) Read(ctx context.Context, req datasour
     if !data.ErrorBudgetTotalSeconds.IsNull() && !data.ErrorBudgetTotalSeconds.IsUnknown() {
         filters["errorBudgetTotalSeconds"] = lookupNumber(data.ErrorBudgetTotalSeconds)
         filterNames = append(filterNames, "error_budget_total_seconds = "+data.ErrorBudgetTotalSeconds.ValueBigFloat().String())
+    }
+    if !data.GoodEventCount.IsNull() && !data.GoodEventCount.IsUnknown() {
+        filters["goodEventCount"] = lookupNumber(data.GoodEventCount)
+        filterNames = append(filterNames, "good_event_count = "+data.GoodEventCount.ValueBigFloat().String())
+    }
+    if !data.TotalEventCount.IsNull() && !data.TotalEventCount.IsUnknown() {
+        filters["totalEventCount"] = lookupNumber(data.TotalEventCount)
+        filterNames = append(filterNames, "total_event_count = "+data.TotalEventCount.ValueBigFloat().String())
+    }
+    if !data.ErrorBudgetTotalEvents.IsNull() && !data.ErrorBudgetTotalEvents.IsUnknown() {
+        filters["errorBudgetTotalEvents"] = lookupNumber(data.ErrorBudgetTotalEvents)
+        filterNames = append(filterNames, "error_budget_total_events = "+data.ErrorBudgetTotalEvents.ValueBigFloat().String())
+    }
+    if !data.ErrorBudgetRemainingEvents.IsNull() && !data.ErrorBudgetRemainingEvents.IsUnknown() {
+        filters["errorBudgetRemainingEvents"] = lookupNumber(data.ErrorBudgetRemainingEvents)
+        filterNames = append(filterNames, "error_budget_remaining_events = "+data.ErrorBudgetRemainingEvents.ValueBigFloat().String())
     }
     if !data.CurrentBurnRate.IsNull() && !data.CurrentBurnRate.IsUnknown() {
         filters["currentBurnRate"] = lookupNumber(data.CurrentBurnRate)
@@ -432,6 +503,9 @@ func (d *ServiceLevelObjectiveDataSource) Read(ctx context.Context, req datasour
         "sliType": true,
         "multiMonitorMode": true,
         "monitors": true,
+        "services": true,
+        "latencyThresholdInMilliseconds": true,
+        "requestFilter": true,
         "monitorLabels": true,
         "autoAddedMonitors": true,
         "downtimeMonitorStatuses": true,
@@ -445,6 +519,10 @@ func (d *ServiceLevelObjectiveDataSource) Read(ctx context.Context, req datasour
         "errorBudgetRemainingPercentage": true,
         "errorBudgetRemainingSeconds": true,
         "errorBudgetTotalSeconds": true,
+        "goodEventCount": true,
+        "totalEventCount": true,
+        "errorBudgetTotalEvents": true,
+        "errorBudgetRemainingEvents": true,
         "currentBurnRate": true,
         "sloStatus": true,
         "statusChangeNotificationSentAt": true,
@@ -456,6 +534,7 @@ func (d *ServiceLevelObjectiveDataSource) Read(ctx context.Context, req datasour
         "lastEvaluatedAt": true,
         "nextEvaluationAt": true,
         "lastAccumulatedBucketEndAt": true,
+        "firstAccumulatedBucketStartAt": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -840,6 +919,55 @@ func (d *ServiceLevelObjectiveDataSource) Read(ctx context.Context, req datasour
     } else {
         data.Monitors = types.SetNull(types.StringType)
     }
+    if val, ok := item["services"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.Services = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.Services = types.SetNull(types.StringType)
+    }
+    data.LatencyThresholdInMilliseconds = numberFromAPI(data.LatencyThresholdInMilliseconds, item["latencyThresholdInMilliseconds"])
+    if obj, ok := item["requestFilter"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RequestFilter = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RequestFilter = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RequestFilter = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RequestFilter = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequestFilter = types.StringNull()
+        }
+    } else if arr, ok := item["requestFilter"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RequestFilter = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequestFilter = types.StringNull()
+        }
+    } else if val, ok := item["requestFilter"].(string); ok {
+        data.RequestFilter = types.StringValue(val)
+    } else {
+        data.RequestFilter = types.StringNull()
+    }
     if val, ok := item["monitorLabels"].([]interface{}); ok {
         var setItems []attr.Value
         for _, item := range val {
@@ -991,6 +1119,10 @@ func (d *ServiceLevelObjectiveDataSource) Read(ctx context.Context, req datasour
     data.ErrorBudgetRemainingPercentage = numberFromAPI(data.ErrorBudgetRemainingPercentage, item["errorBudgetRemainingPercentage"])
     data.ErrorBudgetRemainingSeconds = numberFromAPI(data.ErrorBudgetRemainingSeconds, item["errorBudgetRemainingSeconds"])
     data.ErrorBudgetTotalSeconds = numberFromAPI(data.ErrorBudgetTotalSeconds, item["errorBudgetTotalSeconds"])
+    data.GoodEventCount = numberFromAPI(data.GoodEventCount, item["goodEventCount"])
+    data.TotalEventCount = numberFromAPI(data.TotalEventCount, item["totalEventCount"])
+    data.ErrorBudgetTotalEvents = numberFromAPI(data.ErrorBudgetTotalEvents, item["errorBudgetTotalEvents"])
+    data.ErrorBudgetRemainingEvents = numberFromAPI(data.ErrorBudgetRemainingEvents, item["errorBudgetRemainingEvents"])
     data.CurrentBurnRate = numberFromAPI(data.CurrentBurnRate, item["currentBurnRate"])
     if obj, ok := item["sloStatus"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1212,6 +1344,30 @@ func (d *ServiceLevelObjectiveDataSource) Read(ctx context.Context, req datasour
         data.LastAccumulatedBucketEndAt = types.StringValue(val)
     } else {
         data.LastAccumulatedBucketEndAt = types.StringNull()
+    }
+    if obj, ok := item["firstAccumulatedBucketStartAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FirstAccumulatedBucketStartAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.FirstAccumulatedBucketStartAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.FirstAccumulatedBucketStartAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FirstAccumulatedBucketStartAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.FirstAccumulatedBucketStartAt = types.StringNull()
+        }
+    } else if arr, ok := item["firstAccumulatedBucketStartAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FirstAccumulatedBucketStartAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.FirstAccumulatedBucketStartAt = types.StringNull()
+        }
+    } else if val, ok := item["firstAccumulatedBucketStartAt"].(string); ok {
+        data.FirstAccumulatedBucketStartAt = types.StringValue(val)
+    } else {
+        data.FirstAccumulatedBucketStartAt = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

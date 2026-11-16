@@ -48,6 +48,7 @@ resource "oneuptime_alert_measurement" "example" {
 
 - `backfill_completed_at` (String) When the backfill of this measurement over existing alerts finished.
 - `backfill_cursor_created_at` (String) How far the backfill has walked this project, so a restart resumes instead of starting over.
+- `backfill_cursor_id` (String) The ID of the last alert the backfill worked out, which orders the alerts created at the same moment.
 - `backfill_requested_at` (String) When a backfill of this measurement over existing alerts was requested.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).

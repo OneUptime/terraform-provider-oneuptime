@@ -54,6 +54,9 @@ type ServiceLevelObjectiveResourceModel struct {
     SliType types.String `tfsdk:"sli_type"`
     MultiMonitorMode types.String `tfsdk:"multi_monitor_mode"`
     Monitors types.Set `tfsdk:"monitors"`
+    Services types.Set `tfsdk:"services"`
+    LatencyThresholdInMilliseconds types.Number `tfsdk:"latency_threshold_in_milliseconds"`
+    RequestFilter types.String `tfsdk:"request_filter"`
     MonitorLabels types.Set `tfsdk:"monitor_labels"`
     MetricQueryConfig JSONSubsetValue `tfsdk:"metric_query_config"`
     TargetPercentage types.Number `tfsdk:"target_percentage"`
@@ -72,6 +75,10 @@ type ServiceLevelObjectiveResourceModel struct {
     ErrorBudgetRemainingPercentage types.Number `tfsdk:"error_budget_remaining_percentage"`
     ErrorBudgetRemainingSeconds types.Number `tfsdk:"error_budget_remaining_seconds"`
     ErrorBudgetTotalSeconds types.Number `tfsdk:"error_budget_total_seconds"`
+    GoodEventCount types.Number `tfsdk:"good_event_count"`
+    TotalEventCount types.Number `tfsdk:"total_event_count"`
+    ErrorBudgetTotalEvents types.Number `tfsdk:"error_budget_total_events"`
+    ErrorBudgetRemainingEvents types.Number `tfsdk:"error_budget_remaining_events"`
     CurrentBurnRate types.Number `tfsdk:"current_burn_rate"`
     SloStatus types.String `tfsdk:"slo_status"`
     StatusChangeNotificationSentAt RFC3339Value `tfsdk:"status_change_notification_sent_at"`
@@ -83,6 +90,7 @@ type ServiceLevelObjectiveResourceModel struct {
     LastEvaluatedAt RFC3339Value `tfsdk:"last_evaluated_at"`
     NextEvaluationAt RFC3339Value `tfsdk:"next_evaluation_at"`
     LastAccumulatedBucketEndAt RFC3339Value `tfsdk:"last_accumulated_bucket_end_at"`
+    FirstAccumulatedBucketStartAt RFC3339Value `tfsdk:"first_accumulated_bucket_start_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -154,7 +162,7 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
                 },
             },
             "sli_type": schema.StringAttribute{
-                MarkdownDescription: "Type of Service Level Indicator this objective measures (Monitor Uptime or Metric).",
+                MarkdownDescription: "What this objective measures: Monitor Uptime (the share of time its monitors are up), Request Success (the share of its services' requests that did not fail) or Request Latency (the share of its services' requests served within the latency threshold). Metric is reserved and not measured yet.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("Monitor Uptime"),
@@ -162,7 +170,7 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
                 Validators: []validator.String{
-                    stringvalidator.OneOf("Monitor Uptime", "Metric"),
+                    stringvalidator.OneOf("Monitor Uptime", "Request Success", "Request Latency", "Metric"),
                 },
             },
             "multi_monitor_mode": schema.StringAttribute{
@@ -186,6 +194,33 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
                     setplanmodifier.UseStateForUnknown(),
                 },
                 Validators: recordIDSetValidators("oneuptime_monitor"),
+            },
+            "services": schema.SetAttribute{
+                MarkdownDescription: "Services whose requests this Service Level Objective measures, for the Request Success and Request Latency SLI types. Their requests are counted from their traces. IDs of `oneuptime_service` resources.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+                Validators: recordIDSetValidators("oneuptime_service"),
+            },
+            "latency_threshold_in_milliseconds": schema.NumberAttribute{
+                MarkdownDescription: "For the Request Latency SLI type: a request served in this many milliseconds or less counts as good. A whole number from 1 to 3600000.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "request_filter": schema.StringAttribute{
+                MarkdownDescription: "For request SLI types: count only the requests that match this traces search of span attributes and the span's name, such as @http.route:/checkout* -@http.route:/health. Empty counts every request of the SLO's services.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "monitor_labels": schema.SetAttribute{
                 MarkdownDescription: "Deprecated: superseded by SLO Monitor Rules and no longer read by the SLO engine. Existing labels were migrated into a monitor rule named \"Auto-add monitors with labels\". Kept only for compatibility during upgrades: labels written here to an SLO with no monitor rules are turned into that rule, and are ignored once the SLO has monitor rules. Use SLO Monitor Rules instead. IDs of `oneuptime_label` resources.",
@@ -312,6 +347,22 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Total seconds of error budget for the compliance window. Computed by the worker.",
                 Computed: true,
             },
+            "good_event_count": schema.NumberAttribute{
+                MarkdownDescription: "For request SLIs: the requests in the compliance window that counted as good (did not fail, or were fast enough). Computed by the worker.",
+                Computed: true,
+            },
+            "total_event_count": schema.NumberAttribute{
+                MarkdownDescription: "For request SLIs: every request in the compliance window that this Service Level Objective measures. Computed by the worker.",
+                Computed: true,
+            },
+            "error_budget_total_events": schema.NumberAttribute{
+                MarkdownDescription: "For request SLIs: how many bad requests the target allows in the compliance window. Computed by the worker.",
+                Computed: true,
+            },
+            "error_budget_remaining_events": schema.NumberAttribute{
+                MarkdownDescription: "For request SLIs: how many more bad requests the target allows in the compliance window. Negative when the budget is exhausted. Computed by the worker.",
+                Computed: true,
+            },
             "current_burn_rate": schema.NumberAttribute{
                 MarkdownDescription: "Rate at which the error budget is currently being consumed. A burn rate of 1 exhausts the budget exactly at the end of the window. Computed by the worker.",
                 Computed: true,
@@ -358,7 +409,12 @@ func (r *ServiceLevelObjectiveResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "last_accumulated_bucket_end_at": schema.StringAttribute{
-                MarkdownDescription: "Accumulation cursor for Metric SLIs: end of the last bucket whose good/total counts were persisted. Computed by the worker.",
+                MarkdownDescription: "For request SLIs: the end of the newest 5-minute step whose good and total requests were counted. Computed by the worker.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "first_accumulated_bucket_start_at": schema.StringAttribute{
+                MarkdownDescription: "For request SLIs: the start of the oldest 5-minute step whose good and total requests were counted, so the time this objective's numbers cover. Computed by the worker.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
@@ -457,6 +513,15 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
     if !data.Monitors.IsNull() && !data.Monitors.IsUnknown() {
         requestDataMap["monitors"] = r.convertTerraformSetToInterface(data.Monitors)
     }
+    if !data.Services.IsNull() && !data.Services.IsUnknown() {
+        requestDataMap["services"] = r.convertTerraformSetToInterface(data.Services)
+    }
+    if !data.LatencyThresholdInMilliseconds.IsNull() && !data.LatencyThresholdInMilliseconds.IsUnknown() {
+        requestDataMap["latencyThresholdInMilliseconds"] = r.bigFloatToFloat64(data.LatencyThresholdInMilliseconds.ValueBigFloat())
+    }
+    if !data.RequestFilter.IsNull() && !data.RequestFilter.IsUnknown() {
+        requestDataMap["requestFilter"] = data.RequestFilter.ValueString()
+    }
     if !data.MonitorLabels.IsNull() && !data.MonitorLabels.IsUnknown() {
         requestDataMap["monitorLabels"] = r.convertTerraformSetToInterface(data.MonitorLabels)
     }
@@ -532,6 +597,9 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
         "sliType": true,
         "multiMonitorMode": true,
         "monitors": true,
+        "services": true,
+        "latencyThresholdInMilliseconds": true,
+        "requestFilter": true,
         "monitorLabels": true,
         "metricQueryConfig": true,
         "targetPercentage": true,
@@ -550,6 +618,10 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
         "errorBudgetRemainingPercentage": true,
         "errorBudgetRemainingSeconds": true,
         "errorBudgetTotalSeconds": true,
+        "goodEventCount": true,
+        "totalEventCount": true,
+        "errorBudgetTotalEvents": true,
+        "errorBudgetRemainingEvents": true,
         "currentBurnRate": true,
         "sloStatus": true,
         "statusChangeNotificationSentAt": true,
@@ -561,6 +633,7 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
         "lastEvaluatedAt": true,
         "nextEvaluationAt": true,
         "lastAccumulatedBucketEndAt": true,
+        "firstAccumulatedBucketStartAt": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -850,6 +923,83 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
     } else {
         // For sets, always use empty set instead of null to match default values
         data.Monitors = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["services"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.Services = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.Services = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    data.LatencyThresholdInMilliseconds = numberFromAPI(data.LatencyThresholdInMilliseconds, dataMap["latencyThresholdInMilliseconds"])
+    if obj, ok := dataMap["requestFilter"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RequestFilter = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RequestFilter = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RequestFilter = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RequestFilter = types.StringValue(string(jsonBytes))
+            } else {
+                data.RequestFilter = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RequestFilter = types.StringValue(string(jsonBytes))
+            } else {
+                data.RequestFilter = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RequestFilter = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequestFilter = types.StringNull()
+        }
+    } else if arr, ok := dataMap["requestFilter"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RequestFilter = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequestFilter = types.StringNull()
+        }
+    } else if val, ok := dataMap["requestFilter"].(string); ok {
+        data.RequestFilter = types.StringValue(val)
+    } else {
+        data.RequestFilter = types.StringNull()
     }
     if val, ok := dataMap["monitorLabels"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -1207,6 +1357,10 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
     data.ErrorBudgetRemainingPercentage = numberFromAPI(data.ErrorBudgetRemainingPercentage, dataMap["errorBudgetRemainingPercentage"])
     data.ErrorBudgetRemainingSeconds = numberFromAPI(data.ErrorBudgetRemainingSeconds, dataMap["errorBudgetRemainingSeconds"])
     data.ErrorBudgetTotalSeconds = numberFromAPI(data.ErrorBudgetTotalSeconds, dataMap["errorBudgetTotalSeconds"])
+    data.GoodEventCount = numberFromAPI(data.GoodEventCount, dataMap["goodEventCount"])
+    data.TotalEventCount = numberFromAPI(data.TotalEventCount, dataMap["totalEventCount"])
+    data.ErrorBudgetTotalEvents = numberFromAPI(data.ErrorBudgetTotalEvents, dataMap["errorBudgetTotalEvents"])
+    data.ErrorBudgetRemainingEvents = numberFromAPI(data.ErrorBudgetRemainingEvents, dataMap["errorBudgetRemainingEvents"])
     data.CurrentBurnRate = numberFromAPI(data.CurrentBurnRate, dataMap["currentBurnRate"])
     if obj, ok := dataMap["sloStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1409,6 +1563,17 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
     } else {
         data.LastAccumulatedBucketEndAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["firstAccumulatedBucketStartAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.FirstAccumulatedBucketStartAt = NewRFC3339Value(val)
+        } else {
+            data.FirstAccumulatedBucketStartAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["firstAccumulatedBucketStartAt"].(string); ok && val != "" {
+        data.FirstAccumulatedBucketStartAt = NewRFC3339Value(val)
+    } else {
+        data.FirstAccumulatedBucketStartAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1495,6 +1660,9 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
         "sliType": true,
         "multiMonitorMode": true,
         "monitors": true,
+        "services": true,
+        "latencyThresholdInMilliseconds": true,
+        "requestFilter": true,
         "monitorLabels": true,
         "metricQueryConfig": true,
         "targetPercentage": true,
@@ -1513,6 +1681,10 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
         "errorBudgetRemainingPercentage": true,
         "errorBudgetRemainingSeconds": true,
         "errorBudgetTotalSeconds": true,
+        "goodEventCount": true,
+        "totalEventCount": true,
+        "errorBudgetTotalEvents": true,
+        "errorBudgetRemainingEvents": true,
         "currentBurnRate": true,
         "sloStatus": true,
         "statusChangeNotificationSentAt": true,
@@ -1524,6 +1696,7 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
         "lastEvaluatedAt": true,
         "nextEvaluationAt": true,
         "lastAccumulatedBucketEndAt": true,
+        "firstAccumulatedBucketStartAt": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1815,6 +1988,83 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
         // For sets, always use empty set instead of null to match default values
         data.Monitors = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["services"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.Services = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.Services = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    data.LatencyThresholdInMilliseconds = numberFromAPI(data.LatencyThresholdInMilliseconds, dataMap["latencyThresholdInMilliseconds"])
+    if obj, ok := dataMap["requestFilter"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RequestFilter = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RequestFilter = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RequestFilter = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RequestFilter = types.StringValue(string(jsonBytes))
+            } else {
+                data.RequestFilter = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RequestFilter = types.StringValue(string(jsonBytes))
+            } else {
+                data.RequestFilter = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RequestFilter = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequestFilter = types.StringNull()
+        }
+    } else if arr, ok := dataMap["requestFilter"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RequestFilter = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequestFilter = types.StringNull()
+        }
+    } else if val, ok := dataMap["requestFilter"].(string); ok {
+        data.RequestFilter = types.StringValue(val)
+    } else {
+        data.RequestFilter = types.StringNull()
+    }
     if val, ok := dataMap["monitorLabels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -2171,6 +2421,10 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
     data.ErrorBudgetRemainingPercentage = numberFromAPI(data.ErrorBudgetRemainingPercentage, dataMap["errorBudgetRemainingPercentage"])
     data.ErrorBudgetRemainingSeconds = numberFromAPI(data.ErrorBudgetRemainingSeconds, dataMap["errorBudgetRemainingSeconds"])
     data.ErrorBudgetTotalSeconds = numberFromAPI(data.ErrorBudgetTotalSeconds, dataMap["errorBudgetTotalSeconds"])
+    data.GoodEventCount = numberFromAPI(data.GoodEventCount, dataMap["goodEventCount"])
+    data.TotalEventCount = numberFromAPI(data.TotalEventCount, dataMap["totalEventCount"])
+    data.ErrorBudgetTotalEvents = numberFromAPI(data.ErrorBudgetTotalEvents, dataMap["errorBudgetTotalEvents"])
+    data.ErrorBudgetRemainingEvents = numberFromAPI(data.ErrorBudgetRemainingEvents, dataMap["errorBudgetRemainingEvents"])
     data.CurrentBurnRate = numberFromAPI(data.CurrentBurnRate, dataMap["currentBurnRate"])
     if obj, ok := dataMap["sloStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2373,6 +2627,17 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
     } else {
         data.LastAccumulatedBucketEndAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["firstAccumulatedBucketStartAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.FirstAccumulatedBucketStartAt = NewRFC3339Value(val)
+        } else {
+            data.FirstAccumulatedBucketStartAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["firstAccumulatedBucketStartAt"].(string); ok && val != "" {
+        data.FirstAccumulatedBucketStartAt = NewRFC3339Value(val)
+    } else {
+        data.FirstAccumulatedBucketStartAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2489,6 +2754,15 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
     if !data.Monitors.IsUnknown() && !state.Monitors.IsUnknown() && !data.Monitors.Equal(state.Monitors) {
         requestDataMap["monitors"] = r.convertTerraformSetToInterface(data.Monitors)
     }
+    if !data.Services.IsUnknown() && !state.Services.IsUnknown() && !data.Services.Equal(state.Services) {
+        requestDataMap["services"] = r.convertTerraformSetToInterface(data.Services)
+    }
+    if !data.LatencyThresholdInMilliseconds.IsUnknown() && !state.LatencyThresholdInMilliseconds.IsUnknown() && !data.LatencyThresholdInMilliseconds.Equal(state.LatencyThresholdInMilliseconds) {
+        requestDataMap["latencyThresholdInMilliseconds"] = r.bigFloatToFloat64(data.LatencyThresholdInMilliseconds.ValueBigFloat())
+    }
+    if !data.RequestFilter.IsUnknown() && !state.RequestFilter.IsUnknown() && !data.RequestFilter.Equal(state.RequestFilter) {
+        requestDataMap["requestFilter"] = data.RequestFilter.ValueString()
+    }
     if !data.MonitorLabels.IsUnknown() && !state.MonitorLabels.IsUnknown() && !data.MonitorLabels.Equal(state.MonitorLabels) {
         requestDataMap["monitorLabels"] = r.convertTerraformSetToInterface(data.MonitorLabels)
     }
@@ -2547,6 +2821,9 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         "sliType": true,
         "multiMonitorMode": true,
         "monitors": true,
+        "services": true,
+        "latencyThresholdInMilliseconds": true,
+        "requestFilter": true,
         "monitorLabels": true,
         "metricQueryConfig": true,
         "targetPercentage": true,
@@ -2565,6 +2842,10 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         "errorBudgetRemainingPercentage": true,
         "errorBudgetRemainingSeconds": true,
         "errorBudgetTotalSeconds": true,
+        "goodEventCount": true,
+        "totalEventCount": true,
+        "errorBudgetTotalEvents": true,
+        "errorBudgetRemainingEvents": true,
         "currentBurnRate": true,
         "sloStatus": true,
         "statusChangeNotificationSentAt": true,
@@ -2576,6 +2857,7 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         "lastEvaluatedAt": true,
         "nextEvaluationAt": true,
         "lastAccumulatedBucketEndAt": true,
+        "firstAccumulatedBucketStartAt": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -2861,6 +3143,83 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         // For sets, always use empty set instead of null to match default values
         data.Monitors = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["services"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.Services = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.Services = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    data.LatencyThresholdInMilliseconds = numberFromAPI(data.LatencyThresholdInMilliseconds, dataMap["latencyThresholdInMilliseconds"])
+    if obj, ok := dataMap["requestFilter"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RequestFilter = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RequestFilter = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RequestFilter = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RequestFilter = types.StringValue(string(jsonBytes))
+            } else {
+                data.RequestFilter = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RequestFilter = types.StringValue(string(jsonBytes))
+            } else {
+                data.RequestFilter = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RequestFilter = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequestFilter = types.StringNull()
+        }
+    } else if arr, ok := dataMap["requestFilter"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RequestFilter = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequestFilter = types.StringNull()
+        }
+    } else if val, ok := dataMap["requestFilter"].(string); ok {
+        data.RequestFilter = types.StringValue(val)
+    } else {
+        data.RequestFilter = types.StringNull()
+    }
     if val, ok := dataMap["monitorLabels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -3217,6 +3576,10 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
     data.ErrorBudgetRemainingPercentage = numberFromAPI(data.ErrorBudgetRemainingPercentage, dataMap["errorBudgetRemainingPercentage"])
     data.ErrorBudgetRemainingSeconds = numberFromAPI(data.ErrorBudgetRemainingSeconds, dataMap["errorBudgetRemainingSeconds"])
     data.ErrorBudgetTotalSeconds = numberFromAPI(data.ErrorBudgetTotalSeconds, dataMap["errorBudgetTotalSeconds"])
+    data.GoodEventCount = numberFromAPI(data.GoodEventCount, dataMap["goodEventCount"])
+    data.TotalEventCount = numberFromAPI(data.TotalEventCount, dataMap["totalEventCount"])
+    data.ErrorBudgetTotalEvents = numberFromAPI(data.ErrorBudgetTotalEvents, dataMap["errorBudgetTotalEvents"])
+    data.ErrorBudgetRemainingEvents = numberFromAPI(data.ErrorBudgetRemainingEvents, dataMap["errorBudgetRemainingEvents"])
     data.CurrentBurnRate = numberFromAPI(data.CurrentBurnRate, dataMap["currentBurnRate"])
     if obj, ok := dataMap["sloStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -3419,6 +3782,17 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
     } else {
         data.LastAccumulatedBucketEndAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["firstAccumulatedBucketStartAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.FirstAccumulatedBucketStartAt = NewRFC3339Value(val)
+        } else {
+            data.FirstAccumulatedBucketStartAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["firstAccumulatedBucketStartAt"].(string); ok && val != "" {
+        data.FirstAccumulatedBucketStartAt = NewRFC3339Value(val)
+    } else {
+        data.FirstAccumulatedBucketStartAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3546,6 +3920,15 @@ func (r *ServiceLevelObjectiveResource) keepPlannedValues(data *ServiceLevelObje
     }
     if config.Monitors.IsNull() && !plan.Monitors.IsUnknown() {
         data.Monitors = plan.Monitors
+    }
+    if config.Services.IsNull() && !plan.Services.IsUnknown() {
+        data.Services = plan.Services
+    }
+    if config.LatencyThresholdInMilliseconds.IsNull() && !plan.LatencyThresholdInMilliseconds.IsUnknown() {
+        data.LatencyThresholdInMilliseconds = plan.LatencyThresholdInMilliseconds
+    }
+    if config.RequestFilter.IsNull() && !plan.RequestFilter.IsUnknown() {
+        data.RequestFilter = plan.RequestFilter
     }
     if config.MonitorLabels.IsNull() && !plan.MonitorLabels.IsUnknown() {
         data.MonitorLabels = plan.MonitorLabels

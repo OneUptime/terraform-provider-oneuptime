@@ -28,7 +28,7 @@ data "oneuptime_ai_connection" "by_id" {
 
 ### Optional
 
-- `conversation_readers` (String) For a company AI tool: 'admins' lets only project owners and admins read its conversations; 'everyone' lets everyone who reads the project's AI conversations read them.
+- `conversation_readers` (String) For a company AI tool: 'admins' lets only Project Owners and Project Admins read its conversations; 'everyone' lets everyone who reads the project's AI conversations read them.
 - `created_by_user_id` (String) ID of the user who created this connection. The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_enabled` (Boolean) Whether this connection is read on its schedule.

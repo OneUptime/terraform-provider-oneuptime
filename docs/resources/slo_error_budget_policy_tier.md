@@ -52,9 +52,9 @@ resource "oneuptime_slo_error_budget_policy_tier" "example" {
 - `incident_remediation_notes` (String) Remediation notes (in Markdown) attached to the incident declared when the SLO enters this tier. Supports template variables.
 - `incident_severity_id` (String) ID of the Incident Severity of the incident declared when the SLO enters this tier. The ID of a `oneuptime_incident_severity`.
 - `incident_title_template` (String) Title of the incident declared when the SLO enters this tier. Supports template variables such as {{sloName}} and {{policyTier}}. Leave empty to use the default title.
-- `is_alert_private` (Boolean) Make the alert raised by this tier private, so only its owners, project admins and project owners can see it. Disabled by default. Defaults to `false`.
+- `is_alert_private` (Boolean) Make the alert raised by this tier private, so only its owners, Project Admins and Project Owners can see it. Disabled by default. Defaults to `false`.
 - `is_enabled` (Boolean) Whether this tier is part of the policy. A disabled tier never applies, and anything it raised is resolved. Defaults to `true`.
-- `is_incident_private` (Boolean) Make the incident declared by this tier private, so only its owners, project admins and project owners can see it. Disabled by default. Defaults to `false`.
+- `is_incident_private` (Boolean) Make the incident declared by this tier private, so only its owners, Project Admins and Project Owners can see it. Disabled by default. Defaults to `false`.
 - `on_call_duty_policies` (Set of String) On-call policies attached to alerts raised by this tier. Incidents have their own list. IDs of `oneuptime_on_call_policy` resources.
 - `should_create_alert` (Boolean) Raise an Alert when the SLO enters this tier. Disabled by default. Defaults to `false`.
 - `should_create_incident` (Boolean) Declare an Incident when the SLO enters this tier. Disabled by default. Defaults to `false`.

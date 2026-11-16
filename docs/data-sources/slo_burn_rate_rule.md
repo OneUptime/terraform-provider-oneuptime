@@ -42,9 +42,9 @@ data "oneuptime_slo_burn_rate_rule" "by_id" {
 - `incident_remediation_notes` (String) Remediation notes (in Markdown) attached to the incident declared when this burn rate rule fires. Supports template variables.
 - `incident_severity_id` (String) ID of the Incident Severity of the incident declared when this burn rate rule fires. The ID of a `oneuptime_incident_severity`.
 - `incident_title_template` (String) Title of the incident declared when this burn rate rule fires. Supports template variables such as {{sloName}}. Leave empty to use the default title.
-- `is_alert_private` (Boolean) Make the alert raised by this burn rate rule private, so only its owners, project admins and project owners can see it. Disabled by default.
+- `is_alert_private` (Boolean) Make the alert raised by this burn rate rule private, so only its owners, Project Admins and Project Owners can see it. Disabled by default.
 - `is_enabled` (Boolean) Whether this burn rate rule is enabled.
-- `is_incident_private` (Boolean) Make the incident declared by this burn rate rule private, so only its owners, project admins and project owners can see it. Disabled by default.
+- `is_incident_private` (Boolean) Make the incident declared by this burn rate rule private, so only its owners, Project Admins and Project Owners can see it. Disabled by default.
 - `long_window_in_minutes` (Number) Length of the long lookback window in minutes (e.g. 60). The alert fires when both windows exceed the threshold and resolves when the long window drops below it.
 - `minimum_sample_count` (Number) For event-based SLIs only: skip this rule when the long window has fewer than this many total events. Prevents noisy alerts on low traffic.
 - `name` (String) Name of this burn rate rule.

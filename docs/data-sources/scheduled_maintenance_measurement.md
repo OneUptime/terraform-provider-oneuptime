@@ -29,6 +29,7 @@ data "oneuptime_scheduled_maintenance_measurement" "by_id" {
 ### Optional
 
 - `aggregation_type` (String) How this measurement's chart sums up many maintenance events by default - Avg (the default), P50, P90, P95, P99, Max or Min. View Chart in the dashboard opens the chart this way. Sum is deliberately absent: adding durations up across maintenance events produces a number with no meaning.
+- `backfill_cursor_id` (String) The ID of the last maintenance event the backfill worked out, which orders the events created at the same moment.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Description of what this measurement means to your team.
 - `end_anchor_type` (String) Where the measurement ends - the moment the event was created, either end of the planned window, the start of its timeline, a specific state, or a state role.

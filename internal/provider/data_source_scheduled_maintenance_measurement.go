@@ -50,6 +50,7 @@ type ScheduledMaintenanceMeasurementDataSourceModel struct {
     IsSystemDefined types.Bool `tfsdk:"is_system_defined"`
     BackfillRequestedAt types.String `tfsdk:"backfill_requested_at"`
     BackfillCursorCreatedAt types.String `tfsdk:"backfill_cursor_created_at"`
+    BackfillCursorId types.String `tfsdk:"backfill_cursor_id"`
     BackfillCompletedAt types.String `tfsdk:"backfill_completed_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -60,7 +61,7 @@ func (d *ScheduledMaintenanceMeasurementDataSource) Metadata(ctx context.Context
 
 func (d *ScheduledMaintenanceMeasurementDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A named duration between two points in a maintenance event's life, computed automatically for every event Look up an existing scheduled maintenance measurement by `id`, or by any of its other arguments (`name`, `aggregation_type`, `created_by_user_id`, ...): each one set must match, and exactly one scheduled maintenance measurement may match them all.",
+        MarkdownDescription: "A named duration between two points in a maintenance event's life, computed automatically for every event Look up an existing scheduled maintenance measurement by `id`, or by any of its other arguments (`name`, `aggregation_type`, `backfill_cursor_id`, ...): each one set must match, and exactly one scheduled maintenance measurement may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -178,6 +179,11 @@ func (d *ScheduledMaintenanceMeasurementDataSource) Schema(ctx context.Context, 
             },
             "backfill_cursor_created_at": schema.StringAttribute{
                 MarkdownDescription: "How far the backfill has walked this project, so a restart resumes instead of starting over.",
+                Computed: true,
+            },
+            "backfill_cursor_id": schema.StringAttribute{
+                MarkdownDescription: "The ID of the last maintenance event the backfill worked out, which orders the events created at the same moment.",
+                Optional: true,
                 Computed: true,
             },
             "backfill_completed_at": schema.StringAttribute{
@@ -301,6 +307,10 @@ func (d *ScheduledMaintenanceMeasurementDataSource) Read(ctx context.Context, re
         filters["isSystemDefined"] = data.IsSystemDefined.ValueBool()
         filterNames = append(filterNames, "is_system_defined = "+fmt.Sprintf("%t", data.IsSystemDefined.ValueBool()))
     }
+    if !data.BackfillCursorId.IsNull() && !data.BackfillCursorId.IsUnknown() {
+        filters["backfillCursorId"] = data.BackfillCursorId.ValueString()
+        filterNames = append(filterNames, "backfill_cursor_id = "+fmt.Sprintf("%q", data.BackfillCursorId.ValueString()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -345,6 +355,7 @@ func (d *ScheduledMaintenanceMeasurementDataSource) Read(ctx context.Context, re
         "isSystemDefined": true,
         "backfillRequestedAt": true,
         "backfillCursorCreatedAt": true,
+        "backfillCursorId": true,
         "backfillCompletedAt": true,
         "createdByUserId": true,
         "_id": true,
@@ -903,6 +914,30 @@ func (d *ScheduledMaintenanceMeasurementDataSource) Read(ctx context.Context, re
         data.BackfillCursorCreatedAt = types.StringValue(val)
     } else {
         data.BackfillCursorCreatedAt = types.StringNull()
+    }
+    if obj, ok := item["backfillCursorId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.BackfillCursorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.BackfillCursorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.BackfillCursorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.BackfillCursorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.BackfillCursorId = types.StringNull()
+        }
+    } else if arr, ok := item["backfillCursorId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.BackfillCursorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.BackfillCursorId = types.StringNull()
+        }
+    } else if val, ok := item["backfillCursorId"].(string); ok {
+        data.BackfillCursorId = types.StringValue(val)
+    } else {
+        data.BackfillCursorId = types.StringNull()
     }
     if obj, ok := item["backfillCompletedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

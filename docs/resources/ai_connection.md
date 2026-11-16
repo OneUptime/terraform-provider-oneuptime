@@ -30,7 +30,7 @@ resource "oneuptime_ai_connection" "example" {
 ### Optional
 
 - `config` (String) The provider's settings that are not secret, such as a tenant, a subscription or a Region. Keys are defined by the provider. A JSON value: write it with `jsonencode()`.
-- `conversation_readers` (String) For a company AI tool: 'admins' lets only project owners and admins read its conversations; 'everyone' lets everyone who reads the project's AI conversations read them. Allowed values: `admins`, `everyone`. Defaults to `admins`.
+- `conversation_readers` (String) For a company AI tool: 'admins' lets only Project Owners and Project Admins read its conversations; 'everyone' lets everyone who reads the project's AI conversations read them. Allowed values: `admins`, `everyone`. Defaults to `admins`.
 - `is_enabled` (Boolean) Whether this connection is read on its schedule. Defaults to `true`.
 - `store_conversation_text` (Boolean) For a company AI tool: keep what people asked and what the AI answered. When off, only who used it, when and how much is kept. Defaults to `true`.
 

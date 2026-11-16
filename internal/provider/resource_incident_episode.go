@@ -317,7 +317,7 @@ func (r *IncidentEpisodeResource) schemaDefinition() schema.Schema {
                 },
             },
             "is_private": schema.BoolAttribute{
-                MarkdownDescription: "If true, this incident episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.",
+                MarkdownDescription: "If true, this incident episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), Project Admins, and Project Owners.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),

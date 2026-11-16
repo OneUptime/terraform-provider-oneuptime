@@ -137,7 +137,7 @@ func (r *AiConnectionResource) schemaDefinition() schema.Schema {
                 },
             },
             "conversation_readers": schema.StringAttribute{
-                MarkdownDescription: "For a company AI tool: 'admins' lets only project owners and admins read its conversations; 'everyone' lets everyone who reads the project's AI conversations read them.",
+                MarkdownDescription: "For a company AI tool: 'admins' lets only Project Owners and Project Admins read its conversations; 'everyone' lets everyone who reads the project's AI conversations read them.",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("admins"),

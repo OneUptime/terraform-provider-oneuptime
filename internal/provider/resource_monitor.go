@@ -93,6 +93,9 @@ type MonitorResourceModel struct {
     DisableActiveMonitoringBecauseOfManualIncident types.Bool `tfsdk:"disable_active_monitoring_because_of_manual_incident"`
     ServerMonitorSecretKey types.String `tfsdk:"server_monitor_secret_key"`
     IncomingRequestSecretKey types.String `tfsdk:"incoming_request_secret_key"`
+    IncomingRequestWithSecretAt RFC3339Value `tfsdk:"incoming_request_with_secret_at"`
+    IncomingRequestWithoutSecretAt RFC3339Value `tfsdk:"incoming_request_without_secret_at"`
+    IncomingRequestWithoutSecretReason types.String `tfsdk:"incoming_request_without_secret_reason"`
     IncomingEmailSecretKey types.String `tfsdk:"incoming_email_secret_key"`
     IncomingEmailMonitorLastEmailReceivedAt RFC3339Value `tfsdk:"incoming_email_monitor_last_email_received_at"`
     IncomingEmailMonitorRequest JSONSubsetValue `tfsdk:"incoming_email_monitor_request"`
@@ -542,6 +545,20 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 Computed: true,
                 Sensitive: true,
             },
+            "incoming_request_with_secret_at": schema.StringAttribute{
+                MarkdownDescription: "About when this Incoming Request monitor last received a request that sent one of its project's incoming request secrets, to the nearest five minutes. Empty until one does.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "incoming_request_without_secret_at": schema.StringAttribute{
+                MarkdownDescription: "About when this Incoming Request monitor last received a request without a valid incoming request secret, to the nearest five minutes - refused if its project requires one. Recorded only while the project has a secret.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "incoming_request_without_secret_reason": schema.StringAttribute{
+                MarkdownDescription: "Why the request in Last Request Without Secret At had no valid secret: it sent none, or one that is not one of the project's.",
+                Computed: true,
+            },
             "incoming_email_secret_key": schema.StringAttribute{
                 MarkdownDescription: "This field is for Incoming Email Monitor only. Secret Key used to generate unique email address.",
                 Computed: true,
@@ -839,6 +856,9 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         "disableActiveMonitoringBecauseOfManualIncident": true,
         "serverMonitorSecretKey": true,
         "incomingRequestSecretKey": true,
+        "incomingRequestWithSecretAt": true,
+        "incomingRequestWithoutSecretAt": true,
+        "incomingRequestWithoutSecretReason": true,
         "incomingEmailSecretKey": true,
         "incomingEmailMonitorLastEmailReceivedAt": true,
         "incomingEmailMonitorRequest": true,
@@ -2281,6 +2301,72 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.IncomingRequestSecretKey = types.StringNull()
     }
+    if obj, ok := dataMap["incomingRequestWithSecretAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.IncomingRequestWithSecretAt = NewRFC3339Value(val)
+        } else {
+            data.IncomingRequestWithSecretAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["incomingRequestWithSecretAt"].(string); ok && val != "" {
+        data.IncomingRequestWithSecretAt = NewRFC3339Value(val)
+    } else {
+        data.IncomingRequestWithSecretAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["incomingRequestWithoutSecretAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.IncomingRequestWithoutSecretAt = NewRFC3339Value(val)
+        } else {
+            data.IncomingRequestWithoutSecretAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["incomingRequestWithoutSecretAt"].(string); ok && val != "" {
+        data.IncomingRequestWithoutSecretAt = NewRFC3339Value(val)
+    } else {
+        data.IncomingRequestWithoutSecretAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["incomingRequestWithoutSecretReason"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncomingRequestWithoutSecretReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncomingRequestWithoutSecretReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncomingRequestWithoutSecretReason = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncomingRequestWithoutSecretReason = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingRequestWithoutSecretReason = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncomingRequestWithoutSecretReason = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingRequestWithoutSecretReason = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncomingRequestWithoutSecretReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingRequestWithoutSecretReason = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incomingRequestWithoutSecretReason"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncomingRequestWithoutSecretReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingRequestWithoutSecretReason = types.StringNull()
+        }
+    } else if val, ok := dataMap["incomingRequestWithoutSecretReason"].(string); ok {
+        data.IncomingRequestWithoutSecretReason = types.StringValue(val)
+    } else {
+        data.IncomingRequestWithoutSecretReason = types.StringNull()
+    }
     if obj, ok := dataMap["incomingEmailSecretKey"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2480,6 +2566,9 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         "disableActiveMonitoringBecauseOfManualIncident": true,
         "serverMonitorSecretKey": true,
         "incomingRequestSecretKey": true,
+        "incomingRequestWithSecretAt": true,
+        "incomingRequestWithoutSecretAt": true,
+        "incomingRequestWithoutSecretReason": true,
         "incomingEmailSecretKey": true,
         "incomingEmailMonitorLastEmailReceivedAt": true,
         "incomingEmailMonitorRequest": true,
@@ -3923,6 +4012,72 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.IncomingRequestSecretKey = types.StringNull()
     }
+    if obj, ok := dataMap["incomingRequestWithSecretAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.IncomingRequestWithSecretAt = NewRFC3339Value(val)
+        } else {
+            data.IncomingRequestWithSecretAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["incomingRequestWithSecretAt"].(string); ok && val != "" {
+        data.IncomingRequestWithSecretAt = NewRFC3339Value(val)
+    } else {
+        data.IncomingRequestWithSecretAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["incomingRequestWithoutSecretAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.IncomingRequestWithoutSecretAt = NewRFC3339Value(val)
+        } else {
+            data.IncomingRequestWithoutSecretAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["incomingRequestWithoutSecretAt"].(string); ok && val != "" {
+        data.IncomingRequestWithoutSecretAt = NewRFC3339Value(val)
+    } else {
+        data.IncomingRequestWithoutSecretAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["incomingRequestWithoutSecretReason"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncomingRequestWithoutSecretReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncomingRequestWithoutSecretReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncomingRequestWithoutSecretReason = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncomingRequestWithoutSecretReason = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingRequestWithoutSecretReason = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncomingRequestWithoutSecretReason = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingRequestWithoutSecretReason = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncomingRequestWithoutSecretReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingRequestWithoutSecretReason = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incomingRequestWithoutSecretReason"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncomingRequestWithoutSecretReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingRequestWithoutSecretReason = types.StringNull()
+        }
+    } else if val, ok := dataMap["incomingRequestWithoutSecretReason"].(string); ok {
+        data.IncomingRequestWithoutSecretReason = types.StringValue(val)
+    } else {
+        data.IncomingRequestWithoutSecretReason = types.StringNull()
+    }
     if obj, ok := dataMap["incomingEmailSecretKey"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4260,6 +4415,9 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         "disableActiveMonitoringBecauseOfManualIncident": true,
         "serverMonitorSecretKey": true,
         "incomingRequestSecretKey": true,
+        "incomingRequestWithSecretAt": true,
+        "incomingRequestWithoutSecretAt": true,
+        "incomingRequestWithoutSecretReason": true,
         "incomingEmailSecretKey": true,
         "incomingEmailMonitorLastEmailReceivedAt": true,
         "incomingEmailMonitorRequest": true,
@@ -5696,6 +5854,72 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         data.IncomingRequestSecretKey = types.StringValue(val)
     } else {
         data.IncomingRequestSecretKey = types.StringNull()
+    }
+    if obj, ok := dataMap["incomingRequestWithSecretAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.IncomingRequestWithSecretAt = NewRFC3339Value(val)
+        } else {
+            data.IncomingRequestWithSecretAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["incomingRequestWithSecretAt"].(string); ok && val != "" {
+        data.IncomingRequestWithSecretAt = NewRFC3339Value(val)
+    } else {
+        data.IncomingRequestWithSecretAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["incomingRequestWithoutSecretAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.IncomingRequestWithoutSecretAt = NewRFC3339Value(val)
+        } else {
+            data.IncomingRequestWithoutSecretAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["incomingRequestWithoutSecretAt"].(string); ok && val != "" {
+        data.IncomingRequestWithoutSecretAt = NewRFC3339Value(val)
+    } else {
+        data.IncomingRequestWithoutSecretAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["incomingRequestWithoutSecretReason"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncomingRequestWithoutSecretReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncomingRequestWithoutSecretReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncomingRequestWithoutSecretReason = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncomingRequestWithoutSecretReason = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingRequestWithoutSecretReason = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncomingRequestWithoutSecretReason = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingRequestWithoutSecretReason = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncomingRequestWithoutSecretReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingRequestWithoutSecretReason = types.StringNull()
+        }
+    } else if arr, ok := dataMap["incomingRequestWithoutSecretReason"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncomingRequestWithoutSecretReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingRequestWithoutSecretReason = types.StringNull()
+        }
+    } else if val, ok := dataMap["incomingRequestWithoutSecretReason"].(string); ok {
+        data.IncomingRequestWithoutSecretReason = types.StringValue(val)
+    } else {
+        data.IncomingRequestWithoutSecretReason = types.StringNull()
     }
     if obj, ok := dataMap["incomingEmailSecretKey"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

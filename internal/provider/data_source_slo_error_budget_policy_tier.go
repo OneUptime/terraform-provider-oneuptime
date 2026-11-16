@@ -162,7 +162,7 @@ func (d *SloErrorBudgetPolicyTierDataSource) Schema(ctx context.Context, req dat
                 Computed: true,
             },
             "is_alert_private": schema.BoolAttribute{
-                MarkdownDescription: "Make the alert raised by this tier private, so only its owners, project admins and project owners can see it. Disabled by default.",
+                MarkdownDescription: "Make the alert raised by this tier private, so only its owners, Project Admins and Project Owners can see it. Disabled by default.",
                 Optional: true,
                 Computed: true,
             },
@@ -213,7 +213,7 @@ func (d *SloErrorBudgetPolicyTierDataSource) Schema(ctx context.Context, req dat
                 Computed: true,
             },
             "is_incident_private": schema.BoolAttribute{
-                MarkdownDescription: "Make the incident declared by this tier private, so only its owners, project admins and project owners can see it. Disabled by default.",
+                MarkdownDescription: "Make the incident declared by this tier private, so only its owners, Project Admins and Project Owners can see it. Disabled by default.",
                 Optional: true,
                 Computed: true,
             },

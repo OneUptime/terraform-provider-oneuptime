@@ -347,7 +347,7 @@ func (d *AlertDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Validators: recordIDValidators("oneuptime_alert_episode"),
             },
             "is_private": schema.BoolAttribute{
-                MarkdownDescription: "If true, this alert is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.",
+                MarkdownDescription: "If true, this alert is only visible to its owners (users in 'owner users' and members of 'owner teams'), Project Admins, and Project Owners.",
                 Optional: true,
                 Computed: true,
             },

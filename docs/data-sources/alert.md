@@ -41,7 +41,7 @@ data "oneuptime_alert" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_created_automatically` (Boolean) Is this alert created by OneUptime Probe or Workers automatically (and not created manually by a user)?
 - `is_owner_notified_of_alert_creation` (Boolean) Are owners notified of when this alert is created?
-- `is_private` (Boolean) If true, this alert is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.
+- `is_private` (Boolean) If true, this alert is only visible to its owners (users in 'owner users' and members of 'owner teams'), Project Admins, and Project Owners.
 - `monitor_id` (String) ID of the monitor this alert belongs to. The ID of a `oneuptime_monitor`.
 - `monitor_status_when_this_alert_was_created_id` (String) Monitor Status ID when this alert was created. The ID of a `oneuptime_monitor_status`.
 - `remediation_notes` (String) Notes on how to remediate this alert. This is in markdown.

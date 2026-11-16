@@ -2,12 +2,12 @@
 page_title: "oneuptime_alert_on_call_rule_owning_team Data Source - oneuptime"
 subcategory: "Alerts"
 description: |-
-  Teams that own an alert on-call rule: only their members, and project admins, can change or delete it.
+  Teams that own an alert on-call rule: only their members, and Project Admins, can change or delete it.
 ---
 
 # oneuptime_alert_on_call_rule_owning_team (Data Source)
 
-Teams that own an alert on-call rule: only their members, and project admins, can change or delete it.
+Teams that own an alert on-call rule: only their members, and Project Admins, can change or delete it.
 
 Look one up by `id`, or by any of its other arguments: every argument you set must match, and exactly one alert on call rule owning team may match them all - none, or more than one, is an error rather than an empty or arbitrary result.
 

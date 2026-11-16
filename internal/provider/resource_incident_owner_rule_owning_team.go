@@ -53,7 +53,7 @@ func (r *IncidentOwnerRuleOwningTeamResource) Schema(ctx context.Context, req re
 
 func (r *IncidentOwnerRuleOwningTeamResource) schemaDefinition() schema.Schema {
     return schema.Schema{
-        MarkdownDescription: "Teams that own an incident owner rule: only their members, and project admins, can change or delete it.",
+        MarkdownDescription: "Teams that own an incident owner rule: only their members, and Project Admins, can change or delete it.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

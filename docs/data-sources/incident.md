@@ -44,7 +44,7 @@ data "oneuptime_incident" "by_id" {
 - `incident_severity_id` (String) Incident Severity ID. The ID of a `oneuptime_incident_severity`.
 - `is_created_automatically` (Boolean) Is this incident created by OneUptime Probe or Workers automatically (and not created manually by a user)?
 - `is_owner_notified_of_resource_creation` (Boolean) Are owners notified of when this resource is created?
-- `is_private` (Boolean) If true, this incident is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Private incidents are hidden from status pages.
+- `is_private` (Boolean) If true, this incident is only visible to its owners (users in 'owner users' and members of 'owner teams'), Project Admins, and Project Owners. Private incidents are hidden from status pages.
 - `is_scoped_to_status_pages` (Boolean) Whether this incident is limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored.
 - `is_visible_on_status_page` (Boolean) Should this incident be visible on the status page?
 - `notify_subscribers_on_postmortem_published` (Boolean) Should subscribers be notified when the postmortem is published?

@@ -53,9 +53,9 @@ resource "oneuptime_slo_burn_rate_rule" "example" {
 - `incident_remediation_notes` (String) Remediation notes (in Markdown) attached to the incident declared when this burn rate rule fires. Supports template variables.
 - `incident_severity_id` (String) ID of the Incident Severity of the incident declared when this burn rate rule fires. The ID of a `oneuptime_incident_severity`.
 - `incident_title_template` (String) Title of the incident declared when this burn rate rule fires. Supports template variables such as {{sloName}}. Leave empty to use the default title.
-- `is_alert_private` (Boolean) Make the alert raised by this burn rate rule private, so only its owners, project admins and project owners can see it. Disabled by default. Defaults to `false`.
+- `is_alert_private` (Boolean) Make the alert raised by this burn rate rule private, so only its owners, Project Admins and Project Owners can see it. Disabled by default. Defaults to `false`.
 - `is_enabled` (Boolean) Whether this burn rate rule is enabled. Defaults to `true`.
-- `is_incident_private` (Boolean) Make the incident declared by this burn rate rule private, so only its owners, project admins and project owners can see it. Disabled by default. Defaults to `false`.
+- `is_incident_private` (Boolean) Make the incident declared by this burn rate rule private, so only its owners, Project Admins and Project Owners can see it. Disabled by default. Defaults to `false`.
 - `minimum_sample_count` (Number) For event-based SLIs only: skip this rule when the long window has fewer than this many total events. Prevents noisy alerts on low traffic.
 - `on_call_duty_policies` (Set of String) On-call policies attached to alerts created by this burn rate rule. Incidents have their own list. IDs of `oneuptime_on_call_policy` resources.
 - `refire_suppression_minutes` (Number) Minimum number of minutes after an alert or incident resolves before this rule can declare that same record again. Each output is suppressed independently, from its own resolve. Defaults to the long window length when not set.

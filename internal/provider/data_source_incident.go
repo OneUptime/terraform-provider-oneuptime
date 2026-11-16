@@ -456,7 +456,7 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
             },
             "is_private": schema.BoolAttribute{
-                MarkdownDescription: "If true, this incident is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Private incidents are hidden from status pages.",
+                MarkdownDescription: "If true, this incident is only visible to its owners (users in 'owner users' and members of 'owner teams'), Project Admins, and Project Owners. Private incidents are hidden from status pages.",
                 Optional: true,
                 Computed: true,
             },

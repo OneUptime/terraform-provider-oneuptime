@@ -41,7 +41,7 @@ func (d *IncidentOwnerRuleOwningTeamDataSource) Metadata(ctx context.Context, re
 
 func (d *IncidentOwnerRuleOwningTeamDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Teams that own an incident owner rule: only their members, and project admins, can change or delete it. Look up an existing incident owner rule owning team by `id`, or by any of its other arguments (`created_by_user_id`, `incident_owner_rule_id`, `team_id`): each one set must match, and exactly one incident owner rule owning team may match them all.",
+        MarkdownDescription: "Teams that own an incident owner rule: only their members, and Project Admins, can change or delete it. Look up an existing incident owner rule owning team by `id`, or by any of its other arguments (`created_by_user_id`, `incident_owner_rule_id`, `team_id`): each one set must match, and exactly one incident owner rule owning team may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

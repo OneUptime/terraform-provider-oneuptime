@@ -233,7 +233,7 @@ func (r *SloBurnRateRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "is_alert_private": schema.BoolAttribute{
-                MarkdownDescription: "Make the alert raised by this burn rate rule private, so only its owners, project admins and project owners can see it. Disabled by default.",
+                MarkdownDescription: "Make the alert raised by this burn rate rule private, so only its owners, Project Admins and Project Owners can see it. Disabled by default.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -321,7 +321,7 @@ func (r *SloBurnRateRuleResource) schemaDefinition() schema.Schema {
                 },
             },
             "is_incident_private": schema.BoolAttribute{
-                MarkdownDescription: "Make the incident declared by this burn rate rule private, so only its owners, project admins and project owners can see it. Disabled by default.",
+                MarkdownDescription: "Make the incident declared by this burn rate rule private, so only its owners, Project Admins and Project Owners can see it. Disabled by default.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),

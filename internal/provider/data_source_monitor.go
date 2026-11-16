@@ -76,6 +76,9 @@ type MonitorDataSourceModel struct {
     ServerMonitorSecretKey types.String `tfsdk:"server_monitor_secret_key"`
     IncomingRequestSecretKey types.String `tfsdk:"incoming_request_secret_key"`
     IncomingMonitorRequest types.String `tfsdk:"incoming_monitor_request"`
+    IncomingRequestWithSecretAt types.String `tfsdk:"incoming_request_with_secret_at"`
+    IncomingRequestWithoutSecretAt types.String `tfsdk:"incoming_request_without_secret_at"`
+    IncomingRequestWithoutSecretReason types.String `tfsdk:"incoming_request_without_secret_reason"`
     IncomingEmailSecretKey types.String `tfsdk:"incoming_email_secret_key"`
     IncomingEmailCustomLocalPart types.String `tfsdk:"incoming_email_custom_local_part"`
     IncomingEmailMonitorLastEmailReceivedAt types.String `tfsdk:"incoming_email_monitor_last_email_received_at"`
@@ -331,6 +334,19 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "The latest request this monitor received, as its logs keep it: secrets masked, and no headers or body when it keeps no request content. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
+            "incoming_request_with_secret_at": schema.StringAttribute{
+                MarkdownDescription: "About when this Incoming Request monitor last received a request that sent one of its project's incoming request secrets, to the nearest five minutes. Empty until one does.",
+                Computed: true,
+            },
+            "incoming_request_without_secret_at": schema.StringAttribute{
+                MarkdownDescription: "About when this Incoming Request monitor last received a request without a valid incoming request secret, to the nearest five minutes - refused if its project requires one. Recorded only while the project has a secret.",
+                Computed: true,
+            },
+            "incoming_request_without_secret_reason": schema.StringAttribute{
+                MarkdownDescription: "Why the request in Last Request Without Secret At had no valid secret: it sent none, or one that is not one of the project's.",
+                Optional: true,
+                Computed: true,
+            },
             "incoming_email_secret_key": schema.StringAttribute{
                 MarkdownDescription: "This field is for Incoming Email Monitor only. Secret Key used to generate unique email address.",
                 Computed: true,
@@ -479,6 +495,10 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["disableActiveMonitoringBecauseOfManualIncident"] = data.DisableActiveMonitoringBecauseOfManualIncident.ValueBool()
         filterNames = append(filterNames, "disable_active_monitoring_because_of_manual_incident = "+fmt.Sprintf("%t", data.DisableActiveMonitoringBecauseOfManualIncident.ValueBool()))
     }
+    if !data.IncomingRequestWithoutSecretReason.IsNull() && !data.IncomingRequestWithoutSecretReason.IsUnknown() {
+        filters["incomingRequestWithoutSecretReason"] = data.IncomingRequestWithoutSecretReason.ValueString()
+        filterNames = append(filterNames, "incoming_request_without_secret_reason = "+fmt.Sprintf("%q", data.IncomingRequestWithoutSecretReason.ValueString()))
+    }
     if !data.IncomingEmailCustomLocalPart.IsNull() && !data.IncomingEmailCustomLocalPart.IsUnknown() {
         filters["incomingEmailCustomLocalPart"] = data.IncomingEmailCustomLocalPart.ValueString()
         filterNames = append(filterNames, "incoming_email_custom_local_part = "+fmt.Sprintf("%q", data.IncomingEmailCustomLocalPart.ValueString()))
@@ -559,6 +579,9 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "serverMonitorSecretKey": true,
         "incomingRequestSecretKey": true,
         "incomingMonitorRequest": true,
+        "incomingRequestWithSecretAt": true,
+        "incomingRequestWithoutSecretAt": true,
+        "incomingRequestWithoutSecretReason": true,
         "incomingEmailSecretKey": true,
         "incomingEmailCustomLocalPart": true,
         "incomingEmailMonitorLastEmailReceivedAt": true,
@@ -1666,6 +1689,78 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.IncomingMonitorRequest = types.StringValue(val)
     } else {
         data.IncomingMonitorRequest = types.StringNull()
+    }
+    if obj, ok := item["incomingRequestWithSecretAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncomingRequestWithSecretAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.IncomingRequestWithSecretAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.IncomingRequestWithSecretAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncomingRequestWithSecretAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingRequestWithSecretAt = types.StringNull()
+        }
+    } else if arr, ok := item["incomingRequestWithSecretAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.IncomingRequestWithSecretAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingRequestWithSecretAt = types.StringNull()
+        }
+    } else if val, ok := item["incomingRequestWithSecretAt"].(string); ok {
+        data.IncomingRequestWithSecretAt = types.StringValue(val)
+    } else {
+        data.IncomingRequestWithSecretAt = types.StringNull()
+    }
+    if obj, ok := item["incomingRequestWithoutSecretAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncomingRequestWithoutSecretAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.IncomingRequestWithoutSecretAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.IncomingRequestWithoutSecretAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncomingRequestWithoutSecretAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingRequestWithoutSecretAt = types.StringNull()
+        }
+    } else if arr, ok := item["incomingRequestWithoutSecretAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.IncomingRequestWithoutSecretAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingRequestWithoutSecretAt = types.StringNull()
+        }
+    } else if val, ok := item["incomingRequestWithoutSecretAt"].(string); ok {
+        data.IncomingRequestWithoutSecretAt = types.StringValue(val)
+    } else {
+        data.IncomingRequestWithoutSecretAt = types.StringNull()
+    }
+    if obj, ok := item["incomingRequestWithoutSecretReason"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncomingRequestWithoutSecretReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.IncomingRequestWithoutSecretReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.IncomingRequestWithoutSecretReason = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncomingRequestWithoutSecretReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingRequestWithoutSecretReason = types.StringNull()
+        }
+    } else if arr, ok := item["incomingRequestWithoutSecretReason"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.IncomingRequestWithoutSecretReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingRequestWithoutSecretReason = types.StringNull()
+        }
+    } else if val, ok := item["incomingRequestWithoutSecretReason"].(string); ok {
+        data.IncomingRequestWithoutSecretReason = types.StringValue(val)
+    } else {
+        data.IncomingRequestWithoutSecretReason = types.StringNull()
     }
     if obj, ok := item["incomingEmailSecretKey"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
