@@ -247,7 +247,7 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "snmp_community_string": schema.StringAttribute{
-                MarkdownDescription: "Community string used for SNMP v1/v2c polling.",
+                MarkdownDescription: "Community string used for SNMP v1/v2c polling. Kept encrypted at rest.",
                 Computed: true,
                 Sensitive: true,
             },
@@ -257,7 +257,7 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "snmp_v3_auth": schema.StringAttribute{
-                MarkdownDescription: "Deprecated: SNMP v3 auth is now stored in the snmpV3* columns below. Retained for reading legacy devices. A JSON value: read it with `jsondecode()`.",
+                MarkdownDescription: "Deprecated: SNMP v3 auth is now stored in the snmpV3* columns below. Retained for reading legacy devices. Its authKey and privKey are kept encrypted at rest. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
                 Sensitive: true,
             },
@@ -277,7 +277,7 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "snmp_v3_auth_key": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 authentication passphrase.",
+                MarkdownDescription: "SNMP v3 authentication passphrase. Kept encrypted at rest.",
                 Computed: true,
                 Sensitive: true,
             },
@@ -287,7 +287,7 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "snmp_v3_priv_key": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase.",
+                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase. Kept encrypted at rest.",
                 Computed: true,
                 Sensitive: true,
             },

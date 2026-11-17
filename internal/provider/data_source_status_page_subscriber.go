@@ -93,7 +93,7 @@ func (d *StatusPageSubscriberDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "subscriber_webhook": schema.StringAttribute{
-                MarkdownDescription: "Webhook to ping when events happen on Status Page.",
+                MarkdownDescription: "Webhook to ping when events happen on Status Page. Kept encrypted at rest.",
                 Computed: true,
                 Sensitive: true,
             },

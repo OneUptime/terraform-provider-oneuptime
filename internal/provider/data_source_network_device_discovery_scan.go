@@ -103,7 +103,7 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "snmp_configs": schema.StringAttribute{
-                MarkdownDescription: "Ordered list of SNMP credential sets tried against every host in the subnet, first match wins. Each entry carries an id, an optional name, a version, a community string or the v3 credentials, and a port. When empty, the scan uses the single flattened SNMP configuration on this row. A JSON value: read it with `jsondecode()`.",
+                MarkdownDescription: "Ordered list of SNMP credential sets tried against every host in the subnet, first match wins. Each entry carries an id, an optional name, a version, a community string or the v3 credentials, and a port. When empty, the scan uses the single flattened SNMP configuration on this row. Each entry's community string and v3 keys are kept encrypted at rest. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
                 Sensitive: true,
             },
@@ -123,7 +123,7 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "snmp_community_string": schema.StringAttribute{
-                MarkdownDescription: "Community string tried against every host in the subnet (SNMP v1/v2c). Ignored on an ICMP scan.",
+                MarkdownDescription: "Community string tried against every host in the subnet (SNMP v1/v2c). Ignored on an ICMP scan. Kept encrypted at rest.",
                 Computed: true,
                 Sensitive: true,
             },
@@ -148,7 +148,7 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "snmp_v3_auth_key": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 authentication passphrase tried against every host. Ignored on an ICMP scan.",
+                MarkdownDescription: "SNMP v3 authentication passphrase tried against every host. Ignored on an ICMP scan. Kept encrypted at rest.",
                 Computed: true,
                 Sensitive: true,
             },
@@ -158,7 +158,7 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "snmp_v3_priv_key": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase tried against every host. Ignored on an ICMP scan.",
+                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase tried against every host. Ignored on an ICMP scan. Kept encrypted at rest.",
                 Computed: true,
                 Sensitive: true,
             },

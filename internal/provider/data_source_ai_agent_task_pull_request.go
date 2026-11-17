@@ -31,6 +31,8 @@ type AiAgentTaskPullRequestDataSourceModel struct {
     UpdatedAt types.String `tfsdk:"updated_at"`
     ProjectId types.String `tfsdk:"project_id"`
     AiRunId types.String `tfsdk:"ai_run_id"`
+    CarriedIncidentIds types.String `tfsdk:"carried_incident_ids"`
+    CarriedAlertIds types.String `tfsdk:"carried_alert_ids"`
     AiAgentId types.String `tfsdk:"ai_agent_id"`
     CodeRepositoryId types.String `tfsdk:"code_repository_id"`
     Title types.String `tfsdk:"title"`
@@ -88,6 +90,14 @@ func (d *AiAgentTaskPullRequestDataSource) Schema(ctx context.Context, req datas
             "ai_run_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the AIRun (runType CodeFix) this pull request was opened by.",
                 Optional: true,
+                Computed: true,
+            },
+            "carried_incident_ids": schema.StringAttribute{
+                MarkdownDescription: "IDs of the incidents this pull request carries: the subject of the AI chat it was opened from. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "carried_alert_ids": schema.StringAttribute{
+                MarkdownDescription: "IDs of the alerts this pull request carries: the subject of the AI chat it was opened from. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "ai_agent_id": schema.StringAttribute{
@@ -370,6 +380,8 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         "updatedAt": true,
         "projectId": true,
         "aiRunId": true,
+        "carriedIncidentIds": true,
+        "carriedAlertIds": true,
         "aiAgentId": true,
         "codeRepositoryId": true,
         "title": true,
@@ -576,6 +588,54 @@ func (d *AiAgentTaskPullRequestDataSource) Read(ctx context.Context, req datasou
         data.AiRunId = types.StringValue(val)
     } else {
         data.AiRunId = types.StringNull()
+    }
+    if obj, ok := item["carriedIncidentIds"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CarriedIncidentIds = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CarriedIncidentIds = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CarriedIncidentIds = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CarriedIncidentIds = types.StringValue(string(jsonBytes))
+        } else {
+            data.CarriedIncidentIds = types.StringNull()
+        }
+    } else if arr, ok := item["carriedIncidentIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CarriedIncidentIds = types.StringValue(string(jsonBytes))
+        } else {
+            data.CarriedIncidentIds = types.StringNull()
+        }
+    } else if val, ok := item["carriedIncidentIds"].(string); ok {
+        data.CarriedIncidentIds = types.StringValue(val)
+    } else {
+        data.CarriedIncidentIds = types.StringNull()
+    }
+    if obj, ok := item["carriedAlertIds"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CarriedAlertIds = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CarriedAlertIds = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CarriedAlertIds = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CarriedAlertIds = types.StringValue(string(jsonBytes))
+        } else {
+            data.CarriedAlertIds = types.StringNull()
+        }
+    } else if arr, ok := item["carriedAlertIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CarriedAlertIds = types.StringValue(string(jsonBytes))
+        } else {
+            data.CarriedAlertIds = types.StringNull()
+        }
+    } else if val, ok := item["carriedAlertIds"].(string); ok {
+        data.CarriedAlertIds = types.StringValue(val)
+    } else {
+        data.CarriedAlertIds = types.StringNull()
     }
     if obj, ok := item["aiAgentId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

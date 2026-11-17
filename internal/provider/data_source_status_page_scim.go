@@ -33,7 +33,6 @@ type StatusPageScimDataSourceModel struct {
     StatusPageId types.String `tfsdk:"status_page_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
-    BearerToken types.String `tfsdk:"bearer_token"`
     OauthClientSecretExpiresAt types.String `tfsdk:"oauth_client_secret_expires_at"`
     OauthPreviousClientSecretExpiresAt types.String `tfsdk:"oauth_previous_client_secret_expires_at"`
     AutoProvisionUsers types.Bool `tfsdk:"auto_provision_users"`
@@ -82,11 +81,6 @@ func (d *StatusPageScimDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "Friendly description to help you remember.",
                 Optional: true,
                 Computed: true,
-            },
-            "bearer_token": schema.StringAttribute{
-                MarkdownDescription: "Bearer token for SCIM authentication. Keep this secure.",
-                Computed: true,
-                Sensitive: true,
             },
             "oauth_client_secret_expires_at": schema.StringAttribute{
                 MarkdownDescription: "When the connection's OAuth 2.0 client secret stops working. No access token is issued with an expired secret.",
@@ -198,7 +192,6 @@ func (d *StatusPageScimDataSource) Read(ctx context.Context, req datasource.Read
         "statusPageId": true,
         "name": true,
         "description": true,
-        "bearerToken": true,
         "oauthClientSecretExpiresAt": true,
         "oauthPreviousClientSecretExpiresAt": true,
         "autoProvisionUsers": true,
@@ -432,30 +425,6 @@ func (d *StatusPageScimDataSource) Read(ctx context.Context, req datasource.Read
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
-    }
-    if obj, ok := item["bearerToken"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.BearerToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.BearerToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.BearerToken = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.BearerToken = types.StringValue(string(jsonBytes))
-        } else {
-            data.BearerToken = types.StringNull()
-        }
-    } else if arr, ok := item["bearerToken"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(arr); err == nil {
-            data.BearerToken = types.StringValue(string(jsonBytes))
-        } else {
-            data.BearerToken = types.StringNull()
-        }
-    } else if val, ok := item["bearerToken"].(string); ok {
-        data.BearerToken = types.StringValue(val)
-    } else {
-        data.BearerToken = types.StringNull()
     }
     if obj, ok := item["oauthClientSecretExpiresAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

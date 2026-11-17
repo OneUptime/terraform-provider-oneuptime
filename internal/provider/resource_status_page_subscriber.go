@@ -128,7 +128,7 @@ func (r *StatusPageSubscriberResource) schemaDefinition() schema.Schema {
                 },
             },
             "subscriber_webhook": schema.StringAttribute{
-                MarkdownDescription: "Webhook to ping when events happen on Status Page.",
+                MarkdownDescription: "Webhook to ping when events happen on Status Page. Kept encrypted at rest.",
                 Optional: true,
                 Computed: true,
                 Sensitive: true,
@@ -137,7 +137,7 @@ func (r *StatusPageSubscriberResource) schemaDefinition() schema.Schema {
                 },
             },
             "slack_incoming_webhook_url": schema.StringAttribute{
-                MarkdownDescription: "Slack incoming webhook URL to send notifications to Slack channel.",
+                MarkdownDescription: "Slack incoming webhook URL to send notifications to Slack channel. Write-only: kept encrypted and never returned by the API.",
                 Optional: true,
                 Sensitive: true,
                 PlanModifiers: []planmodifier.String{
@@ -153,7 +153,7 @@ func (r *StatusPageSubscriberResource) schemaDefinition() schema.Schema {
                 },
             },
             "microsoft_teams_incoming_webhook_url": schema.StringAttribute{
-                MarkdownDescription: "Microsoft Teams incoming webhook URL to send notifications to Teams channel.",
+                MarkdownDescription: "Microsoft Teams incoming webhook URL to send notifications to Teams channel. Write-only: kept encrypted and never returned by the API.",
                 Optional: true,
                 Sensitive: true,
                 PlanModifiers: []planmodifier.String{

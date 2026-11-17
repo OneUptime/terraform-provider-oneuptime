@@ -50,6 +50,6 @@ data "oneuptime_status_page_subscriber" "by_id" {
 - `status_page_resources` (Set of String) Relation to Status Page Resources where this subscriber is subscribed to. IDs of `oneuptime_status_page_resource` resources.
 - `subscriber_email` (String) Email address of the subscriber.
 - `subscriber_phone` (String) Phone number of subscriber.
-- `subscriber_webhook` (String, Sensitive) Webhook to ping when events happen on Status Page.
+- `subscriber_webhook` (String, Sensitive) Webhook to ping when events happen on Status Page. Kept encrypted at rest.
 - `unsubscribed_at` (String) When this subscriber unsubscribed. Set by OneUptime when Is Unsubscribed is turned on, and cleared when it is turned off; any value sent for it is ignored.
 - `updated_at` (String) Date and Time when the object was updated.

@@ -42,6 +42,8 @@ resource "oneuptime_ai_agent_task_pull_request" "example" {
 
 ### Read-Only
 
+- `carried_alert_ids` (String) IDs of the alerts this pull request carries: the subject of the AI chat it was opened from. A JSON value: read it with `jsondecode()`.
+- `carried_incident_ids` (String) IDs of the incidents this pull request carries: the subject of the AI chat it was opened from. A JSON value: read it with `jsondecode()`.
 - `ci_status` (String) Rolled-up conclusion of the repository's own CI check runs on this pull request (Pending, Green, Red, ExpectedFailureObserved for should-fail regression-test PRs, NoCiConfigured). Null until the sync job first polls check runs. Written by AIAgent:SyncPullRequestStates — never by users.
 - `ci_status_at` (String) When the CI status last changed.
 - `created_at` (String) Date and Time when the object was created.

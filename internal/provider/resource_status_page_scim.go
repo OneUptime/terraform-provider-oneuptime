@@ -99,7 +99,7 @@ func (r *StatusPageScimResource) schemaDefinition() schema.Schema {
                 },
             },
             "bearer_token": schema.StringAttribute{
-                MarkdownDescription: "Bearer token for SCIM authentication. Keep this secure.",
+                MarkdownDescription: "The bearer token the identity provider signs in to SCIM with. Write-only: OneUptime keeps only its hash, and answers it once, to the create that makes the connection. Leave it out and OneUptime makes one; a new value replaces it, and the one before stops working.",
                 Required: true,
                 Sensitive: true,
             },
@@ -299,7 +299,6 @@ func (r *StatusPageScimResource) Create(ctx context.Context, req resource.Create
         "statusPageId": true,
         "name": true,
         "description": true,
-        "bearerToken": true,
         "oauthClientSecretExpiresAt": true,
         "oauthPreviousClientSecretExpiresAt": true,
         "autoProvisionUsers": true,
@@ -482,50 +481,6 @@ func (r *StatusPageScimResource) Create(ctx context.Context, req resource.Create
     } else {
         data.Description = types.StringNull()
     }
-    if obj, ok := dataMap["bearerToken"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.BearerToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.BearerToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.BearerToken = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.BearerToken = types.StringValue(string(jsonBytes))
-            } else {
-                data.BearerToken = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.BearerToken = types.StringValue(string(jsonBytes))
-            } else {
-                data.BearerToken = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.BearerToken = types.StringValue(string(jsonBytes))
-        } else {
-            data.BearerToken = types.StringNull()
-        }
-    } else if arr, ok := dataMap["bearerToken"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.BearerToken = types.StringValue(string(jsonBytes))
-        } else {
-            data.BearerToken = types.StringNull()
-        }
-    } else if val, ok := dataMap["bearerToken"].(string); ok {
-        data.BearerToken = types.StringValue(val)
-    } else {
-        data.BearerToken = types.StringNull()
-    }
     if obj, ok := dataMap["oauthClientSecretExpiresAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.OauthClientSecretExpiresAt = NewRFC3339Value(val)
@@ -655,7 +610,6 @@ func (r *StatusPageScimResource) Read(ctx context.Context, req resource.ReadRequ
         "statusPageId": true,
         "name": true,
         "description": true,
-        "bearerToken": true,
         "oauthClientSecretExpiresAt": true,
         "oauthPreviousClientSecretExpiresAt": true,
         "autoProvisionUsers": true,
@@ -838,50 +792,6 @@ func (r *StatusPageScimResource) Read(ctx context.Context, req resource.ReadRequ
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
-    }
-    if obj, ok := dataMap["bearerToken"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.BearerToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.BearerToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.BearerToken = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.BearerToken = types.StringValue(string(jsonBytes))
-            } else {
-                data.BearerToken = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.BearerToken = types.StringValue(string(jsonBytes))
-            } else {
-                data.BearerToken = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.BearerToken = types.StringValue(string(jsonBytes))
-        } else {
-            data.BearerToken = types.StringNull()
-        }
-    } else if arr, ok := dataMap["bearerToken"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.BearerToken = types.StringValue(string(jsonBytes))
-        } else {
-            data.BearerToken = types.StringNull()
-        }
-    } else if val, ok := dataMap["bearerToken"].(string); ok {
-        data.BearerToken = types.StringValue(val)
-    } else {
-        data.BearerToken = types.StringNull()
     }
     if obj, ok := dataMap["oauthClientSecretExpiresAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1068,7 +978,6 @@ func (r *StatusPageScimResource) Update(ctx context.Context, req resource.Update
         "statusPageId": true,
         "name": true,
         "description": true,
-        "bearerToken": true,
         "oauthClientSecretExpiresAt": true,
         "oauthPreviousClientSecretExpiresAt": true,
         "autoProvisionUsers": true,
@@ -1245,50 +1154,6 @@ func (r *StatusPageScimResource) Update(ctx context.Context, req resource.Update
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
-    }
-    if obj, ok := dataMap["bearerToken"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.BearerToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.BearerToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.BearerToken = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.BearerToken = types.StringValue(string(jsonBytes))
-            } else {
-                data.BearerToken = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.BearerToken = types.StringValue(string(jsonBytes))
-            } else {
-                data.BearerToken = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.BearerToken = types.StringValue(string(jsonBytes))
-        } else {
-            data.BearerToken = types.StringNull()
-        }
-    } else if arr, ok := dataMap["bearerToken"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.BearerToken = types.StringValue(string(jsonBytes))
-        } else {
-            data.BearerToken = types.StringNull()
-        }
-    } else if val, ok := dataMap["bearerToken"].(string); ok {
-        data.BearerToken = types.StringValue(val)
-    } else {
-        data.BearerToken = types.StringNull()
     }
     if obj, ok := dataMap["oauthClientSecretExpiresAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {

@@ -15,7 +15,7 @@ Manage SCIM auto-provisioning for your status page
 resource "oneuptime_status_page_scim" "example" {
   status_page_id = oneuptime_status_page.example.id
   name           = "Example status page scim"
-  bearer_token   = "This is an example of longer text content that might be stored in this field."
+  bearer_token   = "hashed_string_value"
   description    = "Managed by Terraform"
 }
 ```
@@ -24,7 +24,7 @@ resource "oneuptime_status_page_scim" "example" {
 
 ### Required
 
-- `bearer_token` (String, Sensitive) Bearer token for SCIM authentication. Keep this secure.
+- `bearer_token` (String, Sensitive) The bearer token the identity provider signs in to SCIM with. Write-only: OneUptime keeps only its hash, and answers it once, to the create that makes the connection. Leave it out and OneUptime makes one; a new value replaces it, and the one before stops working.
 - `name` (String) Any friendly name for this SCIM configuration.
 - `status_page_id` (String) ID of your Status Page resource where this object belongs. The ID of a `oneuptime_status_page`.
 

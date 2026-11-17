@@ -33,12 +33,12 @@ resource "oneuptime_network_device_discovery_scan" "example" {
 - `is_snmp_enabled` (Boolean) The scan method: true for an SNMP scan (the default), which also asks each host that answers ping for its name and vendor over SNMP; false for an ICMP scan, which only pings. Defaults to `true`.
 - `name` (String) Optional name for this scan, so it can be told apart from other scans at a glance. Falls back to the scan target when empty.
 - `rescan_interval_in_minutes` (Number) How often a recurring scan re-runs, in minutes. Ignored unless Is Recurring is on.
-- `snmp_community_string` (String, Sensitive) Community string tried against every host in the subnet (SNMP v1/v2c). Ignored on an ICMP scan.
-- `snmp_configs` (String, Sensitive) Ordered list of SNMP credential sets tried against every host in the subnet, first match wins. Each entry carries an id, an optional name, a version, a community string or the v3 credentials, and a port. When empty, the scan uses the single flattened SNMP configuration on this row. A JSON value: write it with `jsonencode()`.
+- `snmp_community_string` (String, Sensitive) Community string tried against every host in the subnet (SNMP v1/v2c). Ignored on an ICMP scan. Kept encrypted at rest.
+- `snmp_configs` (String, Sensitive) Ordered list of SNMP credential sets tried against every host in the subnet, first match wins. Each entry carries an id, an optional name, a version, a community string or the v3 credentials, and a port. When empty, the scan uses the single flattened SNMP configuration on this row. Each entry's community string and v3 keys are kept encrypted at rest. A JSON value: write it with `jsonencode()`.
 - `snmp_port` (Number) UDP port tried against every host in the subnet. Ignored on an ICMP scan.
-- `snmp_v3_auth_key` (String, Sensitive) SNMP v3 authentication passphrase tried against every host. Ignored on an ICMP scan.
+- `snmp_v3_auth_key` (String, Sensitive) SNMP v3 authentication passphrase tried against every host. Ignored on an ICMP scan. Kept encrypted at rest.
 - `snmp_v3_auth_protocol` (String) SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512. Ignored on an ICMP scan.
-- `snmp_v3_priv_key` (String, Sensitive) SNMP v3 privacy (encryption) passphrase tried against every host. Ignored on an ICMP scan.
+- `snmp_v3_priv_key` (String, Sensitive) SNMP v3 privacy (encryption) passphrase tried against every host. Ignored on an ICMP scan. Kept encrypted at rest.
 - `snmp_v3_priv_protocol` (String) SNMP v3 privacy (encryption) protocol: DES, AES, or AES256. Ignored on an ICMP scan.
 - `snmp_v3_security_level` (String) SNMP v3 security level tried against every host: noAuthNoPriv, authNoPriv, or authPriv. Ignored on an ICMP scan.
 - `snmp_v3_username` (String) SNMP v3 security name (username) tried against every host. Ignored on an ICMP scan.

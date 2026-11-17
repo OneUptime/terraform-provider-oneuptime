@@ -64,6 +64,8 @@ type AiRunDataSourceModel struct {
     EgressManifest types.String `tfsdk:"egress_manifest"`
     CodeRepositoryId types.String `tfsdk:"code_repository_id"`
     CodeTaskId types.String `tfsdk:"code_task_id"`
+    CarriedIncidentIds types.String `tfsdk:"carried_incident_ids"`
+    CarriedAlertIds types.String `tfsdk:"carried_alert_ids"`
     NeedsUserInput types.Bool `tfsdk:"needs_user_input"`
     ErrorMessage types.String `tfsdk:"error_message"`
     AnalysisTldr types.String `tfsdk:"analysis_tldr"`
@@ -265,6 +267,14 @@ func (d *AiRunDataSource) Schema(ctx context.Context, req datasource.SchemaReque
             "code_task_id": schema.StringAttribute{
                 MarkdownDescription: "For a reply in a code task's conversation: the task it continues (the id of the task's first run).",
                 Optional: true,
+                Computed: true,
+            },
+            "carried_incident_ids": schema.StringAttribute{
+                MarkdownDescription: "IDs of the incidents this code task carries without being a fix of one: added as context to its request or a reply, or the incident of the postmortem action item it was asked from. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "carried_alert_ids": schema.StringAttribute{
+                MarkdownDescription: "IDs of the alerts this code task carries without being a fix of one: added as context to its request or a reply. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "needs_user_input": schema.BoolAttribute{
@@ -534,6 +544,8 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         "egressManifest": true,
         "codeRepositoryId": true,
         "codeTaskId": true,
+        "carriedIncidentIds": true,
+        "carriedAlertIds": true,
         "needsUserInput": true,
         "errorMessage": true,
         "analysisTldr": true,
@@ -1307,6 +1319,54 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.CodeTaskId = types.StringValue(val)
     } else {
         data.CodeTaskId = types.StringNull()
+    }
+    if obj, ok := item["carriedIncidentIds"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CarriedIncidentIds = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CarriedIncidentIds = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CarriedIncidentIds = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CarriedIncidentIds = types.StringValue(string(jsonBytes))
+        } else {
+            data.CarriedIncidentIds = types.StringNull()
+        }
+    } else if arr, ok := item["carriedIncidentIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CarriedIncidentIds = types.StringValue(string(jsonBytes))
+        } else {
+            data.CarriedIncidentIds = types.StringNull()
+        }
+    } else if val, ok := item["carriedIncidentIds"].(string); ok {
+        data.CarriedIncidentIds = types.StringValue(val)
+    } else {
+        data.CarriedIncidentIds = types.StringNull()
+    }
+    if obj, ok := item["carriedAlertIds"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CarriedAlertIds = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CarriedAlertIds = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CarriedAlertIds = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CarriedAlertIds = types.StringValue(string(jsonBytes))
+        } else {
+            data.CarriedAlertIds = types.StringNull()
+        }
+    } else if arr, ok := item["carriedAlertIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CarriedAlertIds = types.StringValue(string(jsonBytes))
+        } else {
+            data.CarriedAlertIds = types.StringNull()
+        }
+    } else if val, ok := item["carriedAlertIds"].(string); ok {
+        data.CarriedAlertIds = types.StringValue(val)
+    } else {
+        data.CarriedAlertIds = types.StringNull()
     }
     if val, ok := item["needsUserInput"].(bool); ok {
         data.NeedsUserInput = types.BoolValue(val)

@@ -67,6 +67,8 @@ data "oneuptime_ai_run" "by_id" {
 ### Read-Only
 
 - `auto_grade_at` (String) When the automatic grade was recorded.
+- `carried_alert_ids` (String) IDs of the alerts this code task carries without being a fix of one: added as context to its request or a reply. A JSON value: read it with `jsondecode()`.
+- `carried_incident_ids` (String) IDs of the incidents this code task carries without being a fix of one: added as context to its request or a reply, or the incident of the postmortem action item it was asked from. A JSON value: read it with `jsondecode()`.
 - `completed_at` (String) When the run completed.
 - `created_at` (String) Date and Time when the object was created.
 - `egress_manifest` (String) What data was sent to which LLM during this run: provider, model, and per-tool row/byte/redaction counts. A JSON value: read it with `jsondecode()`.

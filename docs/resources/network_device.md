@@ -66,16 +66,16 @@ resource "oneuptime_network_device" "example" {
 - `rule_assigned_name` (String) The name a naming rule gave this device. While the device is still called exactly this, applying the naming rules again may rename it when the rules change. Rename the device yourself and the naming rules leave it alone unless you choose to rename it.
 - `serial_number` (String) Chassis serial number from ENTITY-MIB (entPhysicalSerialNum). Managed by the probe.
 - `site_id` (String) ID of the Network Site this network device belongs to. The ID of a `oneuptime_network_site`.
-- `snmp_community_string` (String, Sensitive) Community string used for SNMP v1/v2c polling.
+- `snmp_community_string` (String, Sensitive) Community string used for SNMP v1/v2c polling. Kept encrypted at rest.
 - `snmp_credential_profile_id` (String) ID of the SNMP Credential Profile this device is walked with. The ID of a `oneuptime_snmp_credential_profile`.
 - `snmp_oids` (String) SNMP OIDs collected on each poll for this device ALONE, on top of whatever its OID Collection Template collects. Values are recorded as metrics and can be alerted on through monitor criteria. If several devices need the same OID, put it on a template instead. A JSON value: write it with `jsonencode()`.
 - `snmp_port` (Number) UDP port used for SNMP polling.
 - `snmp_table_snapshot` (String) The rows of every SNMP table collected on the last successful walk - tunnels, radios, neighbours and so on - with their values. Managed by the probe. A JSON value: write it with `jsonencode()`.
 - `snmp_tables` (String) SNMP tables walked on each poll for this device alone, on top of its OID Collection Template's tables. A table with the same key as a template table replaces it on this device. A JSON value: write it with `jsonencode()`.
-- `snmp_v3_auth` (String, Sensitive) Deprecated: SNMP v3 auth is now stored in the snmpV3* columns below. Retained for reading legacy devices. A JSON value: write it with `jsonencode()`.
-- `snmp_v3_auth_key` (String, Sensitive) SNMP v3 authentication passphrase.
+- `snmp_v3_auth` (String, Sensitive) Deprecated: SNMP v3 auth is now stored in the snmpV3* columns below. Retained for reading legacy devices. Its authKey and privKey are kept encrypted at rest. A JSON value: write it with `jsonencode()`.
+- `snmp_v3_auth_key` (String, Sensitive) SNMP v3 authentication passphrase. Kept encrypted at rest.
 - `snmp_v3_auth_protocol` (String) SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512.
-- `snmp_v3_priv_key` (String, Sensitive) SNMP v3 privacy (encryption) passphrase.
+- `snmp_v3_priv_key` (String, Sensitive) SNMP v3 privacy (encryption) passphrase. Kept encrypted at rest.
 - `snmp_v3_priv_protocol` (String) SNMP v3 privacy (encryption) protocol: DES, AES, or AES256.
 - `snmp_v3_security_level` (String) SNMP v3 security level: noAuthNoPriv, authNoPriv, or authPriv.
 - `snmp_v3_username` (String) Security name (username) used for SNMP v3 polling.

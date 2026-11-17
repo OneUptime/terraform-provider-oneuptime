@@ -45,7 +45,7 @@ data "oneuptime_webhook_log" "by_id" {
 - `status_page_id` (String) ID of Status Page associated with this request (if any). The ID of a `oneuptime_status_page`.
 - `team_id` (String) ID of Team associated with this request (if any). The ID of a `oneuptime_team`.
 - `user_id` (String) ID of User who initiated this request (if any). The ID of a `oneuptime_user` (see the data source).
-- `webhook_url` (String) URL the request was sent to.
+- `webhook_url` (String) Where the request was sent: the address's scheme, host and port. The rest of the address is left out, as it can hold the webhook's secret.
 
 ### Read-Only
 

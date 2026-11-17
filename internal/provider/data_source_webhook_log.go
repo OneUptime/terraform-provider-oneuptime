@@ -76,7 +76,7 @@ func (d *WebhookLogDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "webhook_url": schema.StringAttribute{
-                MarkdownDescription: "URL the request was sent to.",
+                MarkdownDescription: "Where the request was sent: the address's scheme, host and port. The rest of the address is left out, as it can hold the webhook's secret.",
                 Optional: true,
                 Computed: true,
             },

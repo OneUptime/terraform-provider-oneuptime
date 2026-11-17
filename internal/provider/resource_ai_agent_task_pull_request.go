@@ -54,6 +54,8 @@ type AiAgentTaskPullRequestResourceModel struct {
     RepoName types.String `tfsdk:"repo_name"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    CarriedIncidentIds JSONSubsetValue `tfsdk:"carried_incident_ids"`
+    CarriedAlertIds JSONSubsetValue `tfsdk:"carried_alert_ids"`
     CiStatus types.String `tfsdk:"ci_status"`
     CiStatusAt RFC3339Value `tfsdk:"ci_status_at"`
     RunnerVerificationStatus types.String `tfsdk:"runner_verification_status"`
@@ -220,6 +222,16 @@ func (r *AiAgentTaskPullRequestResource) schemaDefinition() schema.Schema {
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "carried_incident_ids": schema.StringAttribute{
+                MarkdownDescription: "IDs of the incidents this pull request carries: the subject of the AI chat it was opened from. A JSON value: read it with `jsondecode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "carried_alert_ids": schema.StringAttribute{
+                MarkdownDescription: "IDs of the alerts this pull request carries: the subject of the AI chat it was opened from. A JSON value: read it with `jsondecode()`.",
+                CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "ci_status": schema.StringAttribute{
@@ -450,6 +462,8 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         "repoName": true,
         "createdAt": true,
         "updatedAt": true,
+        "carriedIncidentIds": true,
+        "carriedAlertIds": true,
         "ciStatus": true,
         "ciStatusAt": true,
         "runnerVerificationStatus": true,
@@ -1015,6 +1029,94 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["carriedIncidentIds"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CarriedIncidentIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CarriedIncidentIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CarriedIncidentIds = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CarriedIncidentIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CarriedIncidentIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CarriedIncidentIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CarriedIncidentIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CarriedIncidentIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CarriedIncidentIds = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["carriedIncidentIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CarriedIncidentIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CarriedIncidentIds = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["carriedIncidentIds"].(string); ok {
+        data.CarriedIncidentIds = NewJSONSubsetValue(val)
+    } else {
+        data.CarriedIncidentIds = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["carriedAlertIds"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CarriedAlertIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CarriedAlertIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CarriedAlertIds = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CarriedAlertIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CarriedAlertIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CarriedAlertIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CarriedAlertIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CarriedAlertIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CarriedAlertIds = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["carriedAlertIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CarriedAlertIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CarriedAlertIds = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["carriedAlertIds"].(string); ok {
+        data.CarriedAlertIds = NewJSONSubsetValue(val)
+    } else {
+        data.CarriedAlertIds = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["ciStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1546,6 +1648,8 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         "repoName": true,
         "createdAt": true,
         "updatedAt": true,
+        "carriedIncidentIds": true,
+        "carriedAlertIds": true,
         "ciStatus": true,
         "ciStatusAt": true,
         "runnerVerificationStatus": true,
@@ -2111,6 +2215,94 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         data.UpdatedAt = NewRFC3339Value(val)
     } else {
         data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["carriedIncidentIds"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CarriedIncidentIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CarriedIncidentIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CarriedIncidentIds = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CarriedIncidentIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CarriedIncidentIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CarriedIncidentIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CarriedIncidentIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CarriedIncidentIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CarriedIncidentIds = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["carriedIncidentIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CarriedIncidentIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CarriedIncidentIds = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["carriedIncidentIds"].(string); ok {
+        data.CarriedIncidentIds = NewJSONSubsetValue(val)
+    } else {
+        data.CarriedIncidentIds = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["carriedAlertIds"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CarriedAlertIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CarriedAlertIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CarriedAlertIds = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CarriedAlertIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CarriedAlertIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CarriedAlertIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CarriedAlertIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CarriedAlertIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CarriedAlertIds = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["carriedAlertIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CarriedAlertIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CarriedAlertIds = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["carriedAlertIds"].(string); ok {
+        data.CarriedAlertIds = NewJSONSubsetValue(val)
+    } else {
+        data.CarriedAlertIds = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["ciStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2690,6 +2882,8 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         "repoName": true,
         "createdAt": true,
         "updatedAt": true,
+        "carriedIncidentIds": true,
+        "carriedAlertIds": true,
         "ciStatus": true,
         "ciStatusAt": true,
         "runnerVerificationStatus": true,
@@ -3249,6 +3443,94 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         data.UpdatedAt = NewRFC3339Value(val)
     } else {
         data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["carriedIncidentIds"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CarriedIncidentIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CarriedIncidentIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CarriedIncidentIds = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CarriedIncidentIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CarriedIncidentIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CarriedIncidentIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CarriedIncidentIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CarriedIncidentIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CarriedIncidentIds = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["carriedIncidentIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CarriedIncidentIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CarriedIncidentIds = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["carriedIncidentIds"].(string); ok {
+        data.CarriedIncidentIds = NewJSONSubsetValue(val)
+    } else {
+        data.CarriedIncidentIds = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["carriedAlertIds"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CarriedAlertIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CarriedAlertIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CarriedAlertIds = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CarriedAlertIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CarriedAlertIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CarriedAlertIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CarriedAlertIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CarriedAlertIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CarriedAlertIds = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["carriedAlertIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CarriedAlertIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CarriedAlertIds = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["carriedAlertIds"].(string); ok {
+        data.CarriedAlertIds = NewJSONSubsetValue(val)
+    } else {
+        data.CarriedAlertIds = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["ciStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
