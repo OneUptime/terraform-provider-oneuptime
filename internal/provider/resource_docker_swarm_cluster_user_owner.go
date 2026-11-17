@@ -230,6 +230,7 @@ func (r *DockerSwarmClusterUserOwnerResource) Create(ctx context.Context, req re
     }
     data.Id = types.StringValue(createdId)
 
+
     // The person a create named by address, as the API has them.
     if data.UserId.IsUnknown() {
         created := dockerSwarmClusterUserOwnerResponse

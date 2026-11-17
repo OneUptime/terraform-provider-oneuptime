@@ -45,6 +45,7 @@ data "oneuptime_network_device_naming_rule" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.
+- `emptied_limits` (String) The lists this rule was limited to whose every record was deleted since: each list, the deleted records' names, how many and when. Deleting the last record a list held would make the rule match every record instead, so OneUptime switched the rule off and wrote this. It is cleared when the rule is switched on again; until a list named here holds a record again, switching the rule on must say what the list holds in the same update. Written by OneUptime; any value sent for it is refused. A JSON value: read it with `jsondecode()`.
 - `lookup_entries` (String) Rows of a key and the value it stands for, put where the name pattern says {lookup}. A device whose key has no row is left to the next rule. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `sites` (Set of String) Only devices in one of these sites, or in a site below one of them. Leave empty to match devices in any site, or in none. IDs of `oneuptime_network_site` resources.

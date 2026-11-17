@@ -203,6 +203,7 @@ func (r *KubernetesClusterTeamOwnerResource) Create(ctx context.Context, req res
     }
     data.Id = types.StringValue(createdId)
 
+
     /*
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting

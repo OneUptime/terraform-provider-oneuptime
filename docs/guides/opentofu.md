@@ -18,7 +18,7 @@ terraform {
   required_providers {
     oneuptime = {
       source  = "oneuptime/oneuptime"
-      version = "~> 14.0"
+      version = "~> 15.0"
     }
   }
 }
@@ -58,7 +58,7 @@ This repository ships hand-written modules under [`modules/`](https://github.com
 
 ```terraform
 module "storefront" {
-  source = "github.com/OneUptime/terraform-provider-oneuptime//modules/monitoring-and-incident-response?ref=v14.3.0"
+  source = "github.com/OneUptime/terraform-provider-oneuptime//modules/monitoring-and-incident-response?ref=v15.0.0"
 
   service_name          = "storefront"
   status_page_is_public = true

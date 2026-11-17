@@ -28,7 +28,7 @@ resource "oneuptime_status_page_domain" "example" {
 ### Optional
 
 - `custom_certificate` (String) Your certificate for the domain, in PEM, with its chain. Used when Is Custom Certificate is on.
-- `custom_certificate_key` (String, Sensitive) The private key of your certificate, in PEM. Used when Is Custom Certificate is on.
+- `custom_certificate_key` (String, Sensitive) The private key of your certificate, in PEM, without a passphrase. Used when Is Custom Certificate is on. Write-only: kept encrypted and never returned by the API.
 - `is_custom_certificate` (Boolean) When on, the domain is served with your own certificate (custom_certificate and its key) instead of one OneUptime gets from Let's Encrypt.
 - `subdomain` (String) Subdomain label for your status page such as 'status'. Leave blank or enter @ to use the root domain.
 

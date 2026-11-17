@@ -94,7 +94,6 @@ resource "oneuptime_monitor" "example" {
 - `docker_swarm_clusters` (Set of String) Docker Swarm clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_docker_swarm_cluster` resources.
 - `hosts` (Set of String) Hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_host` resources.
 - `incoming_email_custom_local_part` (String) This field is for Incoming Email Monitor only. A custom name for this monitor's inbound email address: the part before the @, on the server's inbound email domain. While set, it replaces the generated monitor-{secret key} address. Must be unique across all monitors. Set to null to go back to the generated address.
-- `incoming_monitor_request` (String) The latest request this monitor received, as its logs keep it: secrets masked, and no headers or body when it keeps no request content. A JSON value: write it with `jsonencode()`.
 - `incoming_request_monitor_heartbeat_checked_at` (String) This field is for Incoming Request monitor only. When was the last time we checked the heartbeat?
 - `iot_fleets` (Set of String) IoT fleets this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_iot_fleet` resources.
 - `is_archived` (Boolean) Archived monitors are hidden from monitor lists and status pages, are not checked, and open no incidents or alerts. Unarchiving resumes monitoring. Defaults to `false`.
@@ -126,11 +125,13 @@ resource "oneuptime_monitor" "example" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `disable_active_monitoring_because_of_manual_incident` (Boolean) Disable Monitoring because of Incident which is creeated manually by user.
 - `disable_active_monitoring_because_of_scheduled_maintenance_event` (Boolean) Disable Monitoring because of Ongoing Maintenance Event.
+- `first_measured_at` (String) When a check result, heartbeat, email, agent report or evaluation first reached this monitor. Empty while nothing has measured it yet: its status is then only the one every monitor is created in. A manual monitor, whose status a person sets, holds the time it was created.
 - `id` (String) Unique identifier for the resource.
 - `incoming_email_monitor_heartbeat_checked_at` (String) This field is for Incoming Email monitor only. When was the last time we checked the heartbeat?
 - `incoming_email_monitor_last_email_received_at` (String) This field is for Incoming Email Monitor only. When was the last email received?
 - `incoming_email_monitor_request` (String) This field is for Incoming Email Monitor only. Last email data received. A JSON value: read it with `jsondecode()`.
 - `incoming_email_secret_key` (String, Sensitive) This field is for Incoming Email Monitor only. Secret Key used to generate unique email address.
+- `incoming_monitor_request` (String) The latest request this monitor received, as its logs keep it: secrets masked, and no headers or body when it keeps no request content. A JSON value: read it with `jsondecode()`.
 - `incoming_request_secret_key` (String, Sensitive) This field is for Incoming Request Monitor only. Secret Key to authenticate the request.
 - `incoming_request_with_secret_at` (String) About when this Incoming Request monitor last received a request that sent one of its project's incoming request secrets, to the nearest five minutes. Empty until one does.
 - `incoming_request_without_secret_at` (String) About when this Incoming Request monitor last received a request without a valid incoming request secret, to the nearest five minutes - refused if its project requires one. Recorded only while the project has a secret.

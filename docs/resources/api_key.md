@@ -32,7 +32,8 @@ resource "oneuptime_api_key" "example" {
 
 ### Read-Only
 
-- `api_key` (String, Sensitive) Secret API Key.
+- `api_key` (String, Sensitive) The secret key, sent in the ApiKey header of each request. Shown once: in the answer to the create that makes it, or to a reset of it. OneUptime keeps only its hash. Kept in state from the answer to the create: OneUptime never reads it back, so a resource imported into Terraform has none. Replace the resource for a new one.
+- `api_key_hint` (String) The key's last four characters, to tell it from the project's other keys. Never enough to use the key.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.

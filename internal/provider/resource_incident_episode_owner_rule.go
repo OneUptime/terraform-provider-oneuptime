@@ -55,6 +55,7 @@ type IncidentEpisodeOwnerRuleResourceModel struct {
     OwnerTeams types.Set `tfsdk:"owner_teams"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    EmptiedLimits JSONSubsetValue `tfsdk:"emptied_limits"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     OwnerUserEmails types.Set `tfsdk:"owner_user_emails"`
 }
@@ -193,6 +194,11 @@ func (r *IncidentEpisodeOwnerRuleResource) schemaDefinition() schema.Schema {
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was updated.",
                 CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "emptied_limits": schema.StringAttribute{
+                MarkdownDescription: "The lists this rule was limited to whose every record was deleted since: each list, the deleted records' names, how many and when. Deleting the last record a list held would make the rule match every record instead, so OneUptime switched the rule off and wrote this. It is cleared when the rule is switched on again; until a list named here holds a record again, switching the rule on must say what the list holds in the same update. Written by OneUptime; any value sent for it is refused. A JSON value: read it with `jsondecode()`.",
+                CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -350,6 +356,7 @@ func (r *IncidentEpisodeOwnerRuleResource) Create(ctx context.Context, req resou
     }
     data.Id = types.StringValue(createdId)
 
+
     /*
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
@@ -379,6 +386,7 @@ func (r *IncidentEpisodeOwnerRuleResource) Create(ctx context.Context, req resou
         "ownerTeams": true,
         "createdAt": true,
         "updatedAt": true,
+        "emptiedLimits": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -799,6 +807,50 @@ func (r *IncidentEpisodeOwnerRuleResource) Create(ctx context.Context, req resou
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["emptiedLimits"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EmptiedLimits = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EmptiedLimits = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EmptiedLimits = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EmptiedLimits = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.EmptiedLimits = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EmptiedLimits = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.EmptiedLimits = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EmptiedLimits = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.EmptiedLimits = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["emptiedLimits"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.EmptiedLimits = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.EmptiedLimits = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["emptiedLimits"].(string); ok {
+        data.EmptiedLimits = NewJSONSubsetValue(val)
+    } else {
+        data.EmptiedLimits = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -892,6 +944,7 @@ func (r *IncidentEpisodeOwnerRuleResource) Read(ctx context.Context, req resourc
         "ownerTeams": true,
         "createdAt": true,
         "updatedAt": true,
+        "emptiedLimits": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1317,6 +1370,50 @@ func (r *IncidentEpisodeOwnerRuleResource) Read(ctx context.Context, req resourc
     } else {
         data.UpdatedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["emptiedLimits"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EmptiedLimits = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EmptiedLimits = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EmptiedLimits = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EmptiedLimits = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.EmptiedLimits = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EmptiedLimits = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.EmptiedLimits = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EmptiedLimits = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.EmptiedLimits = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["emptiedLimits"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.EmptiedLimits = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.EmptiedLimits = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["emptiedLimits"].(string); ok {
+        data.EmptiedLimits = NewJSONSubsetValue(val)
+    } else {
+        data.EmptiedLimits = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1491,6 +1588,7 @@ func (r *IncidentEpisodeOwnerRuleResource) Update(ctx context.Context, req resou
         "ownerTeams": true,
         "createdAt": true,
         "updatedAt": true,
+        "emptiedLimits": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1905,6 +2003,50 @@ func (r *IncidentEpisodeOwnerRuleResource) Update(ctx context.Context, req resou
         data.UpdatedAt = NewRFC3339Value(val)
     } else {
         data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["emptiedLimits"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EmptiedLimits = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EmptiedLimits = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EmptiedLimits = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EmptiedLimits = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.EmptiedLimits = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EmptiedLimits = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.EmptiedLimits = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EmptiedLimits = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.EmptiedLimits = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["emptiedLimits"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.EmptiedLimits = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.EmptiedLimits = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["emptiedLimits"].(string); ok {
+        data.EmptiedLimits = NewJSONSubsetValue(val)
+    } else {
+        data.EmptiedLimits = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

@@ -70,6 +70,7 @@ type MonitorDataSourceModel struct {
     IncomingRequestMonitorHeartbeatCheckedAt types.String `tfsdk:"incoming_request_monitor_heartbeat_checked_at"`
     TelemetryMonitorNextMonitorAt types.String `tfsdk:"telemetry_monitor_next_monitor_at"`
     TelemetryMonitorLastMonitorAt types.String `tfsdk:"telemetry_monitor_last_monitor_at"`
+    FirstMeasuredAt types.String `tfsdk:"first_measured_at"`
     DisableActiveMonitoringBecauseOfScheduledMaintenanceEvent types.Bool `tfsdk:"disable_active_monitoring_because_of_scheduled_maintenance_event"`
     DisableActiveMonitoringBecauseOfManualIncident types.Bool `tfsdk:"disable_active_monitoring_because_of_manual_incident"`
     ServerMonitorRequestReceivedAt types.String `tfsdk:"server_monitor_request_received_at"`
@@ -304,6 +305,10 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "telemetry_monitor_last_monitor_at": schema.StringAttribute{
                 MarkdownDescription: "This field is for Telemetry Monitor only. When was the last time we monitored?",
+                Computed: true,
+            },
+            "first_measured_at": schema.StringAttribute{
+                MarkdownDescription: "When a check result, heartbeat, email, agent report or evaluation first reached this monitor. Empty while nothing has measured it yet: its status is then only the one every monitor is created in. A manual monitor, whose status a person sets, holds the time it was created.",
                 Computed: true,
             },
             "disable_active_monitoring_because_of_scheduled_maintenance_event": schema.BoolAttribute{
@@ -573,6 +578,7 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "incomingRequestMonitorHeartbeatCheckedAt": true,
         "telemetryMonitorNextMonitorAt": true,
         "telemetryMonitorLastMonitorAt": true,
+        "firstMeasuredAt": true,
         "disableActiveMonitoringBecauseOfScheduledMaintenanceEvent": true,
         "disableActiveMonitoringBecauseOfManualIncident": true,
         "serverMonitorRequestReceivedAt": true,
@@ -1583,6 +1589,30 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.TelemetryMonitorLastMonitorAt = types.StringValue(val)
     } else {
         data.TelemetryMonitorLastMonitorAt = types.StringNull()
+    }
+    if obj, ok := item["firstMeasuredAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FirstMeasuredAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.FirstMeasuredAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.FirstMeasuredAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FirstMeasuredAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.FirstMeasuredAt = types.StringNull()
+        }
+    } else if arr, ok := item["firstMeasuredAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FirstMeasuredAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.FirstMeasuredAt = types.StringNull()
+        }
+    } else if val, ok := item["firstMeasuredAt"].(string); ok {
+        data.FirstMeasuredAt = types.StringValue(val)
+    } else {
+        data.FirstMeasuredAt = types.StringNull()
     }
     if val, ok := item["disableActiveMonitoringBecauseOfScheduledMaintenanceEvent"].(bool); ok {
         data.DisableActiveMonitoringBecauseOfScheduledMaintenanceEvent = types.BoolValue(val)

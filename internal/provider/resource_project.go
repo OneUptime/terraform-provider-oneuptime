@@ -117,6 +117,7 @@ type ProjectResourceModel struct {
     DiscoveredDeviceRetentionInDays types.Number `tfsdk:"discovered_device_retention_in_days"`
     IncidentRetentionInDays types.Number `tfsdk:"incident_retention_in_days"`
     KeepIncidentsWithCompletedPostmortem types.Bool `tfsdk:"keep_incidents_with_completed_postmortem"`
+    KeepIncidentsInPostmortemStatusIds JSONSubsetValue `tfsdk:"keep_incidents_in_postmortem_status_ids"`
     AlertRetentionInDays types.Number `tfsdk:"alert_retention_in_days"`
     DefaultTableColumns JSONSubsetValue `tfsdk:"default_table_columns"`
     AlertInvestigationMinimumSeverityId types.String `tfsdk:"alert_investigation_minimum_severity_id"`
@@ -177,7 +178,6 @@ type ProjectResourceModel struct {
     SecurityEventsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"security_events_ingestion_rate_limit_in_mb_per_second"`
     Goals JSONSubsetValue `tfsdk:"goals"`
     ProductSettings JSONSubsetValue `tfsdk:"product_settings"`
-    IsSampleProject types.Bool `tfsdk:"is_sample_project"`
 }
 
 func (r *ProjectResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -864,6 +864,19 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "keep_incidents_in_postmortem_status_ids": schema.StringAttribute{
+                MarkdownDescription: "The ids of the postmortem statuses whose incidents the incident retention never deletes while Keep Incidents With a Completed Postmortem is on. Empty (the default) is the project's Completed status. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
             "alert_retention_in_days": schema.NumberAttribute{
                 MarkdownDescription: "Days a resolved alert is kept once resolved: 30, 60, 90, 180, 365, 730 or 1095, or 0 to keep every alert (the default). Alerts that are not resolved are never deleted.",
                 Optional: true,
@@ -1262,12 +1275,8 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "product_settings": schema.StringAttribute{
-                MarkdownDescription: "The products this project hides from its menu, Home and Search's list, and where that list came from (its goals, or a member). A hidden product still works and is found by Search. Not set: every product is shown. A JSON value: read it with `jsondecode()`.",
+                MarkdownDescription: "The products a member hid from this project's menu, Home and Search's list on Project Settings > Products. A hidden product still works and is found by Search. Not set: every product is shown. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
-                Computed: true,
-            },
-            "is_sample_project": schema.BoolAttribute{
-                MarkdownDescription: "A sample project made for looking around: nothing in it is real, it notifies nobody, its status page is never public and it is never billed. Set by OneUptime when the sample is made.",
                 Computed: true,
             },
         },
@@ -1499,6 +1508,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     data.Id = types.StringValue(createdId)
 
+
     /*
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
@@ -1586,6 +1596,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "discoveredDeviceRetentionInDays": true,
         "incidentRetentionInDays": true,
         "keepIncidentsWithCompletedPostmortem": true,
+        "keepIncidentsInPostmortemStatusIds": true,
         "alertRetentionInDays": true,
         "defaultTableColumns": true,
         "alertInvestigationMinimumSeverityId": true,
@@ -1646,7 +1657,6 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "securityEventsIngestionRateLimitInMBPerSecond": true,
         "goals": true,
         "productSettings": true,
-        "isSampleProject": true,
         "_id": true,
     }
 
@@ -2469,6 +2479,50 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     data.IncidentRetentionInDays = numberFromAPI(data.IncidentRetentionInDays, dataMap["incidentRetentionInDays"])
     if val, ok := dataMap["keepIncidentsWithCompletedPostmortem"].(bool); ok {
         data.KeepIncidentsWithCompletedPostmortem = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["keepIncidentsInPostmortemStatusIds"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["keepIncidentsInPostmortemStatusIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["keepIncidentsInPostmortemStatusIds"].(string); ok {
+        data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(val)
+    } else {
+        data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetNull()
     }
     data.AlertRetentionInDays = numberFromAPI(data.AlertRetentionInDays, dataMap["alertRetentionInDays"])
     if obj, ok := dataMap["defaultTableColumns"].(map[string]interface{}); ok {
@@ -3434,9 +3488,6 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.ProductSettings = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["isSampleProject"].(bool); ok {
-        data.IsSampleProject = types.BoolValue(val)
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -3542,6 +3593,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "discoveredDeviceRetentionInDays": true,
         "incidentRetentionInDays": true,
         "keepIncidentsWithCompletedPostmortem": true,
+        "keepIncidentsInPostmortemStatusIds": true,
         "alertRetentionInDays": true,
         "defaultTableColumns": true,
         "alertInvestigationMinimumSeverityId": true,
@@ -3602,7 +3654,6 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "securityEventsIngestionRateLimitInMBPerSecond": true,
         "goals": true,
         "productSettings": true,
-        "isSampleProject": true,
         "_id": true,
     }
 
@@ -4427,6 +4478,50 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     if val, ok := dataMap["keepIncidentsWithCompletedPostmortem"].(bool); ok {
         data.KeepIncidentsWithCompletedPostmortem = types.BoolValue(val)
     }
+    if obj, ok := dataMap["keepIncidentsInPostmortemStatusIds"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["keepIncidentsInPostmortemStatusIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["keepIncidentsInPostmortemStatusIds"].(string); ok {
+        data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(val)
+    } else {
+        data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetNull()
+    }
     data.AlertRetentionInDays = numberFromAPI(data.AlertRetentionInDays, dataMap["alertRetentionInDays"])
     if obj, ok := dataMap["defaultTableColumns"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
@@ -5391,9 +5486,6 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.ProductSettings = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["isSampleProject"].(bool); ok {
-        data.IsSampleProject = types.BoolValue(val)
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -5427,6 +5519,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     writtenFromConfig := map[string]bool{
         "default_metric_downsampling_retention_days": !data.DefaultMetricDownsamplingRetentionDays.Equal(state.DefaultMetricDownsamplingRetentionDays),
         "default_table_columns": !data.DefaultTableColumns.Equal(state.DefaultTableColumns),
+        "keep_incidents_in_postmortem_status_ids": !data.KeepIncidentsInPostmortemStatusIds.Equal(state.KeepIncidentsInPostmortemStatusIds),
         "telemetry_retention_config": !data.TelemetryRetentionConfig.Equal(state.TelemetryRetentionConfig),
     }
 
@@ -5611,6 +5704,14 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if !data.KeepIncidentsWithCompletedPostmortem.IsUnknown() && !state.KeepIncidentsWithCompletedPostmortem.IsUnknown() && !data.KeepIncidentsWithCompletedPostmortem.Equal(state.KeepIncidentsWithCompletedPostmortem) {
         requestDataMap["keepIncidentsWithCompletedPostmortem"] = data.KeepIncidentsWithCompletedPostmortem.ValueBool()
+    }
+    if !data.KeepIncidentsInPostmortemStatusIds.IsUnknown() && !state.KeepIncidentsInPostmortemStatusIds.IsUnknown() && !data.KeepIncidentsInPostmortemStatusIds.Equal(state.KeepIncidentsInPostmortemStatusIds) {
+        var keepincidentsinpostmortemstatusidsData interface{}
+        if err := json.Unmarshal([]byte(data.KeepIncidentsInPostmortemStatusIds.ValueString()), &keepincidentsinpostmortemstatusidsData); err == nil {
+            requestDataMap["keepIncidentsInPostmortemStatusIds"] = keepincidentsinpostmortemstatusidsData
+        } else {
+            requestDataMap["keepIncidentsInPostmortemStatusIds"] = data.KeepIncidentsInPostmortemStatusIds.ValueString()
+        }
     }
     if !data.AlertRetentionInDays.IsUnknown() && !state.AlertRetentionInDays.IsUnknown() && !data.AlertRetentionInDays.Equal(state.AlertRetentionInDays) {
         requestDataMap["alertRetentionInDays"] = r.bigFloatToFloat64(data.AlertRetentionInDays.ValueBigFloat())
@@ -5848,6 +5949,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "discoveredDeviceRetentionInDays": true,
         "incidentRetentionInDays": true,
         "keepIncidentsWithCompletedPostmortem": true,
+        "keepIncidentsInPostmortemStatusIds": true,
         "alertRetentionInDays": true,
         "defaultTableColumns": true,
         "alertInvestigationMinimumSeverityId": true,
@@ -5908,7 +6010,6 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "securityEventsIngestionRateLimitInMBPerSecond": true,
         "goals": true,
         "productSettings": true,
-        "isSampleProject": true,
         "_id": true,
     }
 
@@ -6727,6 +6828,50 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if val, ok := dataMap["keepIncidentsWithCompletedPostmortem"].(bool); ok {
         data.KeepIncidentsWithCompletedPostmortem = types.BoolValue(val)
     }
+    if obj, ok := dataMap["keepIncidentsInPostmortemStatusIds"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["keepIncidentsInPostmortemStatusIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["keepIncidentsInPostmortemStatusIds"].(string); ok {
+        data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetValue(val)
+    } else {
+        data.KeepIncidentsInPostmortemStatusIds = NewJSONSubsetNull()
+    }
     data.AlertRetentionInDays = numberFromAPI(data.AlertRetentionInDays, dataMap["alertRetentionInDays"])
     if obj, ok := dataMap["defaultTableColumns"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
@@ -7691,9 +7836,6 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.ProductSettings = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["isSampleProject"].(bool); ok {
-        data.IsSampleProject = types.BoolValue(val)
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -7745,7 +7887,7 @@ func (r *ProjectResource) ImportState(ctx context.Context, req resource.ImportSt
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
     // These hold the record as OneUptime keeps it, keys it fills in itself
     // included, until an update writes them (see importsettle.go).
-    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"default_metric_downsampling_retention_days", "default_table_columns", "telemetry_retention_config"})...)
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"default_metric_downsampling_retention_days", "default_table_columns", "keep_incidents_in_postmortem_status_ids", "telemetry_retention_config"})...)
 }
 
 
@@ -7969,6 +8111,9 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.KeepIncidentsWithCompletedPostmortem.IsNull() && !plan.KeepIncidentsWithCompletedPostmortem.IsUnknown() {
         data.KeepIncidentsWithCompletedPostmortem = plan.KeepIncidentsWithCompletedPostmortem
+    }
+    if config.KeepIncidentsInPostmortemStatusIds.IsNull() && !plan.KeepIncidentsInPostmortemStatusIds.IsUnknown() {
+        data.KeepIncidentsInPostmortemStatusIds = plan.KeepIncidentsInPostmortemStatusIds
     }
     if config.AlertRetentionInDays.IsNull() && !plan.AlertRetentionInDays.IsUnknown() {
         data.AlertRetentionInDays = plan.AlertRetentionInDays

@@ -39,7 +39,6 @@ type FormDomainDataSourceModel struct {
     IsSslOrdered types.Bool `tfsdk:"is_ssl_ordered"`
     IsSslProvisioned types.Bool `tfsdk:"is_ssl_provisioned"`
     CustomCertificate types.String `tfsdk:"custom_certificate"`
-    CustomCertificateKey types.String `tfsdk:"custom_certificate_key"`
     IsCustomCertificate types.Bool `tfsdk:"is_custom_certificate"`
     CertificateReissueRequestedAt types.String `tfsdk:"certificate_reissue_requested_at"`
 }
@@ -117,11 +116,6 @@ func (d *FormDomainDataSource) Schema(ctx context.Context, req datasource.Schema
                 MarkdownDescription: "The certificate, in PEM format, to serve the domain with instead of the free one. Used while isCustomCertificate is on.",
                 Optional: true,
                 Computed: true,
-            },
-            "custom_certificate_key": schema.StringAttribute{
-                MarkdownDescription: "The custom certificate's private key, in PEM format. Used while isCustomCertificate is on.",
-                Computed: true,
-                Sensitive: true,
             },
             "is_custom_certificate": schema.BoolAttribute{
                 MarkdownDescription: "Serve the domain with the certificate you upload rather than the free SSL certificate OneUptime issues and renews.",
@@ -240,7 +234,6 @@ func (d *FormDomainDataSource) Read(ctx context.Context, req datasource.ReadRequ
         "isSslOrdered": true,
         "isSslProvisioned": true,
         "customCertificate": true,
-        "customCertificateKey": true,
         "isCustomCertificate": true,
         "certificateReissueRequestedAt": true,
         "_id": true,
@@ -558,30 +551,6 @@ func (d *FormDomainDataSource) Read(ctx context.Context, req datasource.ReadRequ
         data.CustomCertificate = types.StringValue(val)
     } else {
         data.CustomCertificate = types.StringNull()
-    }
-    if obj, ok := item["customCertificateKey"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CustomCertificateKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.CustomCertificateKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.CustomCertificateKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.CustomCertificateKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.CustomCertificateKey = types.StringNull()
-        }
-    } else if arr, ok := item["customCertificateKey"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(arr); err == nil {
-            data.CustomCertificateKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.CustomCertificateKey = types.StringNull()
-        }
-    } else if val, ok := item["customCertificateKey"].(string); ok {
-        data.CustomCertificateKey = types.StringValue(val)
-    } else {
-        data.CustomCertificateKey = types.StringNull()
     }
     if val, ok := item["isCustomCertificate"].(bool); ok {
         data.IsCustomCertificate = types.BoolValue(val)

@@ -52,6 +52,7 @@ data "oneuptime_alert_owner_rule" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `creator_teams` (Set of String) Teams added as owners when the person who creates a matching alert is a member of them. Alerts with no creator get none. IDs of `oneuptime_team` resources.
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.
+- `emptied_limits` (String) The lists this rule was limited to whose every record was deleted since: each list, the deleted records' names, how many and when. Deleting the last record a list held would make the rule match every record instead, so OneUptime switched the rule off and wrote this. It is cleared when the rule is switched on again; until a list named here holds a record again, switching the rule on must say what the list holds in the same update. Written by OneUptime; any value sent for it is refused. A JSON value: read it with `jsondecode()`.
 - `monitor_labels` (Set of String) Only trigger for alerts from monitors that have at least one of these labels. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) Only trigger for alerts from these monitors. Leave empty to match alerts from any monitor. IDs of `oneuptime_monitor` resources.
 - `owner_teams` (Set of String) Teams to add as owners on the alert when this rule matches. IDs of `oneuptime_team` resources.

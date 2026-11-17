@@ -230,6 +230,7 @@ func (r *ServiceLevelObjectiveUserOwnerResource) Create(ctx context.Context, req
     }
     data.Id = types.StringValue(createdId)
 
+
     // The person a create named by address, as the API has them.
     if data.UserId.IsUnknown() {
         created := serviceLevelObjectiveUserOwnerResponse

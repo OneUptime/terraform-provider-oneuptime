@@ -115,13 +115,9 @@ func (r *FormDomainResource) schemaDefinition() schema.Schema {
                 },
             },
             "custom_certificate_key": schema.StringAttribute{
-                MarkdownDescription: "The custom certificate's private key, in PEM format. Used while isCustomCertificate is on.",
+                MarkdownDescription: "The custom certificate's private key, in PEM format, without a passphrase. Used while isCustomCertificate is on. Write-only: kept encrypted and never returned by the API.",
                 Optional: true,
-                Computed: true,
                 Sensitive: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
             },
             "is_custom_certificate": schema.BoolAttribute{
                 MarkdownDescription: "Serve the domain with the certificate you upload rather than the free SSL certificate OneUptime issues and renews.",
@@ -285,6 +281,7 @@ func (r *FormDomainResource) Create(ctx context.Context, req resource.CreateRequ
     }
     data.Id = types.StringValue(createdId)
 
+
     /*
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
@@ -305,7 +302,6 @@ func (r *FormDomainResource) Create(ctx context.Context, req resource.CreateRequ
         "formId": true,
         "subdomain": true,
         "customCertificate": true,
-        "customCertificateKey": true,
         "isCustomCertificate": true,
         "createdAt": true,
         "updatedAt": true,
@@ -534,50 +530,6 @@ func (r *FormDomainResource) Create(ctx context.Context, req resource.CreateRequ
     } else {
         data.CustomCertificate = types.StringNull()
     }
-    if obj, ok := dataMap["customCertificateKey"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CustomCertificateKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CustomCertificateKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CustomCertificateKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CustomCertificateKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.CustomCertificateKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CustomCertificateKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.CustomCertificateKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CustomCertificateKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.CustomCertificateKey = types.StringNull()
-        }
-    } else if arr, ok := dataMap["customCertificateKey"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.CustomCertificateKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.CustomCertificateKey = types.StringNull()
-        }
-    } else if val, ok := dataMap["customCertificateKey"].(string); ok {
-        data.CustomCertificateKey = types.StringValue(val)
-    } else {
-        data.CustomCertificateKey = types.StringNull()
-    }
     if val, ok := dataMap["isCustomCertificate"].(bool); ok {
         data.IsCustomCertificate = types.BoolValue(val)
     }
@@ -747,7 +699,6 @@ func (r *FormDomainResource) Read(ctx context.Context, req resource.ReadRequest,
         "formId": true,
         "subdomain": true,
         "customCertificate": true,
-        "customCertificateKey": true,
         "isCustomCertificate": true,
         "createdAt": true,
         "updatedAt": true,
@@ -977,50 +928,6 @@ func (r *FormDomainResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.CustomCertificate = types.StringNull()
     }
-    if obj, ok := dataMap["customCertificateKey"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CustomCertificateKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CustomCertificateKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CustomCertificateKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CustomCertificateKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.CustomCertificateKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CustomCertificateKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.CustomCertificateKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CustomCertificateKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.CustomCertificateKey = types.StringNull()
-        }
-    } else if arr, ok := dataMap["customCertificateKey"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.CustomCertificateKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.CustomCertificateKey = types.StringNull()
-        }
-    } else if val, ok := dataMap["customCertificateKey"].(string); ok {
-        data.CustomCertificateKey = types.StringValue(val)
-    } else {
-        data.CustomCertificateKey = types.StringNull()
-    }
     if val, ok := dataMap["isCustomCertificate"].(bool); ok {
         data.IsCustomCertificate = types.BoolValue(val)
     }
@@ -1234,7 +1141,6 @@ func (r *FormDomainResource) Update(ctx context.Context, req resource.UpdateRequ
         "formId": true,
         "subdomain": true,
         "customCertificate": true,
-        "customCertificateKey": true,
         "isCustomCertificate": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1458,50 +1364,6 @@ func (r *FormDomainResource) Update(ctx context.Context, req resource.UpdateRequ
     } else {
         data.CustomCertificate = types.StringNull()
     }
-    if obj, ok := dataMap["customCertificateKey"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CustomCertificateKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CustomCertificateKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CustomCertificateKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CustomCertificateKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.CustomCertificateKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CustomCertificateKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.CustomCertificateKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CustomCertificateKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.CustomCertificateKey = types.StringNull()
-        }
-    } else if arr, ok := dataMap["customCertificateKey"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.CustomCertificateKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.CustomCertificateKey = types.StringNull()
-        }
-    } else if val, ok := dataMap["customCertificateKey"].(string); ok {
-        data.CustomCertificateKey = types.StringValue(val)
-    } else {
-        data.CustomCertificateKey = types.StringNull()
-    }
     if val, ok := dataMap["isCustomCertificate"].(bool); ok {
         data.IsCustomCertificate = types.BoolValue(val)
     }
@@ -1697,9 +1559,6 @@ func (r *FormDomainResource) keepPlannedValues(data *FormDomainResourceModel, pl
     }
     if config.CustomCertificate.IsNull() && !plan.CustomCertificate.IsUnknown() {
         data.CustomCertificate = plan.CustomCertificate
-    }
-    if config.CustomCertificateKey.IsNull() && !plan.CustomCertificateKey.IsUnknown() {
-        data.CustomCertificateKey = plan.CustomCertificateKey
     }
     if config.IsCustomCertificate.IsNull() && !plan.IsCustomCertificate.IsUnknown() {
         data.IsCustomCertificate = plan.IsCustomCertificate

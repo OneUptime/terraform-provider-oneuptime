@@ -41,6 +41,7 @@ data "oneuptime_on_call_schedule_owner_rule" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.
+- `emptied_limits` (String) The lists this rule was limited to whose every record was deleted since: each list, the deleted records' names, how many and when. Deleting the last record a list held would make the rule match every record instead, so OneUptime switched the rule off and wrote this. It is cleared when the rule is switched on again; until a list named here holds a record again, switching the rule on must say what the list holds in the same update. Written by OneUptime; any value sent for it is refused. A JSON value: read it with `jsondecode()`.
 - `on_call_duty_policy_schedule_labels` (Set of String) Only trigger for on-call schedules that have at least one of these labels. Leave empty to match regardless of labels. IDs of `oneuptime_label` resources.
 - `owner_teams` (Set of String) Teams to add as owners on the on-call schedule when this rule matches. IDs of `oneuptime_team` resources.
 - `owner_users` (Set of String) Users to add as owners on the on-call schedule when this rule matches. IDs of `oneuptime_user` records.

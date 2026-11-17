@@ -744,7 +744,7 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 Computed: true,
             },
             "last_poll_received_at": schema.StringAttribute{
-                MarkdownDescription: "When OneUptime received the poll whose result this device shows (isReachable, isSnmpReachable and the interface counts). A poll received earlier never overwrites that result: a retried poll, or one that waited longer in the queue than the poll after it. Managed by OneUptime.",
+                MarkdownDescription: "When OneUptime received the poll whose result this device shows (isReachable, isSnmpReachable, the interface counts, the SNMP table and transceiver snapshots). A poll received earlier never overwrites that result: a retried poll, or one that waited longer in the queue than the poll after it. Managed by OneUptime.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
@@ -976,6 +976,7 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         return
     }
     data.Id = types.StringValue(createdId)
+
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE

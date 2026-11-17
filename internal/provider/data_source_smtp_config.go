@@ -35,7 +35,6 @@ type SmtpConfigDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Username types.String `tfsdk:"username"`
-    Password types.String `tfsdk:"password"`
     Hostname types.String `tfsdk:"hostname"`
     Port types.Number `tfsdk:"port"`
     FromEmail types.String `tfsdk:"from_email"`
@@ -44,19 +43,13 @@ type SmtpConfigDataSourceModel struct {
     TransportType types.String `tfsdk:"transport_type"`
     AuthType types.String `tfsdk:"auth_type"`
     ClientId types.String `tfsdk:"client_id"`
-    ClientSecret types.String `tfsdk:"client_secret"`
     TokenUrl types.String `tfsdk:"token_url"`
     Scope types.String `tfsdk:"scope"`
     OauthProviderType types.String `tfsdk:"oauth_provider_type"`
     AmazonSesAccessKeyId types.String `tfsdk:"amazon_ses_access_key_id"`
-    AmazonSesSecretAccessKey types.String `tfsdk:"amazon_ses_secret_access_key"`
     AmazonSesRegion types.String `tfsdk:"amazon_ses_region"`
-    SendgridApiKey types.String `tfsdk:"sendgrid_api_key"`
-    MailgunApiKey types.String `tfsdk:"mailgun_api_key"`
     MailgunDomain types.String `tfsdk:"mailgun_domain"`
     MailgunRegion types.String `tfsdk:"mailgun_region"`
-    PostmarkServerToken types.String `tfsdk:"postmark_server_token"`
-    ResendApiKey types.String `tfsdk:"resend_api_key"`
 }
 
 func (d *SmtpConfigDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -111,11 +104,6 @@ func (d *SmtpConfigDataSource) Schema(ctx context.Context, req datasource.Schema
                 Optional: true,
                 Computed: true,
             },
-            "password": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create SMTP Config], Read: [Project Owner, Project Admin, Read SMTP Config], Update: [Project Owner, Project Admin, Edit SMTP Config]",
-                Computed: true,
-                Sensitive: true,
-            },
             "hostname": schema.StringAttribute{
                 MarkdownDescription: "SMTP server hostname. Required when Transport is SMTP. Not used by HTTP-API transports like Microsoft Graph.",
                 Optional: true,
@@ -155,11 +143,6 @@ func (d *SmtpConfigDataSource) Schema(ctx context.Context, req datasource.Schema
                 Optional: true,
                 Computed: true,
             },
-            "client_secret": schema.StringAttribute{
-                MarkdownDescription: "The Client Secret from your OAuth application registration. Required for OAuth authentication. For Google service accounts, this is the private key from the JSON key file.",
-                Computed: true,
-                Sensitive: true,
-            },
             "token_url": schema.StringAttribute{
                 MarkdownDescription: "The OAuth token endpoint URL. For Microsoft 365: https://login.microsoftonline.com/{tenant-id}/oauth2/v2.0/token. For Google: https://oauth2.googleapis.com/token.",
                 Optional: true,
@@ -180,25 +163,10 @@ func (d *SmtpConfigDataSource) Schema(ctx context.Context, req datasource.Schema
                 Optional: true,
                 Computed: true,
             },
-            "amazon_ses_secret_access_key": schema.StringAttribute{
-                MarkdownDescription: "The secret access key that goes with the access key ID. Required when Transport is Amazon SES. Encrypted at rest.",
-                Computed: true,
-                Sensitive: true,
-            },
             "amazon_ses_region": schema.StringAttribute{
                 MarkdownDescription: "The AWS Region your sender identity is verified in, such as us-east-1. Required when Transport is Amazon SES.",
                 Optional: true,
                 Computed: true,
-            },
-            "sendgrid_api_key": schema.StringAttribute{
-                MarkdownDescription: "A SendGrid API key with the Mail Send permission. Required when Transport is SendGrid. Encrypted at rest.",
-                Computed: true,
-                Sensitive: true,
-            },
-            "mailgun_api_key": schema.StringAttribute{
-                MarkdownDescription: "A Mailgun API key, or a sending API key for the domain. Required when Transport is Mailgun. Encrypted at rest.",
-                Computed: true,
-                Sensitive: true,
             },
             "mailgun_domain": schema.StringAttribute{
                 MarkdownDescription: "The Mailgun sending domain mail goes out from, such as mg.example.com. Required when Transport is Mailgun.",
@@ -209,16 +177,6 @@ func (d *SmtpConfigDataSource) Schema(ctx context.Context, req datasource.Schema
                 MarkdownDescription: "The region the Mailgun domain was created in: US or EU. US when not set.",
                 Optional: true,
                 Computed: true,
-            },
-            "postmark_server_token": schema.StringAttribute{
-                MarkdownDescription: "The API token of the Postmark server that sends, from its API Tokens tab. Required when Transport is Postmark. Encrypted at rest.",
-                Computed: true,
-                Sensitive: true,
-            },
-            "resend_api_key": schema.StringAttribute{
-                MarkdownDescription: "A Resend API key with sending access. Required when Transport is Resend. Encrypted at rest.",
-                Computed: true,
-                Sensitive: true,
             },
         },
     }
@@ -360,7 +318,6 @@ func (d *SmtpConfigDataSource) Read(ctx context.Context, req datasource.ReadRequ
         "description": true,
         "createdByUserId": true,
         "username": true,
-        "password": true,
         "hostname": true,
         "port": true,
         "fromEmail": true,
@@ -369,19 +326,13 @@ func (d *SmtpConfigDataSource) Read(ctx context.Context, req datasource.ReadRequ
         "transportType": true,
         "authType": true,
         "clientId": true,
-        "clientSecret": true,
         "tokenUrl": true,
         "scope": true,
         "oauthProviderType": true,
         "amazonSesAccessKeyId": true,
-        "amazonSesSecretAccessKey": true,
         "amazonSesRegion": true,
-        "sendgridApiKey": true,
-        "mailgunApiKey": true,
         "mailgunDomain": true,
         "mailgunRegion": true,
-        "postmarkServerToken": true,
-        "resendApiKey": true,
         "_id": true,
     }
 
@@ -659,30 +610,6 @@ func (d *SmtpConfigDataSource) Read(ctx context.Context, req datasource.ReadRequ
     } else {
         data.Username = types.StringNull()
     }
-    if obj, ok := item["password"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Password = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Password = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Password = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Password = types.StringValue(string(jsonBytes))
-        } else {
-            data.Password = types.StringNull()
-        }
-    } else if arr, ok := item["password"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(arr); err == nil {
-            data.Password = types.StringValue(string(jsonBytes))
-        } else {
-            data.Password = types.StringNull()
-        }
-    } else if val, ok := item["password"].(string); ok {
-        data.Password = types.StringValue(val)
-    } else {
-        data.Password = types.StringNull()
-    }
     if obj, ok := item["hostname"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Hostname = types.StringValue(val)
@@ -833,30 +760,6 @@ func (d *SmtpConfigDataSource) Read(ctx context.Context, req datasource.ReadRequ
     } else {
         data.ClientId = types.StringNull()
     }
-    if obj, ok := item["clientSecret"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ClientSecret = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.ClientSecret = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.ClientSecret = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.ClientSecret = types.StringValue(string(jsonBytes))
-        } else {
-            data.ClientSecret = types.StringNull()
-        }
-    } else if arr, ok := item["clientSecret"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(arr); err == nil {
-            data.ClientSecret = types.StringValue(string(jsonBytes))
-        } else {
-            data.ClientSecret = types.StringNull()
-        }
-    } else if val, ok := item["clientSecret"].(string); ok {
-        data.ClientSecret = types.StringValue(val)
-    } else {
-        data.ClientSecret = types.StringNull()
-    }
     if obj, ok := item["tokenUrl"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TokenUrl = types.StringValue(val)
@@ -953,30 +856,6 @@ func (d *SmtpConfigDataSource) Read(ctx context.Context, req datasource.ReadRequ
     } else {
         data.AmazonSesAccessKeyId = types.StringNull()
     }
-    if obj, ok := item["amazonSesSecretAccessKey"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AmazonSesSecretAccessKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.AmazonSesSecretAccessKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.AmazonSesSecretAccessKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.AmazonSesSecretAccessKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.AmazonSesSecretAccessKey = types.StringNull()
-        }
-    } else if arr, ok := item["amazonSesSecretAccessKey"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(arr); err == nil {
-            data.AmazonSesSecretAccessKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.AmazonSesSecretAccessKey = types.StringNull()
-        }
-    } else if val, ok := item["amazonSesSecretAccessKey"].(string); ok {
-        data.AmazonSesSecretAccessKey = types.StringValue(val)
-    } else {
-        data.AmazonSesSecretAccessKey = types.StringNull()
-    }
     if obj, ok := item["amazonSesRegion"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.AmazonSesRegion = types.StringValue(val)
@@ -1000,54 +879,6 @@ func (d *SmtpConfigDataSource) Read(ctx context.Context, req datasource.ReadRequ
         data.AmazonSesRegion = types.StringValue(val)
     } else {
         data.AmazonSesRegion = types.StringNull()
-    }
-    if obj, ok := item["sendgridApiKey"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SendgridApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.SendgridApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.SendgridApiKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.SendgridApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.SendgridApiKey = types.StringNull()
-        }
-    } else if arr, ok := item["sendgridApiKey"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(arr); err == nil {
-            data.SendgridApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.SendgridApiKey = types.StringNull()
-        }
-    } else if val, ok := item["sendgridApiKey"].(string); ok {
-        data.SendgridApiKey = types.StringValue(val)
-    } else {
-        data.SendgridApiKey = types.StringNull()
-    }
-    if obj, ok := item["mailgunApiKey"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MailgunApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.MailgunApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.MailgunApiKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.MailgunApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.MailgunApiKey = types.StringNull()
-        }
-    } else if arr, ok := item["mailgunApiKey"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(arr); err == nil {
-            data.MailgunApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.MailgunApiKey = types.StringNull()
-        }
-    } else if val, ok := item["mailgunApiKey"].(string); ok {
-        data.MailgunApiKey = types.StringValue(val)
-    } else {
-        data.MailgunApiKey = types.StringNull()
     }
     if obj, ok := item["mailgunDomain"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1096,54 +927,6 @@ func (d *SmtpConfigDataSource) Read(ctx context.Context, req datasource.ReadRequ
         data.MailgunRegion = types.StringValue(val)
     } else {
         data.MailgunRegion = types.StringNull()
-    }
-    if obj, ok := item["postmarkServerToken"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PostmarkServerToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.PostmarkServerToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.PostmarkServerToken = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.PostmarkServerToken = types.StringValue(string(jsonBytes))
-        } else {
-            data.PostmarkServerToken = types.StringNull()
-        }
-    } else if arr, ok := item["postmarkServerToken"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(arr); err == nil {
-            data.PostmarkServerToken = types.StringValue(string(jsonBytes))
-        } else {
-            data.PostmarkServerToken = types.StringNull()
-        }
-    } else if val, ok := item["postmarkServerToken"].(string); ok {
-        data.PostmarkServerToken = types.StringValue(val)
-    } else {
-        data.PostmarkServerToken = types.StringNull()
-    }
-    if obj, ok := item["resendApiKey"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ResendApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.ResendApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.ResendApiKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.ResendApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.ResendApiKey = types.StringNull()
-        }
-    } else if arr, ok := item["resendApiKey"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(arr); err == nil {
-            data.ResendApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.ResendApiKey = types.StringNull()
-        }
-    } else if val, ok := item["resendApiKey"].(string); ok {
-        data.ResendApiKey = types.StringValue(val)
-    } else {
-        data.ResendApiKey = types.StringNull()
     }
 
     // Write logs using the tflog package

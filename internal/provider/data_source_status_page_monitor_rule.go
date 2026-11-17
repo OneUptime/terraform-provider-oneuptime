@@ -32,6 +32,7 @@ type StatusPageMonitorRuleDataSourceModel struct {
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
     Criteria types.String `tfsdk:"criteria"`
+    EmptiedLimits types.String `tfsdk:"emptied_limits"`
     ProjectId types.String `tfsdk:"project_id"`
     StatusPageId types.String `tfsdk:"status_page_id"`
     Name types.String `tfsdk:"name"`
@@ -72,6 +73,10 @@ func (d *StatusPageMonitorRuleDataSource) Schema(ctx context.Context, req dataso
             },
             "criteria": schema.StringAttribute{
                 MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "emptied_limits": schema.StringAttribute{
+                MarkdownDescription: "The lists this rule was limited to whose every record was deleted since: each list, the deleted records' names, how many and when. Deleting the last record a list held would make the rule match every record instead, so OneUptime switched the rule off and wrote this. It is cleared when the rule is switched on again; until a list named here holds a record again, switching the rule on must say what the list holds in the same update. Written by OneUptime; any value sent for it is refused. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -253,6 +258,7 @@ func (d *StatusPageMonitorRuleDataSource) Read(ctx context.Context, req datasour
         "createdAt": true,
         "updatedAt": true,
         "criteria": true,
+        "emptiedLimits": true,
         "projectId": true,
         "statusPageId": true,
         "name": true,
@@ -423,6 +429,30 @@ func (d *StatusPageMonitorRuleDataSource) Read(ctx context.Context, req datasour
         data.Criteria = types.StringValue(val)
     } else {
         data.Criteria = types.StringNull()
+    }
+    if obj, ok := item["emptiedLimits"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EmptiedLimits = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.EmptiedLimits = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.EmptiedLimits = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EmptiedLimits = types.StringValue(string(jsonBytes))
+        } else {
+            data.EmptiedLimits = types.StringNull()
+        }
+    } else if arr, ok := item["emptiedLimits"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.EmptiedLimits = types.StringValue(string(jsonBytes))
+        } else {
+            data.EmptiedLimits = types.StringNull()
+        }
+    } else if val, ok := item["emptiedLimits"].(string); ok {
+        data.EmptiedLimits = types.StringValue(val)
+    } else {
+        data.EmptiedLimits = types.StringNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

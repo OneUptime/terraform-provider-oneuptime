@@ -56,5 +56,6 @@ data "oneuptime_code_repository" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `minted_token_refused_at` (String) When the repository's host last refused to make the short-lived access token an AI code fix pushes with. Empty while it makes one. Set by OneUptime, and cleared when the connection's token is replaced.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

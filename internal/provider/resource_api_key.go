@@ -43,6 +43,7 @@ type ApiKeyResourceModel struct {
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    ApiKeyHint types.String `tfsdk:"api_key_hint"`
     ApiKey types.String `tfsdk:"api_key"`
 }
 
@@ -120,10 +121,17 @@ func (r *ApiKeyResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "api_key_hint": schema.StringAttribute{
+                MarkdownDescription: "The key's last four characters, to tell it from the project's other keys. Never enough to use the key.",
+                Computed: true,
+            },
             "api_key": schema.StringAttribute{
-                MarkdownDescription: "Secret API Key.",
+                MarkdownDescription: "The secret key, sent in the ApiKey header of each request. Shown once: in the answer to the create that makes it, or to a reset of it. OneUptime keeps only its hash. Kept in state from the answer to the create: OneUptime never reads it back, so a resource imported into Terraform has none. Replace the resource for a new one.",
                 Computed: true,
                 Sensitive: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
         },
     }
@@ -228,6 +236,58 @@ func (r *ApiKeyResource) Create(ctx context.Context, req resource.CreateRequest,
     }
     data.Id = types.StringValue(createdId)
 
+    // What the create answers once, and nothing reads back: kept from its answer.
+    var shownOnceMap map[string]interface{}
+    if wrapper, ok := apiKeyResponse["data"].(map[string]interface{}); ok {
+        shownOnceMap = wrapper
+    } else {
+        shownOnceMap = apiKeyResponse
+    }
+    if obj, ok := shownOnceMap["apiKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ApiKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ApiKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ApiKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ApiKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.ApiKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ApiKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.ApiKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ApiKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKey = types.StringNull()
+        }
+    } else if arr, ok := shownOnceMap["apiKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ApiKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ApiKey = types.StringNull()
+        }
+    } else if val, ok := shownOnceMap["apiKey"].(string); ok {
+        data.ApiKey = types.StringValue(val)
+    } else {
+        data.ApiKey = types.StringNull()
+    }
+
     /*
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
@@ -251,7 +311,7 @@ func (r *ApiKeyResource) Create(ctx context.Context, req resource.CreateRequest,
         "updatedAt": true,
         "slug": true,
         "createdByUserId": true,
-        "apiKey": true,
+        "apiKeyHint": true,
         "_id": true,
     }
 
@@ -504,49 +564,49 @@ func (r *ApiKeyResource) Create(ctx context.Context, req resource.CreateRequest,
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["apiKey"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["apiKeyHint"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ApiKey = types.StringValue(val)
+            data.ApiKeyHint = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ApiKey = types.StringValue(val)
+            data.ApiKeyHint = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.ApiKey = types.StringValue(fmt.Sprintf("%v", val))
+            data.ApiKeyHint = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ApiKey = types.StringValue(string(jsonBytes))
+                data.ApiKeyHint = types.StringValue(string(jsonBytes))
             } else {
-                data.ApiKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.ApiKeyHint = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ApiKey = types.StringValue(string(jsonBytes))
+                data.ApiKeyHint = types.StringValue(string(jsonBytes))
             } else {
-                data.ApiKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.ApiKeyHint = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.ApiKey = types.StringValue(string(jsonBytes))
+            data.ApiKeyHint = types.StringValue(string(jsonBytes))
         } else {
-            data.ApiKey = types.StringNull()
+            data.ApiKeyHint = types.StringNull()
         }
-    } else if arr, ok := dataMap["apiKey"].([]interface{}); ok {
+    } else if arr, ok := dataMap["apiKeyHint"].([]interface{}); ok {
         // A JSON array column: the array, as JSON
         if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.ApiKey = types.StringValue(string(jsonBytes))
+            data.ApiKeyHint = types.StringValue(string(jsonBytes))
         } else {
-            data.ApiKey = types.StringNull()
+            data.ApiKeyHint = types.StringNull()
         }
-    } else if val, ok := dataMap["apiKey"].(string); ok {
-        data.ApiKey = types.StringValue(val)
+    } else if val, ok := dataMap["apiKeyHint"].(string); ok {
+        data.ApiKeyHint = types.StringValue(val)
     } else {
-        data.ApiKey = types.StringNull()
+        data.ApiKeyHint = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -587,7 +647,7 @@ func (r *ApiKeyResource) Read(ctx context.Context, req resource.ReadRequest, res
         "updatedAt": true,
         "slug": true,
         "createdByUserId": true,
-        "apiKey": true,
+        "apiKeyHint": true,
         "_id": true,
     }
 
@@ -841,49 +901,49 @@ func (r *ApiKeyResource) Read(ctx context.Context, req resource.ReadRequest, res
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["apiKey"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["apiKeyHint"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ApiKey = types.StringValue(val)
+            data.ApiKeyHint = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ApiKey = types.StringValue(val)
+            data.ApiKeyHint = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.ApiKey = types.StringValue(fmt.Sprintf("%v", val))
+            data.ApiKeyHint = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ApiKey = types.StringValue(string(jsonBytes))
+                data.ApiKeyHint = types.StringValue(string(jsonBytes))
             } else {
-                data.ApiKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.ApiKeyHint = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ApiKey = types.StringValue(string(jsonBytes))
+                data.ApiKeyHint = types.StringValue(string(jsonBytes))
             } else {
-                data.ApiKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.ApiKeyHint = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.ApiKey = types.StringValue(string(jsonBytes))
+            data.ApiKeyHint = types.StringValue(string(jsonBytes))
         } else {
-            data.ApiKey = types.StringNull()
+            data.ApiKeyHint = types.StringNull()
         }
-    } else if arr, ok := dataMap["apiKey"].([]interface{}); ok {
+    } else if arr, ok := dataMap["apiKeyHint"].([]interface{}); ok {
         // A JSON array column: the array, as JSON
         if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.ApiKey = types.StringValue(string(jsonBytes))
+            data.ApiKeyHint = types.StringValue(string(jsonBytes))
         } else {
-            data.ApiKey = types.StringNull()
+            data.ApiKeyHint = types.StringNull()
         }
-    } else if val, ok := dataMap["apiKey"].(string); ok {
-        data.ApiKey = types.StringValue(val)
+    } else if val, ok := dataMap["apiKeyHint"].(string); ok {
+        data.ApiKeyHint = types.StringValue(val)
     } else {
-        data.ApiKey = types.StringNull()
+        data.ApiKeyHint = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -913,6 +973,8 @@ func (r *ApiKeyResource) Update(ctx context.Context, req resource.UpdateRequest,
 
     // Use the ID from the current state
     data.Id = state.Id
+    // Answered once, by the create: kept as state holds it.
+    data.ApiKey = state.ApiKey
 
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config ApiKeyResourceModel
@@ -968,7 +1030,7 @@ func (r *ApiKeyResource) Update(ctx context.Context, req resource.UpdateRequest,
         "updatedAt": true,
         "slug": true,
         "createdByUserId": true,
-        "apiKey": true,
+        "apiKeyHint": true,
         "_id": true,
     }
 
@@ -1216,49 +1278,49 @@ func (r *ApiKeyResource) Update(ctx context.Context, req resource.UpdateRequest,
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if obj, ok := dataMap["apiKey"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["apiKeyHint"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ApiKey = types.StringValue(val)
+            data.ApiKeyHint = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ApiKey = types.StringValue(val)
+            data.ApiKeyHint = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.ApiKey = types.StringValue(fmt.Sprintf("%v", val))
+            data.ApiKeyHint = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ApiKey = types.StringValue(string(jsonBytes))
+                data.ApiKeyHint = types.StringValue(string(jsonBytes))
             } else {
-                data.ApiKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.ApiKeyHint = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ApiKey = types.StringValue(string(jsonBytes))
+                data.ApiKeyHint = types.StringValue(string(jsonBytes))
             } else {
-                data.ApiKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.ApiKeyHint = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.ApiKey = types.StringValue(string(jsonBytes))
+            data.ApiKeyHint = types.StringValue(string(jsonBytes))
         } else {
-            data.ApiKey = types.StringNull()
+            data.ApiKeyHint = types.StringNull()
         }
-    } else if arr, ok := dataMap["apiKey"].([]interface{}); ok {
+    } else if arr, ok := dataMap["apiKeyHint"].([]interface{}); ok {
         // A JSON array column: the array, as JSON
         if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.ApiKey = types.StringValue(string(jsonBytes))
+            data.ApiKeyHint = types.StringValue(string(jsonBytes))
         } else {
-            data.ApiKey = types.StringNull()
+            data.ApiKeyHint = types.StringNull()
         }
-    } else if val, ok := dataMap["apiKey"].(string); ok {
-        data.ApiKey = types.StringValue(val)
+    } else if val, ok := dataMap["apiKeyHint"].(string); ok {
+        data.ApiKeyHint = types.StringValue(val)
     } else {
-        data.ApiKey = types.StringNull()
+        data.ApiKeyHint = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

@@ -281,6 +281,7 @@ func (r *DataAssetFeedResource) Create(ctx context.Context, req resource.CreateR
     }
     data.Id = types.StringValue(createdId)
 
+
     // The person a create named by address, as the API has them.
     if data.UserId.IsUnknown() {
         created := dataAssetFeedResponse

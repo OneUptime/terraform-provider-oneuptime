@@ -35,7 +35,7 @@ type ApiKeyDataSourceModel struct {
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ExpiresAt types.String `tfsdk:"expires_at"`
-    ApiKey types.String `tfsdk:"api_key"`
+    ApiKeyHint types.String `tfsdk:"api_key_hint"`
 }
 
 func (d *ApiKeyDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -44,7 +44,7 @@ func (d *ApiKeyDataSource) Metadata(ctx context.Context, req datasource.Metadata
 
 func (d *ApiKeyDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage API Keys for your project Look up an existing api key by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one api key may match them all.",
+        MarkdownDescription: "Manage API Keys for your project Look up an existing api key by `id`, or by any of its other arguments (`name`, `api_key_hint`, `created_by_user_id`, ...): each one set must match, and exactly one api key may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -89,10 +89,10 @@ func (d *ApiKeyDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 MarkdownDescription: "Date and Time when this API Key expires.",
                 Computed: true,
             },
-            "api_key": schema.StringAttribute{
-                MarkdownDescription: "Secret API Key.",
+            "api_key_hint": schema.StringAttribute{
+                MarkdownDescription: "The key's last four characters, to tell it from the project's other keys. Never enough to use the key.",
+                Optional: true,
                 Computed: true,
-                Sensitive: true,
             },
         },
     }
@@ -149,6 +149,10 @@ func (d *ApiKeyDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
     }
+    if !data.ApiKeyHint.IsNull() && !data.ApiKeyHint.IsUnknown() {
+        filters["apiKeyHint"] = data.ApiKeyHint.ValueString()
+        filterNames = append(filterNames, "api_key_hint = "+fmt.Sprintf("%q", data.ApiKeyHint.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -174,7 +178,7 @@ func (d *ApiKeyDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         "slug": true,
         "createdByUserId": true,
         "expiresAt": true,
-        "apiKey": true,
+        "apiKeyHint": true,
         "_id": true,
     }
 
@@ -452,29 +456,29 @@ func (d *ApiKeyDataSource) Read(ctx context.Context, req datasource.ReadRequest,
     } else {
         data.ExpiresAt = types.StringNull()
     }
-    if obj, ok := item["apiKey"].(map[string]interface{}); ok {
+    if obj, ok := item["apiKeyHint"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ApiKey = types.StringValue(val)
+            data.ApiKeyHint = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.ApiKey = types.StringValue(val)
+            data.ApiKeyHint = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.ApiKey = types.StringValue(fmt.Sprintf("%v", val))
+            data.ApiKeyHint = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.ApiKey = types.StringValue(string(jsonBytes))
+            data.ApiKeyHint = types.StringValue(string(jsonBytes))
         } else {
-            data.ApiKey = types.StringNull()
+            data.ApiKeyHint = types.StringNull()
         }
-    } else if arr, ok := item["apiKey"].([]interface{}); ok {
+    } else if arr, ok := item["apiKeyHint"].([]interface{}); ok {
         // A JSON array column, such as a runbook's steps: the array, as JSON
         if jsonBytes, err := json.Marshal(arr); err == nil {
-            data.ApiKey = types.StringValue(string(jsonBytes))
+            data.ApiKeyHint = types.StringValue(string(jsonBytes))
         } else {
-            data.ApiKey = types.StringNull()
+            data.ApiKeyHint = types.StringNull()
         }
-    } else if val, ok := item["apiKey"].(string); ok {
-        data.ApiKey = types.StringValue(val)
+    } else if val, ok := item["apiKeyHint"].(string); ok {
+        data.ApiKeyHint = types.StringValue(val)
     } else {
-        data.ApiKey = types.StringNull()
+        data.ApiKeyHint = types.StringNull()
     }
 
     // Write logs using the tflog package

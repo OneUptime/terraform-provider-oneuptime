@@ -45,7 +45,7 @@ resource "oneuptime_code_repository" "example" {
 - `production_review_pull_request_content` (String) What a production review posts on a pull request. Review (the default): the review, or only a link to it in OneUptime on a public repository. Link: only a link, whatever the repository. ReviewEvenIfPublic: the review, even on a public repository. Allowed values: `Review`, `Link`, `ReviewEvenIfPublic`.
 - `repository_url` (String) The repository's address: its page on GitHub, GitLab or Forgejo, or the HTTPS address a Git repository is cloned with.
 - `runner_id` (String) ID of the Runner AI works in this repository on: one of the project's own Runners. Empty means the project's default Runner when it has one, and otherwise a global Runner, one OneUptime runs for every project. The ID of a `oneuptime_runner`.
-- `secret_token` (String, Sensitive) Secret token used to verify incoming webhooks.
+- `secret_token` (String, Sensitive) Secret token used to verify incoming webhooks. Write-only: kept encrypted and never returned by the API.
 - `setup_command` (String) Optional. Leave it empty: the code agent learns how to set up, build and test the repository from the repository itself (its AGENTS.md first) and checks its change that way. When set, a Runner of the project's own also runs it at the repository root, in the cloned workspace, to install dependencies before the build and test commands check an AI-authored fix (e.g. 'npm ci').
 - `test_command` (String) Optional. Leave it empty: the code agent learns how to test the repository from the repository itself (its AGENTS.md first) and checks its change that way. When set, a Runner of the project's own also runs it at the repository root to run the test suite against an AI-authored fix (e.g. 'npm test'); a failure is fed back to the code agent for bounded repair attempts before the pull request opens.
 
@@ -56,6 +56,7 @@ resource "oneuptime_code_repository" "example" {
 - `git_hub_app_installation_id` (String) The GitHub App installation ID used to authenticate with this repository.
 - `git_lab_project_id` (String) The GitLab project ID OneUptime reads this repository by. Set when the repository is connected.
 - `id` (String) Unique identifier for the resource.
+- `minted_token_refused_at` (String) When the repository's host last refused to make the short-lived access token an AI code fix pushes with. Empty while it makes one. Set by OneUptime, and cleared when the connection's token is replaced.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `slug` (String) Friendly globally unique name for your object.
 - `updated_at` (String) Date and Time when the object was updated.

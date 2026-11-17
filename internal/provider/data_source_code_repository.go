@@ -53,6 +53,7 @@ type CodeRepositoryDataSourceModel struct {
     RepositoryUrl types.String `tfsdk:"repository_url"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
     GitLabProjectId types.String `tfsdk:"git_lab_project_id"`
+    MintedTokenRefusedAt types.String `tfsdk:"minted_token_refused_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Labels types.Set `tfsdk:"labels"`
 }
@@ -188,6 +189,10 @@ func (d *CodeRepositoryDataSource) Schema(ctx context.Context, req datasource.Sc
             "git_lab_project_id": schema.StringAttribute{
                 MarkdownDescription: "The GitLab project ID OneUptime reads this repository by. Set when the repository is connected.",
                 Optional: true,
+                Computed: true,
+            },
+            "minted_token_refused_at": schema.StringAttribute{
+                MarkdownDescription: "When the repository's host last refused to make the short-lived access token an AI code fix pushes with. Empty while it makes one. Set by OneUptime, and cleared when the connection's token is replaced.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -369,6 +374,7 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
         "repositoryUrl": true,
         "gitHubAppInstallationId": true,
         "gitLabProjectId": true,
+        "mintedTokenRefusedAt": true,
         "createdByUserId": true,
         "labels": true,
         "_id": true,
@@ -951,6 +957,30 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
         data.GitLabProjectId = types.StringValue(val)
     } else {
         data.GitLabProjectId = types.StringNull()
+    }
+    if obj, ok := item["mintedTokenRefusedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MintedTokenRefusedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MintedTokenRefusedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MintedTokenRefusedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MintedTokenRefusedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.MintedTokenRefusedAt = types.StringNull()
+        }
+    } else if arr, ok := item["mintedTokenRefusedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.MintedTokenRefusedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.MintedTokenRefusedAt = types.StringNull()
+        }
+    } else if val, ok := item["mintedTokenRefusedAt"].(string); ok {
+        data.MintedTokenRefusedAt = types.StringValue(val)
+    } else {
+        data.MintedTokenRefusedAt = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

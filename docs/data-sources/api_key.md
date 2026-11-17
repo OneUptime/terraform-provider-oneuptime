@@ -28,6 +28,7 @@ data "oneuptime_api_key" "by_id" {
 
 ### Optional
 
+- `api_key_hint` (String) The key's last four characters, to tell it from the project's other keys. Never enough to use the key.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Friendly description that will help you remember.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
@@ -36,7 +37,6 @@ data "oneuptime_api_key" "by_id" {
 
 ### Read-Only
 
-- `api_key` (String, Sensitive) Secret API Key.
 - `created_at` (String) Date and Time when the object was created.
 - `expires_at` (String) Date and Time when this API Key expires.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

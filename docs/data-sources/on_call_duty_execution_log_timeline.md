@@ -30,6 +30,8 @@ data "oneuptime_on_call_duty_execution_log_timeline" "by_id" {
 
 - `alert_sent_to_user_id` (String) ID of the user who we sent alert to. The ID of a `oneuptime_user` (see the data source).
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `escalation_rule_name` (String) The name of the escalation rule this timeline event belongs to, as it was when the event was written. Kept when the rule is deleted later. Empty for a step of a direct page.
+- `escalation_rule_order` (Number) The level of the escalation rule this timeline event belongs to (1 for the first), as it was when the event was written. Kept when the rule is deleted later. Empty for a step of a direct page.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_acknowledged` (Boolean) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]
 - `is_next_in_rotation` (Boolean) True when this step paged the person because they are next in the schedule's rotation - after whoever is on call - rather than on call themselves. Paired with the step's schedule. A step with this set and nobody paged means nobody was next in the rotation.

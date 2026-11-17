@@ -287,6 +287,7 @@ func (r *ScheduledMaintenanceFeedResource) Create(ctx context.Context, req resou
     }
     data.Id = types.StringValue(createdId)
 
+
     // The person a create named by address, as the API has them.
     if data.UserId.IsUnknown() {
         created := scheduledMaintenanceFeedResponse

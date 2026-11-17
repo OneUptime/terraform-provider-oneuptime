@@ -2,12 +2,12 @@
 page_title: "oneuptime_incoming_request_secret Resource - oneuptime"
 subcategory: "Other"
 description: |-
-  A secret that requests to the project's Incoming Request monitors must send, in the X-OneUptime-Secret header or as a Bearer token, while the project requires one.
+  A secret that requests to the project's Incoming Request monitors must send while the project requires one: in the X-OneUptime-Secret header, as a Bearer token, or as a signature of the request's body.
 ---
 
 # oneuptime_incoming_request_secret (Resource)
 
-A secret that requests to the project's Incoming Request monitors must send, in the X-OneUptime-Secret header or as a Bearer token, while the project requires one.
+A secret that requests to the project's Incoming Request monitors must send while the project requires one: in the X-OneUptime-Secret header, as a Bearer token, or as a signature of the request's body.
 
 ## Example Usage
 
@@ -25,7 +25,10 @@ resource "oneuptime_incoming_request_secret" "example" {
 
 ### Optional
 
-- `secret_value` (String, Sensitive) The value senders send in the X-OneUptime-Secret header, or as a Bearer token in the Authorization header. Leave it empty and OneUptime generates a strong one. Set your own with 16 to 256 characters: letters, digits and keyboard symbols, no spaces. It cannot be changed after the secret is created - create a new secret instead.
+- `labels` (Set of String) When Monitor Access is Monitors With Labels, the Incoming Request monitors that carry at least one of these labels accept this secret. Ignored otherwise. IDs of `oneuptime_label` resources.
+- `monitor_access` (String) Which Incoming Request monitors accept this secret. All Monitors: every one in this project, including monitors created later. Specific Monitors: only the monitors in Monitors. Monitors With Labels: monitors that carry at least one of the labels in Labels. Setting this empties whichever of Monitors and Labels it does not use. Allowed values: `All Monitors`, `Specific Monitors`, `Monitors With Labels`. Defaults to `All Monitors`.
+- `monitors` (Set of String) The Incoming Request monitors that accept this secret when Monitor Access is Specific Monitors. Ignored otherwise. IDs of `oneuptime_monitor` resources.
+- `secret_value` (String, Sensitive) The value senders send in the X-OneUptime-Secret header or as a Bearer token in the Authorization header, or sign each request's body with (X-OneUptime-Signature, or GitHub's, Slack's or Stripe's signature). Leave it empty and OneUptime generates a strong one. Set your own with 16 to 256 characters: letters, digits and keyboard symbols, no spaces. It cannot be changed after the secret is created - create a new secret instead.
 
 ### Read-Only
 

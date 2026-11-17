@@ -57,6 +57,7 @@ type RunnerResourceModel struct {
     LastAlive RFC3339Value `tfsdk:"last_alive"`
     CanRunAiCommands types.Bool `tfsdk:"can_run_ai_commands"`
     TakesCodeFixes types.Bool `tfsdk:"takes_code_fixes"`
+    CanRunCodeFixes types.Bool `tfsdk:"can_run_code_fixes"`
     IsGlobalRunner types.Bool `tfsdk:"is_global_runner"`
     HostInfo JSONSubsetValue `tfsdk:"host_info"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -196,6 +197,10 @@ func (r *RunnerResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Whether this Runner takes OneUptime AI's code fixes, as it said on its last heartbeat. Empty for a Runner of a release that does not say.",
                 Computed: true,
             },
+            "can_run_code_fixes": schema.BoolAttribute{
+                MarkdownDescription: "For a global Runner: whether it takes OneUptime AI's code fixes, with a token for each repository. On by default; a master admin turns it off.",
+                Computed: true,
+            },
             "is_global_runner": schema.BoolAttribute{
                 MarkdownDescription: "Whether OneUptime runs this Runner for every project. Global Runners run JavaScript steps in a sandbox that can reach the internet but not your network. Only a master admin creates them.",
                 Computed: true,
@@ -330,6 +335,7 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
     }
     data.Id = types.StringValue(createdId)
 
+
     /*
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
@@ -360,6 +366,7 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
         "lastAlive": true,
         "canRunAiCommands": true,
         "takesCodeFixes": true,
+        "canRunCodeFixes": true,
         "isGlobalRunner": true,
         "hostInfo": true,
         "createdByUserId": true,
@@ -749,6 +756,9 @@ func (r *RunnerResource) Create(ctx context.Context, req resource.CreateRequest,
     } else {
         data.TakesCodeFixes = types.BoolNull()
     }
+    if val, ok := dataMap["canRunCodeFixes"].(bool); ok {
+        data.CanRunCodeFixes = types.BoolValue(val)
+    }
     if val, ok := dataMap["isGlobalRunner"].(bool); ok {
         data.IsGlobalRunner = types.BoolValue(val)
     }
@@ -886,6 +896,7 @@ func (r *RunnerResource) Read(ctx context.Context, req resource.ReadRequest, res
         "lastAlive": true,
         "canRunAiCommands": true,
         "takesCodeFixes": true,
+        "canRunCodeFixes": true,
         "isGlobalRunner": true,
         "hostInfo": true,
         "createdByUserId": true,
@@ -1276,6 +1287,9 @@ func (r *RunnerResource) Read(ctx context.Context, req resource.ReadRequest, res
     } else {
         data.TakesCodeFixes = types.BoolNull()
     }
+    if val, ok := dataMap["canRunCodeFixes"].(bool); ok {
+        data.CanRunCodeFixes = types.BoolValue(val)
+    }
     if val, ok := dataMap["isGlobalRunner"].(bool); ok {
         data.IsGlobalRunner = types.BoolValue(val)
     }
@@ -1466,6 +1480,7 @@ func (r *RunnerResource) Update(ctx context.Context, req resource.UpdateRequest,
         "lastAlive": true,
         "canRunAiCommands": true,
         "takesCodeFixes": true,
+        "canRunCodeFixes": true,
         "isGlobalRunner": true,
         "hostInfo": true,
         "createdByUserId": true,
@@ -1849,6 +1864,9 @@ func (r *RunnerResource) Update(ctx context.Context, req resource.UpdateRequest,
         data.TakesCodeFixes = types.BoolValue(val)
     } else {
         data.TakesCodeFixes = types.BoolNull()
+    }
+    if val, ok := dataMap["canRunCodeFixes"].(bool); ok {
+        data.CanRunCodeFixes = types.BoolValue(val)
     }
     if val, ok := dataMap["isGlobalRunner"].(bool); ok {
         data.IsGlobalRunner = types.BoolValue(val)

@@ -42,6 +42,7 @@ type RunnerDataSourceModel struct {
     CanRunRunbooks types.Bool `tfsdk:"can_run_runbooks"`
     CanRunAiCommands types.Bool `tfsdk:"can_run_ai_commands"`
     TakesCodeFixes types.Bool `tfsdk:"takes_code_fixes"`
+    CanRunCodeFixes types.Bool `tfsdk:"can_run_code_fixes"`
     IsGlobalRunner types.Bool `tfsdk:"is_global_runner"`
     IsProjectDefault types.Bool `tfsdk:"is_project_default"`
     HostInfo types.String `tfsdk:"host_info"`
@@ -55,7 +56,7 @@ func (d *RunnerDataSource) Metadata(ctx context.Context, req datasource.Metadata
 
 func (d *RunnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A self-hosted OneUptime Runner: it executes runbook steps in your own infrastructure, and AI works on it in the code repositories that pick it. Runbook steps and code repositories each pick the Runner that runs them. Look up an existing runner by `id`, or by any of its other arguments (`name`, `can_run_ai_commands`, `can_run_runbooks`, ...): each one set must match, and exactly one runner may match them all.",
+        MarkdownDescription: "A self-hosted OneUptime Runner: it executes runbook steps in your own infrastructure, and AI works on it in the code repositories that pick it. Runbook steps and code repositories each pick the Runner that runs them. Look up an existing runner by `id`, or by any of its other arguments (`name`, `can_run_ai_commands`, `can_run_code_fixes`, ...): each one set must match, and exactly one runner may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -120,6 +121,11 @@ func (d *RunnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
             },
             "takes_code_fixes": schema.BoolAttribute{
                 MarkdownDescription: "Whether this Runner takes OneUptime AI's code fixes, as it said on its last heartbeat. Empty for a Runner of a release that does not say.",
+                Optional: true,
+                Computed: true,
+            },
+            "can_run_code_fixes": schema.BoolAttribute{
+                MarkdownDescription: "For a global Runner: whether it takes OneUptime AI's code fixes, with a token for each repository. On by default; a master admin turns it off.",
                 Optional: true,
                 Computed: true,
             },
@@ -215,6 +221,10 @@ func (d *RunnerDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         filters["takesCodeFixes"] = data.TakesCodeFixes.ValueBool()
         filterNames = append(filterNames, "takes_code_fixes = "+fmt.Sprintf("%t", data.TakesCodeFixes.ValueBool()))
     }
+    if !data.CanRunCodeFixes.IsNull() && !data.CanRunCodeFixes.IsUnknown() {
+        filters["canRunCodeFixes"] = data.CanRunCodeFixes.ValueBool()
+        filterNames = append(filterNames, "can_run_code_fixes = "+fmt.Sprintf("%t", data.CanRunCodeFixes.ValueBool()))
+    }
     if !data.IsGlobalRunner.IsNull() && !data.IsGlobalRunner.IsUnknown() {
         filters["isGlobalRunner"] = data.IsGlobalRunner.ValueBool()
         filterNames = append(filterNames, "is_global_runner = "+fmt.Sprintf("%t", data.IsGlobalRunner.ValueBool()))
@@ -257,6 +267,7 @@ func (d *RunnerDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         "canRunRunbooks": true,
         "canRunAiCommands": true,
         "takesCodeFixes": true,
+        "canRunCodeFixes": true,
         "isGlobalRunner": true,
         "isProjectDefault": true,
         "hostInfo": true,
@@ -601,6 +612,11 @@ func (d *RunnerDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         data.TakesCodeFixes = types.BoolValue(val)
     } else {
         data.TakesCodeFixes = types.BoolNull()
+    }
+    if val, ok := item["canRunCodeFixes"].(bool); ok {
+        data.CanRunCodeFixes = types.BoolValue(val)
+    } else {
+        data.CanRunCodeFixes = types.BoolNull()
     }
     if val, ok := item["isGlobalRunner"].(bool); ok {
         data.IsGlobalRunner = types.BoolValue(val)

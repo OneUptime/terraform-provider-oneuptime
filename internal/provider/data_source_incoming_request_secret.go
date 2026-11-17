@@ -5,6 +5,8 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
+    "github.com/hashicorp/terraform-plugin-framework/attr"
+    "sort"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -32,6 +34,9 @@ type IncomingRequestSecretDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
     SecretValue types.String `tfsdk:"secret_value"`
+    MonitorAccess types.String `tfsdk:"monitor_access"`
+    Monitors types.Set `tfsdk:"monitors"`
+    Labels types.Set `tfsdk:"labels"`
     LastUsedAt types.String `tfsdk:"last_used_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -42,7 +47,7 @@ func (d *IncomingRequestSecretDataSource) Metadata(ctx context.Context, req data
 
 func (d *IncomingRequestSecretDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A secret that requests to the project's Incoming Request monitors must send, in the X-OneUptime-Secret header or as a Bearer token, while the project requires one. Look up an existing incoming request secret by `id`, or by any of its other arguments (`name`, `created_by_user_id`): each one set must match, and exactly one incoming request secret may match them all.",
+        MarkdownDescription: "A secret that requests to the project's Incoming Request monitors must send while the project requires one: in the X-OneUptime-Secret header, as a Bearer token, or as a signature of the request's body. Look up an existing incoming request secret by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `monitor_access`): each one set must match, and exactly one incoming request secret may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -68,9 +73,24 @@ func (d *IncomingRequestSecretDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "secret_value": schema.StringAttribute{
-                MarkdownDescription: "The value senders send in the X-OneUptime-Secret header, or as a Bearer token in the Authorization header. Leave it empty and OneUptime generates a strong one. Set your own with 16 to 256 characters: letters, digits and keyboard symbols, no spaces. It cannot be changed after the secret is created - create a new secret instead.",
+                MarkdownDescription: "The value senders send in the X-OneUptime-Secret header or as a Bearer token in the Authorization header, or sign each request's body with (X-OneUptime-Signature, or GitHub's, Slack's or Stripe's signature). Leave it empty and OneUptime generates a strong one. Set your own with 16 to 256 characters: letters, digits and keyboard symbols, no spaces. It cannot be changed after the secret is created - create a new secret instead.",
                 Computed: true,
                 Sensitive: true,
+            },
+            "monitor_access": schema.StringAttribute{
+                MarkdownDescription: "Which Incoming Request monitors accept this secret. All Monitors: every one in this project, including monitors created later. Specific Monitors: only the monitors in Monitors. Monitors With Labels: monitors that carry at least one of the labels in Labels. Setting this empties whichever of Monitors and Labels it does not use.",
+                Optional: true,
+                Computed: true,
+            },
+            "monitors": schema.SetAttribute{
+                MarkdownDescription: "The Incoming Request monitors that accept this secret when Monitor Access is Specific Monitors. Ignored otherwise. IDs of `oneuptime_monitor` resources.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "labels": schema.SetAttribute{
+                MarkdownDescription: "When Monitor Access is Monitors With Labels, the Incoming Request monitors that carry at least one of these labels accept this secret. Ignored otherwise. IDs of `oneuptime_label` resources.",
+                Computed: true,
+                ElementType: types.StringType,
             },
             "last_used_at": schema.StringAttribute{
                 MarkdownDescription: "About when a request was last accepted with this secret, to the nearest five minutes. Empty means none has been accepted with it yet. Use it to find secrets that are safe to delete.",
@@ -125,6 +145,10 @@ func (d *IncomingRequestSecretDataSource) Read(ctx context.Context, req datasour
         filters["name"] = data.Name.ValueString()
         filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
     }
+    if !data.MonitorAccess.IsNull() && !data.MonitorAccess.IsUnknown() {
+        filters["monitorAccess"] = data.MonitorAccess.ValueString()
+        filterNames = append(filterNames, "monitor_access = "+fmt.Sprintf("%q", data.MonitorAccess.ValueString()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -151,6 +175,9 @@ func (d *IncomingRequestSecretDataSource) Read(ctx context.Context, req datasour
         "projectId": true,
         "name": true,
         "secretValue": true,
+        "monitorAccess": true,
+        "monitors": true,
+        "labels": true,
         "lastUsedAt": true,
         "createdByUserId": true,
         "_id": true,
@@ -357,6 +384,78 @@ func (d *IncomingRequestSecretDataSource) Read(ctx context.Context, req datasour
         data.SecretValue = types.StringValue(val)
     } else {
         data.SecretValue = types.StringNull()
+    }
+    if obj, ok := item["monitorAccess"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorAccess = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MonitorAccess = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MonitorAccess = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MonitorAccess = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorAccess = types.StringNull()
+        }
+    } else if arr, ok := item["monitorAccess"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.MonitorAccess = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorAccess = types.StringNull()
+        }
+    } else if val, ok := item["monitorAccess"].(string); ok {
+        data.MonitorAccess = types.StringValue(val)
+    } else {
+        data.MonitorAccess = types.StringNull()
+    }
+    if val, ok := item["monitors"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.Monitors = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.Monitors = types.SetNull(types.StringType)
+    }
+    if val, ok := item["labels"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.Labels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.Labels = types.SetNull(types.StringType)
     }
     if obj, ok := item["lastUsedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

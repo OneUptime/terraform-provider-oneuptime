@@ -432,6 +432,7 @@ func (r *ScheduledMaintenanceMeasurementResource) Create(ctx context.Context, re
     }
     data.Id = types.StringValue(createdId)
 
+
     /*
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting

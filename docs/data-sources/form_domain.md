@@ -44,6 +44,5 @@ data "oneuptime_form_domain" "by_id" {
 
 - `certificate_reissue_requested_at` (String) When a reissue of the SSL certificate for this domain was last requested. Used to rate limit how often a certificate can be reissued.
 - `created_at` (String) Date and Time when the object was created.
-- `custom_certificate_key` (String, Sensitive) The custom certificate's private key, in PEM format. Used while isCustomCertificate is on.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

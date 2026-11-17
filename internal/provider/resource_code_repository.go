@@ -69,6 +69,7 @@ type CodeRepositoryResourceModel struct {
     Slug types.String `tfsdk:"slug"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
     GitLabProjectId types.String `tfsdk:"git_lab_project_id"`
+    MintedTokenRefusedAt RFC3339Value `tfsdk:"minted_token_refused_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -248,7 +249,7 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
                 },
             },
             "secret_token": schema.StringAttribute{
-                MarkdownDescription: "Secret token used to verify incoming webhooks.",
+                MarkdownDescription: "Secret token used to verify incoming webhooks. Write-only: kept encrypted and never returned by the API.",
                 Optional: true,
                 Sensitive: true,
             },
@@ -288,6 +289,11 @@ func (r *CodeRepositoryResource) schemaDefinition() schema.Schema {
             },
             "git_lab_project_id": schema.StringAttribute{
                 MarkdownDescription: "The GitLab project ID OneUptime reads this repository by. Set when the repository is connected.",
+                Computed: true,
+            },
+            "minted_token_refused_at": schema.StringAttribute{
+                MarkdownDescription: "When the repository's host last refused to make the short-lived access token an AI code fix pushes with. Empty while it makes one. Set by OneUptime, and cleared when the connection's token is replaced.",
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -451,6 +457,7 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
     }
     data.Id = types.StringValue(createdId)
 
+
     /*
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
@@ -491,6 +498,7 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
         "slug": true,
         "gitHubAppInstallationId": true,
         "gitLabProjectId": true,
+        "mintedTokenRefusedAt": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1351,6 +1359,17 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
     } else {
         data.GitLabProjectId = types.StringNull()
     }
+    if obj, ok := dataMap["mintedTokenRefusedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.MintedTokenRefusedAt = NewRFC3339Value(val)
+        } else {
+            data.MintedTokenRefusedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["mintedTokenRefusedAt"].(string); ok && val != "" {
+        data.MintedTokenRefusedAt = NewRFC3339Value(val)
+    } else {
+        data.MintedTokenRefusedAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1451,6 +1470,7 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
         "slug": true,
         "gitHubAppInstallationId": true,
         "gitLabProjectId": true,
+        "mintedTokenRefusedAt": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -2312,6 +2332,17 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.GitLabProjectId = types.StringNull()
     }
+    if obj, ok := dataMap["mintedTokenRefusedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.MintedTokenRefusedAt = NewRFC3339Value(val)
+        } else {
+            data.MintedTokenRefusedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["mintedTokenRefusedAt"].(string); ok && val != "" {
+        data.MintedTokenRefusedAt = NewRFC3339Value(val)
+    } else {
+        data.MintedTokenRefusedAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2495,6 +2526,7 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
         "slug": true,
         "gitHubAppInstallationId": true,
         "gitLabProjectId": true,
+        "mintedTokenRefusedAt": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -3349,6 +3381,17 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
         data.GitLabProjectId = types.StringValue(val)
     } else {
         data.GitLabProjectId = types.StringNull()
+    }
+    if obj, ok := dataMap["mintedTokenRefusedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.MintedTokenRefusedAt = NewRFC3339Value(val)
+        } else {
+            data.MintedTokenRefusedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["mintedTokenRefusedAt"].(string); ok && val != "" {
+        data.MintedTokenRefusedAt = NewRFC3339Value(val)
+    } else {
+        data.MintedTokenRefusedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

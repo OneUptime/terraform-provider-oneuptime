@@ -76,7 +76,6 @@ type MonitorResourceModel struct {
     TelemetryMonitorNextMonitorAt RFC3339Value `tfsdk:"telemetry_monitor_next_monitor_at"`
     TelemetryMonitorLastMonitorAt RFC3339Value `tfsdk:"telemetry_monitor_last_monitor_at"`
     ServerMonitorRequestReceivedAt RFC3339Value `tfsdk:"server_monitor_request_received_at"`
-    IncomingMonitorRequest JSONSubsetValue `tfsdk:"incoming_monitor_request"`
     ServerMonitorResponse JSONSubsetValue `tfsdk:"server_monitor_response"`
     MinimumProbeAgreement types.Number `tfsdk:"minimum_probe_agreement"`
     IncomingEmailCustomLocalPart types.String `tfsdk:"incoming_email_custom_local_part"`
@@ -89,10 +88,12 @@ type MonitorResourceModel struct {
     AutoProvisionedNetworkDeviceId types.String `tfsdk:"auto_provisioned_network_device_id"`
     NetworkAlertPolicyId types.String `tfsdk:"network_alert_policy_id"`
     IsOwnerNotifiedOfResourceCreation types.Bool `tfsdk:"is_owner_notified_of_resource_creation"`
+    FirstMeasuredAt RFC3339Value `tfsdk:"first_measured_at"`
     DisableActiveMonitoringBecauseOfScheduledMaintenanceEvent types.Bool `tfsdk:"disable_active_monitoring_because_of_scheduled_maintenance_event"`
     DisableActiveMonitoringBecauseOfManualIncident types.Bool `tfsdk:"disable_active_monitoring_because_of_manual_incident"`
     ServerMonitorSecretKey types.String `tfsdk:"server_monitor_secret_key"`
     IncomingRequestSecretKey types.String `tfsdk:"incoming_request_secret_key"`
+    IncomingMonitorRequest JSONSubsetValue `tfsdk:"incoming_monitor_request"`
     IncomingRequestWithSecretAt RFC3339Value `tfsdk:"incoming_request_with_secret_at"`
     IncomingRequestWithoutSecretAt RFC3339Value `tfsdk:"incoming_request_without_secret_at"`
     IncomingRequestWithoutSecretReason types.String `tfsdk:"incoming_request_without_secret_reason"`
@@ -434,20 +435,6 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.RequiresReplace(),
                 },
             },
-            "incoming_monitor_request": schema.StringAttribute{
-                MarkdownDescription: "The latest request this monitor received, as its logs keep it: secrets masked, and no headers or body when it keeps no request content. A JSON value: write it with `jsonencode()`.",
-                CustomType: JSONSubsetType{},
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    JSONSubsetKeepImported(),
-                    stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
-                },
-                Validators: []validator.String{
-                    JSONEnvelopeValidator(),
-                },
-            },
             "server_monitor_response": schema.StringAttribute{
                 MarkdownDescription: "Server Monitor Response for Server Monitor. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
@@ -527,6 +514,11 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Are owners notified of when this resource is created?",
                 Computed: true,
             },
+            "first_measured_at": schema.StringAttribute{
+                MarkdownDescription: "When a check result, heartbeat, email, agent report or evaluation first reached this monitor. Empty while nothing has measured it yet: its status is then only the one every monitor is created in. A manual monitor, whose status a person sets, holds the time it was created.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
             "disable_active_monitoring_because_of_scheduled_maintenance_event": schema.BoolAttribute{
                 MarkdownDescription: "Disable Monitoring because of Ongoing Maintenance Event.",
                 Computed: true,
@@ -544,6 +536,11 @@ func (r *MonitorResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "This field is for Incoming Request Monitor only. Secret Key to authenticate the request.",
                 Computed: true,
                 Sensitive: true,
+            },
+            "incoming_monitor_request": schema.StringAttribute{
+                MarkdownDescription: "The latest request this monitor received, as its logs keep it: secrets masked, and no headers or body when it keeps no request content. A JSON value: read it with `jsondecode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
             },
             "incoming_request_with_secret_at": schema.StringAttribute{
                 MarkdownDescription: "About when this Incoming Request monitor last received a request that sent one of its project's incoming request secrets, to the nearest five minutes. Empty until one does.",
@@ -752,9 +749,6 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
     if !data.ServerMonitorRequestReceivedAt.IsNull() && !data.ServerMonitorRequestReceivedAt.IsUnknown() {
         requestDataMap["serverMonitorRequestReceivedAt"] = data.ServerMonitorRequestReceivedAt.ValueString()
     }
-    if parsedIncomingMonitorRequest := r.parseJSONField(data.IncomingMonitorRequest); parsedIncomingMonitorRequest != nil {
-        requestDataMap["incomingMonitorRequest"] = parsedIncomingMonitorRequest
-    }
     if parsedServerMonitorResponse := r.parseJSONField(data.ServerMonitorResponse); parsedServerMonitorResponse != nil {
         requestDataMap["serverMonitorResponse"] = parsedServerMonitorResponse
     }
@@ -790,6 +784,7 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         return
     }
     data.Id = types.StringValue(createdId)
+
 
     /*
      * The server has committed the row. Persist what we know to state BEFORE
@@ -839,7 +834,6 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         "telemetryMonitorNextMonitorAt": true,
         "telemetryMonitorLastMonitorAt": true,
         "serverMonitorRequestReceivedAt": true,
-        "incomingMonitorRequest": true,
         "serverMonitorResponse": true,
         "minimumProbeAgreement": true,
         "incomingEmailCustomLocalPart": true,
@@ -852,10 +846,12 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         "autoProvisionedNetworkDeviceId": true,
         "networkAlertPolicyId": true,
         "isOwnerNotifiedOfResourceCreation": true,
+        "firstMeasuredAt": true,
         "disableActiveMonitoringBecauseOfScheduledMaintenanceEvent": true,
         "disableActiveMonitoringBecauseOfManualIncident": true,
         "serverMonitorSecretKey": true,
         "incomingRequestSecretKey": true,
+        "incomingMonitorRequest": true,
         "incomingRequestWithSecretAt": true,
         "incomingRequestWithoutSecretAt": true,
         "incomingRequestWithoutSecretReason": true,
@@ -1818,50 +1814,6 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.ServerMonitorRequestReceivedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["incomingMonitorRequest"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IncomingMonitorRequest = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.IncomingMonitorRequest = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.IncomingMonitorRequest = NewJSONSubsetNull()
-        }
-    } else if arr, ok := dataMap["incomingMonitorRequest"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.IncomingMonitorRequest = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["incomingMonitorRequest"].(string); ok {
-        data.IncomingMonitorRequest = NewJSONSubsetValue(val)
-    } else {
-        data.IncomingMonitorRequest = NewJSONSubsetNull()
-    }
     if obj, ok := dataMap["serverMonitorResponse"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2207,6 +2159,17 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
     if val, ok := dataMap["isOwnerNotifiedOfResourceCreation"].(bool); ok {
         data.IsOwnerNotifiedOfResourceCreation = types.BoolValue(val)
     }
+    if obj, ok := dataMap["firstMeasuredAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.FirstMeasuredAt = NewRFC3339Value(val)
+        } else {
+            data.FirstMeasuredAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["firstMeasuredAt"].(string); ok && val != "" {
+        data.FirstMeasuredAt = NewRFC3339Value(val)
+    } else {
+        data.FirstMeasuredAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["disableActiveMonitoringBecauseOfScheduledMaintenanceEvent"].(bool); ok {
         data.DisableActiveMonitoringBecauseOfScheduledMaintenanceEvent = types.BoolValue(val)
     }
@@ -2300,6 +2263,50 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         data.IncomingRequestSecretKey = types.StringValue(val)
     } else {
         data.IncomingRequestSecretKey = types.StringNull()
+    }
+    if obj, ok := dataMap["incomingMonitorRequest"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncomingMonitorRequest = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncomingMonitorRequest = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.IncomingMonitorRequest = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["incomingMonitorRequest"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.IncomingMonitorRequest = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["incomingMonitorRequest"].(string); ok {
+        data.IncomingMonitorRequest = NewJSONSubsetValue(val)
+    } else {
+        data.IncomingMonitorRequest = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["incomingRequestWithSecretAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -2549,7 +2556,6 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         "telemetryMonitorNextMonitorAt": true,
         "telemetryMonitorLastMonitorAt": true,
         "serverMonitorRequestReceivedAt": true,
-        "incomingMonitorRequest": true,
         "serverMonitorResponse": true,
         "minimumProbeAgreement": true,
         "incomingEmailCustomLocalPart": true,
@@ -2562,10 +2568,12 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         "autoProvisionedNetworkDeviceId": true,
         "networkAlertPolicyId": true,
         "isOwnerNotifiedOfResourceCreation": true,
+        "firstMeasuredAt": true,
         "disableActiveMonitoringBecauseOfScheduledMaintenanceEvent": true,
         "disableActiveMonitoringBecauseOfManualIncident": true,
         "serverMonitorSecretKey": true,
         "incomingRequestSecretKey": true,
+        "incomingMonitorRequest": true,
         "incomingRequestWithSecretAt": true,
         "incomingRequestWithoutSecretAt": true,
         "incomingRequestWithoutSecretReason": true,
@@ -3529,50 +3537,6 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.ServerMonitorRequestReceivedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["incomingMonitorRequest"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IncomingMonitorRequest = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.IncomingMonitorRequest = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.IncomingMonitorRequest = NewJSONSubsetNull()
-        }
-    } else if arr, ok := dataMap["incomingMonitorRequest"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.IncomingMonitorRequest = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["incomingMonitorRequest"].(string); ok {
-        data.IncomingMonitorRequest = NewJSONSubsetValue(val)
-    } else {
-        data.IncomingMonitorRequest = NewJSONSubsetNull()
-    }
     if obj, ok := dataMap["serverMonitorResponse"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3918,6 +3882,17 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
     if val, ok := dataMap["isOwnerNotifiedOfResourceCreation"].(bool); ok {
         data.IsOwnerNotifiedOfResourceCreation = types.BoolValue(val)
     }
+    if obj, ok := dataMap["firstMeasuredAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.FirstMeasuredAt = NewRFC3339Value(val)
+        } else {
+            data.FirstMeasuredAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["firstMeasuredAt"].(string); ok && val != "" {
+        data.FirstMeasuredAt = NewRFC3339Value(val)
+    } else {
+        data.FirstMeasuredAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["disableActiveMonitoringBecauseOfScheduledMaintenanceEvent"].(bool); ok {
         data.DisableActiveMonitoringBecauseOfScheduledMaintenanceEvent = types.BoolValue(val)
     }
@@ -4011,6 +3986,50 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.IncomingRequestSecretKey = types.StringValue(val)
     } else {
         data.IncomingRequestSecretKey = types.StringNull()
+    }
+    if obj, ok := dataMap["incomingMonitorRequest"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncomingMonitorRequest = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncomingMonitorRequest = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.IncomingMonitorRequest = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["incomingMonitorRequest"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.IncomingMonitorRequest = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["incomingMonitorRequest"].(string); ok {
+        data.IncomingMonitorRequest = NewJSONSubsetValue(val)
+    } else {
+        data.IncomingMonitorRequest = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["incomingRequestWithSecretAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -4226,7 +4245,6 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
     // The attributes this update writes from the configuration (see importsettle.go).
     writtenFromConfig := map[string]bool{
         "custom_fields": !data.CustomFields.Equal(state.CustomFields),
-        "incoming_monitor_request": !data.IncomingMonitorRequest.Equal(state.IncomingMonitorRequest),
         "monitor_steps": !data.MonitorSteps.Equal(state.MonitorSteps),
         "server_monitor_response": !data.ServerMonitorResponse.Equal(state.ServerMonitorResponse),
     }
@@ -4398,7 +4416,6 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         "telemetryMonitorNextMonitorAt": true,
         "telemetryMonitorLastMonitorAt": true,
         "serverMonitorRequestReceivedAt": true,
-        "incomingMonitorRequest": true,
         "serverMonitorResponse": true,
         "minimumProbeAgreement": true,
         "incomingEmailCustomLocalPart": true,
@@ -4411,10 +4428,12 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         "autoProvisionedNetworkDeviceId": true,
         "networkAlertPolicyId": true,
         "isOwnerNotifiedOfResourceCreation": true,
+        "firstMeasuredAt": true,
         "disableActiveMonitoringBecauseOfScheduledMaintenanceEvent": true,
         "disableActiveMonitoringBecauseOfManualIncident": true,
         "serverMonitorSecretKey": true,
         "incomingRequestSecretKey": true,
+        "incomingMonitorRequest": true,
         "incomingRequestWithSecretAt": true,
         "incomingRequestWithoutSecretAt": true,
         "incomingRequestWithoutSecretReason": true,
@@ -5372,50 +5391,6 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.ServerMonitorRequestReceivedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["incomingMonitorRequest"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IncomingMonitorRequest = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.IncomingMonitorRequest = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.IncomingMonitorRequest = NewJSONSubsetNull()
-        }
-    } else if arr, ok := dataMap["incomingMonitorRequest"].([]interface{}); ok {
-        // A JSON array column, such as a runbook's steps: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.IncomingMonitorRequest = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["incomingMonitorRequest"].(string); ok {
-        data.IncomingMonitorRequest = NewJSONSubsetValue(val)
-    } else {
-        data.IncomingMonitorRequest = NewJSONSubsetNull()
-    }
     if obj, ok := dataMap["serverMonitorResponse"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -5761,6 +5736,17 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
     if val, ok := dataMap["isOwnerNotifiedOfResourceCreation"].(bool); ok {
         data.IsOwnerNotifiedOfResourceCreation = types.BoolValue(val)
     }
+    if obj, ok := dataMap["firstMeasuredAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.FirstMeasuredAt = NewRFC3339Value(val)
+        } else {
+            data.FirstMeasuredAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["firstMeasuredAt"].(string); ok && val != "" {
+        data.FirstMeasuredAt = NewRFC3339Value(val)
+    } else {
+        data.FirstMeasuredAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["disableActiveMonitoringBecauseOfScheduledMaintenanceEvent"].(bool); ok {
         data.DisableActiveMonitoringBecauseOfScheduledMaintenanceEvent = types.BoolValue(val)
     }
@@ -5854,6 +5840,50 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         data.IncomingRequestSecretKey = types.StringValue(val)
     } else {
         data.IncomingRequestSecretKey = types.StringNull()
+    }
+    if obj, ok := dataMap["incomingMonitorRequest"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncomingMonitorRequest = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncomingMonitorRequest = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.IncomingMonitorRequest = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.IncomingMonitorRequest = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["incomingMonitorRequest"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.IncomingMonitorRequest = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.IncomingMonitorRequest = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["incomingMonitorRequest"].(string); ok {
+        data.IncomingMonitorRequest = NewJSONSubsetValue(val)
+    } else {
+        data.IncomingMonitorRequest = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["incomingRequestWithSecretAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -6088,7 +6118,7 @@ func (r *MonitorResource) ImportState(ctx context.Context, req resource.ImportSt
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
     // These hold the record as OneUptime keeps it, keys it fills in itself
     // included, until an update writes them (see importsettle.go).
-    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"custom_fields", "incoming_monitor_request", "monitor_steps", "server_monitor_response"})...)
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"custom_fields", "monitor_steps", "server_monitor_response"})...)
 }
 
 
@@ -6189,9 +6219,6 @@ func (r *MonitorResource) keepPlannedValues(data *MonitorResourceModel, plan *Mo
     }
     if config.ServerMonitorRequestReceivedAt.IsNull() && !plan.ServerMonitorRequestReceivedAt.IsUnknown() {
         data.ServerMonitorRequestReceivedAt = plan.ServerMonitorRequestReceivedAt
-    }
-    if config.IncomingMonitorRequest.IsNull() && !plan.IncomingMonitorRequest.IsUnknown() {
-        data.IncomingMonitorRequest = plan.IncomingMonitorRequest
     }
     if config.ServerMonitorResponse.IsNull() && !plan.ServerMonitorResponse.IsUnknown() {
         data.ServerMonitorResponse = plan.ServerMonitorResponse

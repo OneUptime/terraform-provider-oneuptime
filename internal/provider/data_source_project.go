@@ -98,6 +98,7 @@ type ProjectDataSourceModel struct {
     DiscoveredDeviceRetentionInDays types.Number `tfsdk:"discovered_device_retention_in_days"`
     IncidentRetentionInDays types.Number `tfsdk:"incident_retention_in_days"`
     KeepIncidentsWithCompletedPostmortem types.Bool `tfsdk:"keep_incidents_with_completed_postmortem"`
+    KeepIncidentsInPostmortemStatusIds types.String `tfsdk:"keep_incidents_in_postmortem_status_ids"`
     AlertRetentionInDays types.Number `tfsdk:"alert_retention_in_days"`
     DefaultTableColumns types.String `tfsdk:"default_table_columns"`
     EnableAiInsights types.Bool `tfsdk:"enable_ai_insights"`
@@ -159,7 +160,6 @@ type ProjectDataSourceModel struct {
     SecurityEventsIngestionRateLimitInMbPerSecond types.Number `tfsdk:"security_events_ingestion_rate_limit_in_mb_per_second"`
     Goals types.String `tfsdk:"goals"`
     ProductSettings types.String `tfsdk:"product_settings"`
-    IsSampleProject types.Bool `tfsdk:"is_sample_project"`
 }
 
 func (d *ProjectDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -529,6 +529,10 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Optional: true,
                 Computed: true,
             },
+            "keep_incidents_in_postmortem_status_ids": schema.StringAttribute{
+                MarkdownDescription: "The ids of the postmortem statuses whose incidents the incident retention never deletes while Keep Incidents With a Completed Postmortem is on. Empty (the default) is the project's Completed status. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
             "alert_retention_in_days": schema.NumberAttribute{
                 MarkdownDescription: "Days a resolved alert is kept once resolved: 30, 60, 90, 180, 365, 730 or 1095, or 0 to keep every alert (the default). Alerts that are not resolved are never deleted.",
                 Optional: true,
@@ -828,12 +832,7 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "product_settings": schema.StringAttribute{
-                MarkdownDescription: "The products this project hides from its menu, Home and Search's list, and where that list came from (its goals, or a member). A hidden product still works and is found by Search. Not set: every product is shown. A JSON value: read it with `jsondecode()`.",
-                Computed: true,
-            },
-            "is_sample_project": schema.BoolAttribute{
-                MarkdownDescription: "A sample project made for looking around: nothing in it is real, it notifies nobody, its status page is never public and it is never billed. Set by OneUptime when the sample is made.",
-                Optional: true,
+                MarkdownDescription: "The products a member hid from this project's menu, Home and Search's list on Project Settings > Products. A hidden product still works and is found by Search. Not set: every product is shown. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
         },
@@ -1371,10 +1370,6 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["securityEventsIngestionRateLimitInMBPerSecond"] = lookupNumber(data.SecurityEventsIngestionRateLimitInMbPerSecond)
         filterNames = append(filterNames, "security_events_ingestion_rate_limit_in_mb_per_second = "+data.SecurityEventsIngestionRateLimitInMbPerSecond.ValueBigFloat().String())
     }
-    if !data.IsSampleProject.IsNull() && !data.IsSampleProject.IsUnknown() {
-        filters["isSampleProject"] = data.IsSampleProject.ValueBool()
-        filterNames = append(filterNames, "is_sample_project = "+fmt.Sprintf("%t", data.IsSampleProject.ValueBool()))
-    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -1463,6 +1458,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "discoveredDeviceRetentionInDays": true,
         "incidentRetentionInDays": true,
         "keepIncidentsWithCompletedPostmortem": true,
+        "keepIncidentsInPostmortemStatusIds": true,
         "alertRetentionInDays": true,
         "defaultTableColumns": true,
         "enableAiInsights": true,
@@ -1524,7 +1520,6 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "securityEventsIngestionRateLimitInMBPerSecond": true,
         "goals": true,
         "productSettings": true,
-        "isSampleProject": true,
         "_id": true,
     }
 
@@ -2348,6 +2343,30 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.KeepIncidentsWithCompletedPostmortem = types.BoolNull()
     }
+    if obj, ok := item["keepIncidentsInPostmortemStatusIds"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.KeepIncidentsInPostmortemStatusIds = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.KeepIncidentsInPostmortemStatusIds = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.KeepIncidentsInPostmortemStatusIds = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.KeepIncidentsInPostmortemStatusIds = types.StringValue(string(jsonBytes))
+        } else {
+            data.KeepIncidentsInPostmortemStatusIds = types.StringNull()
+        }
+    } else if arr, ok := item["keepIncidentsInPostmortemStatusIds"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.KeepIncidentsInPostmortemStatusIds = types.StringValue(string(jsonBytes))
+        } else {
+            data.KeepIncidentsInPostmortemStatusIds = types.StringNull()
+        }
+    } else if val, ok := item["keepIncidentsInPostmortemStatusIds"].(string); ok {
+        data.KeepIncidentsInPostmortemStatusIds = types.StringValue(val)
+    } else {
+        data.KeepIncidentsInPostmortemStatusIds = types.StringNull()
+    }
     data.AlertRetentionInDays = numberFromAPI(data.AlertRetentionInDays, item["alertRetentionInDays"])
     if obj, ok := item["defaultTableColumns"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2791,11 +2810,6 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.ProductSettings = types.StringValue(val)
     } else {
         data.ProductSettings = types.StringNull()
-    }
-    if val, ok := item["isSampleProject"].(bool); ok {
-        data.IsSampleProject = types.BoolValue(val)
-    } else {
-        data.IsSampleProject = types.BoolNull()
     }
 
     // Write logs using the tflog package

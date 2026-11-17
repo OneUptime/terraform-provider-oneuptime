@@ -55,6 +55,7 @@ type AutoRemediationSuggestionDataSourceModel struct {
     FirstApprovedByUserId types.String `tfsdk:"first_approved_by_user_id"`
     FirstApprovedAt types.String `tfsdk:"first_approved_at"`
     FirstApprovedFrom types.String `tfsdk:"first_approved_from"`
+    FirstApprovedPlanFingerprint types.String `tfsdk:"first_approved_plan_fingerprint"`
     DismissedByUserId types.String `tfsdk:"dismissed_by_user_id"`
     DismissedAt types.String `tfsdk:"dismissed_at"`
     VerificationStatus types.String `tfsdk:"verification_status"`
@@ -219,6 +220,11 @@ func (d *AutoRemediationSuggestionDataSource) Schema(ctx context.Context, req da
                 Optional: true,
                 Computed: true,
             },
+            "first_approved_plan_fingerprint": schema.StringAttribute{
+                MarkdownDescription: "The fingerprint of what the first of two approvals approved: a second approval runs the fix only while it still runs exactly that.",
+                Optional: true,
+                Computed: true,
+            },
             "dismissed_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the user who dismissed this suggestion. The ID of a `oneuptime_user` (see the data source).",
                 Optional: true,
@@ -376,6 +382,10 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         filters["firstApprovedFrom"] = data.FirstApprovedFrom.ValueString()
         filterNames = append(filterNames, "first_approved_from = "+fmt.Sprintf("%q", data.FirstApprovedFrom.ValueString()))
     }
+    if !data.FirstApprovedPlanFingerprint.IsNull() && !data.FirstApprovedPlanFingerprint.IsUnknown() {
+        filters["firstApprovedPlanFingerprint"] = data.FirstApprovedPlanFingerprint.ValueString()
+        filterNames = append(filterNames, "first_approved_plan_fingerprint = "+fmt.Sprintf("%q", data.FirstApprovedPlanFingerprint.ValueString()))
+    }
     if !data.DismissedByUserId.IsNull() && !data.DismissedByUserId.IsUnknown() {
         filters["dismissedByUserId"] = data.DismissedByUserId.ValueString()
         filterNames = append(filterNames, "dismissed_by_user_id = "+fmt.Sprintf("%q", data.DismissedByUserId.ValueString()))
@@ -441,6 +451,7 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         "firstApprovedByUserId": true,
         "firstApprovedAt": true,
         "firstApprovedFrom": true,
+        "firstApprovedPlanFingerprint": true,
         "dismissedByUserId": true,
         "dismissedAt": true,
         "verificationStatus": true,
@@ -1205,6 +1216,30 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         data.FirstApprovedFrom = types.StringValue(val)
     } else {
         data.FirstApprovedFrom = types.StringNull()
+    }
+    if obj, ok := item["firstApprovedPlanFingerprint"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FirstApprovedPlanFingerprint = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.FirstApprovedPlanFingerprint = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.FirstApprovedPlanFingerprint = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FirstApprovedPlanFingerprint = types.StringValue(string(jsonBytes))
+        } else {
+            data.FirstApprovedPlanFingerprint = types.StringNull()
+        }
+    } else if arr, ok := item["firstApprovedPlanFingerprint"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FirstApprovedPlanFingerprint = types.StringValue(string(jsonBytes))
+        } else {
+            data.FirstApprovedPlanFingerprint = types.StringNull()
+        }
+    } else if val, ok := item["firstApprovedPlanFingerprint"].(string); ok {
+        data.FirstApprovedPlanFingerprint = types.StringValue(val)
+    } else {
+        data.FirstApprovedPlanFingerprint = types.StringNull()
     }
     if obj, ok := item["dismissedByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

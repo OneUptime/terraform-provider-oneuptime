@@ -37,6 +37,8 @@ type OnCallDutyExecutionLogTimelineDataSourceModel struct {
     TriggeredByIncidentEpisodeId types.String `tfsdk:"triggered_by_incident_episode_id"`
     OnCallDutyPolicyExecutionLogId types.String `tfsdk:"on_call_duty_policy_execution_log_id"`
     OnCallDutyPolicyEscalationRuleId types.String `tfsdk:"on_call_duty_policy_escalation_rule_id"`
+    EscalationRuleOrder types.Number `tfsdk:"escalation_rule_order"`
+    EscalationRuleName types.String `tfsdk:"escalation_rule_name"`
     UserNotificationEventType types.String `tfsdk:"user_notification_event_type"`
     AlertSentToUserId types.String `tfsdk:"alert_sent_to_user_id"`
     UserBelongsToTeamId types.String `tfsdk:"user_belongs_to_team_id"`
@@ -57,7 +59,7 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Metadata(ctx context.Context,
 
 func (d *OnCallDutyExecutionLogTimelineDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Timeline events for on-call policy execution log. Look up an existing on call duty execution log timeline by `id`, or by any of its other arguments (`alert_sent_to_user_id`, `created_by_user_id`, `is_acknowledged`, ...): each one set must match, and exactly one on call duty execution log timeline may match them all.",
+        MarkdownDescription: "Timeline events for on-call policy execution log. Look up an existing on call duty execution log timeline by `id`, or by any of its other arguments (`alert_sent_to_user_id`, `created_by_user_id`, `escalation_rule_name`, ...): each one set must match, and exactly one on call duty execution log timeline may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -118,6 +120,16 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Schema(ctx context.Context, r
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_escalation_rule"),
+            },
+            "escalation_rule_order": schema.NumberAttribute{
+                MarkdownDescription: "The level of the escalation rule this timeline event belongs to (1 for the first), as it was when the event was written. Kept when the rule is deleted later. Empty for a step of a direct page.",
+                Optional: true,
+                Computed: true,
+            },
+            "escalation_rule_name": schema.StringAttribute{
+                MarkdownDescription: "The name of the escalation rule this timeline event belongs to, as it was when the event was written. Kept when the rule is deleted later. Empty for a step of a direct page.",
+                Optional: true,
+                Computed: true,
             },
             "user_notification_event_type": schema.StringAttribute{
                 MarkdownDescription: "Type of event that triggered this on-call policy.",
@@ -249,6 +261,14 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Read(ctx context.Context, req
         filters["onCallDutyPolicyEscalationRuleId"] = data.OnCallDutyPolicyEscalationRuleId.ValueString()
         filterNames = append(filterNames, "on_call_duty_policy_escalation_rule_id = "+fmt.Sprintf("%q", data.OnCallDutyPolicyEscalationRuleId.ValueString()))
     }
+    if !data.EscalationRuleOrder.IsNull() && !data.EscalationRuleOrder.IsUnknown() {
+        filters["escalationRuleOrder"] = lookupNumber(data.EscalationRuleOrder)
+        filterNames = append(filterNames, "escalation_rule_order = "+data.EscalationRuleOrder.ValueBigFloat().String())
+    }
+    if !data.EscalationRuleName.IsNull() && !data.EscalationRuleName.IsUnknown() {
+        filters["escalationRuleName"] = data.EscalationRuleName.ValueString()
+        filterNames = append(filterNames, "escalation_rule_name = "+fmt.Sprintf("%q", data.EscalationRuleName.ValueString()))
+    }
     if !data.UserNotificationEventType.IsNull() && !data.UserNotificationEventType.IsUnknown() {
         filters["userNotificationEventType"] = data.UserNotificationEventType.ValueString()
         filterNames = append(filterNames, "user_notification_event_type = "+fmt.Sprintf("%q", data.UserNotificationEventType.ValueString()))
@@ -316,6 +336,8 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Read(ctx context.Context, req
         "triggeredByIncidentEpisodeId": true,
         "onCallDutyPolicyExecutionLogId": true,
         "onCallDutyPolicyEscalationRuleId": true,
+        "escalationRuleOrder": true,
+        "escalationRuleName": true,
         "userNotificationEventType": true,
         "alertSentToUserId": true,
         "userBelongsToTeamId": true,
@@ -652,6 +674,31 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Read(ctx context.Context, req
         data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
     } else {
         data.OnCallDutyPolicyEscalationRuleId = types.StringNull()
+    }
+    data.EscalationRuleOrder = numberFromAPI(data.EscalationRuleOrder, item["escalationRuleOrder"])
+    if obj, ok := item["escalationRuleName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EscalationRuleName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.EscalationRuleName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.EscalationRuleName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EscalationRuleName = types.StringValue(string(jsonBytes))
+        } else {
+            data.EscalationRuleName = types.StringNull()
+        }
+    } else if arr, ok := item["escalationRuleName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.EscalationRuleName = types.StringValue(string(jsonBytes))
+        } else {
+            data.EscalationRuleName = types.StringNull()
+        }
+    } else if val, ok := item["escalationRuleName"].(string); ok {
+        data.EscalationRuleName = types.StringValue(val)
+    } else {
+        data.EscalationRuleName = types.StringNull()
     }
     if obj, ok := item["userNotificationEventType"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

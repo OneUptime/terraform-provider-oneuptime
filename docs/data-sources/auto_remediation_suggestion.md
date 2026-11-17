@@ -38,6 +38,7 @@ data "oneuptime_auto_remediation_suggestion" "by_id" {
 - `execution_mode` (String) The rule's execution mode when this suggestion was created (Suggest or FullAuto).
 - `first_approved_by_user_id` (String) ID of the user who gave the first of the two approvals a riskier fix needs. The ID of a `oneuptime_user` (see the data source).
 - `first_approved_from` (String) Where the first of two approvals was given: Dashboard (the AI card), Slack or MicrosoftTeams.
+- `first_approved_plan_fingerprint` (String) The fingerprint of what the first of two approvals approved: a second approval runs the fix only while it still runs exactly that.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `incident_id` (String) ID of the incident this suggestion remediates. The ID of a `oneuptime_incident`.
 - `kubernetes_cluster_id` (String) ID of the cluster whose AI remediation mode produced this suggestion. The ID of a `oneuptime_kubernetes_cluster`.

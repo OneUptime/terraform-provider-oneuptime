@@ -28,7 +28,7 @@ resource "oneuptime_form_domain" "example" {
 ### Optional
 
 - `custom_certificate` (String) The certificate, in PEM format, to serve the domain with instead of the free one. Used while isCustomCertificate is on.
-- `custom_certificate_key` (String, Sensitive) The custom certificate's private key, in PEM format. Used while isCustomCertificate is on.
+- `custom_certificate_key` (String, Sensitive) The custom certificate's private key, in PEM format, without a passphrase. Used while isCustomCertificate is on. Write-only: kept encrypted and never returned by the API.
 - `is_custom_certificate` (Boolean) Serve the domain with the certificate you upload rather than the free SSL certificate OneUptime issues and renews. Defaults to `false`.
 - `subdomain` (String) Subdomain label for your form such as 'report'. Leave blank or enter @ to use the root domain.
 

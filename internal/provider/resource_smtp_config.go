@@ -119,12 +119,9 @@ func (r *SmtpConfigResource) schemaDefinition() schema.Schema {
                 },
             },
             "password": schema.StringAttribute{
+                MarkdownDescription: "The password the SMTP server is signed in to with, or the API key your provider gives you for SMTP. Used when Authentication Type is Username and Password. Write-only: kept encrypted and never returned by the API.",
                 Optional: true,
-                Computed: true,
                 Sensitive: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
             },
             "hostname": schema.StringAttribute{
                 MarkdownDescription: "SMTP server hostname. Required when Transport is SMTP. Not used by HTTP-API transports like Microsoft Graph.",
@@ -195,13 +192,9 @@ func (r *SmtpConfigResource) schemaDefinition() schema.Schema {
                 },
             },
             "client_secret": schema.StringAttribute{
-                MarkdownDescription: "The Client Secret from your OAuth application registration. Required for OAuth authentication. For Google service accounts, this is the private key from the JSON key file.",
+                MarkdownDescription: "The Client Secret from your OAuth application registration. Required for OAuth authentication. For Google service accounts, this is the private key from the JSON key file. Write-only: kept encrypted and never returned by the API.",
                 Optional: true,
-                Computed: true,
                 Sensitive: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
             },
             "token_url": schema.StringAttribute{
                 MarkdownDescription: "The OAuth token endpoint URL. For Microsoft 365: https://login.microsoftonline.com/{tenant-id}/oauth2/v2.0/token. For Google: https://oauth2.googleapis.com/token.",
@@ -239,13 +232,9 @@ func (r *SmtpConfigResource) schemaDefinition() schema.Schema {
                 },
             },
             "amazon_ses_secret_access_key": schema.StringAttribute{
-                MarkdownDescription: "The secret access key that goes with the access key ID. Required when Transport is Amazon SES. Encrypted at rest.",
+                MarkdownDescription: "The secret access key that goes with the access key ID. Required when Transport is Amazon SES. Write-only: kept encrypted and never returned by the API.",
                 Optional: true,
-                Computed: true,
                 Sensitive: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
             },
             "amazon_ses_region": schema.StringAttribute{
                 MarkdownDescription: "The AWS Region your sender identity is verified in, such as us-east-1. Required when Transport is Amazon SES.",
@@ -256,22 +245,14 @@ func (r *SmtpConfigResource) schemaDefinition() schema.Schema {
                 },
             },
             "sendgrid_api_key": schema.StringAttribute{
-                MarkdownDescription: "A SendGrid API key with the Mail Send permission. Required when Transport is SendGrid. Encrypted at rest.",
+                MarkdownDescription: "A SendGrid API key with the Mail Send permission. Required when Transport is SendGrid. Write-only: kept encrypted and never returned by the API.",
                 Optional: true,
-                Computed: true,
                 Sensitive: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
             },
             "mailgun_api_key": schema.StringAttribute{
-                MarkdownDescription: "A Mailgun API key, or a sending API key for the domain. Required when Transport is Mailgun. Encrypted at rest.",
+                MarkdownDescription: "A Mailgun API key, or a sending API key for the domain. Required when Transport is Mailgun. Write-only: kept encrypted and never returned by the API.",
                 Optional: true,
-                Computed: true,
                 Sensitive: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
             },
             "mailgun_domain": schema.StringAttribute{
                 MarkdownDescription: "The Mailgun sending domain mail goes out from, such as mg.example.com. Required when Transport is Mailgun.",
@@ -293,22 +274,14 @@ func (r *SmtpConfigResource) schemaDefinition() schema.Schema {
                 },
             },
             "postmark_server_token": schema.StringAttribute{
-                MarkdownDescription: "The API token of the Postmark server that sends, from its API Tokens tab. Required when Transport is Postmark. Encrypted at rest.",
+                MarkdownDescription: "The API token of the Postmark server that sends, from its API Tokens tab. Required when Transport is Postmark. Write-only: kept encrypted and never returned by the API.",
                 Optional: true,
-                Computed: true,
                 Sensitive: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
             },
             "resend_api_key": schema.StringAttribute{
-                MarkdownDescription: "A Resend API key with sending access. Required when Transport is Resend. Encrypted at rest.",
+                MarkdownDescription: "A Resend API key with sending access. Required when Transport is Resend. Write-only: kept encrypted and never returned by the API.",
                 Optional: true,
-                Computed: true,
                 Sensitive: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -506,6 +479,7 @@ func (r *SmtpConfigResource) Create(ctx context.Context, req resource.CreateRequ
     }
     data.Id = types.StringValue(createdId)
 
+
     /*
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
@@ -525,7 +499,6 @@ func (r *SmtpConfigResource) Create(ctx context.Context, req resource.CreateRequ
         "name": true,
         "description": true,
         "username": true,
-        "password": true,
         "hostname": true,
         "port": true,
         "fromEmail": true,
@@ -534,19 +507,13 @@ func (r *SmtpConfigResource) Create(ctx context.Context, req resource.CreateRequ
         "transportType": true,
         "authType": true,
         "clientId": true,
-        "clientSecret": true,
         "tokenUrl": true,
         "scope": true,
         "oauthProviderType": true,
         "amazonSesAccessKeyId": true,
-        "amazonSesSecretAccessKey": true,
         "amazonSesRegion": true,
-        "sendgridApiKey": true,
-        "mailgunApiKey": true,
         "mailgunDomain": true,
         "mailgunRegion": true,
-        "postmarkServerToken": true,
-        "resendApiKey": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
@@ -725,50 +692,6 @@ func (r *SmtpConfigResource) Create(ctx context.Context, req resource.CreateRequ
         data.Username = types.StringValue(val)
     } else {
         data.Username = types.StringNull()
-    }
-    if obj, ok := dataMap["password"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Password = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Password = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Password = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Password = types.StringValue(string(jsonBytes))
-            } else {
-                data.Password = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Password = types.StringValue(string(jsonBytes))
-            } else {
-                data.Password = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Password = types.StringValue(string(jsonBytes))
-        } else {
-            data.Password = types.StringNull()
-        }
-    } else if arr, ok := dataMap["password"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.Password = types.StringValue(string(jsonBytes))
-        } else {
-            data.Password = types.StringNull()
-        }
-    } else if val, ok := dataMap["password"].(string); ok {
-        data.Password = types.StringValue(val)
-    } else {
-        data.Password = types.StringNull()
     }
     if obj, ok := dataMap["hostname"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1038,50 +961,6 @@ func (r *SmtpConfigResource) Create(ctx context.Context, req resource.CreateRequ
     } else {
         data.ClientId = types.StringNull()
     }
-    if obj, ok := dataMap["clientSecret"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ClientSecret = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ClientSecret = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ClientSecret = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ClientSecret = types.StringValue(string(jsonBytes))
-            } else {
-                data.ClientSecret = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ClientSecret = types.StringValue(string(jsonBytes))
-            } else {
-                data.ClientSecret = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ClientSecret = types.StringValue(string(jsonBytes))
-        } else {
-            data.ClientSecret = types.StringNull()
-        }
-    } else if arr, ok := dataMap["clientSecret"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.ClientSecret = types.StringValue(string(jsonBytes))
-        } else {
-            data.ClientSecret = types.StringNull()
-        }
-    } else if val, ok := dataMap["clientSecret"].(string); ok {
-        data.ClientSecret = types.StringValue(val)
-    } else {
-        data.ClientSecret = types.StringNull()
-    }
     if obj, ok := dataMap["tokenUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1258,50 +1137,6 @@ func (r *SmtpConfigResource) Create(ctx context.Context, req resource.CreateRequ
     } else {
         data.AmazonSesAccessKeyId = types.StringNull()
     }
-    if obj, ok := dataMap["amazonSesSecretAccessKey"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AmazonSesSecretAccessKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AmazonSesSecretAccessKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AmazonSesSecretAccessKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AmazonSesSecretAccessKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.AmazonSesSecretAccessKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AmazonSesSecretAccessKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.AmazonSesSecretAccessKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AmazonSesSecretAccessKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.AmazonSesSecretAccessKey = types.StringNull()
-        }
-    } else if arr, ok := dataMap["amazonSesSecretAccessKey"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.AmazonSesSecretAccessKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.AmazonSesSecretAccessKey = types.StringNull()
-        }
-    } else if val, ok := dataMap["amazonSesSecretAccessKey"].(string); ok {
-        data.AmazonSesSecretAccessKey = types.StringValue(val)
-    } else {
-        data.AmazonSesSecretAccessKey = types.StringNull()
-    }
     if obj, ok := dataMap["amazonSesRegion"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1345,94 +1180,6 @@ func (r *SmtpConfigResource) Create(ctx context.Context, req resource.CreateRequ
         data.AmazonSesRegion = types.StringValue(val)
     } else {
         data.AmazonSesRegion = types.StringNull()
-    }
-    if obj, ok := dataMap["sendgridApiKey"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SendgridApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.SendgridApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.SendgridApiKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.SendgridApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.SendgridApiKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.SendgridApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.SendgridApiKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.SendgridApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.SendgridApiKey = types.StringNull()
-        }
-    } else if arr, ok := dataMap["sendgridApiKey"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.SendgridApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.SendgridApiKey = types.StringNull()
-        }
-    } else if val, ok := dataMap["sendgridApiKey"].(string); ok {
-        data.SendgridApiKey = types.StringValue(val)
-    } else {
-        data.SendgridApiKey = types.StringNull()
-    }
-    if obj, ok := dataMap["mailgunApiKey"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MailgunApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MailgunApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.MailgunApiKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MailgunApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.MailgunApiKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MailgunApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.MailgunApiKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.MailgunApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.MailgunApiKey = types.StringNull()
-        }
-    } else if arr, ok := dataMap["mailgunApiKey"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.MailgunApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.MailgunApiKey = types.StringNull()
-        }
-    } else if val, ok := dataMap["mailgunApiKey"].(string); ok {
-        data.MailgunApiKey = types.StringValue(val)
-    } else {
-        data.MailgunApiKey = types.StringNull()
     }
     if obj, ok := dataMap["mailgunDomain"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1521,94 +1268,6 @@ func (r *SmtpConfigResource) Create(ctx context.Context, req resource.CreateRequ
         data.MailgunRegion = types.StringValue(val)
     } else {
         data.MailgunRegion = types.StringNull()
-    }
-    if obj, ok := dataMap["postmarkServerToken"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PostmarkServerToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.PostmarkServerToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.PostmarkServerToken = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.PostmarkServerToken = types.StringValue(string(jsonBytes))
-            } else {
-                data.PostmarkServerToken = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.PostmarkServerToken = types.StringValue(string(jsonBytes))
-            } else {
-                data.PostmarkServerToken = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.PostmarkServerToken = types.StringValue(string(jsonBytes))
-        } else {
-            data.PostmarkServerToken = types.StringNull()
-        }
-    } else if arr, ok := dataMap["postmarkServerToken"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.PostmarkServerToken = types.StringValue(string(jsonBytes))
-        } else {
-            data.PostmarkServerToken = types.StringNull()
-        }
-    } else if val, ok := dataMap["postmarkServerToken"].(string); ok {
-        data.PostmarkServerToken = types.StringValue(val)
-    } else {
-        data.PostmarkServerToken = types.StringNull()
-    }
-    if obj, ok := dataMap["resendApiKey"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ResendApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ResendApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ResendApiKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ResendApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.ResendApiKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ResendApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.ResendApiKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ResendApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.ResendApiKey = types.StringNull()
-        }
-    } else if arr, ok := dataMap["resendApiKey"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.ResendApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.ResendApiKey = types.StringNull()
-        }
-    } else if val, ok := dataMap["resendApiKey"].(string); ok {
-        data.ResendApiKey = types.StringValue(val)
-    } else {
-        data.ResendApiKey = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1755,7 +1414,6 @@ func (r *SmtpConfigResource) Read(ctx context.Context, req resource.ReadRequest,
         "name": true,
         "description": true,
         "username": true,
-        "password": true,
         "hostname": true,
         "port": true,
         "fromEmail": true,
@@ -1764,19 +1422,13 @@ func (r *SmtpConfigResource) Read(ctx context.Context, req resource.ReadRequest,
         "transportType": true,
         "authType": true,
         "clientId": true,
-        "clientSecret": true,
         "tokenUrl": true,
         "scope": true,
         "oauthProviderType": true,
         "amazonSesAccessKeyId": true,
-        "amazonSesSecretAccessKey": true,
         "amazonSesRegion": true,
-        "sendgridApiKey": true,
-        "mailgunApiKey": true,
         "mailgunDomain": true,
         "mailgunRegion": true,
-        "postmarkServerToken": true,
-        "resendApiKey": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
@@ -1957,50 +1609,6 @@ func (r *SmtpConfigResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.Username = types.StringNull()
     }
-    if obj, ok := dataMap["password"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Password = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Password = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Password = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Password = types.StringValue(string(jsonBytes))
-            } else {
-                data.Password = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Password = types.StringValue(string(jsonBytes))
-            } else {
-                data.Password = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Password = types.StringValue(string(jsonBytes))
-        } else {
-            data.Password = types.StringNull()
-        }
-    } else if arr, ok := dataMap["password"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.Password = types.StringValue(string(jsonBytes))
-        } else {
-            data.Password = types.StringNull()
-        }
-    } else if val, ok := dataMap["password"].(string); ok {
-        data.Password = types.StringValue(val)
-    } else {
-        data.Password = types.StringNull()
-    }
     if obj, ok := dataMap["hostname"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2269,50 +1877,6 @@ func (r *SmtpConfigResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.ClientId = types.StringNull()
     }
-    if obj, ok := dataMap["clientSecret"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ClientSecret = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ClientSecret = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ClientSecret = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ClientSecret = types.StringValue(string(jsonBytes))
-            } else {
-                data.ClientSecret = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ClientSecret = types.StringValue(string(jsonBytes))
-            } else {
-                data.ClientSecret = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ClientSecret = types.StringValue(string(jsonBytes))
-        } else {
-            data.ClientSecret = types.StringNull()
-        }
-    } else if arr, ok := dataMap["clientSecret"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.ClientSecret = types.StringValue(string(jsonBytes))
-        } else {
-            data.ClientSecret = types.StringNull()
-        }
-    } else if val, ok := dataMap["clientSecret"].(string); ok {
-        data.ClientSecret = types.StringValue(val)
-    } else {
-        data.ClientSecret = types.StringNull()
-    }
     if obj, ok := dataMap["tokenUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2489,50 +2053,6 @@ func (r *SmtpConfigResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.AmazonSesAccessKeyId = types.StringNull()
     }
-    if obj, ok := dataMap["amazonSesSecretAccessKey"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AmazonSesSecretAccessKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AmazonSesSecretAccessKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AmazonSesSecretAccessKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AmazonSesSecretAccessKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.AmazonSesSecretAccessKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AmazonSesSecretAccessKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.AmazonSesSecretAccessKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AmazonSesSecretAccessKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.AmazonSesSecretAccessKey = types.StringNull()
-        }
-    } else if arr, ok := dataMap["amazonSesSecretAccessKey"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.AmazonSesSecretAccessKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.AmazonSesSecretAccessKey = types.StringNull()
-        }
-    } else if val, ok := dataMap["amazonSesSecretAccessKey"].(string); ok {
-        data.AmazonSesSecretAccessKey = types.StringValue(val)
-    } else {
-        data.AmazonSesSecretAccessKey = types.StringNull()
-    }
     if obj, ok := dataMap["amazonSesRegion"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2576,94 +2096,6 @@ func (r *SmtpConfigResource) Read(ctx context.Context, req resource.ReadRequest,
         data.AmazonSesRegion = types.StringValue(val)
     } else {
         data.AmazonSesRegion = types.StringNull()
-    }
-    if obj, ok := dataMap["sendgridApiKey"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SendgridApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.SendgridApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.SendgridApiKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.SendgridApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.SendgridApiKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.SendgridApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.SendgridApiKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.SendgridApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.SendgridApiKey = types.StringNull()
-        }
-    } else if arr, ok := dataMap["sendgridApiKey"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.SendgridApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.SendgridApiKey = types.StringNull()
-        }
-    } else if val, ok := dataMap["sendgridApiKey"].(string); ok {
-        data.SendgridApiKey = types.StringValue(val)
-    } else {
-        data.SendgridApiKey = types.StringNull()
-    }
-    if obj, ok := dataMap["mailgunApiKey"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MailgunApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MailgunApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.MailgunApiKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MailgunApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.MailgunApiKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MailgunApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.MailgunApiKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.MailgunApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.MailgunApiKey = types.StringNull()
-        }
-    } else if arr, ok := dataMap["mailgunApiKey"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.MailgunApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.MailgunApiKey = types.StringNull()
-        }
-    } else if val, ok := dataMap["mailgunApiKey"].(string); ok {
-        data.MailgunApiKey = types.StringValue(val)
-    } else {
-        data.MailgunApiKey = types.StringNull()
     }
     if obj, ok := dataMap["mailgunDomain"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2752,94 +2184,6 @@ func (r *SmtpConfigResource) Read(ctx context.Context, req resource.ReadRequest,
         data.MailgunRegion = types.StringValue(val)
     } else {
         data.MailgunRegion = types.StringNull()
-    }
-    if obj, ok := dataMap["postmarkServerToken"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PostmarkServerToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.PostmarkServerToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.PostmarkServerToken = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.PostmarkServerToken = types.StringValue(string(jsonBytes))
-            } else {
-                data.PostmarkServerToken = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.PostmarkServerToken = types.StringValue(string(jsonBytes))
-            } else {
-                data.PostmarkServerToken = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.PostmarkServerToken = types.StringValue(string(jsonBytes))
-        } else {
-            data.PostmarkServerToken = types.StringNull()
-        }
-    } else if arr, ok := dataMap["postmarkServerToken"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.PostmarkServerToken = types.StringValue(string(jsonBytes))
-        } else {
-            data.PostmarkServerToken = types.StringNull()
-        }
-    } else if val, ok := dataMap["postmarkServerToken"].(string); ok {
-        data.PostmarkServerToken = types.StringValue(val)
-    } else {
-        data.PostmarkServerToken = types.StringNull()
-    }
-    if obj, ok := dataMap["resendApiKey"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ResendApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ResendApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ResendApiKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ResendApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.ResendApiKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ResendApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.ResendApiKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ResendApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.ResendApiKey = types.StringNull()
-        }
-    } else if arr, ok := dataMap["resendApiKey"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.ResendApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.ResendApiKey = types.StringNull()
-        }
-    } else if val, ok := dataMap["resendApiKey"].(string); ok {
-        data.ResendApiKey = types.StringValue(val)
-    } else {
-        data.ResendApiKey = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -3101,7 +2445,6 @@ func (r *SmtpConfigResource) Update(ctx context.Context, req resource.UpdateRequ
         "name": true,
         "description": true,
         "username": true,
-        "password": true,
         "hostname": true,
         "port": true,
         "fromEmail": true,
@@ -3110,19 +2453,13 @@ func (r *SmtpConfigResource) Update(ctx context.Context, req resource.UpdateRequ
         "transportType": true,
         "authType": true,
         "clientId": true,
-        "clientSecret": true,
         "tokenUrl": true,
         "scope": true,
         "oauthProviderType": true,
         "amazonSesAccessKeyId": true,
-        "amazonSesSecretAccessKey": true,
         "amazonSesRegion": true,
-        "sendgridApiKey": true,
-        "mailgunApiKey": true,
         "mailgunDomain": true,
         "mailgunRegion": true,
-        "postmarkServerToken": true,
-        "resendApiKey": true,
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
@@ -3296,50 +2633,6 @@ func (r *SmtpConfigResource) Update(ctx context.Context, req resource.UpdateRequ
         data.Username = types.StringValue(val)
     } else {
         data.Username = types.StringNull()
-    }
-    if obj, ok := dataMap["password"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Password = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Password = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Password = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Password = types.StringValue(string(jsonBytes))
-            } else {
-                data.Password = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Password = types.StringValue(string(jsonBytes))
-            } else {
-                data.Password = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Password = types.StringValue(string(jsonBytes))
-        } else {
-            data.Password = types.StringNull()
-        }
-    } else if arr, ok := dataMap["password"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.Password = types.StringValue(string(jsonBytes))
-        } else {
-            data.Password = types.StringNull()
-        }
-    } else if val, ok := dataMap["password"].(string); ok {
-        data.Password = types.StringValue(val)
-    } else {
-        data.Password = types.StringNull()
     }
     if obj, ok := dataMap["hostname"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -3609,50 +2902,6 @@ func (r *SmtpConfigResource) Update(ctx context.Context, req resource.UpdateRequ
     } else {
         data.ClientId = types.StringNull()
     }
-    if obj, ok := dataMap["clientSecret"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ClientSecret = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ClientSecret = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ClientSecret = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ClientSecret = types.StringValue(string(jsonBytes))
-            } else {
-                data.ClientSecret = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ClientSecret = types.StringValue(string(jsonBytes))
-            } else {
-                data.ClientSecret = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ClientSecret = types.StringValue(string(jsonBytes))
-        } else {
-            data.ClientSecret = types.StringNull()
-        }
-    } else if arr, ok := dataMap["clientSecret"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.ClientSecret = types.StringValue(string(jsonBytes))
-        } else {
-            data.ClientSecret = types.StringNull()
-        }
-    } else if val, ok := dataMap["clientSecret"].(string); ok {
-        data.ClientSecret = types.StringValue(val)
-    } else {
-        data.ClientSecret = types.StringNull()
-    }
     if obj, ok := dataMap["tokenUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3829,50 +3078,6 @@ func (r *SmtpConfigResource) Update(ctx context.Context, req resource.UpdateRequ
     } else {
         data.AmazonSesAccessKeyId = types.StringNull()
     }
-    if obj, ok := dataMap["amazonSesSecretAccessKey"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AmazonSesSecretAccessKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AmazonSesSecretAccessKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AmazonSesSecretAccessKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AmazonSesSecretAccessKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.AmazonSesSecretAccessKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AmazonSesSecretAccessKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.AmazonSesSecretAccessKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AmazonSesSecretAccessKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.AmazonSesSecretAccessKey = types.StringNull()
-        }
-    } else if arr, ok := dataMap["amazonSesSecretAccessKey"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.AmazonSesSecretAccessKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.AmazonSesSecretAccessKey = types.StringNull()
-        }
-    } else if val, ok := dataMap["amazonSesSecretAccessKey"].(string); ok {
-        data.AmazonSesSecretAccessKey = types.StringValue(val)
-    } else {
-        data.AmazonSesSecretAccessKey = types.StringNull()
-    }
     if obj, ok := dataMap["amazonSesRegion"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3916,94 +3121,6 @@ func (r *SmtpConfigResource) Update(ctx context.Context, req resource.UpdateRequ
         data.AmazonSesRegion = types.StringValue(val)
     } else {
         data.AmazonSesRegion = types.StringNull()
-    }
-    if obj, ok := dataMap["sendgridApiKey"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SendgridApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.SendgridApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.SendgridApiKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.SendgridApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.SendgridApiKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.SendgridApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.SendgridApiKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.SendgridApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.SendgridApiKey = types.StringNull()
-        }
-    } else if arr, ok := dataMap["sendgridApiKey"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.SendgridApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.SendgridApiKey = types.StringNull()
-        }
-    } else if val, ok := dataMap["sendgridApiKey"].(string); ok {
-        data.SendgridApiKey = types.StringValue(val)
-    } else {
-        data.SendgridApiKey = types.StringNull()
-    }
-    if obj, ok := dataMap["mailgunApiKey"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MailgunApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MailgunApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.MailgunApiKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MailgunApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.MailgunApiKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MailgunApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.MailgunApiKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.MailgunApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.MailgunApiKey = types.StringNull()
-        }
-    } else if arr, ok := dataMap["mailgunApiKey"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.MailgunApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.MailgunApiKey = types.StringNull()
-        }
-    } else if val, ok := dataMap["mailgunApiKey"].(string); ok {
-        data.MailgunApiKey = types.StringValue(val)
-    } else {
-        data.MailgunApiKey = types.StringNull()
     }
     if obj, ok := dataMap["mailgunDomain"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -4092,94 +3209,6 @@ func (r *SmtpConfigResource) Update(ctx context.Context, req resource.UpdateRequ
         data.MailgunRegion = types.StringValue(val)
     } else {
         data.MailgunRegion = types.StringNull()
-    }
-    if obj, ok := dataMap["postmarkServerToken"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PostmarkServerToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.PostmarkServerToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.PostmarkServerToken = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.PostmarkServerToken = types.StringValue(string(jsonBytes))
-            } else {
-                data.PostmarkServerToken = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.PostmarkServerToken = types.StringValue(string(jsonBytes))
-            } else {
-                data.PostmarkServerToken = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.PostmarkServerToken = types.StringValue(string(jsonBytes))
-        } else {
-            data.PostmarkServerToken = types.StringNull()
-        }
-    } else if arr, ok := dataMap["postmarkServerToken"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.PostmarkServerToken = types.StringValue(string(jsonBytes))
-        } else {
-            data.PostmarkServerToken = types.StringNull()
-        }
-    } else if val, ok := dataMap["postmarkServerToken"].(string); ok {
-        data.PostmarkServerToken = types.StringValue(val)
-    } else {
-        data.PostmarkServerToken = types.StringNull()
-    }
-    if obj, ok := dataMap["resendApiKey"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ResendApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ResendApiKey = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ResendApiKey = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ResendApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.ResendApiKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ResendApiKey = types.StringValue(string(jsonBytes))
-            } else {
-                data.ResendApiKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ResendApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.ResendApiKey = types.StringNull()
-        }
-    } else if arr, ok := dataMap["resendApiKey"].([]interface{}); ok {
-        // A JSON array column: the array, as JSON
-        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
-            data.ResendApiKey = types.StringValue(string(jsonBytes))
-        } else {
-            data.ResendApiKey = types.StringNull()
-        }
-    } else if val, ok := dataMap["resendApiKey"].(string); ok {
-        data.ResendApiKey = types.StringValue(val)
-    } else {
-        data.ResendApiKey = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -4354,9 +3383,6 @@ func (r *SmtpConfigResource) keepPlannedValues(data *SmtpConfigResourceModel, pl
     if config.Username.IsNull() && !plan.Username.IsUnknown() {
         data.Username = plan.Username
     }
-    if config.Password.IsNull() && !plan.Password.IsUnknown() {
-        data.Password = plan.Password
-    }
     if config.Hostname.IsNull() && !plan.Hostname.IsUnknown() {
         data.Hostname = plan.Hostname
     }
@@ -4375,9 +3401,6 @@ func (r *SmtpConfigResource) keepPlannedValues(data *SmtpConfigResourceModel, pl
     if config.ClientId.IsNull() && !plan.ClientId.IsUnknown() {
         data.ClientId = plan.ClientId
     }
-    if config.ClientSecret.IsNull() && !plan.ClientSecret.IsUnknown() {
-        data.ClientSecret = plan.ClientSecret
-    }
     if config.TokenUrl.IsNull() && !plan.TokenUrl.IsUnknown() {
         data.TokenUrl = plan.TokenUrl
     }
@@ -4390,29 +3413,14 @@ func (r *SmtpConfigResource) keepPlannedValues(data *SmtpConfigResourceModel, pl
     if config.AmazonSesAccessKeyId.IsNull() && !plan.AmazonSesAccessKeyId.IsUnknown() {
         data.AmazonSesAccessKeyId = plan.AmazonSesAccessKeyId
     }
-    if config.AmazonSesSecretAccessKey.IsNull() && !plan.AmazonSesSecretAccessKey.IsUnknown() {
-        data.AmazonSesSecretAccessKey = plan.AmazonSesSecretAccessKey
-    }
     if config.AmazonSesRegion.IsNull() && !plan.AmazonSesRegion.IsUnknown() {
         data.AmazonSesRegion = plan.AmazonSesRegion
-    }
-    if config.SendgridApiKey.IsNull() && !plan.SendgridApiKey.IsUnknown() {
-        data.SendgridApiKey = plan.SendgridApiKey
-    }
-    if config.MailgunApiKey.IsNull() && !plan.MailgunApiKey.IsUnknown() {
-        data.MailgunApiKey = plan.MailgunApiKey
     }
     if config.MailgunDomain.IsNull() && !plan.MailgunDomain.IsUnknown() {
         data.MailgunDomain = plan.MailgunDomain
     }
     if config.MailgunRegion.IsNull() && !plan.MailgunRegion.IsUnknown() {
         data.MailgunRegion = plan.MailgunRegion
-    }
-    if config.PostmarkServerToken.IsNull() && !plan.PostmarkServerToken.IsUnknown() {
-        data.PostmarkServerToken = plan.PostmarkServerToken
-    }
-    if config.ResendApiKey.IsNull() && !plan.ResendApiKey.IsUnknown() {
-        data.ResendApiKey = plan.ResendApiKey
     }
 }
 

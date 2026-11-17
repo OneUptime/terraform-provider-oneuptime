@@ -51,14 +51,7 @@ data "oneuptime_smtp_config" "by_id" {
 
 ### Read-Only
 
-- `amazon_ses_secret_access_key` (String, Sensitive) The secret access key that goes with the access key ID. Required when Transport is Amazon SES. Encrypted at rest.
-- `client_secret` (String, Sensitive) The Client Secret from your OAuth application registration. Required for OAuth authentication. For Google service accounts, this is the private key from the JSON key file.
 - `created_at` (String) Date and Time when the object was created.
 - `from_email` (String) Permissions - Create: [Project Owner, Project Admin, Create SMTP Config], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read SMTP Config], Update: [Project Owner, Project Admin, Edit SMTP Config]
-- `mailgun_api_key` (String, Sensitive) A Mailgun API key, or a sending API key for the domain. Required when Transport is Mailgun. Encrypted at rest.
-- `password` (String, Sensitive) Permissions - Create: [Project Owner, Project Admin, Create SMTP Config], Read: [Project Owner, Project Admin, Read SMTP Config], Update: [Project Owner, Project Admin, Edit SMTP Config]
-- `postmark_server_token` (String, Sensitive) The API token of the Postmark server that sends, from its API Tokens tab. Required when Transport is Postmark. Encrypted at rest.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
-- `resend_api_key` (String, Sensitive) A Resend API key with sending access. Required when Transport is Resend. Encrypted at rest.
-- `sendgrid_api_key` (String, Sensitive) A SendGrid API key with the Mail Send permission. Required when Transport is SendGrid. Encrypted at rest.
 - `updated_at` (String) Date and Time when the object was updated.
