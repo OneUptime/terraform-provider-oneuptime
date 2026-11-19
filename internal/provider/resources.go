@@ -64,6 +64,8 @@ func GetResources() []func() resource.Resource {
         NewTableUserOwnerResource,
         NewTableTeamOwnerResource,
         NewTableOwnerRuleResource,
+        NewPipelineUserOwnerResource,
+        NewPipelineTeamOwnerResource,
         NewTableLabelRuleResource,
         NewDataObservabilitySettingResource,
         NewProtectedEntityResource,
@@ -447,6 +449,7 @@ func GetResources() []func() resource.Resource {
         NewRumApplicationLabelRuleResource,
         NewRumApplicationOwnerRuleResource,
         NewSavedProductAnalyticsViewResource,
+        NewOnCallScheduleLayersResource,
         // Deprecated aliases: the names these resources had before resource
         // type names kept mixed-case words whole.
         NewEscalationRuleTeamLegacyResource,

@@ -34,7 +34,7 @@ data "oneuptime_escalation_rule" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `name` (String) Any friendly name of this object.
 - `on_call_duty_policy_id` (String) ID of your On-Call Policy where this escalation rule belongs. The ID of a `oneuptime_on_call_policy`.
-- `order` (Number) Order of this rule.
+- `order` (Number) This rule's level in its on-call policy: the lowest is paged first, then the next, and so on. Rules that share a level are paged in the order of their IDs. Setting it places this rule and moves no other, so a configuration that numbers every rule of a policy ends up exactly as written. Left out when you create a rule, it becomes the policy's last level.
 
 ### Read-Only
 

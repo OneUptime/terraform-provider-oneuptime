@@ -38,6 +38,7 @@ type BiToolDataSourceModel struct {
     LastSyncError types.String `tfsdk:"last_sync_error"`
     DashboardCount types.Number `tfsdk:"dashboard_count"`
     MatchedTableCount types.Number `tfsdk:"matched_table_count"`
+    LineageSummary types.String `tfsdk:"lineage_summary"`
     LastSyncWarning types.String `tfsdk:"last_sync_warning"`
     UsageReadFrom types.String `tfsdk:"usage_read_from"`
     UsageReadUntil types.String `tfsdk:"usage_read_until"`
@@ -110,6 +111,10 @@ func (d *BiToolDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
             "matched_table_count": schema.NumberAttribute{
                 MarkdownDescription: "How many watched tables the last read found behind its dashboards.",
                 Optional: true,
+                Computed: true,
+            },
+            "lineage_summary": schema.StringAttribute{
+                MarkdownDescription: "Why the last read's dashboards are, or are not, tied to watched tables: the tables they read and how many matched, the data sources behind them and whether OneUptime watches each, and what keeps the rest from matching, such as a Power BI tenant setting that is off. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "last_sync_warning": schema.StringAttribute{
@@ -256,6 +261,7 @@ func (d *BiToolDataSource) Read(ctx context.Context, req datasource.ReadRequest,
         "lastSyncError": true,
         "dashboardCount": true,
         "matchedTableCount": true,
+        "lineageSummary": true,
         "lastSyncWarning": true,
         "usageReadFrom": true,
         "usageReadUntil": true,
@@ -547,6 +553,30 @@ func (d *BiToolDataSource) Read(ctx context.Context, req datasource.ReadRequest,
     }
     data.DashboardCount = numberFromAPI(data.DashboardCount, item["dashboardCount"])
     data.MatchedTableCount = numberFromAPI(data.MatchedTableCount, item["matchedTableCount"])
+    if obj, ok := item["lineageSummary"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LineageSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LineageSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LineageSummary = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LineageSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.LineageSummary = types.StringNull()
+        }
+    } else if arr, ok := item["lineageSummary"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LineageSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.LineageSummary = types.StringNull()
+        }
+    } else if val, ok := item["lineageSummary"].(string); ok {
+        data.LineageSummary = types.StringValue(val)
+    } else {
+        data.LineageSummary = types.StringNull()
+    }
     if obj, ok := item["lastSyncWarning"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.LastSyncWarning = types.StringValue(val)

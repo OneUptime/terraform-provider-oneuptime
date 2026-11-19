@@ -75,6 +75,7 @@ type DataStoreDataSourceModel struct {
     NextContentScanAt types.String `tfsdk:"next_content_scan_at"`
     IsTableHealthEnabled types.Bool `tfsdk:"is_table_health_enabled"`
     TableHealthCollectedAt types.String `tfsdk:"table_health_collected_at"`
+    TableHealthAttemptedAt types.String `tfsdk:"table_health_attempted_at"`
     TableHealthStatus types.String `tfsdk:"table_health_status"`
     TableHealthMessage types.String `tfsdk:"table_health_message"`
     TableHealthAssetCount types.Number `tfsdk:"table_health_asset_count"`
@@ -324,6 +325,10 @@ func (d *DataStoreDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "table_health_collected_at": schema.StringAttribute{
                 MarkdownDescription: "When Data Observability last collected the store's tables.",
+                Computed: true,
+            },
+            "table_health_attempted_at": schema.StringAttribute{
+                MarkdownDescription: "When the last collection of the store's tables ended, whether it collected them or failed.",
                 Computed: true,
             },
             "table_health_status": schema.StringAttribute{
@@ -655,6 +660,7 @@ func (d *DataStoreDataSource) Read(ctx context.Context, req datasource.ReadReque
         "nextContentScanAt": true,
         "isTableHealthEnabled": true,
         "tableHealthCollectedAt": true,
+        "tableHealthAttemptedAt": true,
         "tableHealthStatus": true,
         "tableHealthMessage": true,
         "tableHealthAssetCount": true,
@@ -1711,6 +1717,30 @@ func (d *DataStoreDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.TableHealthCollectedAt = types.StringValue(val)
     } else {
         data.TableHealthCollectedAt = types.StringNull()
+    }
+    if obj, ok := item["tableHealthAttemptedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TableHealthAttemptedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TableHealthAttemptedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TableHealthAttemptedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TableHealthAttemptedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.TableHealthAttemptedAt = types.StringNull()
+        }
+    } else if arr, ok := item["tableHealthAttemptedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TableHealthAttemptedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.TableHealthAttemptedAt = types.StringNull()
+        }
+    } else if val, ok := item["tableHealthAttemptedAt"].(string); ok {
+        data.TableHealthAttemptedAt = types.StringValue(val)
+    } else {
+        data.TableHealthAttemptedAt = types.StringNull()
     }
     if obj, ok := item["tableHealthStatus"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

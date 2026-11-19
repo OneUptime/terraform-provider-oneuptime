@@ -40,6 +40,7 @@ type SecurityCaseTaskResourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     SecurityCaseId types.String `tfsdk:"security_case_id"`
     Title types.String `tfsdk:"title"`
+    ResponseStepKey types.String `tfsdk:"response_step_key"`
     AssignedToUserId types.String `tfsdk:"assigned_to_user_id"`
     IsDone types.Bool `tfsdk:"is_done"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
@@ -88,6 +89,15 @@ func (r *SecurityCaseTaskResource) schemaDefinition() schema.Schema {
             "title": schema.StringAttribute{
                 MarkdownDescription: "What has to be done, in a line.",
                 Required: true,
+            },
+            "response_step_key": schema.StringAttribute{
+                MarkdownDescription: "The step of the case's response plan this task was made from, when it was made from one. Set when the task is added.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
             },
             "assigned_to_user_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the person doing the task. Empty while nobody is. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `assigned_to_user_email`.",
@@ -223,6 +233,9 @@ func (r *SecurityCaseTaskResource) Create(ctx context.Context, req resource.Crea
     if !data.Title.IsNull() && !data.Title.IsUnknown() {
         requestDataMap["title"] = data.Title.ValueString()
     }
+    if !data.ResponseStepKey.IsNull() && !data.ResponseStepKey.IsUnknown() {
+        requestDataMap["responseStepKey"] = data.ResponseStepKey.ValueString()
+    }
     if !data.AssignedToUserId.IsNull() && !data.AssignedToUserId.IsUnknown() {
         requestDataMap["assignedToUserId"] = data.AssignedToUserId.ValueString()
     }
@@ -291,6 +304,7 @@ func (r *SecurityCaseTaskResource) Create(ctx context.Context, req resource.Crea
         "projectId": true,
         "securityCaseId": true,
         "title": true,
+        "responseStepKey": true,
         "assignedToUserId": true,
         "isDone": true,
         "createdAt": true,
@@ -428,6 +442,50 @@ func (r *SecurityCaseTaskResource) Create(ctx context.Context, req resource.Crea
         data.Title = types.StringValue(val)
     } else {
         data.Title = types.StringNull()
+    }
+    if obj, ok := dataMap["responseStepKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResponseStepKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ResponseStepKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ResponseStepKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ResponseStepKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResponseStepKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ResponseStepKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResponseStepKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ResponseStepKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResponseStepKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["responseStepKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResponseStepKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResponseStepKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["responseStepKey"].(string); ok {
+        data.ResponseStepKey = types.StringValue(val)
+    } else {
+        data.ResponseStepKey = types.StringNull()
     }
     if obj, ok := dataMap["assignedToUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -633,6 +691,7 @@ func (r *SecurityCaseTaskResource) Read(ctx context.Context, req resource.ReadRe
         "projectId": true,
         "securityCaseId": true,
         "title": true,
+        "responseStepKey": true,
         "assignedToUserId": true,
         "isDone": true,
         "createdAt": true,
@@ -775,6 +834,50 @@ func (r *SecurityCaseTaskResource) Read(ctx context.Context, req resource.ReadRe
         data.Title = types.StringValue(val)
     } else {
         data.Title = types.StringNull()
+    }
+    if obj, ok := dataMap["responseStepKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResponseStepKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ResponseStepKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ResponseStepKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ResponseStepKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResponseStepKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ResponseStepKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResponseStepKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ResponseStepKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResponseStepKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["responseStepKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResponseStepKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResponseStepKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["responseStepKey"].(string); ok {
+        data.ResponseStepKey = types.StringValue(val)
+    } else {
+        data.ResponseStepKey = types.StringNull()
     }
     if obj, ok := dataMap["assignedToUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1029,6 +1132,7 @@ func (r *SecurityCaseTaskResource) Update(ctx context.Context, req resource.Upda
         "projectId": true,
         "securityCaseId": true,
         "title": true,
+        "responseStepKey": true,
         "assignedToUserId": true,
         "isDone": true,
         "createdAt": true,
@@ -1161,6 +1265,50 @@ func (r *SecurityCaseTaskResource) Update(ctx context.Context, req resource.Upda
         data.Title = types.StringValue(val)
     } else {
         data.Title = types.StringNull()
+    }
+    if obj, ok := dataMap["responseStepKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResponseStepKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ResponseStepKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ResponseStepKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ResponseStepKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResponseStepKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ResponseStepKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResponseStepKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ResponseStepKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResponseStepKey = types.StringNull()
+        }
+    } else if arr, ok := dataMap["responseStepKey"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResponseStepKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResponseStepKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["responseStepKey"].(string); ok {
+        data.ResponseStepKey = types.StringValue(val)
+    } else {
+        data.ResponseStepKey = types.StringNull()
     }
     if obj, ok := dataMap["assignedToUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1389,6 +1537,9 @@ func (r *SecurityCaseTaskResource) ImportState(ctx context.Context, req resource
 // "Provider produced inconsistent result after apply". The next refresh reads
 // the server's value, which is never a diff for an attribute nobody configured.
 func (r *SecurityCaseTaskResource) keepPlannedValues(data *SecurityCaseTaskResourceModel, plan *SecurityCaseTaskResourceModel, config *SecurityCaseTaskResourceModel) {
+    if config.ResponseStepKey.IsNull() && !plan.ResponseStepKey.IsUnknown() {
+        data.ResponseStepKey = plan.ResponseStepKey
+    }
     if config.AssignedToUserId.IsNull() && !plan.AssignedToUserId.IsUnknown() {
         data.AssignedToUserId = plan.AssignedToUserId
     }

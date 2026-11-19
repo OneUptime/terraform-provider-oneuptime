@@ -36,9 +36,13 @@ resource "oneuptime_probe" "example" {
 
 ### Read-Only
 
+- `checks_last_late_at` (String) When OneUptime last found one of this probe's monitors waiting more than a minute past its check time. Set by OneUptime.
+- `checks_late_since` (String) When this probe's monitors started waiting more than a minute past their check time. Set by OneUptime; empty while they are checked on time.
 - `connection_status` (String) Connection Status of the Probe.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User).
+- `device_polls_last_late_at` (String) When OneUptime last found one of the network devices this probe polls waiting more than a minute past its poll time. Set by OneUptime.
+- `device_polls_late_since` (String) When the network devices this probe polls started waiting more than a minute past their poll time. Set by OneUptime; empty while they are polled on time.
 - `id` (String) Unique identifier for the resource.
 - `packet_capture_capability` (String) What the probe last reported about packet capture: whether it is turned on (PROBE_PACKET_CAPTURE_ENABLED on the probe), whether tcpdump is installed, the network interfaces it can capture on, and the limits its operator set. Managed by the probe. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of the project the probe belongs to. A global probe belongs to none.

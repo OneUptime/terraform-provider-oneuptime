@@ -35,7 +35,7 @@ data "oneuptime_network_device_auto_import_rule" "by_id" {
 - `ip_match_target` (String) Only trigger for discovered hosts whose IP is inside this CIDR (192.168.1.0/24) or octet range (10.16-22.0-255.51-66) — the same notations a scan target takes. Leave empty to match any address.
 - `is_enabled` (Boolean) Whether this rule is enabled.
 - `is_exclusion` (Boolean) Invert this rule: matching hosts are NEVER auto-imported, even when another rule matches them. Use it to carve printers, phones, or other unwanted hosts out of a broader rule.
-- `monitor_template_id` (String) ID of the optional Network Device monitor template to apply to devices imported by this rule. The ID of a `oneuptime_monitor_template`.
+- `monitor_template_id` (String) ID of the optional monitor template (Network Device, Ping, IP, Port or NTP) each device this rule imports gets a monitor from. The ID of a `oneuptime_monitor_template`.
 - `name` (String) Name of this network device auto import rule.
 - `oid_template_id` (String) ID of the optional OID Collection Template to link to devices imported by this rule. The ID of a `oneuptime_oid_collection_template`.
 - `polling_interval_in_minutes` (Number) How often the scan's probe polls each device this rule imports, in minutes: 1, 2, 5, 10, 15, 30 or 60. The probe pings every device and walks the ones that answered SNMP. Leave it empty for the devices' default, every 5 minutes. The same choice as Check every when importing from Review Results.

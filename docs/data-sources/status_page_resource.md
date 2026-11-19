@@ -36,7 +36,7 @@ data "oneuptime_status_page_resource" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `monitor_group_id` (String) Relation to Monitor Group ID Resource in which this object belongs. The ID of a `oneuptime_monitor_group`.
 - `monitor_id` (String) Relation to Monitor ID Resource in which this object belongs. The ID of a `oneuptime_monitor`.
-- `order` (Number) Order / Priority of this resource.
+- `order` (Number) This resource's place in its group, or among the page's resources in no group, lowest first. Resources that share a place are shown in the order of their IDs. Setting it places this resource and moves no other, so a configuration that numbers every resource of a group ends up exactly as written. Left out when you create a resource, it goes after the last resource of its group.
 - `row_axis_value` (String) Row this resource belongs to when its status page group is rendered as a grid. Should match one of the row axis values defined on the group.
 - `show_current_status` (Boolean) Show current status like offline, operational or degraded.
 - `show_status_history_chart` (Boolean) Show a 90 day uptime history of this monitor.

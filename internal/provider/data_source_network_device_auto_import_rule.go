@@ -132,7 +132,7 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Schema(ctx context.Context, req 
                 Computed: true,
             },
             "monitor_template_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the optional Network Device monitor template to apply to devices imported by this rule. The ID of a `oneuptime_monitor_template`.",
+                MarkdownDescription: "ID of the optional monitor template (Network Device, Ping, IP, Port or NTP) each device this rule imports gets a monitor from. The ID of a `oneuptime_monitor_template`.",
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_monitor_template"),

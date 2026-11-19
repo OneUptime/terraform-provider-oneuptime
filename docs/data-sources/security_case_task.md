@@ -35,6 +35,7 @@ data "oneuptime_security_case_task" "by_id" {
 - `done_by_user_id` (String) ID of the person who marked the task done. The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_done` (Boolean) Whether the task is done. Setting it records who did it and when; clearing it opens the task again.
+- `response_step_key` (String) The step of the case's response plan this task was made from, when it was made from one. Set when the task is added.
 - `security_case_id` (String) ID of the case this task is on. The ID of a `oneuptime_security_case`.
 - `title` (String) What has to be done, in a line.
 

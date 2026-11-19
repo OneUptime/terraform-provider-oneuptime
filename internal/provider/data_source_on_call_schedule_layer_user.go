@@ -83,7 +83,7 @@ func (d *OnCallScheduleLayerUserDataSource) Schema(ctx context.Context, req data
                 Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this layer. Lower the number, higher the priority.",
+                MarkdownDescription: "This person's turn in the layer's rotation, lowest first. People who share a turn take it in the order of their IDs. Setting it places this person and moves no other, so a configuration that numbers everyone in a layer ends up exactly as written. Left out when you add someone, they take the layer's last turn.",
                 Optional: true,
                 Computed: true,
             },

@@ -19,6 +19,21 @@ resource "oneuptime_status_page_group" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this group's place among the groups of its status page. Setting it places this group and moves no other, so a configuration that numbers every group of a status page is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.groups`:
+
+```terraform
+order = index(local.groups, each.key) + 1
+```
+
+- Give each group a number of its own: two groups at one number are shown in the order of their IDs.
+- A group created without `order` goes after the page's last group.
+- Deleting a group leaves a gap in the numbers, which changes nothing: groups go by their numbers, not by counting.
+- Moving a group in the OneUptime Dashboard numbers the status page's groups 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -32,7 +47,7 @@ resource "oneuptime_status_page_group" "example" {
 - `column_axis_values` (String) Comma-separated list of column labels for the grid (e.g. 'US-East, EU-West, Asia'). Determines column order in the grid layout.
 - `description` (String) Description for this group. This is visible on Status Page. This can be in markdown format.
 - `is_expanded_by_default` (Boolean) Is this group expanded by default on Status Page? Defaults to `true`.
-- `order` (Number) Order / Priority of this resource.
+- `order` (Number) This group's place on its status page, lowest first. Groups that share a place are shown in the order of their IDs. Setting it places this group and moves no other, so a configuration that numbers every group ends up exactly as written. Left out when you create a group, it goes after the page's last group. See [Order](#order).
 - `parent_status_page_group_id` (String) ID of the Status Page Group this group is nested under. Empty for top level groups. The ID of a `oneuptime_status_page_group`.
 - `row_axis_label` (String) Label shown above the row axis when the group is rendered as a grid (e.g. 'Service', 'Tenant'). Free-form so you can use any dimension you like.
 - `row_axis_values` (String) Comma-separated list of row labels for the grid (e.g. 'Auth, API, Database'). Determines row order in the grid layout.

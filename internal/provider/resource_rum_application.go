@@ -74,6 +74,7 @@ type RumApplicationResourceModel struct {
     SessionReplayMonthlyBudgetInGb types.Number `tfsdk:"session_replay_monthly_budget_in_gb"`
     IsProductAnalyticsEnabled types.Bool `tfsdk:"is_product_analytics_enabled"`
     ProductAnalyticsUserPropertyKeys JSONSubsetValue `tfsdk:"product_analytics_user_property_keys"`
+    ProductAnalyticsRetentionInMonths types.Number `tfsdk:"product_analytics_retention_in_months"`
     IsArchived types.Bool `tfsdk:"is_archived"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
@@ -412,6 +413,16 @@ func (r *RumApplicationResource) schemaDefinition() schema.Schema {
                     JSONEnvelopeValidator(),
                 },
             },
+            "product_analytics_retention_in_months": schema.NumberAttribute{
+                MarkdownDescription: "How long product analytics keeps this application's numbers and events: 3, 6, 13 or 25 months, 13 by default. Separate from how long recordings are kept.",
+                Optional: true,
+                Computed: true,
+                Default: numberdefault.StaticBigFloat(big.NewFloat(13)),
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Is this RUM application archived? Archived RUM applications are hidden from lists but keep collecting telemetry.",
                 Optional: true,
@@ -656,6 +667,9 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
     if parsedProductAnalyticsUserPropertyKeys := r.parseJSONField(data.ProductAnalyticsUserPropertyKeys); parsedProductAnalyticsUserPropertyKeys != nil {
         requestDataMap["productAnalyticsUserPropertyKeys"] = parsedProductAnalyticsUserPropertyKeys
     }
+    if !data.ProductAnalyticsRetentionInMonths.IsNull() && !data.ProductAnalyticsRetentionInMonths.IsUnknown() {
+        requestDataMap["productAnalyticsRetentionInMonths"] = r.bigFloatToFloat64(data.ProductAnalyticsRetentionInMonths.ValueBigFloat())
+    }
     if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
         requestDataMap["isArchived"] = data.IsArchived.ValueBool()
     }
@@ -734,6 +748,7 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         "sessionReplayMonthlyBudgetInGB": true,
         "isProductAnalyticsEnabled": true,
         "productAnalyticsUserPropertyKeys": true,
+        "productAnalyticsRetentionInMonths": true,
         "isArchived": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1468,6 +1483,7 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
     } else {
         data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetNull()
     }
+    data.ProductAnalyticsRetentionInMonths = numberFromAPI(data.ProductAnalyticsRetentionInMonths, dataMap["productAnalyticsRetentionInMonths"])
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
     }
@@ -1951,6 +1967,7 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         "sessionReplayMonthlyBudgetInGB": true,
         "isProductAnalyticsEnabled": true,
         "productAnalyticsUserPropertyKeys": true,
+        "productAnalyticsRetentionInMonths": true,
         "isArchived": true,
         "createdAt": true,
         "updatedAt": true,
@@ -2686,6 +2703,7 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
     } else {
         data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetNull()
     }
+    data.ProductAnalyticsRetentionInMonths = numberFromAPI(data.ProductAnalyticsRetentionInMonths, dataMap["productAnalyticsRetentionInMonths"])
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
     }
@@ -3283,6 +3301,9 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
             requestDataMap["productAnalyticsUserPropertyKeys"] = data.ProductAnalyticsUserPropertyKeys.ValueString()
         }
     }
+    if !data.ProductAnalyticsRetentionInMonths.IsUnknown() && !state.ProductAnalyticsRetentionInMonths.IsUnknown() && !data.ProductAnalyticsRetentionInMonths.Equal(state.ProductAnalyticsRetentionInMonths) {
+        requestDataMap["productAnalyticsRetentionInMonths"] = r.bigFloatToFloat64(data.ProductAnalyticsRetentionInMonths.ValueBigFloat())
+    }
     if !data.IsArchived.IsUnknown() && !state.IsArchived.IsUnknown() && !data.IsArchived.Equal(state.IsArchived) {
         requestDataMap["isArchived"] = data.IsArchived.ValueBool()
     }
@@ -3338,6 +3359,7 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         "sessionReplayMonthlyBudgetInGB": true,
         "isProductAnalyticsEnabled": true,
         "productAnalyticsUserPropertyKeys": true,
+        "productAnalyticsRetentionInMonths": true,
         "isArchived": true,
         "createdAt": true,
         "updatedAt": true,
@@ -4067,6 +4089,7 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
     } else {
         data.ProductAnalyticsUserPropertyKeys = NewJSONSubsetNull()
     }
+    data.ProductAnalyticsRetentionInMonths = numberFromAPI(data.ProductAnalyticsRetentionInMonths, dataMap["productAnalyticsRetentionInMonths"])
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
     }
@@ -4628,6 +4651,9 @@ func (r *RumApplicationResource) keepPlannedValues(data *RumApplicationResourceM
     }
     if config.ProductAnalyticsUserPropertyKeys.IsNull() && !plan.ProductAnalyticsUserPropertyKeys.IsUnknown() {
         data.ProductAnalyticsUserPropertyKeys = plan.ProductAnalyticsUserPropertyKeys
+    }
+    if config.ProductAnalyticsRetentionInMonths.IsNull() && !plan.ProductAnalyticsRetentionInMonths.IsUnknown() {
+        data.ProductAnalyticsRetentionInMonths = plan.ProductAnalyticsRetentionInMonths
     }
     if config.IsArchived.IsNull() && !plan.IsArchived.IsUnknown() {
         data.IsArchived = plan.IsArchived

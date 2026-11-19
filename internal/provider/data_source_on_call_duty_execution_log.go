@@ -59,6 +59,9 @@ type OnCallDutyExecutionLogDataSourceModel struct {
     TestPageRecordKind types.String `tfsdk:"test_page_record_kind"`
     TestPageSeverityId types.String `tfsdk:"test_page_severity_id"`
     TestPageWalksEscalation types.Bool `tfsdk:"test_page_walks_escalation"`
+    TestPageFireDrillId types.String `tfsdk:"test_page_fire_drill_id"`
+    TestPageFireDrillMonitorId types.String `tfsdk:"test_page_fire_drill_monitor_id"`
+    TestPageFireDrillFailure types.String `tfsdk:"test_page_fire_drill_failure"`
 }
 
 func (d *OnCallDutyExecutionLogDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -239,6 +242,21 @@ func (d *OnCallDutyExecutionLogDataSource) Schema(ctx context.Context, req datas
                 Optional: true,
                 Computed: true,
             },
+            "test_page_fire_drill_id": schema.StringAttribute{
+                MarkdownDescription: "For a test started by a monitor's fire drill: the drill, the same on the test of every on-call policy it started. Empty for every other run.",
+                Optional: true,
+                Computed: true,
+            },
+            "test_page_fire_drill_monitor_id": schema.StringAttribute{
+                MarkdownDescription: "For a test started by a monitor's fire drill: ID of the monitor whose failure the drill rehearsed. Empty for every other run, and once the monitor is deleted. The ID of a `oneuptime_monitor`.",
+                Optional: true,
+                Computed: true,
+                Validators: recordIDValidators("oneuptime_monitor"),
+            },
+            "test_page_fire_drill_failure": schema.StringAttribute{
+                MarkdownDescription: "For a test started by a monitor's fire drill: the failure the drill rehearsed, as its dialog named it - the criteria's name, and how long an alert stays open before an alert incident rule declares the incident tested. Empty for every other run. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
         },
     }
 }
@@ -382,6 +400,14 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
         filters["testPageWalksEscalation"] = data.TestPageWalksEscalation.ValueBool()
         filterNames = append(filterNames, "test_page_walks_escalation = "+fmt.Sprintf("%t", data.TestPageWalksEscalation.ValueBool()))
     }
+    if !data.TestPageFireDrillId.IsNull() && !data.TestPageFireDrillId.IsUnknown() {
+        filters["testPageFireDrillId"] = data.TestPageFireDrillId.ValueString()
+        filterNames = append(filterNames, "test_page_fire_drill_id = "+fmt.Sprintf("%q", data.TestPageFireDrillId.ValueString()))
+    }
+    if !data.TestPageFireDrillMonitorId.IsNull() && !data.TestPageFireDrillMonitorId.IsUnknown() {
+        filters["testPageFireDrillMonitorId"] = data.TestPageFireDrillMonitorId.ValueString()
+        filterNames = append(filterNames, "test_page_fire_drill_monitor_id = "+fmt.Sprintf("%q", data.TestPageFireDrillMonitorId.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -431,6 +457,9 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
         "testPageRecordKind": true,
         "testPageSeverityId": true,
         "testPageWalksEscalation": true,
+        "testPageFireDrillId": true,
+        "testPageFireDrillMonitorId": true,
+        "testPageFireDrillFailure": true,
         "_id": true,
     }
 
@@ -1153,6 +1182,78 @@ func (d *OnCallDutyExecutionLogDataSource) Read(ctx context.Context, req datasou
         data.TestPageWalksEscalation = types.BoolValue(val)
     } else {
         data.TestPageWalksEscalation = types.BoolNull()
+    }
+    if obj, ok := item["testPageFireDrillId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TestPageFireDrillId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TestPageFireDrillId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TestPageFireDrillId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TestPageFireDrillId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillId = types.StringNull()
+        }
+    } else if arr, ok := item["testPageFireDrillId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TestPageFireDrillId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillId = types.StringNull()
+        }
+    } else if val, ok := item["testPageFireDrillId"].(string); ok {
+        data.TestPageFireDrillId = types.StringValue(val)
+    } else {
+        data.TestPageFireDrillId = types.StringNull()
+    }
+    if obj, ok := item["testPageFireDrillMonitorId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TestPageFireDrillMonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TestPageFireDrillMonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TestPageFireDrillMonitorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TestPageFireDrillMonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillMonitorId = types.StringNull()
+        }
+    } else if arr, ok := item["testPageFireDrillMonitorId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TestPageFireDrillMonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillMonitorId = types.StringNull()
+        }
+    } else if val, ok := item["testPageFireDrillMonitorId"].(string); ok {
+        data.TestPageFireDrillMonitorId = types.StringValue(val)
+    } else {
+        data.TestPageFireDrillMonitorId = types.StringNull()
+    }
+    if obj, ok := item["testPageFireDrillFailure"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TestPageFireDrillFailure = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TestPageFireDrillFailure = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TestPageFireDrillFailure = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TestPageFireDrillFailure = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillFailure = types.StringNull()
+        }
+    } else if arr, ok := item["testPageFireDrillFailure"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TestPageFireDrillFailure = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillFailure = types.StringNull()
+        }
+    } else if val, ok := item["testPageFireDrillFailure"].(string); ok {
+        data.TestPageFireDrillFailure = types.StringValue(val)
+    } else {
+        data.TestPageFireDrillFailure = types.StringNull()
     }
 
     // Write logs using the tflog package

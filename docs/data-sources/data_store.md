@@ -89,5 +89,6 @@ data "oneuptime_data_store" "by_id" {
 - `project_id` (String) ID of the project this data store belongs to. The ID of a `oneuptime_project`.
 - `scan_exclusions` (String) Path prefixes, tables or attribute keys the content scan skips. A JSON value: read it with `jsondecode()`.
 - `subject_countries` (String) Countries whose people's data the store holds, from country-bound data types (ISO 3166-1 alpha-2). A JSON value: read it with `jsondecode()`.
+- `table_health_attempted_at` (String) When the last collection of the store's tables ended, whether it collected them or failed.
 - `table_health_collected_at` (String) When Data Observability last collected the store's tables.
 - `updated_at` (String) Date and Time when the object was updated.

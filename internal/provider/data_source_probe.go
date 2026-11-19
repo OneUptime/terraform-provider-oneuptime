@@ -42,6 +42,10 @@ type ProbeDataSourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ShouldAutoEnableProbeOnNewMonitors types.Bool `tfsdk:"should_auto_enable_probe_on_new_monitors"`
     ConnectionStatus types.String `tfsdk:"connection_status"`
+    ChecksLateSince types.String `tfsdk:"checks_late_since"`
+    ChecksLastLateAt types.String `tfsdk:"checks_last_late_at"`
+    DevicePollsLateSince types.String `tfsdk:"device_polls_late_since"`
+    DevicePollsLastLateAt types.String `tfsdk:"device_polls_last_late_at"`
     PacketCaptureCapability types.String `tfsdk:"packet_capture_capability"`
     Labels types.Set `tfsdk:"labels"`
 }
@@ -119,6 +123,22 @@ func (d *ProbeDataSource) Schema(ctx context.Context, req datasource.SchemaReque
             "connection_status": schema.StringAttribute{
                 MarkdownDescription: "Connection Status of the Probe.",
                 Optional: true,
+                Computed: true,
+            },
+            "checks_late_since": schema.StringAttribute{
+                MarkdownDescription: "When this probe's monitors started waiting more than a minute past their check time. Set by OneUptime; empty while they are checked on time.",
+                Computed: true,
+            },
+            "checks_last_late_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime last found one of this probe's monitors waiting more than a minute past its check time. Set by OneUptime.",
+                Computed: true,
+            },
+            "device_polls_late_since": schema.StringAttribute{
+                MarkdownDescription: "When the network devices this probe polls started waiting more than a minute past their poll time. Set by OneUptime; empty while they are polled on time.",
+                Computed: true,
+            },
+            "device_polls_last_late_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime last found one of the network devices this probe polls waiting more than a minute past its poll time. Set by OneUptime.",
                 Computed: true,
             },
             "packet_capture_capability": schema.StringAttribute{
@@ -227,6 +247,10 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         "createdByUserId": true,
         "shouldAutoEnableProbeOnNewMonitors": true,
         "connectionStatus": true,
+        "checksLateSince": true,
+        "checksLastLateAt": true,
+        "devicePollsLateSince": true,
+        "devicePollsLastLateAt": true,
         "packetCaptureCapability": true,
         "labels": true,
         "_id": true,
@@ -606,6 +630,102 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.ConnectionStatus = types.StringValue(val)
     } else {
         data.ConnectionStatus = types.StringNull()
+    }
+    if obj, ok := item["checksLateSince"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ChecksLateSince = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ChecksLateSince = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ChecksLateSince = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ChecksLateSince = types.StringValue(string(jsonBytes))
+        } else {
+            data.ChecksLateSince = types.StringNull()
+        }
+    } else if arr, ok := item["checksLateSince"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ChecksLateSince = types.StringValue(string(jsonBytes))
+        } else {
+            data.ChecksLateSince = types.StringNull()
+        }
+    } else if val, ok := item["checksLateSince"].(string); ok {
+        data.ChecksLateSince = types.StringValue(val)
+    } else {
+        data.ChecksLateSince = types.StringNull()
+    }
+    if obj, ok := item["checksLastLateAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ChecksLastLateAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ChecksLastLateAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ChecksLastLateAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ChecksLastLateAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ChecksLastLateAt = types.StringNull()
+        }
+    } else if arr, ok := item["checksLastLateAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ChecksLastLateAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ChecksLastLateAt = types.StringNull()
+        }
+    } else if val, ok := item["checksLastLateAt"].(string); ok {
+        data.ChecksLastLateAt = types.StringValue(val)
+    } else {
+        data.ChecksLastLateAt = types.StringNull()
+    }
+    if obj, ok := item["devicePollsLateSince"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DevicePollsLateSince = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DevicePollsLateSince = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DevicePollsLateSince = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DevicePollsLateSince = types.StringValue(string(jsonBytes))
+        } else {
+            data.DevicePollsLateSince = types.StringNull()
+        }
+    } else if arr, ok := item["devicePollsLateSince"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.DevicePollsLateSince = types.StringValue(string(jsonBytes))
+        } else {
+            data.DevicePollsLateSince = types.StringNull()
+        }
+    } else if val, ok := item["devicePollsLateSince"].(string); ok {
+        data.DevicePollsLateSince = types.StringValue(val)
+    } else {
+        data.DevicePollsLateSince = types.StringNull()
+    }
+    if obj, ok := item["devicePollsLastLateAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DevicePollsLastLateAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DevicePollsLastLateAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DevicePollsLastLateAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DevicePollsLastLateAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.DevicePollsLastLateAt = types.StringNull()
+        }
+    } else if arr, ok := item["devicePollsLastLateAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.DevicePollsLastLateAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.DevicePollsLastLateAt = types.StringNull()
+        }
+    } else if val, ok := item["devicePollsLastLateAt"].(string); ok {
+        data.DevicePollsLastLateAt = types.StringValue(val)
+    } else {
+        data.DevicePollsLastLateAt = types.StringNull()
     }
     if obj, ok := item["packetCaptureCapability"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

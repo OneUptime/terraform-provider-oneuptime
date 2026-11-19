@@ -52,6 +52,7 @@ resource "oneuptime_data_asset" "example" {
 - `last_changed_at` (String) When a row was last inserted, updated or deleted, as near as the engine tells.
 - `last_collected_at` (String) When OneUptime last read the asset's health.
 - `last_read_at` (String) When the table was last seen read, to the hour: by the engine's read counters, or by a service's database spans.
+- `late_at` (String) When the table is late if it has not changed by then: twice its usual interval after its last change, and at least fifteen minutes past it. Empty for a view, or a table whose rhythm is not known yet.
 - `project_id` (String) ID of the project this data asset belongs to. The ID of a `oneuptime_project`.
 - `row_count` (Number) How many rows the asset holds, from the engine's own statistics at the last collection.
 - `row_count_change_tolerance_percent` (Number) A change in rows this small counts as none here, raised each time such an alert is marked not an issue.

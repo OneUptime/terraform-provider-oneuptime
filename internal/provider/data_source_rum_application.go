@@ -70,6 +70,7 @@ type RumApplicationDataSourceModel struct {
     SessionReplayMonthlyBudgetInGb types.Number `tfsdk:"session_replay_monthly_budget_in_gb"`
     IsProductAnalyticsEnabled types.Bool `tfsdk:"is_product_analytics_enabled"`
     ProductAnalyticsUserPropertyKeys types.String `tfsdk:"product_analytics_user_property_keys"`
+    ProductAnalyticsRetentionInMonths types.Number `tfsdk:"product_analytics_retention_in_months"`
     SessionReplayLastChunkReceivedAt types.String `tfsdk:"session_replay_last_chunk_received_at"`
     SessionReplayBudgetExceededAt types.String `tfsdk:"session_replay_budget_exceeded_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -281,6 +282,11 @@ func (d *RumApplicationDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "The identify() trait keys product analytics keeps on each event, for breakdowns and segments (at most 20). Matched as written. Only kept while user-identity capture is on; every other trait is dropped before it leaves the page. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
+            "product_analytics_retention_in_months": schema.NumberAttribute{
+                MarkdownDescription: "How long product analytics keeps this application's numbers and events: 3, 6, 13 or 25 months, 13 by default. Separate from how long recordings are kept.",
+                Optional: true,
+                Computed: true,
+            },
             "session_replay_last_chunk_received_at": schema.StringAttribute{
                 MarkdownDescription: "When a session replay chunk was last accepted for this application.",
                 Computed: true,
@@ -445,6 +451,10 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         filters["isProductAnalyticsEnabled"] = data.IsProductAnalyticsEnabled.ValueBool()
         filterNames = append(filterNames, "is_product_analytics_enabled = "+fmt.Sprintf("%t", data.IsProductAnalyticsEnabled.ValueBool()))
     }
+    if !data.ProductAnalyticsRetentionInMonths.IsNull() && !data.ProductAnalyticsRetentionInMonths.IsUnknown() {
+        filters["productAnalyticsRetentionInMonths"] = lookupNumber(data.ProductAnalyticsRetentionInMonths)
+        filterNames = append(filterNames, "product_analytics_retention_in_months = "+data.ProductAnalyticsRetentionInMonths.ValueBigFloat().String())
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -515,6 +525,7 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         "sessionReplayMonthlyBudgetInGB": true,
         "isProductAnalyticsEnabled": true,
         "productAnalyticsUserPropertyKeys": true,
+        "productAnalyticsRetentionInMonths": true,
         "sessionReplayLastChunkReceivedAt": true,
         "sessionReplayBudgetExceededAt": true,
         "createdByUserId": true,
@@ -1315,6 +1326,7 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.ProductAnalyticsUserPropertyKeys = types.StringNull()
     }
+    data.ProductAnalyticsRetentionInMonths = numberFromAPI(data.ProductAnalyticsRetentionInMonths, item["productAnalyticsRetentionInMonths"])
     if obj, ok := item["sessionReplayLastChunkReceivedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SessionReplayLastChunkReceivedAt = types.StringValue(val)

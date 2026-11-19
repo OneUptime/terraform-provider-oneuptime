@@ -39,7 +39,11 @@ data "oneuptime_probe" "by_id" {
 
 ### Read-Only
 
+- `checks_last_late_at` (String) When OneUptime last found one of this probe's monitors waiting more than a minute past its check time. Set by OneUptime.
+- `checks_late_since` (String) When this probe's monitors started waiting more than a minute past their check time. Set by OneUptime; empty while they are checked on time.
 - `created_at` (String) Date and Time when the object was created.
+- `device_polls_last_late_at` (String) When OneUptime last found one of the network devices this probe polls waiting more than a minute past its poll time. Set by OneUptime.
+- `device_polls_late_since` (String) When the network devices this probe polls started waiting more than a minute past their poll time. Set by OneUptime; empty while they are polled on time.
 - `key` (String, Sensitive) The secret the probe connects with, its PROBE_KEY. Leave it out and OneUptime generates one.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_alive` (String) When the probe last checked in. Set by OneUptime.

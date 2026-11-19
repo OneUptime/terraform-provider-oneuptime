@@ -75,6 +75,9 @@ type OnCallDutyExecutionLogResourceModel struct {
     TestPageRecordKind types.String `tfsdk:"test_page_record_kind"`
     TestPageSeverityId types.String `tfsdk:"test_page_severity_id"`
     TestPageWalksEscalation types.Bool `tfsdk:"test_page_walks_escalation"`
+    TestPageFireDrillId types.String `tfsdk:"test_page_fire_drill_id"`
+    TestPageFireDrillMonitorId types.String `tfsdk:"test_page_fire_drill_monitor_id"`
+    TestPageFireDrillFailure JSONSubsetValue `tfsdk:"test_page_fire_drill_failure"`
 }
 
 func (r *OnCallDutyExecutionLogResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -316,6 +319,19 @@ func (r *OnCallDutyExecutionLogResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "For a test of an on-call policy: whether it walks every escalation level, each after a short wait, rather than paging the first level only.",
                 Computed: true,
             },
+            "test_page_fire_drill_id": schema.StringAttribute{
+                MarkdownDescription: "For a test started by a monitor's fire drill: the drill, the same on the test of every on-call policy it started. Empty for every other run.",
+                Computed: true,
+            },
+            "test_page_fire_drill_monitor_id": schema.StringAttribute{
+                MarkdownDescription: "For a test started by a monitor's fire drill: ID of the monitor whose failure the drill rehearsed. Empty for every other run, and once the monitor is deleted. The ID of a `oneuptime_monitor`.",
+                Computed: true,
+            },
+            "test_page_fire_drill_failure": schema.StringAttribute{
+                MarkdownDescription: "For a test started by a monitor's fire drill: the failure the drill rehearsed, as its dialog named it - the criteria's name, and how long an alert stays open before an alert incident rule declares the incident tested. Empty for every other run. A JSON value: read it with `jsondecode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
         },
     }
 }
@@ -506,6 +522,9 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
         "testPageRecordKind": true,
         "testPageSeverityId": true,
         "testPageWalksEscalation": true,
+        "testPageFireDrillId": true,
+        "testPageFireDrillMonitorId": true,
+        "testPageFireDrillFailure": true,
         "_id": true,
     }
 
@@ -1494,6 +1513,138 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
     if val, ok := dataMap["testPageWalksEscalation"].(bool); ok {
         data.TestPageWalksEscalation = types.BoolValue(val)
     }
+    if obj, ok := dataMap["testPageFireDrillId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TestPageFireDrillId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TestPageFireDrillId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TestPageFireDrillId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TestPageFireDrillId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TestPageFireDrillId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TestPageFireDrillId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TestPageFireDrillId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TestPageFireDrillId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["testPageFireDrillId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TestPageFireDrillId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillId = types.StringNull()
+        }
+    } else if val, ok := dataMap["testPageFireDrillId"].(string); ok {
+        data.TestPageFireDrillId = types.StringValue(val)
+    } else {
+        data.TestPageFireDrillId = types.StringNull()
+    }
+    if obj, ok := dataMap["testPageFireDrillMonitorId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TestPageFireDrillMonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TestPageFireDrillMonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TestPageFireDrillMonitorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TestPageFireDrillMonitorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TestPageFireDrillMonitorId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TestPageFireDrillMonitorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TestPageFireDrillMonitorId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TestPageFireDrillMonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillMonitorId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["testPageFireDrillMonitorId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TestPageFireDrillMonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillMonitorId = types.StringNull()
+        }
+    } else if val, ok := dataMap["testPageFireDrillMonitorId"].(string); ok {
+        data.TestPageFireDrillMonitorId = types.StringValue(val)
+    } else {
+        data.TestPageFireDrillMonitorId = types.StringNull()
+    }
+    if obj, ok := dataMap["testPageFireDrillFailure"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TestPageFireDrillFailure = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TestPageFireDrillFailure = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TestPageFireDrillFailure = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TestPageFireDrillFailure = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TestPageFireDrillFailure = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TestPageFireDrillFailure = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TestPageFireDrillFailure = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TestPageFireDrillFailure = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillFailure = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["testPageFireDrillFailure"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TestPageFireDrillFailure = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillFailure = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["testPageFireDrillFailure"].(string); ok {
+        data.TestPageFireDrillFailure = NewJSONSubsetValue(val)
+    } else {
+        data.TestPageFireDrillFailure = NewJSONSubsetNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1557,6 +1708,9 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
         "testPageRecordKind": true,
         "testPageSeverityId": true,
         "testPageWalksEscalation": true,
+        "testPageFireDrillId": true,
+        "testPageFireDrillMonitorId": true,
+        "testPageFireDrillFailure": true,
         "_id": true,
     }
 
@@ -2545,6 +2699,138 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
     }
     if val, ok := dataMap["testPageWalksEscalation"].(bool); ok {
         data.TestPageWalksEscalation = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["testPageFireDrillId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TestPageFireDrillId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TestPageFireDrillId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TestPageFireDrillId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TestPageFireDrillId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TestPageFireDrillId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TestPageFireDrillId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TestPageFireDrillId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TestPageFireDrillId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["testPageFireDrillId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TestPageFireDrillId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillId = types.StringNull()
+        }
+    } else if val, ok := dataMap["testPageFireDrillId"].(string); ok {
+        data.TestPageFireDrillId = types.StringValue(val)
+    } else {
+        data.TestPageFireDrillId = types.StringNull()
+    }
+    if obj, ok := dataMap["testPageFireDrillMonitorId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TestPageFireDrillMonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TestPageFireDrillMonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TestPageFireDrillMonitorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TestPageFireDrillMonitorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TestPageFireDrillMonitorId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TestPageFireDrillMonitorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.TestPageFireDrillMonitorId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TestPageFireDrillMonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillMonitorId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["testPageFireDrillMonitorId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TestPageFireDrillMonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillMonitorId = types.StringNull()
+        }
+    } else if val, ok := dataMap["testPageFireDrillMonitorId"].(string); ok {
+        data.TestPageFireDrillMonitorId = types.StringValue(val)
+    } else {
+        data.TestPageFireDrillMonitorId = types.StringNull()
+    }
+    if obj, ok := dataMap["testPageFireDrillFailure"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TestPageFireDrillFailure = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TestPageFireDrillFailure = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TestPageFireDrillFailure = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TestPageFireDrillFailure = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TestPageFireDrillFailure = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TestPageFireDrillFailure = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TestPageFireDrillFailure = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TestPageFireDrillFailure = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillFailure = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["testPageFireDrillFailure"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TestPageFireDrillFailure = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TestPageFireDrillFailure = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["testPageFireDrillFailure"].(string); ok {
+        data.TestPageFireDrillFailure = NewJSONSubsetValue(val)
+    } else {
+        data.TestPageFireDrillFailure = NewJSONSubsetNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

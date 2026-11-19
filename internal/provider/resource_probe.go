@@ -54,6 +54,10 @@ type ProbeResourceModel struct {
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ConnectionStatus types.String `tfsdk:"connection_status"`
+    ChecksLateSince RFC3339Value `tfsdk:"checks_late_since"`
+    ChecksLastLateAt RFC3339Value `tfsdk:"checks_last_late_at"`
+    DevicePollsLateSince RFC3339Value `tfsdk:"device_polls_late_since"`
+    DevicePollsLastLateAt RFC3339Value `tfsdk:"device_polls_last_late_at"`
     PacketCaptureCapability JSONSubsetValue `tfsdk:"packet_capture_capability"`
 }
 
@@ -184,6 +188,26 @@ func (r *ProbeResource) schemaDefinition() schema.Schema {
             },
             "connection_status": schema.StringAttribute{
                 MarkdownDescription: "Connection Status of the Probe.",
+                Computed: true,
+            },
+            "checks_late_since": schema.StringAttribute{
+                MarkdownDescription: "When this probe's monitors started waiting more than a minute past their check time. Set by OneUptime; empty while they are checked on time.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "checks_last_late_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime last found one of this probe's monitors waiting more than a minute past its check time. Set by OneUptime.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "device_polls_late_since": schema.StringAttribute{
+                MarkdownDescription: "When the network devices this probe polls started waiting more than a minute past their poll time. Set by OneUptime; empty while they are polled on time.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "device_polls_last_late_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime last found one of the network devices this probe polls waiting more than a minute past its poll time. Set by OneUptime.",
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "packet_capture_capability": schema.StringAttribute{
@@ -339,6 +363,10 @@ func (r *ProbeResource) Create(ctx context.Context, req resource.CreateRequest, 
         "slug": true,
         "createdByUserId": true,
         "connectionStatus": true,
+        "checksLateSince": true,
+        "checksLastLateAt": true,
+        "devicePollsLateSince": true,
+        "devicePollsLastLateAt": true,
         "packetCaptureCapability": true,
         "_id": true,
     }
@@ -805,6 +833,50 @@ func (r *ProbeResource) Create(ctx context.Context, req resource.CreateRequest, 
     } else {
         data.ConnectionStatus = types.StringNull()
     }
+    if obj, ok := dataMap["checksLateSince"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ChecksLateSince = NewRFC3339Value(val)
+        } else {
+            data.ChecksLateSince = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["checksLateSince"].(string); ok && val != "" {
+        data.ChecksLateSince = NewRFC3339Value(val)
+    } else {
+        data.ChecksLateSince = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["checksLastLateAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ChecksLastLateAt = NewRFC3339Value(val)
+        } else {
+            data.ChecksLastLateAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["checksLastLateAt"].(string); ok && val != "" {
+        data.ChecksLastLateAt = NewRFC3339Value(val)
+    } else {
+        data.ChecksLastLateAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["devicePollsLateSince"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DevicePollsLateSince = NewRFC3339Value(val)
+        } else {
+            data.DevicePollsLateSince = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["devicePollsLateSince"].(string); ok && val != "" {
+        data.DevicePollsLateSince = NewRFC3339Value(val)
+    } else {
+        data.DevicePollsLateSince = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["devicePollsLastLateAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DevicePollsLastLateAt = NewRFC3339Value(val)
+        } else {
+            data.DevicePollsLastLateAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["devicePollsLastLateAt"].(string); ok && val != "" {
+        data.DevicePollsLastLateAt = NewRFC3339Value(val)
+    } else {
+        data.DevicePollsLastLateAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["packetCaptureCapability"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -894,6 +966,10 @@ func (r *ProbeResource) Read(ctx context.Context, req resource.ReadRequest, resp
         "slug": true,
         "createdByUserId": true,
         "connectionStatus": true,
+        "checksLateSince": true,
+        "checksLastLateAt": true,
+        "devicePollsLateSince": true,
+        "devicePollsLastLateAt": true,
         "packetCaptureCapability": true,
         "_id": true,
     }
@@ -1361,6 +1437,50 @@ func (r *ProbeResource) Read(ctx context.Context, req resource.ReadRequest, resp
     } else {
         data.ConnectionStatus = types.StringNull()
     }
+    if obj, ok := dataMap["checksLateSince"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ChecksLateSince = NewRFC3339Value(val)
+        } else {
+            data.ChecksLateSince = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["checksLateSince"].(string); ok && val != "" {
+        data.ChecksLateSince = NewRFC3339Value(val)
+    } else {
+        data.ChecksLateSince = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["checksLastLateAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ChecksLastLateAt = NewRFC3339Value(val)
+        } else {
+            data.ChecksLastLateAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["checksLastLateAt"].(string); ok && val != "" {
+        data.ChecksLastLateAt = NewRFC3339Value(val)
+    } else {
+        data.ChecksLastLateAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["devicePollsLateSince"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DevicePollsLateSince = NewRFC3339Value(val)
+        } else {
+            data.DevicePollsLateSince = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["devicePollsLateSince"].(string); ok && val != "" {
+        data.DevicePollsLateSince = NewRFC3339Value(val)
+    } else {
+        data.DevicePollsLateSince = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["devicePollsLastLateAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DevicePollsLastLateAt = NewRFC3339Value(val)
+        } else {
+            data.DevicePollsLastLateAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["devicePollsLastLateAt"].(string); ok && val != "" {
+        data.DevicePollsLastLateAt = NewRFC3339Value(val)
+    } else {
+        data.DevicePollsLastLateAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["packetCaptureCapability"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1511,6 +1631,10 @@ func (r *ProbeResource) Update(ctx context.Context, req resource.UpdateRequest, 
         "slug": true,
         "createdByUserId": true,
         "connectionStatus": true,
+        "checksLateSince": true,
+        "checksLastLateAt": true,
+        "devicePollsLateSince": true,
+        "devicePollsLastLateAt": true,
         "packetCaptureCapability": true,
         "_id": true,
     }
@@ -1971,6 +2095,50 @@ func (r *ProbeResource) Update(ctx context.Context, req resource.UpdateRequest, 
         data.ConnectionStatus = types.StringValue(val)
     } else {
         data.ConnectionStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["checksLateSince"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ChecksLateSince = NewRFC3339Value(val)
+        } else {
+            data.ChecksLateSince = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["checksLateSince"].(string); ok && val != "" {
+        data.ChecksLateSince = NewRFC3339Value(val)
+    } else {
+        data.ChecksLateSince = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["checksLastLateAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ChecksLastLateAt = NewRFC3339Value(val)
+        } else {
+            data.ChecksLastLateAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["checksLastLateAt"].(string); ok && val != "" {
+        data.ChecksLastLateAt = NewRFC3339Value(val)
+    } else {
+        data.ChecksLastLateAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["devicePollsLateSince"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DevicePollsLateSince = NewRFC3339Value(val)
+        } else {
+            data.DevicePollsLateSince = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["devicePollsLateSince"].(string); ok && val != "" {
+        data.DevicePollsLateSince = NewRFC3339Value(val)
+    } else {
+        data.DevicePollsLateSince = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["devicePollsLastLateAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DevicePollsLastLateAt = NewRFC3339Value(val)
+        } else {
+            data.DevicePollsLastLateAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["devicePollsLastLateAt"].(string); ok && val != "" {
+        data.DevicePollsLastLateAt = NewRFC3339Value(val)
+    } else {
+        data.DevicePollsLastLateAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["packetCaptureCapability"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)

@@ -96,6 +96,8 @@ type ProjectResourceModel struct {
     EnableTelegramNotifications types.Bool `tfsdk:"enable_telegram_notifications"`
     EnableCallNotifications types.Bool `tfsdk:"enable_call_notifications"`
     DisableOnCallNotificationFallback types.Bool `tfsdk:"disable_on_call_notification_fallback"`
+    DefaultPagingLadder JSONSubsetValue `tfsdk:"default_paging_ladder"`
+    RequirePhoneMethodForOnCall types.Bool `tfsdk:"require_phone_method_for_on_call"`
     EnableAutoRechargeSmsOrCallBalance types.Bool `tfsdk:"enable_auto_recharge_sms_or_call_balance"`
     AutoAiRechargeByBalanceInUsd types.Number `tfsdk:"auto_ai_recharge_by_balance_in_usd"`
     AutoRechargeAiWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_ai_when_current_balance_falls_in_usd"`
@@ -670,6 +672,28 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "default_paging_ladder": schema.StringAttribute{
+                MarkdownDescription: "How a member is paged once they verify a way to be reached: steps of a channel and a wait in minutes. A channel it leaves out gets no on-call rules. It changes nobody's existing rules. Empty: every verified method pages at once. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
+            "require_phone_method_for_on_call": schema.BoolAttribute{
+                MarkdownDescription: "When on, On-Call Readiness and Setup health name everyone on an on-call policy who has no verified SMS, phone call or WhatsApp number, and a setup reminder asks them to add one. Nobody is locked out.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "enable_auto_recharge_sms_or_call_balance": schema.BoolAttribute{
                 MarkdownDescription: "Enable auto recharge for SMS, Call, and WhatsApp balance for this project.",
                 Optional: true,
@@ -816,7 +840,7 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                 },
             },
             "notify_status_page_subscribers_of_new_incidents_by_default": schema.BoolAttribute{
-                MarkdownDescription: "Whether the Notify Status Page Subscribers box starts ticked when someone declares an incident in the dashboard. When enabled, status page subscribers are notified of a new incident unless the person declaring it unticks the box. When disabled, the box starts unticked and subscribers are notified only if it is ticked. Incidents declared from Slack or Microsoft Teams, or by OneUptime AI, follow it too: while it is disabled they are declared without notifying. Incidents created by monitors, the API and workflows are not affected: each keeps its own Notify Status Page Subscribers value. On by default.",
+                MarkdownDescription: "Whether the Notify Status Page Subscribers box starts ticked when someone declares an incident in the dashboard, Slack or Microsoft Teams. When enabled, status page subscribers are notified of a new incident unless the person declaring it unticks the box. When disabled, the box starts unticked and subscribers are notified only if it is ticked. Incidents declared by OneUptime AI, where nothing asks, follow it too: while it is disabled they are declared without notifying. Incidents created by monitors, the API and workflows are not affected: each keeps its own Notify Status Page Subscribers value. On by default.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -1575,6 +1599,8 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "enableTelegramNotifications": true,
         "enableCallNotifications": true,
         "disableOnCallNotificationFallback": true,
+        "defaultPagingLadder": true,
+        "requirePhoneMethodForOnCall": true,
         "enableAutoRechargeSmsOrCallBalance": true,
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
@@ -2354,6 +2380,53 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if val, ok := dataMap["disableOnCallNotificationFallback"].(bool); ok {
         data.DisableOnCallNotificationFallback = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["defaultPagingLadder"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultPagingLadder = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DefaultPagingLadder = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DefaultPagingLadder = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DefaultPagingLadder = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DefaultPagingLadder = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DefaultPagingLadder = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DefaultPagingLadder = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DefaultPagingLadder = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DefaultPagingLadder = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["defaultPagingLadder"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DefaultPagingLadder = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DefaultPagingLadder = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["defaultPagingLadder"].(string); ok {
+        data.DefaultPagingLadder = NewJSONSubsetValue(val)
+    } else {
+        data.DefaultPagingLadder = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["requirePhoneMethodForOnCall"].(bool); ok {
+        data.RequirePhoneMethodForOnCall = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAutoRechargeSmsOrCallBalance"].(bool); ok {
         data.EnableAutoRechargeSmsOrCallBalance = types.BoolValue(val)
@@ -3572,6 +3645,8 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "enableTelegramNotifications": true,
         "enableCallNotifications": true,
         "disableOnCallNotificationFallback": true,
+        "defaultPagingLadder": true,
+        "requirePhoneMethodForOnCall": true,
         "enableAutoRechargeSmsOrCallBalance": true,
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
@@ -4352,6 +4427,53 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     if val, ok := dataMap["disableOnCallNotificationFallback"].(bool); ok {
         data.DisableOnCallNotificationFallback = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["defaultPagingLadder"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultPagingLadder = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DefaultPagingLadder = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DefaultPagingLadder = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DefaultPagingLadder = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DefaultPagingLadder = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DefaultPagingLadder = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DefaultPagingLadder = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DefaultPagingLadder = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DefaultPagingLadder = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["defaultPagingLadder"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DefaultPagingLadder = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DefaultPagingLadder = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["defaultPagingLadder"].(string); ok {
+        data.DefaultPagingLadder = NewJSONSubsetValue(val)
+    } else {
+        data.DefaultPagingLadder = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["requirePhoneMethodForOnCall"].(bool); ok {
+        data.RequirePhoneMethodForOnCall = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAutoRechargeSmsOrCallBalance"].(bool); ok {
         data.EnableAutoRechargeSmsOrCallBalance = types.BoolValue(val)
@@ -5518,6 +5640,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     // The attributes this update writes from the configuration (see importsettle.go).
     writtenFromConfig := map[string]bool{
         "default_metric_downsampling_retention_days": !data.DefaultMetricDownsamplingRetentionDays.Equal(state.DefaultMetricDownsamplingRetentionDays),
+        "default_paging_ladder": !data.DefaultPagingLadder.Equal(state.DefaultPagingLadder),
         "default_table_columns": !data.DefaultTableColumns.Equal(state.DefaultTableColumns),
         "keep_incidents_in_postmortem_status_ids": !data.KeepIncidentsInPostmortemStatusIds.Equal(state.KeepIncidentsInPostmortemStatusIds),
         "telemetry_retention_config": !data.TelemetryRetentionConfig.Equal(state.TelemetryRetentionConfig),
@@ -5617,6 +5740,17 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if !data.DisableOnCallNotificationFallback.IsUnknown() && !state.DisableOnCallNotificationFallback.IsUnknown() && !data.DisableOnCallNotificationFallback.Equal(state.DisableOnCallNotificationFallback) {
         requestDataMap["disableOnCallNotificationFallback"] = data.DisableOnCallNotificationFallback.ValueBool()
+    }
+    if !data.DefaultPagingLadder.IsUnknown() && !state.DefaultPagingLadder.IsUnknown() && !data.DefaultPagingLadder.Equal(state.DefaultPagingLadder) {
+        var defaultpagingladderData interface{}
+        if err := json.Unmarshal([]byte(data.DefaultPagingLadder.ValueString()), &defaultpagingladderData); err == nil {
+            requestDataMap["defaultPagingLadder"] = defaultpagingladderData
+        } else {
+            requestDataMap["defaultPagingLadder"] = data.DefaultPagingLadder.ValueString()
+        }
+    }
+    if !data.RequirePhoneMethodForOnCall.IsUnknown() && !state.RequirePhoneMethodForOnCall.IsUnknown() && !data.RequirePhoneMethodForOnCall.Equal(state.RequirePhoneMethodForOnCall) {
+        requestDataMap["requirePhoneMethodForOnCall"] = data.RequirePhoneMethodForOnCall.ValueBool()
     }
     if !data.EnableAutoRechargeSmsOrCallBalance.IsUnknown() && !state.EnableAutoRechargeSmsOrCallBalance.IsUnknown() && !data.EnableAutoRechargeSmsOrCallBalance.Equal(state.EnableAutoRechargeSmsOrCallBalance) {
         requestDataMap["enableAutoRechargeSmsOrCallBalance"] = data.EnableAutoRechargeSmsOrCallBalance.ValueBool()
@@ -5928,6 +6062,8 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "enableTelegramNotifications": true,
         "enableCallNotifications": true,
         "disableOnCallNotificationFallback": true,
+        "defaultPagingLadder": true,
+        "requirePhoneMethodForOnCall": true,
         "enableAutoRechargeSmsOrCallBalance": true,
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
@@ -6702,6 +6838,53 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if val, ok := dataMap["disableOnCallNotificationFallback"].(bool); ok {
         data.DisableOnCallNotificationFallback = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["defaultPagingLadder"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultPagingLadder = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DefaultPagingLadder = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DefaultPagingLadder = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DefaultPagingLadder = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DefaultPagingLadder = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DefaultPagingLadder = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.DefaultPagingLadder = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DefaultPagingLadder = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DefaultPagingLadder = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["defaultPagingLadder"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.DefaultPagingLadder = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.DefaultPagingLadder = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["defaultPagingLadder"].(string); ok {
+        data.DefaultPagingLadder = NewJSONSubsetValue(val)
+    } else {
+        data.DefaultPagingLadder = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["requirePhoneMethodForOnCall"].(bool); ok {
+        data.RequirePhoneMethodForOnCall = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAutoRechargeSmsOrCallBalance"].(bool); ok {
         data.EnableAutoRechargeSmsOrCallBalance = types.BoolValue(val)
@@ -7887,7 +8070,7 @@ func (r *ProjectResource) ImportState(ctx context.Context, req resource.ImportSt
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
     // These hold the record as OneUptime keeps it, keys it fills in itself
     // included, until an update writes them (see importsettle.go).
-    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"default_metric_downsampling_retention_days", "default_table_columns", "keep_incidents_in_postmortem_status_ids", "telemetry_retention_config"})...)
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"default_metric_downsampling_retention_days", "default_paging_ladder", "default_table_columns", "keep_incidents_in_postmortem_status_ids", "telemetry_retention_config"})...)
 }
 
 
@@ -8048,6 +8231,12 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.DisableOnCallNotificationFallback.IsNull() && !plan.DisableOnCallNotificationFallback.IsUnknown() {
         data.DisableOnCallNotificationFallback = plan.DisableOnCallNotificationFallback
+    }
+    if config.DefaultPagingLadder.IsNull() && !plan.DefaultPagingLadder.IsUnknown() {
+        data.DefaultPagingLadder = plan.DefaultPagingLadder
+    }
+    if config.RequirePhoneMethodForOnCall.IsNull() && !plan.RequirePhoneMethodForOnCall.IsUnknown() {
+        data.RequirePhoneMethodForOnCall = plan.RequirePhoneMethodForOnCall
     }
     if config.EnableAutoRechargeSmsOrCallBalance.IsNull() && !plan.EnableAutoRechargeSmsOrCallBalance.IsUnknown() {
         data.EnableAutoRechargeSmsOrCallBalance = plan.EnableAutoRechargeSmsOrCallBalance

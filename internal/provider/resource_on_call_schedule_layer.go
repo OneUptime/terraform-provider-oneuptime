@@ -99,7 +99,7 @@ func (r *OnCallScheduleLayerResource) schemaDefinition() schema.Schema {
                 },
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this layer. Lower the number, higher the priority.",
+                MarkdownDescription: "This layer's priority in its schedule: the lower the number, the higher the priority. Layers that share a number are ranked in the order of their IDs. Setting it places this layer and moves no other, so a configuration that numbers every layer of a schedule ends up exactly as written. Left out when you create a layer, it goes below the schedule's last layer.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{

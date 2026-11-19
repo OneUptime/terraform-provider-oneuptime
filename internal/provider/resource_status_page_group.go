@@ -119,7 +119,7 @@ func (r *StatusPageGroupResource) schemaDefinition() schema.Schema {
                 },
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource.",
+                MarkdownDescription: "This group's place on its status page, lowest first. Groups that share a place are shown in the order of their IDs. Setting it places this group and moves no other, so a configuration that numbers every group ends up exactly as written. Left out when you create a group, it goes after the page's last group.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{

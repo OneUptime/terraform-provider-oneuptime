@@ -52,4 +52,5 @@ data "oneuptime_bi_dashboard" "by_id" {
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `refresh_history` (String) The latest refreshes of the data it charts, each with how it went and a failed one's error, and how many ran and failed in the last seven days. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.
+- `upstream` (String) What its tool says it is built on (Power BI): the datasets it charts, and where their data comes from - a database, a file, a web page or a dataflow - whether or not OneUptime watches it. A JSON value: read it with `jsondecode()`.
 - `usage_summary` (String) Who opened it most in the last 28 days, with how often and when last, and since when its views are counted while the 28 days are still being read. A JSON value: read it with `jsondecode()`.

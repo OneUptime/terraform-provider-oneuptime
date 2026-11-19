@@ -32,6 +32,7 @@ type SecurityCaseTaskDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     SecurityCaseId types.String `tfsdk:"security_case_id"`
     Title types.String `tfsdk:"title"`
+    ResponseStepKey types.String `tfsdk:"response_step_key"`
     AssignedToUserId types.String `tfsdk:"assigned_to_user_id"`
     IsDone types.Bool `tfsdk:"is_done"`
     DoneAt types.String `tfsdk:"done_at"`
@@ -74,6 +75,11 @@ func (d *SecurityCaseTaskDataSource) Schema(ctx context.Context, req datasource.
             },
             "title": schema.StringAttribute{
                 MarkdownDescription: "What has to be done, in a line.",
+                Optional: true,
+                Computed: true,
+            },
+            "response_step_key": schema.StringAttribute{
+                MarkdownDescription: "The step of the case's response plan this task was made from, when it was made from one. Set when the task is added.",
                 Optional: true,
                 Computed: true,
             },
@@ -157,6 +163,10 @@ func (d *SecurityCaseTaskDataSource) Read(ctx context.Context, req datasource.Re
         filters["title"] = data.Title.ValueString()
         filterNames = append(filterNames, "title = "+fmt.Sprintf("%q", data.Title.ValueString()))
     }
+    if !data.ResponseStepKey.IsNull() && !data.ResponseStepKey.IsUnknown() {
+        filters["responseStepKey"] = data.ResponseStepKey.ValueString()
+        filterNames = append(filterNames, "response_step_key = "+fmt.Sprintf("%q", data.ResponseStepKey.ValueString()))
+    }
     if !data.AssignedToUserId.IsNull() && !data.AssignedToUserId.IsUnknown() {
         filters["assignedToUserId"] = data.AssignedToUserId.ValueString()
         filterNames = append(filterNames, "assigned_to_user_id = "+fmt.Sprintf("%q", data.AssignedToUserId.ValueString()))
@@ -203,6 +213,7 @@ func (d *SecurityCaseTaskDataSource) Read(ctx context.Context, req datasource.Re
         "projectId": true,
         "securityCaseId": true,
         "title": true,
+        "responseStepKey": true,
         "assignedToUserId": true,
         "isDone": true,
         "doneAt": true,
@@ -412,6 +423,30 @@ func (d *SecurityCaseTaskDataSource) Read(ctx context.Context, req datasource.Re
         data.Title = types.StringValue(val)
     } else {
         data.Title = types.StringNull()
+    }
+    if obj, ok := item["responseStepKey"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResponseStepKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ResponseStepKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ResponseStepKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ResponseStepKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResponseStepKey = types.StringNull()
+        }
+    } else if arr, ok := item["responseStepKey"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ResponseStepKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResponseStepKey = types.StringNull()
+        }
+    } else if val, ok := item["responseStepKey"].(string); ok {
+        data.ResponseStepKey = types.StringValue(val)
+    } else {
+        data.ResponseStepKey = types.StringNull()
     }
     if obj, ok := item["assignedToUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

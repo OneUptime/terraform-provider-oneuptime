@@ -48,6 +48,7 @@ type BiDashboardDataSourceModel struct {
     LastRefreshStatus types.String `tfsdk:"last_refresh_status"`
     LastRefreshAt types.String `tfsdk:"last_refresh_at"`
     RefreshHistory types.String `tfsdk:"refresh_history"`
+    Upstream types.String `tfsdk:"upstream"`
     DataAssets types.Set `tfsdk:"data_assets"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -152,6 +153,10 @@ func (d *BiDashboardDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "refresh_history": schema.StringAttribute{
                 MarkdownDescription: "The latest refreshes of the data it charts, each with how it went and a failed one's error, and how many ran and failed in the last seven days. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "upstream": schema.StringAttribute{
+                MarkdownDescription: "What its tool says it is built on (Power BI): the datasets it charts, and where their data comes from - a database, a file, a web page or a dataflow - whether or not OneUptime watches it. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "data_assets": schema.SetAttribute{
@@ -288,6 +293,7 @@ func (d *BiDashboardDataSource) Read(ctx context.Context, req datasource.ReadReq
         "lastRefreshStatus": true,
         "lastRefreshAt": true,
         "refreshHistory": true,
+        "upstream": true,
         "dataAssets": true,
         "createdByUserId": true,
         "_id": true,
@@ -761,6 +767,30 @@ func (d *BiDashboardDataSource) Read(ctx context.Context, req datasource.ReadReq
         data.RefreshHistory = types.StringValue(val)
     } else {
         data.RefreshHistory = types.StringNull()
+    }
+    if obj, ok := item["upstream"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Upstream = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Upstream = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Upstream = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Upstream = types.StringValue(string(jsonBytes))
+        } else {
+            data.Upstream = types.StringNull()
+        }
+    } else if arr, ok := item["upstream"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Upstream = types.StringValue(string(jsonBytes))
+        } else {
+            data.Upstream = types.StringNull()
+        }
+    } else if val, ok := item["upstream"].(string); ok {
+        data.Upstream = types.StringValue(val)
+    } else {
+        data.Upstream = types.StringNull()
     }
     if val, ok := item["dataAssets"].([]interface{}); ok {
         var setItems []attr.Value

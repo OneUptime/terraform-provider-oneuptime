@@ -33,7 +33,7 @@ data "oneuptime_on_call_schedule_layer" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `name` (String) Friendly name for this layer.
 - `on_call_duty_policy_schedule_id` (String) ID of the on-call schedule the layer is in. The ID of a `oneuptime_on_call_policy_schedule`.
-- `order` (Number) Order / Priority of this layer. Lower the number, higher the priority.
+- `order` (Number) This layer's priority in its schedule: the lower the number, the higher the priority. Layers that share a number are ranked in the order of their IDs. Setting it places this layer and moves no other, so a configuration that numbers every layer of a schedule ends up exactly as written. Left out when you create a layer, it goes below the schedule's last layer.
 
 ### Read-Only
 

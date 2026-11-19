@@ -30,6 +30,7 @@ resource "oneuptime_security_case_task" "example" {
 - `assigned_to_user_email` (String) The email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
 - `assigned_to_user_id` (String) ID of the person doing the task. Empty while nobody is. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `assigned_to_user_email`.
 - `is_done` (Boolean) Whether the task is done. Setting it records who did it and when; clearing it opens the task again. Defaults to `false`.
+- `response_step_key` (String) The step of the case's response plan this task was made from, when it was made from one. Set when the task is added.
 
 ### Read-Only
 

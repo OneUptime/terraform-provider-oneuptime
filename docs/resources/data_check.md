@@ -53,6 +53,8 @@ resource "oneuptime_data_check" "example" {
 - `data_store_id` (String) ID of the data store the table is in, set from the table.
 - `external_id` (String) For a dbt test, the test's unique id in the dbt project, which each upload of its artifacts is matched by.
 - `failing_rows_sample` (String) A masked sample of the rows the last run found failing, when the project keeps them. A JSON value: read it with `jsondecode()`.
+- `health` (String) How the check stands now: Failing while its alert is open, Could Not Run when its query failed, Passing, No Alert, Waiting before its first run, or Off.
+- `health_rank` (Number) The check's health as a number to sort by, worst first: 0 failing, 1 could not run, 2 passing, 3 no alert, 4 waiting, 5 off.
 - `id` (String) Unique identifier for the resource.
 - `is_managed_by_file` (Boolean) Whether the check came from a file in a repository (oneuptime data-checks apply).
 - `last_run_at` (String) When the check last ran.

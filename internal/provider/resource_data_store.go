@@ -91,6 +91,7 @@ type DataStoreResourceModel struct {
     ContentScanStatus types.String `tfsdk:"content_scan_status"`
     NextContentScanAt RFC3339Value `tfsdk:"next_content_scan_at"`
     TableHealthCollectedAt RFC3339Value `tfsdk:"table_health_collected_at"`
+    TableHealthAttemptedAt RFC3339Value `tfsdk:"table_health_attempted_at"`
     TableHealthStatus types.String `tfsdk:"table_health_status"`
     TableHealthMessage types.String `tfsdk:"table_health_message"`
     TableHealthAssetCount types.Number `tfsdk:"table_health_asset_count"`
@@ -417,6 +418,11 @@ func (r *DataStoreResource) schemaDefinition() schema.Schema {
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
+            "table_health_attempted_at": schema.StringAttribute{
+                MarkdownDescription: "When the last collection of the store's tables ended, whether it collected them or failed.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
             "table_health_status": schema.StringAttribute{
                 MarkdownDescription: "How the last collection of the store's tables ended: Collected, or Failed.",
                 Computed: true,
@@ -679,6 +685,7 @@ func (r *DataStoreResource) Create(ctx context.Context, req resource.CreateReque
         "contentScanStatus": true,
         "nextContentScanAt": true,
         "tableHealthCollectedAt": true,
+        "tableHealthAttemptedAt": true,
         "tableHealthStatus": true,
         "tableHealthMessage": true,
         "tableHealthAssetCount": true,
@@ -2222,6 +2229,17 @@ func (r *DataStoreResource) Create(ctx context.Context, req resource.CreateReque
     } else {
         data.TableHealthCollectedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["tableHealthAttemptedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.TableHealthAttemptedAt = NewRFC3339Value(val)
+        } else {
+            data.TableHealthAttemptedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["tableHealthAttemptedAt"].(string); ok && val != "" {
+        data.TableHealthAttemptedAt = NewRFC3339Value(val)
+    } else {
+        data.TableHealthAttemptedAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["tableHealthStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2551,6 +2569,7 @@ func (r *DataStoreResource) Read(ctx context.Context, req resource.ReadRequest, 
         "contentScanStatus": true,
         "nextContentScanAt": true,
         "tableHealthCollectedAt": true,
+        "tableHealthAttemptedAt": true,
         "tableHealthStatus": true,
         "tableHealthMessage": true,
         "tableHealthAssetCount": true,
@@ -4095,6 +4114,17 @@ func (r *DataStoreResource) Read(ctx context.Context, req resource.ReadRequest, 
     } else {
         data.TableHealthCollectedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["tableHealthAttemptedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.TableHealthAttemptedAt = NewRFC3339Value(val)
+        } else {
+            data.TableHealthAttemptedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["tableHealthAttemptedAt"].(string); ok && val != "" {
+        data.TableHealthAttemptedAt = NewRFC3339Value(val)
+    } else {
+        data.TableHealthAttemptedAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["tableHealthStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4515,6 +4545,7 @@ func (r *DataStoreResource) Update(ctx context.Context, req resource.UpdateReque
         "contentScanStatus": true,
         "nextContentScanAt": true,
         "tableHealthCollectedAt": true,
+        "tableHealthAttemptedAt": true,
         "tableHealthStatus": true,
         "tableHealthMessage": true,
         "tableHealthAssetCount": true,
@@ -6052,6 +6083,17 @@ func (r *DataStoreResource) Update(ctx context.Context, req resource.UpdateReque
         data.TableHealthCollectedAt = NewRFC3339Value(val)
     } else {
         data.TableHealthCollectedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["tableHealthAttemptedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.TableHealthAttemptedAt = NewRFC3339Value(val)
+        } else {
+            data.TableHealthAttemptedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["tableHealthAttemptedAt"].(string); ok && val != "" {
+        data.TableHealthAttemptedAt = NewRFC3339Value(val)
+    } else {
+        data.TableHealthAttemptedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["tableHealthStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

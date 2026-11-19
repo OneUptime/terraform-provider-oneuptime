@@ -51,6 +51,7 @@ data "oneuptime_data_pipeline" "by_id" {
 - `last_run_ended_at` (String) When the latest run ended.
 - `last_run_started_at` (String) When the latest run started.
 - `last_success_at` (String) When a run last completed.
+- `late_at` (String) When the pipeline is late if no run has started by then: its expected interval after its last start, plus a quarter of it and at least fifteen minutes. Empty until it has a schedule to judge by.
 - `outputs` (String) The datasets the pipeline writes, as namespace and name. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

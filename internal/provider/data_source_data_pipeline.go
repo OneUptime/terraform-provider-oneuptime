@@ -45,6 +45,7 @@ type DataPipelineDataSourceModel struct {
     RunCount types.Number `tfsdk:"run_count"`
     TypicalRunDurationInSeconds types.Number `tfsdk:"typical_run_duration_in_seconds"`
     ExpectedRunIntervalInSeconds types.Number `tfsdk:"expected_run_interval_in_seconds"`
+    LateAt types.String `tfsdk:"late_at"`
     Inputs types.String `tfsdk:"inputs"`
     Outputs types.String `tfsdk:"outputs"`
     FirstSeenAt types.String `tfsdk:"first_seen_at"`
@@ -146,6 +147,10 @@ func (d *DataPipelineDataSource) Schema(ctx context.Context, req datasource.Sche
             "expected_run_interval_in_seconds": schema.NumberAttribute{
                 MarkdownDescription: "The longest the pipeline goes between runs on its schedule, in seconds: the longest gap between the starts of its last 50 runs, once there are five.",
                 Optional: true,
+                Computed: true,
+            },
+            "late_at": schema.StringAttribute{
+                MarkdownDescription: "When the pipeline is late if no run has started by then: its expected interval after its last start, plus a quarter of it and at least fifteen minutes. Empty until it has a schedule to judge by.",
                 Computed: true,
             },
             "inputs": schema.StringAttribute{
@@ -288,6 +293,7 @@ func (d *DataPipelineDataSource) Read(ctx context.Context, req datasource.ReadRe
         "runCount": true,
         "typicalRunDurationInSeconds": true,
         "expectedRunIntervalInSeconds": true,
+        "lateAt": true,
         "inputs": true,
         "outputs": true,
         "firstSeenAt": true,
@@ -717,6 +723,30 @@ func (d *DataPipelineDataSource) Read(ctx context.Context, req datasource.ReadRe
     data.RunCount = numberFromAPI(data.RunCount, item["runCount"])
     data.TypicalRunDurationInSeconds = numberFromAPI(data.TypicalRunDurationInSeconds, item["typicalRunDurationInSeconds"])
     data.ExpectedRunIntervalInSeconds = numberFromAPI(data.ExpectedRunIntervalInSeconds, item["expectedRunIntervalInSeconds"])
+    if obj, ok := item["lateAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LateAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LateAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LateAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LateAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LateAt = types.StringNull()
+        }
+    } else if arr, ok := item["lateAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LateAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LateAt = types.StringNull()
+        }
+    } else if val, ok := item["lateAt"].(string); ok {
+        data.LateAt = types.StringValue(val)
+    } else {
+        data.LateAt = types.StringNull()
+    }
     if obj, ok := item["inputs"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Inputs = types.StringValue(val)

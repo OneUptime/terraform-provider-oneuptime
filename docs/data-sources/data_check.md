@@ -40,6 +40,8 @@ data "oneuptime_data_check" "by_id" {
 - `description` (String) Why the check matters, and what to do when it fails.
 - `external_id` (String) For a dbt test, the test's unique id in the dbt project, which each upload of its artifacts is matched by.
 - `format_preset` (String) For Format Mismatch Percent: a format everyone wants, instead of writing the pattern.
+- `health` (String) How the check stands now: Failing while its alert is open, Could Not Run when its query failed, Passing, No Alert, Waiting before its first run, or Off.
+- `health_rank` (Number) The check's health as a number to sort by, worst first: 0 failing, 1 could not run, 2 passing, 3 no alert, 4 waiting, 5 off.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `interval_in_minutes` (Number) How often the check runs: 15, 60, 360 or 1440 minutes.
 - `is_enabled` (Boolean) Whether the check runs.

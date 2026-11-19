@@ -81,6 +81,8 @@ func GetDataSources() []func() datasource.DataSource {
         NewTableUserOwnerDataSource,
         NewTableTeamOwnerDataSource,
         NewTableOwnerRuleDataSource,
+        NewPipelineUserOwnerDataSource,
+        NewPipelineTeamOwnerDataSource,
         NewTableLabelRuleDataSource,
         NewDataObservabilitySettingDataSource,
         NewDataAssetLineageDataSource,

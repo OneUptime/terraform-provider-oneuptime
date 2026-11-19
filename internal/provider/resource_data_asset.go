@@ -66,6 +66,7 @@ type DataAssetResourceModel struct {
     LastReadAt RFC3339Value `tfsdk:"last_read_at"`
     UnreadSince RFC3339Value `tfsdk:"unread_since"`
     UpdateIntervalInSeconds types.Number `tfsdk:"update_interval_in_seconds"`
+    LateAt RFC3339Value `tfsdk:"late_at"`
     LastCollectedAt RFC3339Value `tfsdk:"last_collected_at"`
     FirstSeenAt RFC3339Value `tfsdk:"first_seen_at"`
     IsDropped types.Bool `tfsdk:"is_dropped"`
@@ -242,6 +243,11 @@ func (r *DataAssetResource) schemaDefinition() schema.Schema {
             },
             "update_interval_in_seconds": schema.NumberAttribute{
                 MarkdownDescription: "How often the asset usually changes, learned from the changes OneUptime has seen.",
+                Computed: true,
+            },
+            "late_at": schema.StringAttribute{
+                MarkdownDescription: "When the table is late if it has not changed by then: twice its usual interval after its last change, and at least fifteen minutes past it. Empty for a view, or a table whose rhythm is not known yet.",
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "last_collected_at": schema.StringAttribute{
@@ -429,6 +435,7 @@ func (r *DataAssetResource) Create(ctx context.Context, req resource.CreateReque
         "lastReadAt": true,
         "unreadSince": true,
         "updateIntervalInSeconds": true,
+        "lateAt": true,
         "lastCollectedAt": true,
         "firstSeenAt": true,
         "isDropped": true,
@@ -1055,6 +1062,17 @@ func (r *DataAssetResource) Create(ctx context.Context, req resource.CreateReque
         data.UnreadSince = NewRFC3339Null()
     }
     data.UpdateIntervalInSeconds = numberFromAPI(data.UpdateIntervalInSeconds, dataMap["updateIntervalInSeconds"])
+    if obj, ok := dataMap["lateAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LateAt = NewRFC3339Value(val)
+        } else {
+            data.LateAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lateAt"].(string); ok && val != "" {
+        data.LateAt = NewRFC3339Value(val)
+    } else {
+        data.LateAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["lastCollectedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastCollectedAt = NewRFC3339Value(val)
@@ -1191,6 +1209,7 @@ func (r *DataAssetResource) Read(ctx context.Context, req resource.ReadRequest, 
         "lastReadAt": true,
         "unreadSince": true,
         "updateIntervalInSeconds": true,
+        "lateAt": true,
         "lastCollectedAt": true,
         "firstSeenAt": true,
         "isDropped": true,
@@ -1818,6 +1837,17 @@ func (r *DataAssetResource) Read(ctx context.Context, req resource.ReadRequest, 
         data.UnreadSince = NewRFC3339Null()
     }
     data.UpdateIntervalInSeconds = numberFromAPI(data.UpdateIntervalInSeconds, dataMap["updateIntervalInSeconds"])
+    if obj, ok := dataMap["lateAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LateAt = NewRFC3339Value(val)
+        } else {
+            data.LateAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lateAt"].(string); ok && val != "" {
+        data.LateAt = NewRFC3339Value(val)
+    } else {
+        data.LateAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["lastCollectedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastCollectedAt = NewRFC3339Value(val)
@@ -1998,6 +2028,7 @@ func (r *DataAssetResource) Update(ctx context.Context, req resource.UpdateReque
         "lastReadAt": true,
         "unreadSince": true,
         "updateIntervalInSeconds": true,
+        "lateAt": true,
         "lastCollectedAt": true,
         "firstSeenAt": true,
         "isDropped": true,
@@ -2619,6 +2650,17 @@ func (r *DataAssetResource) Update(ctx context.Context, req resource.UpdateReque
         data.UnreadSince = NewRFC3339Null()
     }
     data.UpdateIntervalInSeconds = numberFromAPI(data.UpdateIntervalInSeconds, dataMap["updateIntervalInSeconds"])
+    if obj, ok := dataMap["lateAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LateAt = NewRFC3339Value(val)
+        } else {
+            data.LateAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lateAt"].(string); ok && val != "" {
+        data.LateAt = NewRFC3339Value(val)
+    } else {
+        data.LateAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["lastCollectedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastCollectedAt = NewRFC3339Value(val)

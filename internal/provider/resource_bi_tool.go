@@ -52,6 +52,7 @@ type BiToolResourceModel struct {
     LastSyncError types.String `tfsdk:"last_sync_error"`
     DashboardCount types.Number `tfsdk:"dashboard_count"`
     MatchedTableCount types.Number `tfsdk:"matched_table_count"`
+    LineageSummary JSONSubsetValue `tfsdk:"lineage_summary"`
     LastSyncWarning types.String `tfsdk:"last_sync_warning"`
     UsageReadFrom RFC3339Value `tfsdk:"usage_read_from"`
     UsageReadUntil RFC3339Value `tfsdk:"usage_read_until"`
@@ -160,6 +161,11 @@ func (r *BiToolResource) schemaDefinition() schema.Schema {
             },
             "matched_table_count": schema.NumberAttribute{
                 MarkdownDescription: "How many watched tables the last read found behind its dashboards.",
+                Computed: true,
+            },
+            "lineage_summary": schema.StringAttribute{
+                MarkdownDescription: "Why the last read's dashboards are, or are not, tied to watched tables: the tables they read and how many matched, the data sources behind them and whether OneUptime watches each, and what keeps the rest from matching, such as a Power BI tenant setting that is off. A JSON value: read it with `jsondecode()`.",
+                CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "last_sync_warning": schema.StringAttribute{
@@ -332,6 +338,7 @@ func (r *BiToolResource) Create(ctx context.Context, req resource.CreateRequest,
         "lastSyncError": true,
         "dashboardCount": true,
         "matchedTableCount": true,
+        "lineageSummary": true,
         "lastSyncWarning": true,
         "usageReadFrom": true,
         "usageReadUntil": true,
@@ -598,6 +605,50 @@ func (r *BiToolResource) Create(ctx context.Context, req resource.CreateRequest,
     }
     data.DashboardCount = numberFromAPI(data.DashboardCount, dataMap["dashboardCount"])
     data.MatchedTableCount = numberFromAPI(data.MatchedTableCount, dataMap["matchedTableCount"])
+    if obj, ok := dataMap["lineageSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LineageSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LineageSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LineageSummary = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LineageSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LineageSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LineageSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LineageSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LineageSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.LineageSummary = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["lineageSummary"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LineageSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.LineageSummary = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["lineageSummary"].(string); ok {
+        data.LineageSummary = NewJSONSubsetValue(val)
+    } else {
+        data.LineageSummary = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["lastSyncWarning"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -839,6 +890,7 @@ func (r *BiToolResource) Read(ctx context.Context, req resource.ReadRequest, res
         "lastSyncError": true,
         "dashboardCount": true,
         "matchedTableCount": true,
+        "lineageSummary": true,
         "lastSyncWarning": true,
         "usageReadFrom": true,
         "usageReadUntil": true,
@@ -1106,6 +1158,50 @@ func (r *BiToolResource) Read(ctx context.Context, req resource.ReadRequest, res
     }
     data.DashboardCount = numberFromAPI(data.DashboardCount, dataMap["dashboardCount"])
     data.MatchedTableCount = numberFromAPI(data.MatchedTableCount, dataMap["matchedTableCount"])
+    if obj, ok := dataMap["lineageSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LineageSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LineageSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LineageSummary = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LineageSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LineageSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LineageSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LineageSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LineageSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.LineageSummary = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["lineageSummary"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LineageSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.LineageSummary = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["lineageSummary"].(string); ok {
+        data.LineageSummary = NewJSONSubsetValue(val)
+    } else {
+        data.LineageSummary = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["lastSyncWarning"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1397,6 +1493,7 @@ func (r *BiToolResource) Update(ctx context.Context, req resource.UpdateRequest,
         "lastSyncError": true,
         "dashboardCount": true,
         "matchedTableCount": true,
+        "lineageSummary": true,
         "lastSyncWarning": true,
         "usageReadFrom": true,
         "usageReadUntil": true,
@@ -1658,6 +1755,50 @@ func (r *BiToolResource) Update(ctx context.Context, req resource.UpdateRequest,
     }
     data.DashboardCount = numberFromAPI(data.DashboardCount, dataMap["dashboardCount"])
     data.MatchedTableCount = numberFromAPI(data.MatchedTableCount, dataMap["matchedTableCount"])
+    if obj, ok := dataMap["lineageSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LineageSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LineageSummary = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LineageSummary = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LineageSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LineageSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LineageSummary = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LineageSummary = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LineageSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.LineageSummary = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["lineageSummary"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.LineageSummary = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.LineageSummary = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["lineageSummary"].(string); ok {
+        data.LineageSummary = NewJSONSubsetValue(val)
+    } else {
+        data.LineageSummary = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["lastSyncWarning"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -182,7 +182,7 @@ func (r *StatusPageResourceResource) schemaDefinition() schema.Schema {
                 },
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource.",
+                MarkdownDescription: "This resource's place in its group, or among the page's resources in no group, lowest first. Resources that share a place are shown in the order of their IDs. Setting it places this resource and moves no other, so a configuration that numbers every resource of a group ends up exactly as written. Left out when you create a resource, it goes after the last resource of its group.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{

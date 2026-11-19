@@ -148,6 +148,23 @@ When the layer is on call. `restictionType` is the key's real name, without the 
 
 A time is `{ _type = "DateTime", value = "<RFC 3339 timestamp>" }`, with or without fractional seconds. It is a wall-clock time in the schedule's `timezone`: write it with the offset that time zone has on that date, as in `2026-01-05T09:00:00-05:00` for 09:00 in New York. A schedule without a `timezone` reads times in the server's time zone.
 
+<a id="order"></a>
+## Order
+
+`order` is this layer's place among the layers of its schedule, the lowest number the highest priority. Setting it places this layer and moves no other, so a configuration that numbers every layer of a schedule is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.layers`:
+
+```terraform
+order = index(local.layers, each.key) + 1
+```
+
+- Give each layer a number of its own: two layers at one number are ranked in the order of their IDs.
+- A layer created without `order` goes below the schedule's last layer.
+- Deleting a layer leaves a gap in the numbers, which changes nothing: layers go by their numbers, not by counting.
+- Moving a layer in the OneUptime Dashboard numbers the schedule's layers 1..n again; the next plan shows that as changes to `order`.
+
+To set the layers' order and who takes turns in each in one write, use [`oneuptime_on_call_schedule_layers`](./on_call_schedule_layers) instead, and leave `order` unset here.
+
+
 ## Schema
 
 ### Required
@@ -160,7 +177,7 @@ A time is `{ _type = "DateTime", value = "<RFC 3339 timestamp>" }`, with or with
 ### Optional
 
 - `description` (String) Description for this layer. This is optional and can be left blank.
-- `order` (Number) Order / Priority of this layer. Lower the number, higher the priority.
+- `order` (Number) This layer's priority in its schedule: the lower the number, the higher the priority. Layers that share a number are ranked in the order of their IDs. Setting it places this layer and moves no other, so a configuration that numbers every layer of a schedule ends up exactly as written. Left out when you create a layer, it goes below the schedule's last layer. See [Order](#order).
 - `restriction_times` (String) Restrict this layer to these times. A JSON value: write it with `jsonencode()`. See [Rotation and restriction times](#rotation-and-restriction-times).
 - `rotation` (String) How often would you like to hand off the duty to the next user in this layer? A JSON value: write it with `jsonencode()`. See [Rotation and restriction times](#rotation-and-restriction-times).
 

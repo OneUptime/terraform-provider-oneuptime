@@ -54,6 +54,7 @@ type DataAssetDataSourceModel struct {
     LastReadAt types.String `tfsdk:"last_read_at"`
     UnreadSince types.String `tfsdk:"unread_since"`
     UpdateIntervalInSeconds types.Number `tfsdk:"update_interval_in_seconds"`
+    LateAt types.String `tfsdk:"late_at"`
     LastCollectedAt types.String `tfsdk:"last_collected_at"`
     FirstSeenAt types.String `tfsdk:"first_seen_at"`
     IsDropped types.Bool `tfsdk:"is_dropped"`
@@ -191,6 +192,10 @@ func (d *DataAssetDataSource) Schema(ctx context.Context, req datasource.SchemaR
             "update_interval_in_seconds": schema.NumberAttribute{
                 MarkdownDescription: "How often the asset usually changes, learned from the changes OneUptime has seen.",
                 Optional: true,
+                Computed: true,
+            },
+            "late_at": schema.StringAttribute{
+                MarkdownDescription: "When the table is late if it has not changed by then: twice its usual interval after its last change, and at least fifteen minutes past it. Empty for a view, or a table whose rhythm is not known yet.",
                 Computed: true,
             },
             "last_collected_at": schema.StringAttribute{
@@ -369,6 +374,7 @@ func (d *DataAssetDataSource) Read(ctx context.Context, req datasource.ReadReque
         "lastReadAt": true,
         "unreadSince": true,
         "updateIntervalInSeconds": true,
+        "lateAt": true,
         "lastCollectedAt": true,
         "firstSeenAt": true,
         "isDropped": true,
@@ -898,6 +904,30 @@ func (d *DataAssetDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.UnreadSince = types.StringNull()
     }
     data.UpdateIntervalInSeconds = numberFromAPI(data.UpdateIntervalInSeconds, item["updateIntervalInSeconds"])
+    if obj, ok := item["lateAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LateAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LateAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LateAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LateAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LateAt = types.StringNull()
+        }
+    } else if arr, ok := item["lateAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LateAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LateAt = types.StringNull()
+        }
+    } else if val, ok := item["lateAt"].(string); ok {
+        data.LateAt = types.StringValue(val)
+    } else {
+        data.LateAt = types.StringNull()
+    }
     if obj, ok := item["lastCollectedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.LastCollectedAt = types.StringValue(val)

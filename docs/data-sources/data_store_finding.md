@@ -61,4 +61,5 @@ data "oneuptime_data_store_finding" "by_id" {
 - `last_seen_at` (String) When a scan last found it.
 - `masked_samples` (String) At most three masked samples, such as j***@e******.com. Never a raw value. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of the project this finding belongs to. The ID of a `oneuptime_project`.
+- `sample_records` (String) Telemetry only: up to ten records the last scan found it in, by when each was written and its trace, span or session. Never a value. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

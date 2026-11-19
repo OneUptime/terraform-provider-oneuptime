@@ -64,6 +64,8 @@ type DataCheckResourceModel struct {
     DataStoreId types.String `tfsdk:"data_store_id"`
     IsManagedByFile types.Bool `tfsdk:"is_managed_by_file"`
     MonitorId types.String `tfsdk:"monitor_id"`
+    Health types.String `tfsdk:"health"`
+    HealthRank types.Number `tfsdk:"health_rank"`
     DataReconciliationId types.String `tfsdk:"data_reconciliation_id"`
     LastRunAt RFC3339Value `tfsdk:"last_run_at"`
     LastRunStatus types.String `tfsdk:"last_run_status"`
@@ -269,6 +271,14 @@ func (r *DataCheckResource) schemaDefinition() schema.Schema {
             },
             "monitor_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Metrics monitor that alerts on the check. The ID of a `oneuptime_monitor`.",
+                Computed: true,
+            },
+            "health": schema.StringAttribute{
+                MarkdownDescription: "How the check stands now: Failing while its alert is open, Could Not Run when its query failed, Passing, No Alert, Waiting before its first run, or Off.",
+                Computed: true,
+            },
+            "health_rank": schema.NumberAttribute{
+                MarkdownDescription: "The check's health as a number to sort by, worst first: 0 failing, 1 could not run, 2 passing, 3 no alert, 4 waiting, 5 off.",
                 Computed: true,
             },
             "data_reconciliation_id": schema.StringAttribute{
@@ -496,6 +506,8 @@ func (r *DataCheckResource) Create(ctx context.Context, req resource.CreateReque
         "dataStoreId": true,
         "isManagedByFile": true,
         "monitorId": true,
+        "health": true,
+        "healthRank": true,
         "dataReconciliationId": true,
         "lastRunAt": true,
         "lastRunStatus": true,
@@ -1239,6 +1251,51 @@ func (r *DataCheckResource) Create(ctx context.Context, req resource.CreateReque
     } else {
         data.MonitorId = types.StringNull()
     }
+    if obj, ok := dataMap["health"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Health = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Health = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Health = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Health = types.StringValue(string(jsonBytes))
+            } else {
+                data.Health = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Health = types.StringValue(string(jsonBytes))
+            } else {
+                data.Health = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Health = types.StringValue(string(jsonBytes))
+        } else {
+            data.Health = types.StringNull()
+        }
+    } else if arr, ok := dataMap["health"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Health = types.StringValue(string(jsonBytes))
+        } else {
+            data.Health = types.StringNull()
+        }
+    } else if val, ok := dataMap["health"].(string); ok {
+        data.Health = types.StringValue(val)
+    } else {
+        data.Health = types.StringNull()
+    }
+    data.HealthRank = numberFromAPI(data.HealthRank, dataMap["healthRank"])
     if obj, ok := dataMap["dataReconciliationId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1572,6 +1629,8 @@ func (r *DataCheckResource) Read(ctx context.Context, req resource.ReadRequest, 
         "dataStoreId": true,
         "isManagedByFile": true,
         "monitorId": true,
+        "health": true,
+        "healthRank": true,
         "dataReconciliationId": true,
         "lastRunAt": true,
         "lastRunStatus": true,
@@ -2316,6 +2375,51 @@ func (r *DataCheckResource) Read(ctx context.Context, req resource.ReadRequest, 
     } else {
         data.MonitorId = types.StringNull()
     }
+    if obj, ok := dataMap["health"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Health = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Health = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Health = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Health = types.StringValue(string(jsonBytes))
+            } else {
+                data.Health = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Health = types.StringValue(string(jsonBytes))
+            } else {
+                data.Health = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Health = types.StringValue(string(jsonBytes))
+        } else {
+            data.Health = types.StringNull()
+        }
+    } else if arr, ok := dataMap["health"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Health = types.StringValue(string(jsonBytes))
+        } else {
+            data.Health = types.StringNull()
+        }
+    } else if val, ok := dataMap["health"].(string); ok {
+        data.Health = types.StringValue(val)
+    } else {
+        data.Health = types.StringNull()
+    }
+    data.HealthRank = numberFromAPI(data.HealthRank, dataMap["healthRank"])
     if obj, ok := dataMap["dataReconciliationId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2740,6 +2844,8 @@ func (r *DataCheckResource) Update(ctx context.Context, req resource.UpdateReque
         "dataStoreId": true,
         "isManagedByFile": true,
         "monitorId": true,
+        "health": true,
+        "healthRank": true,
         "dataReconciliationId": true,
         "lastRunAt": true,
         "lastRunStatus": true,
@@ -3478,6 +3584,51 @@ func (r *DataCheckResource) Update(ctx context.Context, req resource.UpdateReque
     } else {
         data.MonitorId = types.StringNull()
     }
+    if obj, ok := dataMap["health"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Health = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Health = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Health = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Health = types.StringValue(string(jsonBytes))
+            } else {
+                data.Health = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Health = types.StringValue(string(jsonBytes))
+            } else {
+                data.Health = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Health = types.StringValue(string(jsonBytes))
+        } else {
+            data.Health = types.StringNull()
+        }
+    } else if arr, ok := dataMap["health"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Health = types.StringValue(string(jsonBytes))
+        } else {
+            data.Health = types.StringNull()
+        }
+    } else if val, ok := dataMap["health"].(string); ok {
+        data.Health = types.StringValue(val)
+    } else {
+        data.Health = types.StringNull()
+    }
+    data.HealthRank = numberFromAPI(data.HealthRank, dataMap["healthRank"])
     if obj, ok := dataMap["dataReconciliationId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

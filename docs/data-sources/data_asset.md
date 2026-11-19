@@ -59,6 +59,7 @@ data "oneuptime_data_asset" "by_id" {
 - `last_changed_at` (String) When a row was last inserted, updated or deleted, as near as the engine tells.
 - `last_collected_at` (String) When OneUptime last read the asset's health.
 - `last_read_at` (String) When the table was last seen read, to the hour: by the engine's read counters, or by a service's database spans.
+- `late_at` (String) When the table is late if it has not changed by then: twice its usual interval after its last change, and at least fifteen minutes past it. Empty for a view, or a table whose rhythm is not known yet.
 - `project_id` (String) ID of the project this data asset belongs to. The ID of a `oneuptime_project`.
 - `unread_since` (String) The time from which the table is known to have had no read: its last read, or when the engine's read counters started when it has had none since. Empty when that cannot be said.
 - `updated_at` (String) Date and Time when the object was updated.

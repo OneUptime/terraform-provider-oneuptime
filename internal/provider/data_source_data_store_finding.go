@@ -45,6 +45,7 @@ type DataStoreFindingDataSourceModel struct {
     DistinctValues types.Number `tfsdk:"distinct_values"`
     TestValueCount types.Number `tfsdk:"test_value_count"`
     MaskedSamples types.String `tfsdk:"masked_samples"`
+    SampleRecords types.String `tfsdk:"sample_records"`
     IsFreeText types.Bool `tfsdk:"is_free_text"`
     IsNameHinted types.Bool `tfsdk:"is_name_hinted"`
     IsFoundByName types.Bool `tfsdk:"is_found_by_name"`
@@ -158,6 +159,10 @@ func (d *DataStoreFindingDataSource) Schema(ctx context.Context, req datasource.
             },
             "masked_samples": schema.StringAttribute{
                 MarkdownDescription: "At most three masked samples, such as j***@e******.com. Never a raw value. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "sample_records": schema.StringAttribute{
+                MarkdownDescription: "Telemetry only: up to ten records the last scan found it in, by when each was written and its trace, span or session. Never a value. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "is_free_text": schema.BoolAttribute{
@@ -389,6 +394,7 @@ func (d *DataStoreFindingDataSource) Read(ctx context.Context, req datasource.Re
         "distinctValues": true,
         "testValueCount": true,
         "maskedSamples": true,
+        "sampleRecords": true,
         "isFreeText": true,
         "isNameHinted": true,
         "isFoundByName": true,
@@ -802,6 +808,30 @@ func (d *DataStoreFindingDataSource) Read(ctx context.Context, req datasource.Re
         data.MaskedSamples = types.StringValue(val)
     } else {
         data.MaskedSamples = types.StringNull()
+    }
+    if obj, ok := item["sampleRecords"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SampleRecords = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SampleRecords = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SampleRecords = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SampleRecords = types.StringValue(string(jsonBytes))
+        } else {
+            data.SampleRecords = types.StringNull()
+        }
+    } else if arr, ok := item["sampleRecords"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SampleRecords = types.StringValue(string(jsonBytes))
+        } else {
+            data.SampleRecords = types.StringNull()
+        }
+    } else if val, ok := item["sampleRecords"].(string); ok {
+        data.SampleRecords = types.StringValue(val)
+    } else {
+        data.SampleRecords = types.StringNull()
     }
     if val, ok := item["isFreeText"].(bool); ok {
         data.IsFreeText = types.BoolValue(val)

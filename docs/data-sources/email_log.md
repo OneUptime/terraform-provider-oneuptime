@@ -43,6 +43,7 @@ data "oneuptime_email_log" "by_id" {
 - `status_page_id` (String) ID of Status Page associated with this email (if any). The ID of a `oneuptime_status_page`.
 - `subject` (String) Subject of the email sent.
 - `team_id` (String) ID of Team associated with this email (if any). The ID of a `oneuptime_team`.
+- `template_type` (String) Which of OneUptime's emails it was.
 - `user_id` (String) ID of User who initiated this email (if any). The ID of a `oneuptime_user` (see the data source).
 
 ### Read-Only

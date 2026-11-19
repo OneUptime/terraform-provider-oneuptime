@@ -40,6 +40,7 @@ data "oneuptime_rum_application" "by_id" {
 - `is_session_replay_enabled` (Boolean) When enabled, the browser recorder may record and upload session replays for this application. On by default; Project.isSessionReplayAllowed must also be on. Turn it off here to stop recording for one application without affecting the rest of the project.
 - `name` (String) Friendly name for this application.
 - `otel_collector_status` (String) connected while data has arrived in the last 15 minutes, disconnected once nothing has for 15 minutes (normal while nobody uses the app), and empty until the first data arrives. The Dashboard shows these as Receiving data, No recent traffic and Waiting for data.
+- `product_analytics_retention_in_months` (Number) How long product analytics keeps this application's numbers and events: 3, 6, 13 or 25 months, 13 by default. Separate from how long recordings are kept.
 - `retain_telemetry_data_for_days` (Number) Number of days to retain telemetry data for this application. Leave blank to use the project-wide default.
 - `sdk_language` (String) Last-seen telemetry.sdk.language resource attribute (e.g. webjs, swift, android). Used to scope this application's client telemetry apart from a same-named backend service.
 - `session_replay_capture_geo` (Boolean) When enabled, a country code is derived from the request and stored on the session. On by default. The end user's IP address is never stored either way - the country is the only geographic fact this keeps.

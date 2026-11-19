@@ -44,6 +44,8 @@ data "oneuptime_on_call_duty_execution_log" "by_id" {
 - `schedule_gap_retry_count` (Number) How many times the current escalation rule has been re-sampled because its target schedule(s) momentarily had no on-call user.
 - `status` (String) Status of this execution.
 - `status_message` (String) Status message of this execution.
+- `test_page_fire_drill_id` (String) For a test started by a monitor's fire drill: the drill, the same on the test of every on-call policy it started. Empty for every other run.
+- `test_page_fire_drill_monitor_id` (String) For a test started by a monitor's fire drill: ID of the monitor whose failure the drill rehearsed. Empty for every other run, and once the monitor is deleted. The ID of a `oneuptime_monitor`.
 - `test_page_record_kind` (String) For a test page: the kind of record it stands in for - Incident or Alert - whose On-Call Rules it runs. Empty for every other run.
 - `test_page_severity_id` (String) For a test page: the incident or alert severity whose On-Call Rules it runs. Empty for every other run.
 - `test_page_walks_escalation` (Boolean) For a test of an on-call policy: whether it walks every escalation level, each after a short wait, rather than paging the first level only.
@@ -63,4 +65,5 @@ data "oneuptime_on_call_duty_execution_log" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `paging_starts_at` (String) When this run starts paging, when it waited to: an on-call rule that pages only during working hours held it until they began. Empty when it paged straight away.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `test_page_fire_drill_failure` (String) For a test started by a monitor's fire drill: the failure the drill rehearsed, as its dialog named it - the criteria's name, and how long an alert stays open before an alert incident rule declares the incident tested. Empty for every other run. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

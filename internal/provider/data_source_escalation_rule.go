@@ -92,7 +92,7 @@ func (d *EscalationRuleDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order of this rule.",
+                MarkdownDescription: "This rule's level in its on-call policy: the lowest is paged first, then the next, and so on. Rules that share a level are paged in the order of their IDs. Setting it places this rule and moves no other, so a configuration that numbers every rule of a policy ends up exactly as written. Left out when you create a rule, it becomes the policy's last level.",
                 Optional: true,
                 Computed: true,
             },

@@ -35,7 +35,7 @@ data "oneuptime_status_page_group" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_expanded_by_default` (Boolean) Is this group expanded by default on Status Page?
 - `name` (String) Name of the Group.
-- `order` (Number) Order / Priority of this resource.
+- `order` (Number) This group's place on its status page, lowest first. Groups that share a place are shown in the order of their IDs. Setting it places this group and moves no other, so a configuration that numbers every group ends up exactly as written. Left out when you create a group, it goes after the page's last group.
 - `parent_status_page_group_id` (String) ID of the Status Page Group this group is nested under. Empty for top level groups. The ID of a `oneuptime_status_page_group`.
 - `row_axis_label` (String) Label shown above the row axis when the group is rendered as a grid (e.g. 'Service', 'Tenant'). Free-form so you can use any dimension you like.
 - `row_axis_values` (String) Comma-separated list of row labels for the grid (e.g. 'Auth, API, Database'). Determines row order in the grid layout.

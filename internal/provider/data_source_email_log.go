@@ -33,6 +33,7 @@ type EmailLogDataSourceModel struct {
     ToEmail types.String `tfsdk:"to_email"`
     FromEmail types.String `tfsdk:"from_email"`
     Subject types.String `tfsdk:"subject"`
+    TemplateType types.String `tfsdk:"template_type"`
     StatusMessage types.String `tfsdk:"status_message"`
     Status types.String `tfsdk:"status"`
     ProjectSmtpConfigId types.String `tfsdk:"project_smtp_config_id"`
@@ -85,6 +86,11 @@ func (d *EmailLogDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             },
             "subject": schema.StringAttribute{
                 MarkdownDescription: "Subject of the email sent.",
+                Optional: true,
+                Computed: true,
+            },
+            "template_type": schema.StringAttribute{
+                MarkdownDescription: "Which of OneUptime's emails it was.",
                 Optional: true,
                 Computed: true,
             },
@@ -213,6 +219,10 @@ func (d *EmailLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         filters["subject"] = data.Subject.ValueString()
         filterNames = append(filterNames, "subject = "+fmt.Sprintf("%q", data.Subject.ValueString()))
     }
+    if !data.TemplateType.IsNull() && !data.TemplateType.IsUnknown() {
+        filters["templateType"] = data.TemplateType.ValueString()
+        filterNames = append(filterNames, "template_type = "+fmt.Sprintf("%q", data.TemplateType.ValueString()))
+    }
     if !data.StatusMessage.IsNull() && !data.StatusMessage.IsUnknown() {
         filters["statusMessage"] = data.StatusMessage.ValueString()
         filterNames = append(filterNames, "status_message = "+fmt.Sprintf("%q", data.StatusMessage.ValueString()))
@@ -292,6 +302,7 @@ func (d *EmailLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         "toEmail": true,
         "fromEmail": true,
         "subject": true,
+        "templateType": true,
         "statusMessage": true,
         "status": true,
         "projectSmtpConfigId": true,
@@ -534,6 +545,30 @@ func (d *EmailLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.Subject = types.StringValue(val)
     } else {
         data.Subject = types.StringNull()
+    }
+    if obj, ok := item["templateType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TemplateType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TemplateType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TemplateType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TemplateType = types.StringValue(string(jsonBytes))
+        } else {
+            data.TemplateType = types.StringNull()
+        }
+    } else if arr, ok := item["templateType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TemplateType = types.StringValue(string(jsonBytes))
+        } else {
+            data.TemplateType = types.StringNull()
+        }
+    } else if val, ok := item["templateType"].(string); ok {
+        data.TemplateType = types.StringValue(val)
+    } else {
+        data.TemplateType = types.StringNull()
     }
     if obj, ok := item["statusMessage"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -50,6 +50,8 @@ type DataCheckDataSourceModel struct {
     AlertCondition types.String `tfsdk:"alert_condition"`
     AlertThreshold types.Number `tfsdk:"alert_threshold"`
     MonitorId types.String `tfsdk:"monitor_id"`
+    Health types.String `tfsdk:"health"`
+    HealthRank types.Number `tfsdk:"health_rank"`
     DataReconciliationId types.String `tfsdk:"data_reconciliation_id"`
     LastRunAt types.String `tfsdk:"last_run_at"`
     LastRunStatus types.String `tfsdk:"last_run_status"`
@@ -187,6 +189,16 @@ func (d *DataCheckDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_monitor"),
+            },
+            "health": schema.StringAttribute{
+                MarkdownDescription: "How the check stands now: Failing while its alert is open, Could Not Run when its query failed, Passing, No Alert, Waiting before its first run, or Off.",
+                Optional: true,
+                Computed: true,
+            },
+            "health_rank": schema.NumberAttribute{
+                MarkdownDescription: "The check's health as a number to sort by, worst first: 0 failing, 1 could not run, 2 passing, 3 no alert, 4 waiting, 5 off.",
+                Optional: true,
+                Computed: true,
             },
             "data_reconciliation_id": schema.StringAttribute{
                 MarkdownDescription: "For a check that reads one side of a reconciliation: the reconciliation's ID. Such a check is changed only from its reconciliation.",
@@ -347,6 +359,14 @@ func (d *DataCheckDataSource) Read(ctx context.Context, req datasource.ReadReque
         filters["monitorId"] = data.MonitorId.ValueString()
         filterNames = append(filterNames, "monitor_id = "+fmt.Sprintf("%q", data.MonitorId.ValueString()))
     }
+    if !data.Health.IsNull() && !data.Health.IsUnknown() {
+        filters["health"] = data.Health.ValueString()
+        filterNames = append(filterNames, "health = "+fmt.Sprintf("%q", data.Health.ValueString()))
+    }
+    if !data.HealthRank.IsNull() && !data.HealthRank.IsUnknown() {
+        filters["healthRank"] = lookupNumber(data.HealthRank)
+        filterNames = append(filterNames, "health_rank = "+data.HealthRank.ValueBigFloat().String())
+    }
     if !data.DataReconciliationId.IsNull() && !data.DataReconciliationId.IsUnknown() {
         filters["dataReconciliationId"] = data.DataReconciliationId.ValueString()
         filterNames = append(filterNames, "data_reconciliation_id = "+fmt.Sprintf("%q", data.DataReconciliationId.ValueString()))
@@ -415,6 +435,8 @@ func (d *DataCheckDataSource) Read(ctx context.Context, req datasource.ReadReque
         "alertCondition": true,
         "alertThreshold": true,
         "monitorId": true,
+        "health": true,
+        "healthRank": true,
         "dataReconciliationId": true,
         "lastRunAt": true,
         "lastRunStatus": true,
@@ -954,6 +976,31 @@ func (d *DataCheckDataSource) Read(ctx context.Context, req datasource.ReadReque
     } else {
         data.MonitorId = types.StringNull()
     }
+    if obj, ok := item["health"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Health = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Health = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Health = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Health = types.StringValue(string(jsonBytes))
+        } else {
+            data.Health = types.StringNull()
+        }
+    } else if arr, ok := item["health"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Health = types.StringValue(string(jsonBytes))
+        } else {
+            data.Health = types.StringNull()
+        }
+    } else if val, ok := item["health"].(string); ok {
+        data.Health = types.StringValue(val)
+    } else {
+        data.Health = types.StringNull()
+    }
+    data.HealthRank = numberFromAPI(data.HealthRank, item["healthRank"])
     if obj, ok := item["dataReconciliationId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.DataReconciliationId = types.StringValue(val)

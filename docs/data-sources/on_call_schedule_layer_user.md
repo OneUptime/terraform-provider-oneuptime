@@ -33,7 +33,7 @@ data "oneuptime_on_call_schedule_layer_user" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `on_call_duty_policy_schedule_id` (String) ID of the on-call schedule the layer is in. The ID of a `oneuptime_on_call_policy_schedule`.
 - `on_call_duty_policy_schedule_layer_id` (String) ID of the layer the person takes turns on call in. The ID of a `oneuptime_on_call_schedule_layer`.
-- `order` (Number) Order / Priority of this layer. Lower the number, higher the priority.
+- `order` (Number) This person's turn in the layer's rotation, lowest first. People who share a turn take it in the order of their IDs. Setting it places this person and moves no other, so a configuration that numbers everyone in a layer ends up exactly as written. Left out when you add someone, they take the layer's last turn.
 - `user_email` (String) Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
 - `user_id` (String) ID of the person who takes turns on call in this layer. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.
 

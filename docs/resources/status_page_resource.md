@@ -18,6 +18,21 @@ resource "oneuptime_status_page_resource" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this resource's place among the resources of its group (or, in no group, of its status page). Setting it places this resource and moves no other, so a configuration that numbers every resource of a group is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.resources`:
+
+```terraform
+order = index(local.resources, each.key) + 1
+```
+
+- Give each resource a number of its own: two resources at one number are shown in the order of their IDs.
+- A resource created without `order` goes after the last resource of its group.
+- Deleting a resource leaves a gap in the numbers, which changes nothing: resources go by their numbers, not by counting.
+- Moving a resource in the OneUptime Dashboard numbers the group's resources 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -32,7 +47,7 @@ resource "oneuptime_status_page_resource" "example" {
 - `display_tooltip` (String) Tooltip of the monitor on the Status Page.
 - `monitor_group_id` (String) Relation to Monitor Group ID Resource in which this object belongs. The ID of a `oneuptime_monitor_group`.
 - `monitor_id` (String) Relation to Monitor ID Resource in which this object belongs. The ID of a `oneuptime_monitor`.
-- `order` (Number) Order / Priority of this resource.
+- `order` (Number) This resource's place in its group, or among the page's resources in no group, lowest first. Resources that share a place are shown in the order of their IDs. Setting it places this resource and moves no other, so a configuration that numbers every resource of a group ends up exactly as written. Left out when you create a resource, it goes after the last resource of its group. See [Order](#order).
 - `row_axis_value` (String) Row this resource belongs to when its status page group is rendered as a grid. Should match one of the row axis values defined on the group.
 - `show_current_status` (Boolean) Show current status like offline, operational or degraded. Defaults to `true`.
 - `show_status_history_chart` (Boolean) Show a 90 day uptime history of this monitor. Defaults to `true`.

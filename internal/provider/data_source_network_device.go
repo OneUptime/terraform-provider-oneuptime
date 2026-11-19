@@ -78,6 +78,7 @@ type NetworkDeviceDataSourceModel struct {
     SysLocation types.String `tfsdk:"sys_location"`
     SysContact types.String `tfsdk:"sys_contact"`
     Vendor types.String `tfsdk:"vendor"`
+    Manufacturer types.String `tfsdk:"manufacturer"`
     DeviceModel types.String `tfsdk:"device_model"`
     SerialNumber types.String `tfsdk:"serial_number"`
     FirmwareVersion types.String `tfsdk:"firmware_version"`
@@ -359,6 +360,11 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "vendor": schema.StringAttribute{
                 MarkdownDescription: "Hardware vendor, from ENTITY-MIB or derived from sysObjectID. Managed by the probe.",
+                Optional: true,
+                Computed: true,
+            },
+            "manufacturer": schema.StringAttribute{
+                MarkdownDescription: "Who made the device, as OneUptime shows it: the vendor saved on the device or read by its SNMP poll, or else the maker its SNMP identity, its network controller or the Discovered Devices list names. Worked out by the server from the device's details and kept up to date as they change; read-only.",
                 Optional: true,
                 Computed: true,
             },
@@ -660,6 +666,10 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         filters["vendor"] = data.Vendor.ValueString()
         filterNames = append(filterNames, "vendor = "+fmt.Sprintf("%q", data.Vendor.ValueString()))
     }
+    if !data.Manufacturer.IsNull() && !data.Manufacturer.IsUnknown() {
+        filters["manufacturer"] = data.Manufacturer.ValueString()
+        filterNames = append(filterNames, "manufacturer = "+fmt.Sprintf("%q", data.Manufacturer.ValueString()))
+    }
     if !data.DeviceModel.IsNull() && !data.DeviceModel.IsUnknown() {
         filters["deviceModel"] = data.DeviceModel.ValueString()
         filterNames = append(filterNames, "device_model = "+fmt.Sprintf("%q", data.DeviceModel.ValueString()))
@@ -774,6 +784,7 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "sysLocation": true,
         "sysContact": true,
         "vendor": true,
+        "manufacturer": true,
         "deviceModel": true,
         "serialNumber": true,
         "firmwareVersion": true,
@@ -1917,6 +1928,30 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.Vendor = types.StringValue(val)
     } else {
         data.Vendor = types.StringNull()
+    }
+    if obj, ok := item["manufacturer"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Manufacturer = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Manufacturer = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Manufacturer = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Manufacturer = types.StringValue(string(jsonBytes))
+        } else {
+            data.Manufacturer = types.StringNull()
+        }
+    } else if arr, ok := item["manufacturer"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Manufacturer = types.StringValue(string(jsonBytes))
+        } else {
+            data.Manufacturer = types.StringNull()
+        }
+    } else if val, ok := item["manufacturer"].(string); ok {
+        data.Manufacturer = types.StringValue(val)
+    } else {
+        data.Manufacturer = types.StringNull()
     }
     if obj, ok := item["deviceModel"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

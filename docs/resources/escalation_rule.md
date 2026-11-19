@@ -19,6 +19,21 @@ resource "oneuptime_escalation_rule" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this rule's place among the levels of its on-call policy, the lowest paged first. Setting it places this rule and moves no other, so a configuration that numbers every rule of a policy is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.levels`:
+
+```terraform
+order = index(local.levels, each.key) + 1
+```
+
+- Give each rule a number of its own: two rules at one number are paged one after the other, in the order of their IDs.
+- A rule created without `order` becomes the policy's last level.
+- Deleting a rule leaves a gap in the numbers, which changes nothing: rules go by their numbers, not by counting.
+- Moving a rule in the OneUptime Dashboard numbers the policy's rules 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -30,7 +45,7 @@ resource "oneuptime_escalation_rule" "example" {
 
 - `description` (String) Friendly description that will help you remember.
 - `escalate_after_in_minutes` (Number) How long should we wait before we execute the next escalation rule?
-- `order` (Number) Order of this rule.
+- `order` (Number) This rule's level in its on-call policy: the lowest is paged first, then the next, and so on. Rules that share a level are paged in the order of their IDs. Setting it places this rule and moves no other, so a configuration that numbers every rule of a policy ends up exactly as written. Left out when you create a rule, it becomes the policy's last level. See [Order](#order).
 
 ### Read-Only
 

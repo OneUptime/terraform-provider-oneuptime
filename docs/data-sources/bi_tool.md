@@ -46,6 +46,7 @@ data "oneuptime_bi_tool" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `failed_refreshes` (String) The datasets whose last refresh failed or was cancelled (Power BI), each with its error, until a later refresh completes - and for an hour after that, marked recovered. A JSON value: read it with `jsondecode()`.
 - `last_synced_at` (String) When its dashboards were last read.
+- `lineage_summary` (String) Why the last read's dashboards are, or are not, tied to watched tables: the tables they read and how many matched, the data sources behind them and whether OneUptime watches each, and what keeps the rest from matching, such as a Power BI tenant setting that is off. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.
 - `usage_read_from` (String) The start of the hours of the tool's activity log read so far (Power BI): its dashboards' views are counted from them.

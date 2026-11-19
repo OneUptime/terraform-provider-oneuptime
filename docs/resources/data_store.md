@@ -86,6 +86,7 @@ resource "oneuptime_data_store" "example" {
 - `store_key` (String) What identifies the store within the project: its provider, kind and native id. One row per store, however often it is discovered.
 - `subject_countries` (String) Countries whose people's data the store holds, from country-bound data types (ISO 3166-1 alpha-2). A JSON value: read it with `jsondecode()`.
 - `table_health_asset_count` (Number) How many tables and views the last collection found.
+- `table_health_attempted_at` (String) When the last collection of the store's tables ended, whether it collected them or failed.
 - `table_health_collected_at` (String) When Data Observability last collected the store's tables.
 - `table_health_message` (String) Why the last collection failed, or what it had to leave out.
 - `table_health_status` (String) How the last collection of the store's tables ended: Collected, or Failed.

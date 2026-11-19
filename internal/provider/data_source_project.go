@@ -68,6 +68,8 @@ type ProjectDataSourceModel struct {
     EnableTelegramNotifications types.Bool `tfsdk:"enable_telegram_notifications"`
     EnableCallNotifications types.Bool `tfsdk:"enable_call_notifications"`
     DisableOnCallNotificationFallback types.Bool `tfsdk:"disable_on_call_notification_fallback"`
+    DefaultPagingLadder types.String `tfsdk:"default_paging_ladder"`
+    RequirePhoneMethodForOnCall types.Bool `tfsdk:"require_phone_method_for_on_call"`
     EnableAutoRechargeSmsOrCallBalance types.Bool `tfsdk:"enable_auto_recharge_sms_or_call_balance"`
     AiCurrentBalanceInUsdCents types.Number `tfsdk:"ai_current_balance_in_usd_cents"`
     AutoAiRechargeByBalanceInUsd types.Number `tfsdk:"auto_ai_recharge_by_balance_in_usd"`
@@ -379,6 +381,15 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Optional: true,
                 Computed: true,
             },
+            "default_paging_ladder": schema.StringAttribute{
+                MarkdownDescription: "How a member is paged once they verify a way to be reached: steps of a channel and a wait in minutes. A channel it leaves out gets no on-call rules. It changes nobody's existing rules. Empty: every verified method pages at once. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "require_phone_method_for_on_call": schema.BoolAttribute{
+                MarkdownDescription: "When on, On-Call Readiness and Setup health name everyone on an on-call policy who has no verified SMS, phone call or WhatsApp number, and a setup reminder asks them to add one. Nobody is locked out.",
+                Optional: true,
+                Computed: true,
+            },
             "enable_auto_recharge_sms_or_call_balance": schema.BoolAttribute{
                 MarkdownDescription: "Enable auto recharge for SMS, Call, and WhatsApp balance for this project.",
                 Optional: true,
@@ -505,7 +516,7 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "notify_status_page_subscribers_of_new_incidents_by_default": schema.BoolAttribute{
-                MarkdownDescription: "Whether the Notify Status Page Subscribers box starts ticked when someone declares an incident in the dashboard. When enabled, status page subscribers are notified of a new incident unless the person declaring it unticks the box. When disabled, the box starts unticked and subscribers are notified only if it is ticked. Incidents declared from Slack or Microsoft Teams, or by OneUptime AI, follow it too: while it is disabled they are declared without notifying. Incidents created by monitors, the API and workflows are not affected: each keeps its own Notify Status Page Subscribers value. On by default.",
+                MarkdownDescription: "Whether the Notify Status Page Subscribers box starts ticked when someone declares an incident in the dashboard, Slack or Microsoft Teams. When enabled, status page subscribers are notified of a new incident unless the person declaring it unticks the box. When disabled, the box starts unticked and subscribers are notified only if it is ticked. Incidents declared by OneUptime AI, where nothing asks, follow it too: while it is disabled they are declared without notifying. Incidents created by monitors, the API and workflows are not affected: each keeps its own Notify Status Page Subscribers value. On by default.",
                 Optional: true,
                 Computed: true,
             },
@@ -1026,6 +1037,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["disableOnCallNotificationFallback"] = data.DisableOnCallNotificationFallback.ValueBool()
         filterNames = append(filterNames, "disable_on_call_notification_fallback = "+fmt.Sprintf("%t", data.DisableOnCallNotificationFallback.ValueBool()))
     }
+    if !data.RequirePhoneMethodForOnCall.IsNull() && !data.RequirePhoneMethodForOnCall.IsUnknown() {
+        filters["requirePhoneMethodForOnCall"] = data.RequirePhoneMethodForOnCall.ValueBool()
+        filterNames = append(filterNames, "require_phone_method_for_on_call = "+fmt.Sprintf("%t", data.RequirePhoneMethodForOnCall.ValueBool()))
+    }
     if !data.EnableAutoRechargeSmsOrCallBalance.IsNull() && !data.EnableAutoRechargeSmsOrCallBalance.IsUnknown() {
         filters["enableAutoRechargeSmsOrCallBalance"] = data.EnableAutoRechargeSmsOrCallBalance.ValueBool()
         filterNames = append(filterNames, "enable_auto_recharge_sms_or_call_balance = "+fmt.Sprintf("%t", data.EnableAutoRechargeSmsOrCallBalance.ValueBool()))
@@ -1428,6 +1443,8 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "enableTelegramNotifications": true,
         "enableCallNotifications": true,
         "disableOnCallNotificationFallback": true,
+        "defaultPagingLadder": true,
+        "requirePhoneMethodForOnCall": true,
         "enableAutoRechargeSmsOrCallBalance": true,
         "aiCurrentBalanceInUSDCents": true,
         "autoAiRechargeByBalanceInUSD": true,
@@ -2202,6 +2219,35 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.DisableOnCallNotificationFallback = types.BoolValue(val)
     } else {
         data.DisableOnCallNotificationFallback = types.BoolNull()
+    }
+    if obj, ok := item["defaultPagingLadder"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultPagingLadder = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DefaultPagingLadder = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DefaultPagingLadder = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DefaultPagingLadder = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultPagingLadder = types.StringNull()
+        }
+    } else if arr, ok := item["defaultPagingLadder"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.DefaultPagingLadder = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultPagingLadder = types.StringNull()
+        }
+    } else if val, ok := item["defaultPagingLadder"].(string); ok {
+        data.DefaultPagingLadder = types.StringValue(val)
+    } else {
+        data.DefaultPagingLadder = types.StringNull()
+    }
+    if val, ok := item["requirePhoneMethodForOnCall"].(bool); ok {
+        data.RequirePhoneMethodForOnCall = types.BoolValue(val)
+    } else {
+        data.RequirePhoneMethodForOnCall = types.BoolNull()
     }
     if val, ok := item["enableAutoRechargeSmsOrCallBalance"].(bool); ok {
         data.EnableAutoRechargeSmsOrCallBalance = types.BoolValue(val)

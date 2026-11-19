@@ -110,6 +110,7 @@ type NetworkDeviceResourceModel struct {
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Slug types.String `tfsdk:"slug"`
     LastWalkLog JSONSubsetValue `tfsdk:"last_walk_log"`
+    Manufacturer types.String `tfsdk:"manufacturer"`
     LastPollReceivedAt RFC3339Value `tfsdk:"last_poll_received_at"`
     RefreshRequestedAt RFC3339Value `tfsdk:"refresh_requested_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -743,6 +744,10 @@ func (r *NetworkDeviceResource) schemaDefinition() schema.Schema {
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
+            "manufacturer": schema.StringAttribute{
+                MarkdownDescription: "Who made the device, as OneUptime shows it: the vendor saved on the device or read by its SNMP poll, or else the maker its SNMP identity, its network controller or the Discovered Devices list names. Worked out by the server from the device's details and kept up to date as they change; read-only.",
+                Computed: true,
+            },
             "last_poll_received_at": schema.StringAttribute{
                 MarkdownDescription: "When OneUptime received the poll whose result this device shows (isReachable, isSnmpReachable, the interface counts, the SNMP table and transceiver snapshots). A poll received earlier never overwrites that result: a retried poll, or one that waited longer in the queue than the poll after it. Managed by OneUptime.",
                 CustomType: RFC3339Type{},
@@ -1061,6 +1066,7 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         "updatedAt": true,
         "slug": true,
         "lastWalkLog": true,
+        "manufacturer": true,
         "lastPollReceivedAt": true,
         "refreshRequestedAt": true,
         "createdByUserId": true,
@@ -3275,6 +3281,50 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.LastWalkLog = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["manufacturer"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Manufacturer = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Manufacturer = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Manufacturer = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Manufacturer = types.StringValue(string(jsonBytes))
+            } else {
+                data.Manufacturer = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Manufacturer = types.StringValue(string(jsonBytes))
+            } else {
+                data.Manufacturer = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Manufacturer = types.StringValue(string(jsonBytes))
+        } else {
+            data.Manufacturer = types.StringNull()
+        }
+    } else if arr, ok := dataMap["manufacturer"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Manufacturer = types.StringValue(string(jsonBytes))
+        } else {
+            data.Manufacturer = types.StringNull()
+        }
+    } else if val, ok := dataMap["manufacturer"].(string); ok {
+        data.Manufacturer = types.StringValue(val)
+    } else {
+        data.Manufacturer = types.StringNull()
+    }
     if obj, ok := dataMap["lastPollReceivedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastPollReceivedAt = NewRFC3339Value(val)
@@ -3497,6 +3547,7 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         "updatedAt": true,
         "slug": true,
         "lastWalkLog": true,
+        "manufacturer": true,
         "lastPollReceivedAt": true,
         "refreshRequestedAt": true,
         "createdByUserId": true,
@@ -5712,6 +5763,50 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.LastWalkLog = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["manufacturer"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Manufacturer = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Manufacturer = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Manufacturer = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Manufacturer = types.StringValue(string(jsonBytes))
+            } else {
+                data.Manufacturer = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Manufacturer = types.StringValue(string(jsonBytes))
+            } else {
+                data.Manufacturer = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Manufacturer = types.StringValue(string(jsonBytes))
+        } else {
+            data.Manufacturer = types.StringNull()
+        }
+    } else if arr, ok := dataMap["manufacturer"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Manufacturer = types.StringValue(string(jsonBytes))
+        } else {
+            data.Manufacturer = types.StringNull()
+        }
+    } else if val, ok := dataMap["manufacturer"].(string); ok {
+        data.Manufacturer = types.StringValue(val)
+    } else {
+        data.Manufacturer = types.StringNull()
+    }
     if obj, ok := dataMap["lastPollReceivedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastPollReceivedAt = NewRFC3339Value(val)
@@ -6191,6 +6286,7 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         "updatedAt": true,
         "slug": true,
         "lastWalkLog": true,
+        "manufacturer": true,
         "lastPollReceivedAt": true,
         "refreshRequestedAt": true,
         "createdByUserId": true,
@@ -8399,6 +8495,50 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         data.LastWalkLog = NewJSONSubsetValue(val)
     } else {
         data.LastWalkLog = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["manufacturer"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Manufacturer = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Manufacturer = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Manufacturer = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Manufacturer = types.StringValue(string(jsonBytes))
+            } else {
+                data.Manufacturer = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Manufacturer = types.StringValue(string(jsonBytes))
+            } else {
+                data.Manufacturer = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Manufacturer = types.StringValue(string(jsonBytes))
+        } else {
+            data.Manufacturer = types.StringNull()
+        }
+    } else if arr, ok := dataMap["manufacturer"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Manufacturer = types.StringValue(string(jsonBytes))
+        } else {
+            data.Manufacturer = types.StringNull()
+        }
+    } else if val, ok := dataMap["manufacturer"].(string); ok {
+        data.Manufacturer = types.StringValue(val)
+    } else {
+        data.Manufacturer = types.StringNull()
     }
     if obj, ok := dataMap["lastPollReceivedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {

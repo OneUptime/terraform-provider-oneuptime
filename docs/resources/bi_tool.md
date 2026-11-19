@@ -42,6 +42,7 @@ resource "oneuptime_bi_tool" "example" {
 - `last_sync_error` (String) Why the last read failed; empty when it did not.
 - `last_sync_warning` (String) What the last read could not read while it read the dashboards - views or refreshes - and why; empty when it read everything.
 - `last_synced_at` (String) When its dashboards were last read.
+- `lineage_summary` (String) Why the last read's dashboards are, or are not, tied to watched tables: the tables they read and how many matched, the data sources behind them and whether OneUptime watches each, and what keeps the rest from matching, such as a Power BI tenant setting that is off. A JSON value: read it with `jsondecode()`.
 - `matched_table_count` (Number) How many watched tables the last read found behind its dashboards.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `refresh_monitor_id` (String) ID of the Metrics monitor that alerts on the tool's failed refreshes.
