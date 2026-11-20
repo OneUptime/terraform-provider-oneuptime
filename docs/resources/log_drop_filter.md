@@ -20,6 +20,21 @@ resource "oneuptime_log_drop_filter" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`sort_order` is this log drop filter's place among the log drop filters of its project, lowest first. Setting it places this log drop filter and moves no other, so a configuration that numbers every log drop filter of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.log_drop_filters`:
+
+```terraform
+sort_order = index(local.log_drop_filters, each.key) + 1
+```
+
+- Give each log drop filter a number of its own: two log drop filters at one number are shown the older first.
+- A log drop filter created without `sort_order` goes after the last one of its project.
+- Deleting a log drop filter leaves a gap in the numbers, which changes nothing: log drop filters go by their numbers, not by counting.
+- Moving a log drop filter in the OneUptime Dashboard numbers the project's log drop filters 1..n again; the next plan shows that as changes to `sort_order`.
+
+
 ## Schema
 
 ### Required
@@ -33,7 +48,7 @@ resource "oneuptime_log_drop_filter" "example" {
 - `description` (String) Description of what this drop filter does.
 - `is_enabled` (Boolean) Whether this drop filter is active. Defaults to `true`.
 - `sample_percentage` (Number) When action is 'sample', the percentage of matching logs to keep (1-99).
-- `sort_order` (Number) Where this filter is evaluated among the project's log drop filters, lowest number first. A new filter is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `sort_order` (Number) Where this filter is evaluated among the project's log drop filters, lowest number first. A new filter is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 
 ### Read-Only
 

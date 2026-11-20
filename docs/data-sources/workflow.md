@@ -38,6 +38,10 @@ data "oneuptime_workflow" "by_id" {
 - `is_webhook_signing_secret_set` (Boolean) Whether a webhook signing secret is saved. A trigger that checks signatures refuses every request until it is. Set by the server from the signing secret itself.
 - `last_webhook_error` (String) Why the last request to a trigger that checks signatures was refused, if it was. Cleared by the next request that is accepted, and by saving a new signing secret.
 - `name` (String) Any friendly name of this object.
+- `run_as` (String) What the workflow's steps can do in the project. Default: what a Project Admin can, except change who has access. ProjectOwner: what a Project Owner can. CustomRole: exactly what the custom role in runAsCustomRoleId allows. Only a person or a project API key that has those permissions can choose anything but Default, and only such a person or key can then change the workflow or run it by hand.
+- `run_as_custom_role_id` (String) ID of the custom role the workflow's steps act as, when Run As is CustomRole. Empty otherwise. The ID of a `oneuptime_custom_role`.
+- `run_as_given_by_api_key_id` (String) ID of the project API key whose permissions the workflow runs with when it runs as more than Default and a key gave them. Set by OneUptime. The ID of a `oneuptime_api_key`.
+- `run_as_given_by_user_id` (String) ID of the person whose permissions the workflow runs with when it runs as more than Default. Set by OneUptime. The ID of a `oneuptime_user` (see the data source).
 - `slug` (String) Friendly globally unique name for your object.
 
 ### Read-Only
@@ -50,5 +54,6 @@ data "oneuptime_workflow" "by_id" {
 - `last_webhook_error_at` (String) When the last webhook error happened.
 - `last_webhook_request_at` (String) When a request signed with the webhook signing secret last arrived. Empty until the sender's first one.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `run_as_given_at` (String) When the person in runAsGivenByUserId last gave the workflow its permissions. Set by OneUptime.
 - `updated_at` (String) Date and Time when the object was updated.
 - `webhook_secret_key` (String, Sensitive) The secret part of the Webhook trigger's URL (/workflow/trigger/<key>). Anyone who has the URL can start the workflow, so only people who can edit the workflow can read the key. Generated when the workflow is created; set a new value to reset the URL.

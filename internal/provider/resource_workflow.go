@@ -15,6 +15,7 @@ import (
     "net/url"
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -22,6 +23,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -48,6 +50,8 @@ type WorkflowResourceModel struct {
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     Graph JSONSubsetValue `tfsdk:"graph"`
     Labels types.Set `tfsdk:"labels"`
+    RunAs types.String `tfsdk:"run_as"`
+    RunAsCustomRoleId types.String `tfsdk:"run_as_custom_role_id"`
     WebhookSigningSecret types.String `tfsdk:"webhook_signing_secret"`
     WebhookSecretKey types.String `tfsdk:"webhook_secret_key"`
     IncomingEmailSecretKey types.String `tfsdk:"incoming_email_secret_key"`
@@ -58,6 +62,9 @@ type WorkflowResourceModel struct {
     ArchivedAt RFC3339Value `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
     GraphRevision types.Number `tfsdk:"graph_revision"`
+    RunAsGivenByUserId types.String `tfsdk:"run_as_given_by_user_id"`
+    RunAsGivenByApiKeyId types.String `tfsdk:"run_as_given_by_api_key_id"`
+    RunAsGivenAt RFC3339Value `tfsdk:"run_as_given_at"`
     IsWebhookSigningSecretSet types.Bool `tfsdk:"is_webhook_signing_secret_set"`
     LastWebhookRequestAt RFC3339Value `tfsdk:"last_webhook_request_at"`
     LastWebhookError types.String `tfsdk:"last_webhook_error"`
@@ -144,6 +151,27 @@ func (r *WorkflowResource) schemaDefinition() schema.Schema {
                 },
                 Validators: recordIDSetValidators("oneuptime_label"),
             },
+            "run_as": schema.StringAttribute{
+                MarkdownDescription: "What the workflow's steps can do in the project. Default: what a Project Admin can, except change who has access. ProjectOwner: what a Project Owner can. CustomRole: exactly what the custom role in runAsCustomRoleId allows. Only a person or a project API key that has those permissions can choose anything but Default, and only such a person or key can then change the workflow or run it by hand.",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("Default"),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Default", "ProjectOwner", "CustomRole"),
+                },
+            },
+            "run_as_custom_role_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the custom role the workflow's steps act as, when Run As is CustomRole. Empty otherwise. The ID of a `oneuptime_custom_role`.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: recordIDValidators("oneuptime_custom_role"),
+            },
             "webhook_signing_secret": schema.StringAttribute{
                 MarkdownDescription: "The signing secret of a trigger that checks the signature of each request, such as the Huntress trigger's endpoint secret (whsec_...). A request that is not signed with it starts nothing. Encrypted at rest and never returned by the API.",
                 Optional: true,
@@ -205,6 +233,19 @@ func (r *WorkflowResource) schemaDefinition() schema.Schema {
             },
             "graph_revision": schema.NumberAttribute{
                 MarkdownDescription: "How many times the workflow's graph has been saved. To save a graph only if nobody has saved one since you read the workflow, send this number as miscDataProps.graphRevision with the graph: a save made to an older graph is refused with 409 Conflict. Set by the server.",
+                Computed: true,
+            },
+            "run_as_given_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the person whose permissions the workflow runs with when it runs as more than Default. Set by OneUptime. The ID of a `oneuptime_user` (see the data source).",
+                Computed: true,
+            },
+            "run_as_given_by_api_key_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the project API key whose permissions the workflow runs with when it runs as more than Default and a key gave them. Set by OneUptime. The ID of a `oneuptime_api_key`.",
+                Computed: true,
+            },
+            "run_as_given_at": schema.StringAttribute{
+                MarkdownDescription: "When the person in runAsGivenByUserId last gave the workflow its permissions. Set by OneUptime.",
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "is_webhook_signing_secret_set": schema.BoolAttribute{
@@ -307,6 +348,12 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
     if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
+    if !data.RunAs.IsNull() && !data.RunAs.IsUnknown() {
+        requestDataMap["runAs"] = data.RunAs.ValueString()
+    }
+    if !data.RunAsCustomRoleId.IsNull() && !data.RunAsCustomRoleId.IsUnknown() {
+        requestDataMap["runAsCustomRoleId"] = data.RunAsCustomRoleId.ValueString()
+    }
     if !data.WebhookSigningSecret.IsNull() && !data.WebhookSigningSecret.IsUnknown() {
         requestDataMap["webhookSigningSecret"] = data.WebhookSigningSecret.ValueString()
     }
@@ -363,6 +410,8 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
         "isEnabled": true,
         "graph": true,
         "labels": true,
+        "runAs": true,
+        "runAsCustomRoleId": true,
         "webhookSecretKey": true,
         "incomingEmailSecretKey": true,
         "createdAt": true,
@@ -372,6 +421,9 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
         "archivedAt": true,
         "archivedByUserId": true,
         "graphRevision": true,
+        "runAsGivenByUserId": true,
+        "runAsGivenByApiKeyId": true,
+        "runAsGivenAt": true,
         "isWebhookSigningSecretSet": true,
         "lastWebhookRequestAt": true,
         "lastWebhookError": true,
@@ -588,6 +640,94 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["runAs"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAs = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunAs = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunAs = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunAs = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAs = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunAs = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAs = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunAs = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAs = types.StringNull()
+        }
+    } else if arr, ok := dataMap["runAs"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RunAs = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAs = types.StringNull()
+        }
+    } else if val, ok := dataMap["runAs"].(string); ok {
+        data.RunAs = types.StringValue(val)
+    } else {
+        data.RunAs = types.StringNull()
+    }
+    if obj, ok := dataMap["runAsCustomRoleId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAsCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunAsCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunAsCustomRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunAsCustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsCustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunAsCustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsCustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunAsCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsCustomRoleId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["runAsCustomRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RunAsCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsCustomRoleId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runAsCustomRoleId"].(string); ok {
+        data.RunAsCustomRoleId = types.StringValue(val)
+    } else {
+        data.RunAsCustomRoleId = types.StringNull()
     }
     if obj, ok := dataMap["webhookSecretKey"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -843,6 +983,105 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
         data.ArchivedByUserId = types.StringNull()
     }
     data.GraphRevision = numberFromAPI(data.GraphRevision, dataMap["graphRevision"])
+    if obj, ok := dataMap["runAsGivenByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAsGivenByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunAsGivenByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunAsGivenByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunAsGivenByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsGivenByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunAsGivenByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsGivenByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunAsGivenByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["runAsGivenByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RunAsGivenByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runAsGivenByUserId"].(string); ok {
+        data.RunAsGivenByUserId = types.StringValue(val)
+    } else {
+        data.RunAsGivenByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["runAsGivenByApiKeyId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAsGivenByApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunAsGivenByApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunAsGivenByApiKeyId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsGivenByApiKeyId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsGivenByApiKeyId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByApiKeyId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["runAsGivenByApiKeyId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByApiKeyId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runAsGivenByApiKeyId"].(string); ok {
+        data.RunAsGivenByApiKeyId = types.StringValue(val)
+    } else {
+        data.RunAsGivenByApiKeyId = types.StringNull()
+    }
+    if obj, ok := dataMap["runAsGivenAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.RunAsGivenAt = NewRFC3339Value(val)
+        } else {
+            data.RunAsGivenAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["runAsGivenAt"].(string); ok && val != "" {
+        data.RunAsGivenAt = NewRFC3339Value(val)
+    } else {
+        data.RunAsGivenAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["isWebhookSigningSecretSet"].(bool); ok {
         data.IsWebhookSigningSecretSet = types.BoolValue(val)
     }
@@ -952,6 +1191,8 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
         "isEnabled": true,
         "graph": true,
         "labels": true,
+        "runAs": true,
+        "runAsCustomRoleId": true,
         "webhookSecretKey": true,
         "incomingEmailSecretKey": true,
         "createdAt": true,
@@ -961,6 +1202,9 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
         "archivedAt": true,
         "archivedByUserId": true,
         "graphRevision": true,
+        "runAsGivenByUserId": true,
+        "runAsGivenByApiKeyId": true,
+        "runAsGivenAt": true,
         "isWebhookSigningSecretSet": true,
         "lastWebhookRequestAt": true,
         "lastWebhookError": true,
@@ -1179,6 +1423,94 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["runAs"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAs = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunAs = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunAs = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunAs = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAs = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunAs = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAs = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunAs = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAs = types.StringNull()
+        }
+    } else if arr, ok := dataMap["runAs"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RunAs = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAs = types.StringNull()
+        }
+    } else if val, ok := dataMap["runAs"].(string); ok {
+        data.RunAs = types.StringValue(val)
+    } else {
+        data.RunAs = types.StringNull()
+    }
+    if obj, ok := dataMap["runAsCustomRoleId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAsCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunAsCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunAsCustomRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunAsCustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsCustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunAsCustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsCustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunAsCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsCustomRoleId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["runAsCustomRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RunAsCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsCustomRoleId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runAsCustomRoleId"].(string); ok {
+        data.RunAsCustomRoleId = types.StringValue(val)
+    } else {
+        data.RunAsCustomRoleId = types.StringNull()
+    }
     if obj, ok := dataMap["webhookSecretKey"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1433,6 +1765,105 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
         data.ArchivedByUserId = types.StringNull()
     }
     data.GraphRevision = numberFromAPI(data.GraphRevision, dataMap["graphRevision"])
+    if obj, ok := dataMap["runAsGivenByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAsGivenByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunAsGivenByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunAsGivenByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunAsGivenByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsGivenByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunAsGivenByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsGivenByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunAsGivenByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["runAsGivenByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RunAsGivenByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runAsGivenByUserId"].(string); ok {
+        data.RunAsGivenByUserId = types.StringValue(val)
+    } else {
+        data.RunAsGivenByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["runAsGivenByApiKeyId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAsGivenByApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunAsGivenByApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunAsGivenByApiKeyId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsGivenByApiKeyId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsGivenByApiKeyId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByApiKeyId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["runAsGivenByApiKeyId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByApiKeyId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runAsGivenByApiKeyId"].(string); ok {
+        data.RunAsGivenByApiKeyId = types.StringValue(val)
+    } else {
+        data.RunAsGivenByApiKeyId = types.StringNull()
+    }
+    if obj, ok := dataMap["runAsGivenAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.RunAsGivenAt = NewRFC3339Value(val)
+        } else {
+            data.RunAsGivenAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["runAsGivenAt"].(string); ok && val != "" {
+        data.RunAsGivenAt = NewRFC3339Value(val)
+    } else {
+        data.RunAsGivenAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["isWebhookSigningSecretSet"].(bool); ok {
         data.IsWebhookSigningSecretSet = types.BoolValue(val)
     }
@@ -1573,6 +2004,12 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
     if !data.Labels.IsUnknown() && !state.Labels.IsUnknown() && !data.Labels.Equal(state.Labels) {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
+    if !data.RunAs.IsUnknown() && !state.RunAs.IsUnknown() && !data.RunAs.Equal(state.RunAs) {
+        requestDataMap["runAs"] = data.RunAs.ValueString()
+    }
+    if !data.RunAsCustomRoleId.IsUnknown() && !state.RunAsCustomRoleId.IsUnknown() && !data.RunAsCustomRoleId.Equal(state.RunAsCustomRoleId) {
+        requestDataMap["runAsCustomRoleId"] = data.RunAsCustomRoleId.ValueString()
+    }
     if !data.WebhookSecretKey.IsUnknown() && !state.WebhookSecretKey.IsUnknown() && !data.WebhookSecretKey.Equal(state.WebhookSecretKey) {
         requestDataMap["webhookSecretKey"] = data.WebhookSecretKey.ValueString()
     }
@@ -1612,6 +2049,8 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
         "isEnabled": true,
         "graph": true,
         "labels": true,
+        "runAs": true,
+        "runAsCustomRoleId": true,
         "webhookSecretKey": true,
         "incomingEmailSecretKey": true,
         "createdAt": true,
@@ -1621,6 +2060,9 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
         "archivedAt": true,
         "archivedByUserId": true,
         "graphRevision": true,
+        "runAsGivenByUserId": true,
+        "runAsGivenByApiKeyId": true,
+        "runAsGivenAt": true,
         "isWebhookSigningSecretSet": true,
         "lastWebhookRequestAt": true,
         "lastWebhookError": true,
@@ -1833,6 +2275,94 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["runAs"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAs = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunAs = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunAs = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunAs = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAs = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunAs = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAs = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunAs = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAs = types.StringNull()
+        }
+    } else if arr, ok := dataMap["runAs"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RunAs = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAs = types.StringNull()
+        }
+    } else if val, ok := dataMap["runAs"].(string); ok {
+        data.RunAs = types.StringValue(val)
+    } else {
+        data.RunAs = types.StringNull()
+    }
+    if obj, ok := dataMap["runAsCustomRoleId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAsCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunAsCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunAsCustomRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunAsCustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsCustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunAsCustomRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsCustomRoleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunAsCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsCustomRoleId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["runAsCustomRoleId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RunAsCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsCustomRoleId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runAsCustomRoleId"].(string); ok {
+        data.RunAsCustomRoleId = types.StringValue(val)
+    } else {
+        data.RunAsCustomRoleId = types.StringNull()
+    }
     if obj, ok := dataMap["webhookSecretKey"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2087,6 +2617,105 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
         data.ArchivedByUserId = types.StringNull()
     }
     data.GraphRevision = numberFromAPI(data.GraphRevision, dataMap["graphRevision"])
+    if obj, ok := dataMap["runAsGivenByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAsGivenByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunAsGivenByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunAsGivenByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunAsGivenByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsGivenByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunAsGivenByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsGivenByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunAsGivenByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["runAsGivenByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RunAsGivenByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runAsGivenByUserId"].(string); ok {
+        data.RunAsGivenByUserId = types.StringValue(val)
+    } else {
+        data.RunAsGivenByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["runAsGivenByApiKeyId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAsGivenByApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunAsGivenByApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunAsGivenByApiKeyId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsGivenByApiKeyId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunAsGivenByApiKeyId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByApiKeyId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["runAsGivenByApiKeyId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.RunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByApiKeyId = types.StringNull()
+        }
+    } else if val, ok := dataMap["runAsGivenByApiKeyId"].(string); ok {
+        data.RunAsGivenByApiKeyId = types.StringValue(val)
+    } else {
+        data.RunAsGivenByApiKeyId = types.StringNull()
+    }
+    if obj, ok := dataMap["runAsGivenAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.RunAsGivenAt = NewRFC3339Value(val)
+        } else {
+            data.RunAsGivenAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["runAsGivenAt"].(string); ok && val != "" {
+        data.RunAsGivenAt = NewRFC3339Value(val)
+    } else {
+        data.RunAsGivenAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["isWebhookSigningSecretSet"].(bool); ok {
         data.IsWebhookSigningSecretSet = types.BoolValue(val)
     }
@@ -2233,6 +2862,12 @@ func (r *WorkflowResource) keepPlannedValues(data *WorkflowResourceModel, plan *
     }
     if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
         data.Labels = plan.Labels
+    }
+    if config.RunAs.IsNull() && !plan.RunAs.IsUnknown() {
+        data.RunAs = plan.RunAs
+    }
+    if config.RunAsCustomRoleId.IsNull() && !plan.RunAsCustomRoleId.IsUnknown() {
+        data.RunAsCustomRoleId = plan.RunAsCustomRoleId
     }
     if config.WebhookSecretKey.IsNull() && !plan.WebhookSecretKey.IsUnknown() {
         data.WebhookSecretKey = plan.WebhookSecretKey

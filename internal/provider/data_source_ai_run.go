@@ -61,6 +61,8 @@ type AiRunDataSourceModel struct {
     ToolCallCount types.Number `tfsdk:"tool_call_count"`
     TotalTokens types.Number `tfsdk:"total_tokens"`
     TotalCostInUsdCents types.Number `tfsdk:"total_cost_in_usd_cents"`
+    ModelName types.String `tfsdk:"model_name"`
+    LlmProviderType types.String `tfsdk:"llm_provider_type"`
     EgressManifest types.String `tfsdk:"egress_manifest"`
     CodeRepositoryId types.String `tfsdk:"code_repository_id"`
     CodeTaskId types.String `tfsdk:"code_task_id"`
@@ -251,6 +253,16 @@ func (d *AiRunDataSource) Schema(ctx context.Context, req datasource.SchemaReque
             },
             "total_cost_in_usd_cents": schema.NumberAttribute{
                 MarkdownDescription: "Total billed cost of this run in USD cents.",
+                Optional: true,
+                Computed: true,
+            },
+            "model_name": schema.StringAttribute{
+                MarkdownDescription: "The model that wrote this run's answer, as its LLM provider named it. Recorded when the run completes; empty for runs that completed before OneUptime recorded it.",
+                Optional: true,
+                Computed: true,
+            },
+            "llm_provider_type": schema.StringAttribute{
+                MarkdownDescription: "The type of the LLM provider whose model wrote this run's answer (OpenAI, Anthropic, Ollama...). Recorded when the run completes.",
                 Optional: true,
                 Computed: true,
             },
@@ -458,6 +470,14 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         filters["totalCostInUSDCents"] = lookupNumber(data.TotalCostInUsdCents)
         filterNames = append(filterNames, "total_cost_in_usd_cents = "+data.TotalCostInUsdCents.ValueBigFloat().String())
     }
+    if !data.ModelName.IsNull() && !data.ModelName.IsUnknown() {
+        filters["modelName"] = data.ModelName.ValueString()
+        filterNames = append(filterNames, "model_name = "+fmt.Sprintf("%q", data.ModelName.ValueString()))
+    }
+    if !data.LlmProviderType.IsNull() && !data.LlmProviderType.IsUnknown() {
+        filters["llmProviderType"] = data.LlmProviderType.ValueString()
+        filterNames = append(filterNames, "llm_provider_type = "+fmt.Sprintf("%q", data.LlmProviderType.ValueString()))
+    }
     if !data.CodeRepositoryId.IsNull() && !data.CodeRepositoryId.IsUnknown() {
         filters["codeRepositoryId"] = data.CodeRepositoryId.ValueString()
         filterNames = append(filterNames, "code_repository_id = "+fmt.Sprintf("%q", data.CodeRepositoryId.ValueString()))
@@ -541,6 +561,8 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         "toolCallCount": true,
         "totalTokens": true,
         "totalCostInUSDCents": true,
+        "modelName": true,
+        "llmProviderType": true,
         "egressManifest": true,
         "codeRepositoryId": true,
         "codeTaskId": true,
@@ -1248,6 +1270,54 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
     data.ToolCallCount = numberFromAPI(data.ToolCallCount, item["toolCallCount"])
     data.TotalTokens = numberFromAPI(data.TotalTokens, item["totalTokens"])
     data.TotalCostInUsdCents = numberFromAPI(data.TotalCostInUsdCents, item["totalCostInUSDCents"])
+    if obj, ok := item["modelName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ModelName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ModelName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ModelName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ModelName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ModelName = types.StringNull()
+        }
+    } else if arr, ok := item["modelName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ModelName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ModelName = types.StringNull()
+        }
+    } else if val, ok := item["modelName"].(string); ok {
+        data.ModelName = types.StringValue(val)
+    } else {
+        data.ModelName = types.StringNull()
+    }
+    if obj, ok := item["llmProviderType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmProviderType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LlmProviderType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LlmProviderType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LlmProviderType = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmProviderType = types.StringNull()
+        }
+    } else if arr, ok := item["llmProviderType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LlmProviderType = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmProviderType = types.StringNull()
+        }
+    } else if val, ok := item["llmProviderType"].(string); ok {
+        data.LlmProviderType = types.StringValue(val)
+    } else {
+        data.LlmProviderType = types.StringNull()
+    }
     if obj, ok := item["egressManifest"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.EgressManifest = types.StringValue(val)

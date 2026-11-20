@@ -45,6 +45,11 @@ data "oneuptime_audit_log" "by_id" {
 - `user_type` (String) User Type.
 - `workflow_id` (String) Workflow ID.
 - `workflow_name` (String) Workflow Name.
+- `workflow_run_as` (String) Workflow Ran As.
+- `workflow_run_as_custom_role_name` (String) Workflow Ran As Custom Role.
+- `workflow_run_as_given_by_api_key_id` (String) Workflow Permissions Given by API Key ID.
+- `workflow_run_as_given_by_name` (String) Workflow Permissions Given By.
+- `workflow_run_as_given_by_user_id` (String) Workflow Permissions Given by User ID.
 
 ### Read-Only
 

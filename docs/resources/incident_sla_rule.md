@@ -18,6 +18,21 @@ resource "oneuptime_incident_sla_rule" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this incident SLA rule's place among the incident SLA rules of its project, lowest first. Setting it places this incident SLA rule and moves no other, so a configuration that numbers every incident SLA rule of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.incident_sla_rules`:
+
+```terraform
+order = index(local.incident_sla_rules, each.key) + 1
+```
+
+- Give each incident SLA rule a number of its own: two incident SLA rules at one number are shown the older first.
+- An incident SLA rule created without `order` goes after the last one of its project.
+- Deleting an incident SLA rule leaves a gap in the numbers, which changes nothing: incident SLA rules go by their numbers, not by counting.
+- Moving an incident SLA rule in the OneUptime Dashboard numbers the project's incident SLA rules 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -38,7 +53,7 @@ resource "oneuptime_incident_sla_rule" "example" {
 - `is_enabled` (Boolean) Whether this SLA rule is enabled. Defaults to `true`.
 - `monitor_labels` (Set of String) Only apply this SLA rule to incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) Only apply this SLA rule to incidents affecting these monitors. Leave empty to match incidents from any monitor. IDs of `oneuptime_monitor` resources.
-- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 - `public_note_reminder_interval_in_minutes` (Number) How often (in minutes) to automatically post public notes to unresolved incidents. Public notes are visible to external stakeholders on your status page. For example, set to 60 to post a status update every hour. Leave empty to disable.
 - `public_note_reminder_template` (String) The content of the automatic public note shown on your status page. Use variables like {{incidentTitle}}, {{elapsedTime}}, {{slaStatus}}, {{timeToResolutionDeadline}} to include dynamic incident data. If left empty, a default template will be used.
 - `resolution_time_in_minutes` (Number) Target resolution time in minutes. This is the maximum time allowed before the incident must be resolved.

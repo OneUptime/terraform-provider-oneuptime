@@ -36,6 +36,7 @@ type ProbeDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     Slug types.String `tfsdk:"slug"`
     ProbeVersion types.String `tfsdk:"probe_version"`
+    ReportedVersion types.String `tfsdk:"reported_version"`
     LastAlive types.String `tfsdk:"last_alive"`
     IconFileId types.String `tfsdk:"icon_file_id"`
     ProjectId types.String `tfsdk:"project_id"`
@@ -94,6 +95,11 @@ func (d *ProbeDataSource) Schema(ctx context.Context, req datasource.SchemaReque
             },
             "probe_version": schema.StringAttribute{
                 MarkdownDescription: "A version label for the probe. Leave it out and it is 1.0.0.",
+                Computed: true,
+            },
+            "reported_version": schema.StringAttribute{
+                MarkdownDescription: "The OneUptime release this probe last said it runs. Set by OneUptime from the probe's own requests. Empty until the probe connects, and for a probe older than 17.0.1, which does not say.",
+                Optional: true,
                 Computed: true,
             },
             "last_alive": schema.StringAttribute{
@@ -201,6 +207,10 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         filters["slug"] = data.Slug.ValueString()
         filterNames = append(filterNames, "slug = "+fmt.Sprintf("%q", data.Slug.ValueString()))
     }
+    if !data.ReportedVersion.IsNull() && !data.ReportedVersion.IsUnknown() {
+        filters["reportedVersion"] = data.ReportedVersion.ValueString()
+        filterNames = append(filterNames, "reported_version = "+fmt.Sprintf("%q", data.ReportedVersion.ValueString()))
+    }
     if !data.IconFileId.IsNull() && !data.IconFileId.IsUnknown() {
         filters["iconFileId"] = data.IconFileId.ValueString()
         filterNames = append(filterNames, "icon_file_id = "+fmt.Sprintf("%q", data.IconFileId.ValueString()))
@@ -241,6 +251,7 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         "description": true,
         "slug": true,
         "probeVersion": true,
+        "reportedVersion": true,
         "lastAlive": true,
         "iconFileId": true,
         "projectId": true,
@@ -505,6 +516,30 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.ProbeVersion = types.StringValue(val)
     } else {
         data.ProbeVersion = types.StringNull()
+    }
+    if obj, ok := item["reportedVersion"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ReportedVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ReportedVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ReportedVersion = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ReportedVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.ReportedVersion = types.StringNull()
+        }
+    } else if arr, ok := item["reportedVersion"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ReportedVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.ReportedVersion = types.StringNull()
+        }
+    } else if val, ok := item["reportedVersion"].(string); ok {
+        data.ReportedVersion = types.StringValue(val)
+    } else {
+        data.ReportedVersion = types.StringNull()
     }
     if obj, ok := item["lastAlive"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -118,7 +118,7 @@ func (r *CollectorConfigResource) schemaDefinition() schema.Schema {
                 Validators: recordIDSetValidators("oneuptime_label"),
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Where this config sits in the list. A host runs the first config in the list that applies to it. A new config is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along. In the dashboard, drag the rows to reorder them.",
+                MarkdownDescription: "Where this config sits in the list. A host runs the first config in the list that applies to it. A new config is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{

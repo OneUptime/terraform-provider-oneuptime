@@ -31,7 +31,7 @@ data "oneuptime_network_site_assignment_rule" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `hostname_pattern` (String) Devices whose hostname, SNMP system name, display name or DNS name matches this wildcard pattern are assigned to the site.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
-- `priority` (Number) Where this rule sits in the list: when several rules match a device, the one highest in the list wins. The rule at the top has the highest number. A new rule is added to the end of the list, with the lowest number. Setting a number another rule already has puts this rule in that place, and the rules in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `priority` (Number) Where this rule sits in the list: when several rules match a device, the one highest in the list wins. The rule at the top has the highest number. A new rule is added to the end of the list, with the lowest number. Setting a number places this rule there and moves no other rule: two rules at one number are read the older first. In the dashboard, drag the rows to reorder them.
 - `site_id` (String) ID of the Network Site matched resources are assigned to. The ID of a `oneuptime_network_site`.
 - `subnet_cidr` (String) Devices and endpoints with an IP in this CIDR are assigned to the site.
 

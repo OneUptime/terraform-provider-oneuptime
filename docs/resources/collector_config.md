@@ -18,6 +18,21 @@ resource "oneuptime_collector_config" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this collector config's place among the collector configs of its project, lowest first. Setting it places this collector config and moves no other, so a configuration that numbers every collector config of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.collector_configs`:
+
+```terraform
+order = index(local.collector_configs, each.key) + 1
+```
+
+- Give each collector config a number of its own: two collector configs at one number are shown the older first.
+- A collector config created without `order` goes after the last one of its project.
+- Deleting a collector config leaves a gap in the numbers, which changes nothing: collector configs go by their numbers, not by counting.
+- Moving a collector config in the OneUptime Dashboard numbers the project's collector configs 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -29,7 +44,7 @@ resource "oneuptime_collector_config" "example" {
 - `config_yaml` (String) The collector's config.yaml. Left empty on create, it starts as OneUptime's default for the config's system. Every saved change is checked and becomes a new version.
 - `description` (String) What this config collects, for the people who edit it.
 - `labels` (Set of String) Only hosts with at least one of these labels get this config. Leave empty for every host of its system. IDs of `oneuptime_label` resources.
-- `order` (Number) Where this config sits in the list. A host runs the first config in the list that applies to it. A new config is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this config sits in the list. A host runs the first config in the list that applies to it. A new config is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 - `os_type` (String) The system of the hosts this config is for: linux, windows, darwin (macOS) or any. Allowed values: `any`, `linux`, `windows`, `darwin`. Defaults to `linux`.
 
 ### Read-Only

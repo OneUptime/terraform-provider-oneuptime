@@ -36,7 +36,7 @@ data "oneuptime_monitor_status" "by_id" {
 - `is_offline_state` (Boolean) Is this monitor in offline state?
 - `is_operational_state` (Boolean) Is this monitor in operational state?
 - `name` (String) Any friendly name of this object.
-- `priority` (Number) Where this status sits in the project's list of monitor statuses, from the healthiest (the lowest number) down to the worst: where monitors are shown together, as on a status page or in a monitor group, the status furthest down the list wins. A new status without a number goes just above the offline status. Setting a number moves the status to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.
+- `priority` (Number) Where this status sits in the project's list of monitor statuses, from the healthiest (the lowest number) down to the worst: where monitors are shown together, as on a status page or in a monitor group, the status furthest down the list wins. A new status without a number goes just above the offline status. Setting a number places the status there and moves no other: two at one number are read the older first. In the dashboard, drag the rows to reorder them.
 - `slug` (String) Friendly globally unique name for your object.
 
 ### Read-Only

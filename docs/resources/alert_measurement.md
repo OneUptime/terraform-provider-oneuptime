@@ -20,6 +20,21 @@ resource "oneuptime_alert_measurement" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this alert measurement's place among the alert measurements of its project, lowest first. Setting it places this alert measurement and moves no other, so a configuration that numbers every alert measurement of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.alert_measurements`:
+
+```terraform
+order = index(local.alert_measurements, each.key) + 1
+```
+
+- Give each alert measurement a number of its own: two alert measurements at one number are shown the older first.
+- An alert measurement created without `order` goes after the last one of its project.
+- Deleting an alert measurement leaves a gap in the numbers, which changes nothing: alert measurements go by their numbers, not by counting.
+- Moving an alert measurement in the OneUptime Dashboard numbers the project's alert measurements 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -37,7 +52,7 @@ resource "oneuptime_alert_measurement" "example" {
 - `end_state_occurrence` (String) Which entry to use when the end state is entered more than once - First or Last. First matches the built-in alert metrics; Last follows a reopened alert to its final pass through that state. Allowed values: `First`, `Last`. Defaults to `First`.
 - `is_enabled` (Boolean) Whether this measurement is computed for new and updated alerts. Defaults to `true`.
 - `key` (String) Stable, machine readable identifier for this measurement, unique within the project: lowercase letters, numbers and hyphens. Leave it out and it is made from the name - Time to Acknowledge becomes time-to-acknowledge, with -2, -3 and so on added when another measurement already has it. It cannot be changed once the measurement is created, because it is used to build the metric name that every recorded point is written under; to rename a measurement, change the Name instead.
-- `order` (Number) Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 - `show_on_alert_view` (Boolean) Whether this measurement is shown on the alert page alongside the alert's other timings. Defaults to `true`.
 - `start_alert_state_id` (String) ID of the alert state this measurement starts at. Required only when the Start Anchor Type is State Entered. Cleared if that state is deleted, at which point the measurement reports Not Applicable rather than a wrong number. The ID of a `oneuptime_alert_state`.
 - `start_alert_state_role` (String) The role of the state this measurement starts at - Created, Acknowledged or Resolved. Used when the Start Anchor Type is State Role Entered. Resolving by role keeps the measurement working when a project renames or replaces the state that plays that part. Allowed values: `Created`, `Acknowledged`, `Resolved`.

@@ -18,6 +18,21 @@ resource "oneuptime_alert_grouping_rule" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`priority` is this alert grouping rule's place among the alert grouping rules of its project, lowest first. Setting it places this alert grouping rule and moves no other, so a configuration that numbers every alert grouping rule of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.alert_grouping_rules`:
+
+```terraform
+priority = index(local.alert_grouping_rules, each.key) + 1
+```
+
+- Give each alert grouping rule a number of its own: two alert grouping rules at one number are shown the older first.
+- An alert grouping rule created without `priority` goes after the last one of its project.
+- Deleting an alert grouping rule leaves a gap in the numbers, which changes nothing: alert grouping rules go by their numbers, not by counting.
+- Moving an alert grouping rule in the OneUptime Dashboard numbers the project's alert grouping rules 1..n again; the next plan shows that as changes to `priority`.
+
+
 ## Schema
 
 ### Required
@@ -62,7 +77,7 @@ resource "oneuptime_alert_grouping_rule" "example" {
 - `monitor_name_pattern` (String) Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.
 - `monitors` (Set of String) Only group alerts from these monitors. Leave empty to match alerts from any monitor. IDs of `oneuptime_monitor` resources.
 - `on_call_duty_policies` (Set of String) List of on-call policies to execute for episodes created by this rule. IDs of `oneuptime_on_call_policy` resources.
-- `priority` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `priority` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first. A new rule is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 - `reopen_window_minutes` (Number) Time window in minutes to reopen a recently resolved episode instead of creating a new one. Defaults to `0`.
 - `resolve_delay_minutes` (Number) Grace period in minutes before auto-resolving an episode after all alerts are resolved. Defaults to `0`.
 - `time_window_minutes` (Number) Rolling time window in minutes. Alerts are grouped if they arrive within this gap from the last alert. Defaults to `60`.

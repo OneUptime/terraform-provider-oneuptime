@@ -31,7 +31,6 @@ data "oneuptime_incident_template_team_owner" "by_id" {
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `incident_template_id` (String) ID of the incident template the team owns. The ID of a `oneuptime_incident_template`.
-- `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
 - `team_id` (String) ID of the team that owns the incident template. The ID of a `oneuptime_team`.
 
 ### Read-Only

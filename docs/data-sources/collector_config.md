@@ -35,7 +35,7 @@ data "oneuptime_collector_config" "by_id" {
 - `description` (String) What this config collects, for the people who edit it.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `name` (String) What the hosts this config is for have in common.
-- `order` (Number) Where this config sits in the list. A host runs the first config in the list that applies to it. A new config is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this config sits in the list. A host runs the first config in the list that applies to it. A new config is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them.
 - `os_type` (String) The system of the hosts this config is for: linux, windows, darwin (macOS) or any.
 
 ### Read-Only

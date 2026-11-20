@@ -19,6 +19,21 @@ resource "oneuptime_status_page_history_chart_bar_color" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this status page history chart bar color's place among the status page history chart bar colors of its status page, lowest first. Setting it places this status page history chart bar color and moves no other, so a configuration that numbers every status page history chart bar color of a status page is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.status_page_history_chart_bar_colors`:
+
+```terraform
+order = index(local.status_page_history_chart_bar_colors, each.key) + 1
+```
+
+- Give each status page history chart bar color a number of its own: two status page history chart bar colors at one number are shown the older first.
+- A status page history chart bar color created without `order` goes after the last one of its status page.
+- Deleting a status page history chart bar color leaves a gap in the numbers, which changes nothing: status page history chart bar colors go by their numbers, not by counting.
+- Moving a status page history chart bar color in the OneUptime Dashboard numbers the status page's status page history chart bar colors 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -29,7 +44,7 @@ resource "oneuptime_status_page_history_chart_bar_color" "example" {
 
 ### Optional
 
-- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first. A new rule is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 
 ### Read-Only
 

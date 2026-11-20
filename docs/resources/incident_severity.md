@@ -19,6 +19,21 @@ resource "oneuptime_incident_severity" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this incident severity's place among the incident severities of its project, lowest first. Setting it places this incident severity and moves no other, so a configuration that numbers every incident severity of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.incident_severities`:
+
+```terraform
+order = index(local.incident_severities, each.key) + 1
+```
+
+- Give each incident severity a number of its own: two incident severities at one number are shown the older first.
+- An incident severity created without `order` goes after the last one of its project.
+- Deleting an incident severity leaves a gap in the numbers, which changes nothing: incident severities go by their numbers, not by counting.
+- Moving an incident severity in the OneUptime Dashboard numbers the project's incident severities 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -30,7 +45,7 @@ resource "oneuptime_incident_severity" "example" {
 
 - `description` (String) Friendly description that will help you remember.
 - `is_archived` (Boolean) Archived severities stay on the incidents and episodes that have them, but can't be picked again. A project keeps at least one severity that is not archived. Defaults to `false`.
-- `order` (Number) Where this severity ranks among the project's incident severities: 1 is the most severe. A new severity without a number goes to the end of the list. Setting a number moves the severity to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this severity ranks among the project's incident severities: 1 is the most severe. A new severity without a number goes to the end of the list. Setting a number places the severity there and moves no other: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 
 ### Read-Only
 

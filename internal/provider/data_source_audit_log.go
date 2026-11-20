@@ -46,6 +46,11 @@ type AuditLogDataSourceModel struct {
     McpClientName types.String `tfsdk:"mcp_client_name"`
     WorkflowId types.String `tfsdk:"workflow_id"`
     WorkflowName types.String `tfsdk:"workflow_name"`
+    WorkflowRunAs types.String `tfsdk:"workflow_run_as"`
+    WorkflowRunAsCustomRoleName types.String `tfsdk:"workflow_run_as_custom_role_name"`
+    WorkflowRunAsGivenByUserId types.String `tfsdk:"workflow_run_as_given_by_user_id"`
+    WorkflowRunAsGivenByApiKeyId types.String `tfsdk:"workflow_run_as_given_by_api_key_id"`
+    WorkflowRunAsGivenByName types.String `tfsdk:"workflow_run_as_given_by_name"`
     Changes types.Set `tfsdk:"changes"`
 }
 
@@ -144,6 +149,31 @@ func (d *AuditLogDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             },
             "workflow_name": schema.StringAttribute{
                 MarkdownDescription: "Workflow Name.",
+                Optional: true,
+                Computed: true,
+            },
+            "workflow_run_as": schema.StringAttribute{
+                MarkdownDescription: "Workflow Ran As.",
+                Optional: true,
+                Computed: true,
+            },
+            "workflow_run_as_custom_role_name": schema.StringAttribute{
+                MarkdownDescription: "Workflow Ran As Custom Role.",
+                Optional: true,
+                Computed: true,
+            },
+            "workflow_run_as_given_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "Workflow Permissions Given by User ID.",
+                Optional: true,
+                Computed: true,
+            },
+            "workflow_run_as_given_by_api_key_id": schema.StringAttribute{
+                MarkdownDescription: "Workflow Permissions Given by API Key ID.",
+                Optional: true,
+                Computed: true,
+            },
+            "workflow_run_as_given_by_name": schema.StringAttribute{
+                MarkdownDescription: "Workflow Permissions Given By.",
                 Optional: true,
                 Computed: true,
             },
@@ -255,6 +285,26 @@ func (d *AuditLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         filters["workflowName"] = data.WorkflowName.ValueString()
         filterNames = append(filterNames, "workflow_name = "+fmt.Sprintf("%q", data.WorkflowName.ValueString()))
     }
+    if !data.WorkflowRunAs.IsNull() && !data.WorkflowRunAs.IsUnknown() {
+        filters["workflowRunAs"] = data.WorkflowRunAs.ValueString()
+        filterNames = append(filterNames, "workflow_run_as = "+fmt.Sprintf("%q", data.WorkflowRunAs.ValueString()))
+    }
+    if !data.WorkflowRunAsCustomRoleName.IsNull() && !data.WorkflowRunAsCustomRoleName.IsUnknown() {
+        filters["workflowRunAsCustomRoleName"] = data.WorkflowRunAsCustomRoleName.ValueString()
+        filterNames = append(filterNames, "workflow_run_as_custom_role_name = "+fmt.Sprintf("%q", data.WorkflowRunAsCustomRoleName.ValueString()))
+    }
+    if !data.WorkflowRunAsGivenByUserId.IsNull() && !data.WorkflowRunAsGivenByUserId.IsUnknown() {
+        filters["workflowRunAsGivenByUserId"] = data.WorkflowRunAsGivenByUserId.ValueString()
+        filterNames = append(filterNames, "workflow_run_as_given_by_user_id = "+fmt.Sprintf("%q", data.WorkflowRunAsGivenByUserId.ValueString()))
+    }
+    if !data.WorkflowRunAsGivenByApiKeyId.IsNull() && !data.WorkflowRunAsGivenByApiKeyId.IsUnknown() {
+        filters["workflowRunAsGivenByApiKeyId"] = data.WorkflowRunAsGivenByApiKeyId.ValueString()
+        filterNames = append(filterNames, "workflow_run_as_given_by_api_key_id = "+fmt.Sprintf("%q", data.WorkflowRunAsGivenByApiKeyId.ValueString()))
+    }
+    if !data.WorkflowRunAsGivenByName.IsNull() && !data.WorkflowRunAsGivenByName.IsUnknown() {
+        filters["workflowRunAsGivenByName"] = data.WorkflowRunAsGivenByName.ValueString()
+        filterNames = append(filterNames, "workflow_run_as_given_by_name = "+fmt.Sprintf("%q", data.WorkflowRunAsGivenByName.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -289,6 +339,11 @@ func (d *AuditLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         "mcpClientName": true,
         "workflowId": true,
         "workflowName": true,
+        "workflowRunAs": true,
+        "workflowRunAsCustomRoleName": true,
+        "workflowRunAsGivenByUserId": true,
+        "workflowRunAsGivenByApiKeyId": true,
+        "workflowRunAsGivenByName": true,
         "changes": true,
         "_id": true,
     }
@@ -782,6 +837,126 @@ func (d *AuditLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.WorkflowName = types.StringValue(val)
     } else {
         data.WorkflowName = types.StringNull()
+    }
+    if obj, ok := item["workflowRunAs"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WorkflowRunAs = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.WorkflowRunAs = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.WorkflowRunAs = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.WorkflowRunAs = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkflowRunAs = types.StringNull()
+        }
+    } else if arr, ok := item["workflowRunAs"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.WorkflowRunAs = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkflowRunAs = types.StringNull()
+        }
+    } else if val, ok := item["workflowRunAs"].(string); ok {
+        data.WorkflowRunAs = types.StringValue(val)
+    } else {
+        data.WorkflowRunAs = types.StringNull()
+    }
+    if obj, ok := item["workflowRunAsCustomRoleName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WorkflowRunAsCustomRoleName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.WorkflowRunAsCustomRoleName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.WorkflowRunAsCustomRoleName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.WorkflowRunAsCustomRoleName = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkflowRunAsCustomRoleName = types.StringNull()
+        }
+    } else if arr, ok := item["workflowRunAsCustomRoleName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.WorkflowRunAsCustomRoleName = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkflowRunAsCustomRoleName = types.StringNull()
+        }
+    } else if val, ok := item["workflowRunAsCustomRoleName"].(string); ok {
+        data.WorkflowRunAsCustomRoleName = types.StringValue(val)
+    } else {
+        data.WorkflowRunAsCustomRoleName = types.StringNull()
+    }
+    if obj, ok := item["workflowRunAsGivenByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WorkflowRunAsGivenByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.WorkflowRunAsGivenByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.WorkflowRunAsGivenByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.WorkflowRunAsGivenByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkflowRunAsGivenByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["workflowRunAsGivenByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.WorkflowRunAsGivenByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkflowRunAsGivenByUserId = types.StringNull()
+        }
+    } else if val, ok := item["workflowRunAsGivenByUserId"].(string); ok {
+        data.WorkflowRunAsGivenByUserId = types.StringValue(val)
+    } else {
+        data.WorkflowRunAsGivenByUserId = types.StringNull()
+    }
+    if obj, ok := item["workflowRunAsGivenByApiKeyId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WorkflowRunAsGivenByApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.WorkflowRunAsGivenByApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.WorkflowRunAsGivenByApiKeyId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.WorkflowRunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkflowRunAsGivenByApiKeyId = types.StringNull()
+        }
+    } else if arr, ok := item["workflowRunAsGivenByApiKeyId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.WorkflowRunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkflowRunAsGivenByApiKeyId = types.StringNull()
+        }
+    } else if val, ok := item["workflowRunAsGivenByApiKeyId"].(string); ok {
+        data.WorkflowRunAsGivenByApiKeyId = types.StringValue(val)
+    } else {
+        data.WorkflowRunAsGivenByApiKeyId = types.StringNull()
+    }
+    if obj, ok := item["workflowRunAsGivenByName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WorkflowRunAsGivenByName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.WorkflowRunAsGivenByName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.WorkflowRunAsGivenByName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.WorkflowRunAsGivenByName = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkflowRunAsGivenByName = types.StringNull()
+        }
+    } else if arr, ok := item["workflowRunAsGivenByName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.WorkflowRunAsGivenByName = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkflowRunAsGivenByName = types.StringNull()
+        }
+    } else if val, ok := item["workflowRunAsGivenByName"].(string); ok {
+        data.WorkflowRunAsGivenByName = types.StringValue(val)
+    } else {
+        data.WorkflowRunAsGivenByName = types.StringNull()
     }
     if val, ok := item["changes"].([]interface{}); ok {
         var setItems []attr.Value

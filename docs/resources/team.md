@@ -38,6 +38,7 @@ resource "oneuptime_team" "example" {
 - `is_team_deleteable` (Boolean) Can you delete this team? Teams auto-created for you are not deleteable but you should be able to delete permissions on the team you create.
 - `is_team_editable` (Boolean) Can you edit team? Teams auto-created for you are uneditable but you should be able to edit on the team you create.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `scim_group_linked_at` (String) When a SCIM identity provider first took this team as one of its groups. Empty for a team no identity provider has taken.
 - `should_have_at_least_one_member` (Boolean) Can this team have no members? Owner team should have at least 1 member, other teams can have no members.
 - `slug` (String) Friendly globally unique name for your object.
 - `updated_at` (String) Date and Time when the object was updated.

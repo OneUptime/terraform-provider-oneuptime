@@ -20,6 +20,21 @@ resource "oneuptime_incident_measurement" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this incident measurement's place among the incident measurements of its project, lowest first. Setting it places this incident measurement and moves no other, so a configuration that numbers every incident measurement of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.incident_measurements`:
+
+```terraform
+order = index(local.incident_measurements, each.key) + 1
+```
+
+- Give each incident measurement a number of its own: two incident measurements at one number are shown the older first.
+- An incident measurement created without `order` goes after the last one of its project.
+- Deleting an incident measurement leaves a gap in the numbers, which changes nothing: incident measurements go by their numbers, not by counting.
+- Moving an incident measurement in the OneUptime Dashboard numbers the project's incident measurements 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -37,7 +52,7 @@ resource "oneuptime_incident_measurement" "example" {
 - `end_state_occurrence` (String) Which entry to use when the end state is entered more than once - First or Last. First matches the built-in incident metrics; Last follows a reopened incident to its final pass through that state. Allowed values: `First`, `Last`. Defaults to `First`.
 - `is_enabled` (Boolean) Whether this measurement is computed for new and updated incidents. Defaults to `true`.
 - `key` (String) Stable, machine readable identifier for this measurement, unique within the project: lowercase letters, numbers and hyphens. Leave it out and it is made from the name - Time to Detect becomes time-to-detect, with -2, -3 and so on added when another measurement already has it. It cannot be changed once the measurement is created, because it is used to build the metric name that every recorded point is written under; to rename a measurement, change the Name instead.
-- `order` (Number) Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 - `show_on_incident_view` (Boolean) Whether this measurement is shown on the incident page alongside the incident's other timings. Defaults to `true`.
 - `start_incident_state_id` (String) ID of the incident state this measurement starts at. Required only when the Start Anchor Type is State Entered. Cleared if that state is deleted, at which point the measurement reports Not Applicable rather than a wrong number. The ID of a `oneuptime_incident_state`.
 - `start_incident_state_role` (String) The role of the state this measurement starts at - Created, Acknowledged or Resolved. Used when the Start Anchor Type is State Role Entered. Resolving by role keeps the measurement working when a project renames or replaces the state that plays that part. Allowed values: `Created`, `Acknowledged`, `Resolved`.

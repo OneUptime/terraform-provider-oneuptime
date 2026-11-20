@@ -20,6 +20,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -54,6 +55,7 @@ type DetectionRuleResourceModel struct {
     ShouldCreateIncident types.Bool `tfsdk:"should_create_incident"`
     ShouldCreateCase types.Bool `tfsdk:"should_create_case"`
     RiskScore types.Number `tfsdk:"risk_score"`
+    ResponseSteps JSONSubsetValue `tfsdk:"response_steps"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
     IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
@@ -204,6 +206,19 @@ func (r *DetectionRuleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Number{
                     NumberKeepSameAPINumber(),
                     numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "response_steps": schema.StringAttribute{
+                MarkdownDescription: "What to do when the rule fires: up to 10 steps, each { id, phase, text }, where phase is Confirm, Contain or Fix. A case's Response Plan shows them ahead of its general steps. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
                 },
             },
             "alert_severity_id": schema.StringAttribute{
@@ -364,6 +379,9 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
     if !data.RiskScore.IsNull() && !data.RiskScore.IsUnknown() {
         requestDataMap["riskScore"] = r.bigFloatToFloat64(data.RiskScore.ValueBigFloat())
     }
+    if parsedResponseSteps := r.parseJSONField(data.ResponseSteps); parsedResponseSteps != nil {
+        requestDataMap["responseSteps"] = parsedResponseSteps
+    }
     if !data.AlertSeverityId.IsNull() && !data.AlertSeverityId.IsUnknown() {
         requestDataMap["alertSeverityId"] = data.AlertSeverityId.ValueString()
     }
@@ -431,6 +449,7 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
         "shouldCreateIncident": true,
         "shouldCreateCase": true,
         "riskScore": true,
+        "responseSteps": true,
         "alertSeverityId": true,
         "incidentSeverityId": true,
         "createdAt": true,
@@ -723,6 +742,50 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
         data.ShouldCreateCase = types.BoolValue(val)
     }
     data.RiskScore = numberFromAPI(data.RiskScore, dataMap["riskScore"])
+    if obj, ok := dataMap["responseSteps"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResponseSteps = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ResponseSteps = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ResponseSteps = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ResponseSteps = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ResponseSteps = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ResponseSteps = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ResponseSteps = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ResponseSteps = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ResponseSteps = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["responseSteps"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResponseSteps = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ResponseSteps = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["responseSteps"].(string); ok {
+        data.ResponseSteps = NewJSONSubsetValue(val)
+    } else {
+        data.ResponseSteps = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -958,6 +1021,8 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
     tflog.Trace(ctx, "created a resource")
 
 
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(forgetImportedFromServer(ctx, resp.Private)...)
     // Save data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -989,6 +1054,7 @@ func (r *DetectionRuleResource) Read(ctx context.Context, req resource.ReadReque
         "shouldCreateIncident": true,
         "shouldCreateCase": true,
         "riskScore": true,
+        "responseSteps": true,
         "alertSeverityId": true,
         "incidentSeverityId": true,
         "createdAt": true,
@@ -1282,6 +1348,50 @@ func (r *DetectionRuleResource) Read(ctx context.Context, req resource.ReadReque
         data.ShouldCreateCase = types.BoolValue(val)
     }
     data.RiskScore = numberFromAPI(data.RiskScore, dataMap["riskScore"])
+    if obj, ok := dataMap["responseSteps"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResponseSteps = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ResponseSteps = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ResponseSteps = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ResponseSteps = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ResponseSteps = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ResponseSteps = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ResponseSteps = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ResponseSteps = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ResponseSteps = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["responseSteps"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResponseSteps = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ResponseSteps = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["responseSteps"].(string); ok {
+        data.ResponseSteps = NewJSONSubsetValue(val)
+    } else {
+        data.ResponseSteps = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1531,6 +1641,11 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
     // Use the ID from the current state
     data.Id = state.Id
 
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "response_steps": !data.ResponseSteps.Equal(state.ResponseSteps),
+    }
+
     // What the configuration sets, and what Terraform planned (see keepPlannedValues).
     var config DetectionRuleResourceModel
     resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
@@ -1587,6 +1702,14 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
     if !data.RiskScore.IsUnknown() && !state.RiskScore.IsUnknown() && !data.RiskScore.Equal(state.RiskScore) {
         requestDataMap["riskScore"] = r.bigFloatToFloat64(data.RiskScore.ValueBigFloat())
     }
+    if !data.ResponseSteps.IsUnknown() && !state.ResponseSteps.IsUnknown() && !data.ResponseSteps.Equal(state.ResponseSteps) {
+        var responsestepsData interface{}
+        if err := json.Unmarshal([]byte(data.ResponseSteps.ValueString()), &responsestepsData); err == nil {
+            requestDataMap["responseSteps"] = responsestepsData
+        } else {
+            requestDataMap["responseSteps"] = data.ResponseSteps.ValueString()
+        }
+    }
     if !data.AlertSeverityId.IsUnknown() && !state.AlertSeverityId.IsUnknown() && !data.AlertSeverityId.Equal(state.AlertSeverityId) {
         requestDataMap["alertSeverityId"] = data.AlertSeverityId.ValueString()
     }
@@ -1631,6 +1754,7 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
         "shouldCreateIncident": true,
         "shouldCreateCase": true,
         "riskScore": true,
+        "responseSteps": true,
         "alertSeverityId": true,
         "incidentSeverityId": true,
         "createdAt": true,
@@ -1918,6 +2042,50 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
         data.ShouldCreateCase = types.BoolValue(val)
     }
     data.RiskScore = numberFromAPI(data.RiskScore, dataMap["riskScore"])
+    if obj, ok := dataMap["responseSteps"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResponseSteps = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ResponseSteps = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ResponseSteps = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ResponseSteps = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ResponseSteps = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ResponseSteps = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ResponseSteps = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ResponseSteps = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ResponseSteps = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["responseSteps"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ResponseSteps = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ResponseSteps = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["responseSteps"].(string); ok {
+        data.ResponseSteps = NewJSONSubsetValue(val)
+    } else {
+        data.ResponseSteps = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2148,6 +2316,9 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
     // Unconfigured attributes keep their planned value; see keepPlannedValues.
     r.keepPlannedValues(&data, &plan, &config)
 
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(keepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -2184,6 +2355,9 @@ func (r *DetectionRuleResource) Delete(ctx context.Context, req resource.DeleteR
 
 func (r *DetectionRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"response_steps"})...)
 }
 
 
@@ -2230,6 +2404,9 @@ func (r *DetectionRuleResource) keepPlannedValues(data *DetectionRuleResourceMod
     }
     if config.RiskScore.IsNull() && !plan.RiskScore.IsUnknown() {
         data.RiskScore = plan.RiskScore
+    }
+    if config.ResponseSteps.IsNull() && !plan.ResponseSteps.IsUnknown() {
+        data.ResponseSteps = plan.ResponseSteps
     }
     if config.AlertSeverityId.IsNull() && !plan.AlertSeverityId.IsUnknown() {
         data.AlertSeverityId = plan.AlertSeverityId

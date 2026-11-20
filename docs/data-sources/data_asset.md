@@ -36,6 +36,7 @@ data "oneuptime_data_asset" "by_id" {
 - `data_store_kind` (String) What kind of store this asset is in, such as PostgreSQL or Snowflake.
 - `data_store_name` (String) The name of the data store this asset is in.
 - `description` (String) What the asset holds and who relies on it, in your own words.
+- `entity_set_name` (String) A Microsoft Dataverse table's entity set: the name its Web API and Power BI's OData connectors call it by, such as accounts for the account table. Empty for every other database's tables.
 - `freshness_column` (String) A timestamp column that says when a row was written. Its latest value says when the table last changed, where the database's own counters cannot.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_dropped` (Boolean) The asset is gone from its store. It is kept with its history, and comes back if the table does.

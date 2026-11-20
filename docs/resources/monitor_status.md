@@ -19,6 +19,21 @@ resource "oneuptime_monitor_status" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`priority` is this monitor status's place among the monitor statuses of its project, lowest first. Setting it places this monitor status and moves no other, so a configuration that numbers every monitor status of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.monitor_statuses`:
+
+```terraform
+priority = index(local.monitor_statuses, each.key) + 1
+```
+
+- Give each monitor status a number of its own: two monitor statuses at one number are shown the older first.
+- A monitor status created without `priority` goes just above the offline status: it takes the offline status's number, and the offline status and the monitor statuses right below it step down one. Give it `priority` when the configuration numbers the others, or the next plan shows theirs changed.
+- Deleting a monitor status leaves a gap in the numbers, which changes nothing: monitor statuses go by their numbers, not by counting.
+- Moving a monitor status in the OneUptime Dashboard numbers the project's monitor statuses 1..n again; the next plan shows that as changes to `priority`.
+
+
 ## Schema
 
 ### Required
@@ -32,7 +47,7 @@ resource "oneuptime_monitor_status" "example" {
 - `is_archived` (Boolean) Archived statuses stay on the monitors that are in them, but can't be picked again. The operational and offline statuses can't be archived. Defaults to `false`.
 - `is_offline_state` (Boolean) Is this monitor in offline state? Defaults to `false`.
 - `is_operational_state` (Boolean) Is this monitor in operational state? Defaults to `false`.
-- `priority` (Number) Where this status sits in the project's list of monitor statuses, from the healthiest (the lowest number) down to the worst: where monitors are shown together, as on a status page or in a monitor group, the status furthest down the list wins. A new status without a number goes just above the offline status. Setting a number moves the status to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.
+- `priority` (Number) Where this status sits in the project's list of monitor statuses, from the healthiest (the lowest number) down to the worst: where monitors are shown together, as on a status page or in a monitor group, the status furthest down the list wins. A new status without a number goes just above the offline status. Setting a number places the status there and moves no other: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 
 ### Read-Only
 

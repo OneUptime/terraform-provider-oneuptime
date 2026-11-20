@@ -46,6 +46,7 @@ resource "oneuptime_probe" "example" {
 - `id` (String) Unique identifier for the resource.
 - `packet_capture_capability` (String) What the probe last reported about packet capture: whether it is turned on (PROBE_PACKET_CAPTURE_ENABLED on the probe), whether tcpdump is installed, the network interfaces it can capture on, and the limits its operator set. Managed by the probe. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of the project the probe belongs to. A global probe belongs to none.
+- `reported_version` (String) The OneUptime release this probe last said it runs. Set by OneUptime from the probe's own requests. Empty until the probe connects, and for a probe older than 17.0.1, which does not say.
 - `slug` (String) Friendly globally unique name for your object.
 - `updated_at` (String) Date and Time when the object was updated.
 

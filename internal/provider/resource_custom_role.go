@@ -16,6 +16,8 @@ import (
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -43,6 +45,8 @@ type CustomRoleResourceModel struct {
     Slug types.String `tfsdk:"slug"`
     PermissionCount types.Number `tfsdk:"permission_count"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    WorkflowsRunAsOnDelete types.String `tfsdk:"workflows_run_as_on_delete"`
+    WorkflowsRunAsCustomRoleIdOnDelete types.String `tfsdk:"workflows_run_as_custom_role_id_on_delete"`
 }
 
 func (r *CustomRoleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -114,6 +118,18 @@ func (r *CustomRoleResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+            },
+            "workflows_run_as_on_delete": schema.StringAttribute{
+                MarkdownDescription: "What the workflows that run as this custom role run as once it is deleted: \"Default\", the default permissions, or \"CustomRole\", another custom role you could give a team, named in `workflows_run_as_custom_role_id_on_delete`. Never Project Owner: deleting a role never raises what a workflow can do. Sent only when Terraform deletes the custom role, and changes nothing before: set it, and apply, before you destroy the custom role.",
+                Optional: true,
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Default", "CustomRole"),
+                },
+            },
+            "workflows_run_as_custom_role_id_on_delete": schema.StringAttribute{
+                MarkdownDescription: "The ID of the other custom role the workflows run as, when `workflows_run_as_on_delete` is \"CustomRole\": one you could give a team, and not the role being deleted. The ID of a `oneuptime_custom_role`. Sent only when Terraform deletes the custom role, and changes nothing before: set it, and apply, before you destroy the custom role.",
+                Optional: true,
+                Validators: append(recordIDValidators("oneuptime_custom_role"), deleteChoiceRequiredWith("workflows_run_as_on_delete", "CustomRole")),
             },
         },
     }
@@ -1104,8 +1120,14 @@ func (r *CustomRoleResource) Delete(ctx context.Context, req resource.DeleteRequ
         return
     }
 
+    // What the delete says besides the custom role, from state (see deletechoices.go).
+    deleteChoices := []deleteChoice{
+        {key: "workflowsRunAs", attribute: "workflows_run_as_on_delete", value: data.WorkflowsRunAsOnDelete},
+        {key: "workflowsRunAsCustomRoleId", attribute: "workflows_run_as_custom_role_id_on_delete", value: data.WorkflowsRunAsCustomRoleIdOnDelete},
+    }
+
     // Make API call
-    httpResp, err := r.client.Delete(ctx, "/custom-role/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.DeleteWithBody(ctx, "/custom-role/" + data.Id.ValueString() + "", deleteChoicesBody(deleteChoices))
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete custom_role, got error: %s", err))
         return
@@ -1115,7 +1137,7 @@ func (r *CustomRoleResource) Delete(ctx context.Context, req resource.DeleteRequ
     // orphans real infrastructure. 404 means it is already gone.
     if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
         err = r.client.ParseResponse(httpResp, nil)
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete custom_role: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete custom_role: %s%s", err, deleteChoicesHint(err, deleteChoices, "To say it in Terraform, set workflows_run_as_on_delete on this oneuptime_custom_role - with workflows_run_as_custom_role_id_on_delete when workflows_run_as_on_delete is \"CustomRole\" - and run terraform apply, then destroy it again: Terraform deletes a resource with what its state holds.")))
         return
     }
     if httpResp.Body != nil {

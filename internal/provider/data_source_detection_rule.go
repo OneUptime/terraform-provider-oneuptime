@@ -44,6 +44,7 @@ type DetectionRuleDataSourceModel struct {
     ShouldCreateIncident types.Bool `tfsdk:"should_create_incident"`
     ShouldCreateCase types.Bool `tfsdk:"should_create_case"`
     RiskScore types.Number `tfsdk:"risk_score"`
+    ResponseSteps types.String `tfsdk:"response_steps"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
     IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     LastEvaluatedAt types.String `tfsdk:"last_evaluated_at"`
@@ -146,6 +147,10 @@ func (d *DetectionRuleDataSource) Schema(ctx context.Context, req datasource.Sch
             "risk_score": schema.NumberAttribute{
                 MarkdownDescription: "What a match adds to the risk of the user, host or address it is about, from 0 to 100. Empty: by the rule's level.",
                 Optional: true,
+                Computed: true,
+            },
+            "response_steps": schema.StringAttribute{
+                MarkdownDescription: "What to do when the rule fires: up to 10 steps, each { id, phase, text }, where phase is Confirm, Contain or Fix. A case's Response Plan shows them ahead of its general steps. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "alert_severity_id": schema.StringAttribute{
@@ -324,6 +329,7 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
         "shouldCreateIncident": true,
         "shouldCreateCase": true,
         "riskScore": true,
+        "responseSteps": true,
         "alertSeverityId": true,
         "incidentSeverityId": true,
         "lastEvaluatedAt": true,
@@ -640,6 +646,30 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
         data.ShouldCreateCase = types.BoolNull()
     }
     data.RiskScore = numberFromAPI(data.RiskScore, item["riskScore"])
+    if obj, ok := item["responseSteps"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResponseSteps = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ResponseSteps = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ResponseSteps = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ResponseSteps = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResponseSteps = types.StringNull()
+        }
+    } else if arr, ok := item["responseSteps"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ResponseSteps = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResponseSteps = types.StringNull()
+        }
+    } else if val, ok := item["responseSteps"].(string); ok {
+        data.ResponseSteps = types.StringValue(val)
+    } else {
+        data.ResponseSteps = types.StringNull()
+    }
     if obj, ok := item["alertSeverityId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.AlertSeverityId = types.StringValue(val)

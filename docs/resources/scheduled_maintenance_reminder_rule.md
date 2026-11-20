@@ -19,6 +19,21 @@ resource "oneuptime_scheduled_maintenance_reminder_rule" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this scheduled maintenance reminder rule's place among the scheduled maintenance reminder rules of its project, lowest first. Setting it places this scheduled maintenance reminder rule and moves no other, so a configuration that numbers every scheduled maintenance reminder rule of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.scheduled_maintenance_reminder_rules`:
+
+```terraform
+order = index(local.scheduled_maintenance_reminder_rules, each.key) + 1
+```
+
+- Give each scheduled maintenance reminder rule a number of its own: two scheduled maintenance reminder rules at one number are shown the older first.
+- A scheduled maintenance reminder rule created without `order` goes after the last one of its project.
+- Deleting a scheduled maintenance reminder rule leaves a gap in the numbers, which changes nothing: scheduled maintenance reminder rules go by their numbers, not by counting.
+- Moving a scheduled maintenance reminder rule in the OneUptime Dashboard numbers the project's scheduled maintenance reminder rules 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -32,7 +47,7 @@ resource "oneuptime_scheduled_maintenance_reminder_rule" "example" {
 - `description` (String) Description of this reminder rule.
 - `is_enabled` (Boolean) Whether this reminder rule is enabled. Defaults to `true`.
 - `labels` (Set of String) Only apply this reminder rule to maintenance events with these labels. Leave empty to match all events. IDs of `oneuptime_label` resources.
-- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 - `remind_while_scheduled` (Boolean) Send reminders while the event is still scheduled (before it starts). When disabled, reminders only begin once the event has started. Defaults to `false`.
 - `stop_reminders_on_state` (String) Stop sending reminders once the maintenance event reaches this state. Select Ongoing to stop reminders when the event starts, or Completed to keep reminding until the event is completed. Ongoing needs Remind While Event is Scheduled on: a rule that waits for the event to start and stops when it starts would never remind, so it is refused. Allowed values: `Ongoing`, `Completed`. Defaults to `Completed`.
 

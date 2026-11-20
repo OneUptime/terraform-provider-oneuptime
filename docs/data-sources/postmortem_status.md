@@ -37,7 +37,7 @@ data "oneuptime_postmortem_status" "by_id" {
 - `is_draft_status` (Boolean) Is it the status a postmortem moves to once its note is written? A project has one, and it can't be deleted or archived.
 - `is_not_started_status` (Boolean) Is it the status a new incident's postmortem starts in? A project has one, and it can't be deleted or archived.
 - `name` (String) Any friendly name of this object.
-- `order` (Number) Where this status sits in the project's list of postmortem statuses: 1 is the top. A postmortem in the completed status, or in a status below it, counts as done; one above it is still owed. So the not started, draft and completed statuses have to stay in that order. A new status without a number goes just above the completed status. Setting a number moves the status to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this status sits in the project's list of postmortem statuses: 1 is the top. A postmortem in the completed status, or in a status below it, counts as done; one above it is still owed. So the not started, draft and completed statuses have to stay in that order. A new status without a number goes just above the completed status. Setting a number places the status there and moves no other: two at one number are read the older first. In the dashboard, drag the rows to reorder them.
 - `slug` (String) Friendly globally unique name for your object.
 
 ### Read-Only

@@ -56,6 +56,9 @@ type RumApplicationResourceModel struct {
     SessionReplayMaskingMode types.String `tfsdk:"session_replay_masking_mode"`
     SessionReplayMaskSelectors JSONSubsetValue `tfsdk:"session_replay_mask_selectors"`
     SessionReplayBlockSelectors JSONSubsetValue `tfsdk:"session_replay_block_selectors"`
+    SessionReplayRecordOnlyPages JSONSubsetValue `tfsdk:"session_replay_record_only_pages"`
+    SessionReplayNeverRecordPages JSONSubsetValue `tfsdk:"session_replay_never_record_pages"`
+    SessionReplayReadableEventProperties JSONSubsetValue `tfsdk:"session_replay_readable_event_properties"`
     SessionReplayIgnoreErrorPatterns JSONSubsetValue `tfsdk:"session_replay_ignore_error_patterns"`
     SessionReplayTracePropagationOrigins JSONSubsetValue `tfsdk:"session_replay_trace_propagation_origins"`
     SessionReplaySameOriginTracePropagation types.Bool `tfsdk:"session_replay_same_origin_trace_propagation"`
@@ -209,6 +212,45 @@ func (r *RumApplicationResource) schemaDefinition() schema.Schema {
             },
             "session_replay_block_selectors": schema.StringAttribute{
                 MarkdownDescription: "CSS selectors the recorder excludes from the DOM snapshot entirely, so the subtree is never captured rather than captured and masked. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
+            "session_replay_record_only_pages": schema.StringAttribute{
+                MarkdownDescription: "Page paths the browser recorder records, a star standing for any characters, such as /checkout*. Empty records every page. Any other page is not recorded at all. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
+            "session_replay_never_record_pages": schema.StringAttribute{
+                MarkdownDescription: "Page paths the browser recorder never records, even when the record-only list names them, a star standing for any characters, such as /admin*. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
+            "session_replay_readable_event_properties": schema.StringAttribute{
+                MarkdownDescription: "Event property keys whose values stay as written under every masking mode, but only while a value is a short token (letters, digits and _ . : / -, at most 32 characters). Matched as written. Any other value is masked. A JSON value: write it with `jsonencode()`.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -613,6 +655,15 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
     if parsedSessionReplayBlockSelectors := r.parseJSONField(data.SessionReplayBlockSelectors); parsedSessionReplayBlockSelectors != nil {
         requestDataMap["sessionReplayBlockSelectors"] = parsedSessionReplayBlockSelectors
     }
+    if parsedSessionReplayRecordOnlyPages := r.parseJSONField(data.SessionReplayRecordOnlyPages); parsedSessionReplayRecordOnlyPages != nil {
+        requestDataMap["sessionReplayRecordOnlyPages"] = parsedSessionReplayRecordOnlyPages
+    }
+    if parsedSessionReplayNeverRecordPages := r.parseJSONField(data.SessionReplayNeverRecordPages); parsedSessionReplayNeverRecordPages != nil {
+        requestDataMap["sessionReplayNeverRecordPages"] = parsedSessionReplayNeverRecordPages
+    }
+    if parsedSessionReplayReadableEventProperties := r.parseJSONField(data.SessionReplayReadableEventProperties); parsedSessionReplayReadableEventProperties != nil {
+        requestDataMap["sessionReplayReadableEventProperties"] = parsedSessionReplayReadableEventProperties
+    }
     if parsedSessionReplayIgnoreErrorPatterns := r.parseJSONField(data.SessionReplayIgnoreErrorPatterns); parsedSessionReplayIgnoreErrorPatterns != nil {
         requestDataMap["sessionReplayIgnoreErrorPatterns"] = parsedSessionReplayIgnoreErrorPatterns
     }
@@ -730,6 +781,9 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         "sessionReplayMaskingMode": true,
         "sessionReplayMaskSelectors": true,
         "sessionReplayBlockSelectors": true,
+        "sessionReplayRecordOnlyPages": true,
+        "sessionReplayNeverRecordPages": true,
+        "sessionReplayReadableEventProperties": true,
         "sessionReplayIgnoreErrorPatterns": true,
         "sessionReplayTracePropagationOrigins": true,
         "sessionReplaySameOriginTracePropagation": true,
@@ -1153,6 +1207,138 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         data.SessionReplayBlockSelectors = NewJSONSubsetValue(val)
     } else {
         data.SessionReplayBlockSelectors = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["sessionReplayRecordOnlyPages"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayRecordOnlyPages"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["sessionReplayRecordOnlyPages"].(string); ok {
+        data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(val)
+    } else {
+        data.SessionReplayRecordOnlyPages = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["sessionReplayNeverRecordPages"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionReplayNeverRecordPages = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SessionReplayNeverRecordPages = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SessionReplayNeverRecordPages = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SessionReplayNeverRecordPages = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayNeverRecordPages = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SessionReplayNeverRecordPages = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayNeverRecordPages = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayNeverRecordPages = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayNeverRecordPages = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayNeverRecordPages"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayNeverRecordPages = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayNeverRecordPages = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["sessionReplayNeverRecordPages"].(string); ok {
+        data.SessionReplayNeverRecordPages = NewJSONSubsetValue(val)
+    } else {
+        data.SessionReplayNeverRecordPages = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["sessionReplayReadableEventProperties"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionReplayReadableEventProperties = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SessionReplayReadableEventProperties = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SessionReplayReadableEventProperties = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SessionReplayReadableEventProperties = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayReadableEventProperties = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SessionReplayReadableEventProperties = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayReadableEventProperties = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayReadableEventProperties = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayReadableEventProperties = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayReadableEventProperties"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayReadableEventProperties = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayReadableEventProperties = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["sessionReplayReadableEventProperties"].(string); ok {
+        data.SessionReplayReadableEventProperties = NewJSONSubsetValue(val)
+    } else {
+        data.SessionReplayReadableEventProperties = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["sessionReplayIgnoreErrorPatterns"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
@@ -1949,6 +2135,9 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         "sessionReplayMaskingMode": true,
         "sessionReplayMaskSelectors": true,
         "sessionReplayBlockSelectors": true,
+        "sessionReplayRecordOnlyPages": true,
+        "sessionReplayNeverRecordPages": true,
+        "sessionReplayReadableEventProperties": true,
         "sessionReplayIgnoreErrorPatterns": true,
         "sessionReplayTracePropagationOrigins": true,
         "sessionReplaySameOriginTracePropagation": true,
@@ -2373,6 +2562,138 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         data.SessionReplayBlockSelectors = NewJSONSubsetValue(val)
     } else {
         data.SessionReplayBlockSelectors = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["sessionReplayRecordOnlyPages"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayRecordOnlyPages"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["sessionReplayRecordOnlyPages"].(string); ok {
+        data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(val)
+    } else {
+        data.SessionReplayRecordOnlyPages = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["sessionReplayNeverRecordPages"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionReplayNeverRecordPages = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SessionReplayNeverRecordPages = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SessionReplayNeverRecordPages = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SessionReplayNeverRecordPages = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayNeverRecordPages = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SessionReplayNeverRecordPages = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayNeverRecordPages = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayNeverRecordPages = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayNeverRecordPages = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayNeverRecordPages"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayNeverRecordPages = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayNeverRecordPages = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["sessionReplayNeverRecordPages"].(string); ok {
+        data.SessionReplayNeverRecordPages = NewJSONSubsetValue(val)
+    } else {
+        data.SessionReplayNeverRecordPages = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["sessionReplayReadableEventProperties"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionReplayReadableEventProperties = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SessionReplayReadableEventProperties = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SessionReplayReadableEventProperties = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SessionReplayReadableEventProperties = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayReadableEventProperties = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SessionReplayReadableEventProperties = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayReadableEventProperties = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayReadableEventProperties = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayReadableEventProperties = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayReadableEventProperties"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayReadableEventProperties = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayReadableEventProperties = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["sessionReplayReadableEventProperties"].(string); ok {
+        data.SessionReplayReadableEventProperties = NewJSONSubsetValue(val)
+    } else {
+        data.SessionReplayReadableEventProperties = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["sessionReplayIgnoreErrorPatterns"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
@@ -3162,6 +3483,9 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         "session_replay_frustration_signals": !data.SessionReplayFrustrationSignals.Equal(state.SessionReplayFrustrationSignals),
         "session_replay_ignore_error_patterns": !data.SessionReplayIgnoreErrorPatterns.Equal(state.SessionReplayIgnoreErrorPatterns),
         "session_replay_mask_selectors": !data.SessionReplayMaskSelectors.Equal(state.SessionReplayMaskSelectors),
+        "session_replay_never_record_pages": !data.SessionReplayNeverRecordPages.Equal(state.SessionReplayNeverRecordPages),
+        "session_replay_readable_event_properties": !data.SessionReplayReadableEventProperties.Equal(state.SessionReplayReadableEventProperties),
+        "session_replay_record_only_pages": !data.SessionReplayRecordOnlyPages.Equal(state.SessionReplayRecordOnlyPages),
         "session_replay_trace_propagation_origins": !data.SessionReplayTracePropagationOrigins.Equal(state.SessionReplayTracePropagationOrigins),
         "telemetry_retention_config": !data.TelemetryRetentionConfig.Equal(state.TelemetryRetentionConfig),
     }
@@ -3220,6 +3544,30 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
             requestDataMap["sessionReplayBlockSelectors"] = sessionreplayblockselectorsData
         } else {
             requestDataMap["sessionReplayBlockSelectors"] = data.SessionReplayBlockSelectors.ValueString()
+        }
+    }
+    if !data.SessionReplayRecordOnlyPages.IsUnknown() && !state.SessionReplayRecordOnlyPages.IsUnknown() && !data.SessionReplayRecordOnlyPages.Equal(state.SessionReplayRecordOnlyPages) {
+        var sessionreplayrecordonlypagesData interface{}
+        if err := json.Unmarshal([]byte(data.SessionReplayRecordOnlyPages.ValueString()), &sessionreplayrecordonlypagesData); err == nil {
+            requestDataMap["sessionReplayRecordOnlyPages"] = sessionreplayrecordonlypagesData
+        } else {
+            requestDataMap["sessionReplayRecordOnlyPages"] = data.SessionReplayRecordOnlyPages.ValueString()
+        }
+    }
+    if !data.SessionReplayNeverRecordPages.IsUnknown() && !state.SessionReplayNeverRecordPages.IsUnknown() && !data.SessionReplayNeverRecordPages.Equal(state.SessionReplayNeverRecordPages) {
+        var sessionreplayneverrecordpagesData interface{}
+        if err := json.Unmarshal([]byte(data.SessionReplayNeverRecordPages.ValueString()), &sessionreplayneverrecordpagesData); err == nil {
+            requestDataMap["sessionReplayNeverRecordPages"] = sessionreplayneverrecordpagesData
+        } else {
+            requestDataMap["sessionReplayNeverRecordPages"] = data.SessionReplayNeverRecordPages.ValueString()
+        }
+    }
+    if !data.SessionReplayReadableEventProperties.IsUnknown() && !state.SessionReplayReadableEventProperties.IsUnknown() && !data.SessionReplayReadableEventProperties.Equal(state.SessionReplayReadableEventProperties) {
+        var sessionreplayreadableeventpropertiesData interface{}
+        if err := json.Unmarshal([]byte(data.SessionReplayReadableEventProperties.ValueString()), &sessionreplayreadableeventpropertiesData); err == nil {
+            requestDataMap["sessionReplayReadableEventProperties"] = sessionreplayreadableeventpropertiesData
+        } else {
+            requestDataMap["sessionReplayReadableEventProperties"] = data.SessionReplayReadableEventProperties.ValueString()
         }
     }
     if !data.SessionReplayIgnoreErrorPatterns.IsUnknown() && !state.SessionReplayIgnoreErrorPatterns.IsUnknown() && !data.SessionReplayIgnoreErrorPatterns.Equal(state.SessionReplayIgnoreErrorPatterns) {
@@ -3341,6 +3689,9 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         "sessionReplayMaskingMode": true,
         "sessionReplayMaskSelectors": true,
         "sessionReplayBlockSelectors": true,
+        "sessionReplayRecordOnlyPages": true,
+        "sessionReplayNeverRecordPages": true,
+        "sessionReplayReadableEventProperties": true,
         "sessionReplayIgnoreErrorPatterns": true,
         "sessionReplayTracePropagationOrigins": true,
         "sessionReplaySameOriginTracePropagation": true,
@@ -3759,6 +4110,138 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         data.SessionReplayBlockSelectors = NewJSONSubsetValue(val)
     } else {
         data.SessionReplayBlockSelectors = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["sessionReplayRecordOnlyPages"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayRecordOnlyPages"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayRecordOnlyPages = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["sessionReplayRecordOnlyPages"].(string); ok {
+        data.SessionReplayRecordOnlyPages = NewJSONSubsetValue(val)
+    } else {
+        data.SessionReplayRecordOnlyPages = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["sessionReplayNeverRecordPages"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionReplayNeverRecordPages = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SessionReplayNeverRecordPages = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SessionReplayNeverRecordPages = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SessionReplayNeverRecordPages = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayNeverRecordPages = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SessionReplayNeverRecordPages = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayNeverRecordPages = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayNeverRecordPages = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayNeverRecordPages = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayNeverRecordPages"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayNeverRecordPages = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayNeverRecordPages = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["sessionReplayNeverRecordPages"].(string); ok {
+        data.SessionReplayNeverRecordPages = NewJSONSubsetValue(val)
+    } else {
+        data.SessionReplayNeverRecordPages = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["sessionReplayReadableEventProperties"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionReplayReadableEventProperties = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SessionReplayReadableEventProperties = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SessionReplayReadableEventProperties = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SessionReplayReadableEventProperties = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayReadableEventProperties = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SessionReplayReadableEventProperties = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SessionReplayReadableEventProperties = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SessionReplayReadableEventProperties = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayReadableEventProperties = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["sessionReplayReadableEventProperties"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SessionReplayReadableEventProperties = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SessionReplayReadableEventProperties = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["sessionReplayReadableEventProperties"].(string); ok {
+        data.SessionReplayReadableEventProperties = NewJSONSubsetValue(val)
+    } else {
+        data.SessionReplayReadableEventProperties = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["sessionReplayIgnoreErrorPatterns"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
@@ -4562,7 +5045,7 @@ func (r *RumApplicationResource) ImportState(ctx context.Context, req resource.I
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
     // These hold the record as OneUptime keeps it, keys it fills in itself
     // included, until an update writes them (see importsettle.go).
-    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"product_analytics_user_property_keys", "session_replay_allowed_origins", "session_replay_block_selectors", "session_replay_frustration_signals", "session_replay_ignore_error_patterns", "session_replay_mask_selectors", "session_replay_trace_propagation_origins", "telemetry_retention_config"})...)
+    resp.Diagnostics.Append(markImportedFromServer(ctx, resp.Private, []string{"product_analytics_user_property_keys", "session_replay_allowed_origins", "session_replay_block_selectors", "session_replay_frustration_signals", "session_replay_ignore_error_patterns", "session_replay_mask_selectors", "session_replay_never_record_pages", "session_replay_readable_event_properties", "session_replay_record_only_pages", "session_replay_trace_propagation_origins", "telemetry_retention_config"})...)
 }
 
 
@@ -4597,6 +5080,15 @@ func (r *RumApplicationResource) keepPlannedValues(data *RumApplicationResourceM
     }
     if config.SessionReplayBlockSelectors.IsNull() && !plan.SessionReplayBlockSelectors.IsUnknown() {
         data.SessionReplayBlockSelectors = plan.SessionReplayBlockSelectors
+    }
+    if config.SessionReplayRecordOnlyPages.IsNull() && !plan.SessionReplayRecordOnlyPages.IsUnknown() {
+        data.SessionReplayRecordOnlyPages = plan.SessionReplayRecordOnlyPages
+    }
+    if config.SessionReplayNeverRecordPages.IsNull() && !plan.SessionReplayNeverRecordPages.IsUnknown() {
+        data.SessionReplayNeverRecordPages = plan.SessionReplayNeverRecordPages
+    }
+    if config.SessionReplayReadableEventProperties.IsNull() && !plan.SessionReplayReadableEventProperties.IsUnknown() {
+        data.SessionReplayReadableEventProperties = plan.SessionReplayReadableEventProperties
     }
     if config.SessionReplayIgnoreErrorPatterns.IsNull() && !plan.SessionReplayIgnoreErrorPatterns.IsUnknown() {
         data.SessionReplayIgnoreErrorPatterns = plan.SessionReplayIgnoreErrorPatterns

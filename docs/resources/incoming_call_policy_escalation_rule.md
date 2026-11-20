@@ -19,6 +19,21 @@ resource "oneuptime_incoming_call_policy_escalation_rule" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this incoming call policy escalation rule's place among the incoming call policy escalation rules of its incoming call policy, lowest first. Setting it places this incoming call policy escalation rule and moves no other, so a configuration that numbers every incoming call policy escalation rule of an incoming call policy is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.incoming_call_policy_escalation_rules`:
+
+```terraform
+order = index(local.incoming_call_policy_escalation_rules, each.key) + 1
+```
+
+- Give each incoming call policy escalation rule a number of its own: two incoming call policy escalation rules at one number are shown the older first.
+- An incoming call policy escalation rule created without `order` goes after the last one of its incoming call policy.
+- Deleting an incoming call policy escalation rule leaves a gap in the numbers, which changes nothing: incoming call policy escalation rules go by their numbers, not by counting.
+- Moving an incoming call policy escalation rule in the OneUptime Dashboard numbers the incoming call policy's incoming call policy escalation rules 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -31,7 +46,7 @@ resource "oneuptime_incoming_call_policy_escalation_rule" "example" {
 - `escalate_after_seconds` (Number) How long, in seconds, the phone rings before the call moves on to the next rule. 20 when left out; a time below 5 or above 600 rings for 5 or 600, the limits Twilio takes. Defaults to `20`.
 - `name` (String) Rule name (e.g., 'Primary On-Call', 'Backup Engineer').
 - `on_call_duty_policy_schedule_id` (String) ID of the on-call schedule to route to (mutually exclusive with userId). The ID of a `oneuptime_on_call_policy_schedule`.
-- `order` (Number) Where this rule sits in the escalation, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this rule sits in the escalation, lowest number first. A new rule is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 - `user_email` (String) The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
 - `user_id` (String) ID of the user to route to directly (mutually exclusive with onCallDutyPolicyScheduleId). The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 

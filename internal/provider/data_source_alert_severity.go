@@ -93,7 +93,7 @@ func (d *AlertSeverityDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Where this severity ranks among the project's alert severities: 1 is the most severe. A new severity without a number goes to the end of the list. Setting a number moves the severity to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.",
+                MarkdownDescription: "Where this severity ranks among the project's alert severities: 1 is the most severe. A new severity without a number goes to the end of the list. Setting a number places the severity there and moves no other: two at one number are read the older first. In the dashboard, drag the rows to reorder them.",
                 Optional: true,
                 Computed: true,
             },

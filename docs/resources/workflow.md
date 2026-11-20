@@ -32,6 +32,8 @@ resource "oneuptime_workflow" "example" {
 - `is_archived` (Boolean) Archived workflows are hidden from the Workflows list and never run, from any trigger. Unarchiving restores them as they were. Defaults to `false`.
 - `is_enabled` (Boolean) Is this workflow enabled? Defaults to `false`.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `run_as` (String) What the workflow's steps can do in the project. Default: what a Project Admin can, except change who has access. ProjectOwner: what a Project Owner can. CustomRole: exactly what the custom role in runAsCustomRoleId allows. Only a person or a project API key that has those permissions can choose anything but Default, and only such a person or key can then change the workflow or run it by hand. Allowed values: `Default`, `ProjectOwner`, `CustomRole`. Defaults to `Default`.
+- `run_as_custom_role_id` (String) ID of the custom role the workflow's steps act as, when Run As is CustomRole. Empty otherwise. The ID of a `oneuptime_custom_role`.
 - `webhook_secret_key` (String, Sensitive) The secret part of the Webhook trigger's URL (/workflow/trigger/<key>). Anyone who has the URL can start the workflow, so only people who can edit the workflow can read the key. Generated when the workflow is created; set a new value to reset the URL.
 - `webhook_signing_secret` (String, Sensitive) The signing secret of a trigger that checks the signature of each request, such as the Huntress trigger's endpoint secret (whsec_...). A request that is not signed with it starts nothing. Encrypted at rest and never returned by the API.
 
@@ -48,6 +50,9 @@ resource "oneuptime_workflow" "example" {
 - `last_webhook_error_at` (String) When the last webhook error happened.
 - `last_webhook_request_at` (String) When a request signed with the webhook signing secret last arrived. Empty until the sender's first one.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `run_as_given_at` (String) When the person in runAsGivenByUserId last gave the workflow its permissions. Set by OneUptime.
+- `run_as_given_by_api_key_id` (String) ID of the project API key whose permissions the workflow runs with when it runs as more than Default and a key gave them. Set by OneUptime. The ID of a `oneuptime_api_key`.
+- `run_as_given_by_user_id` (String) ID of the person whose permissions the workflow runs with when it runs as more than Default. Set by OneUptime. The ID of a `oneuptime_user` (see the data source).
 - `slug` (String) Friendly globally unique name for your object.
 - `updated_at` (String) Date and Time when the object was updated.
 

@@ -46,6 +46,7 @@ resource "oneuptime_data_asset" "example" {
 - `data_store_name` (String) The name of the data store this asset is in.
 - `dbt_node` (String) The dbt model, seed, snapshot or source that is this table, from the project's last uploaded artifacts: its id, materialization, tags, owner, and how its last build went. A JSON value: read it with `jsondecode()`.
 - `dropped_at` (String) When OneUptime saw that the asset was gone.
+- `entity_set_name` (String) A Microsoft Dataverse table's entity set: the name its Web API and Power BI's OData connectors call it by, such as accounts for the account table. Empty for every other database's tables.
 - `first_seen_at` (String) When OneUptime first found the asset.
 - `id` (String) Unique identifier for the resource.
 - `is_dropped` (Boolean) The asset is gone from its store. It is kept with its history, and comes back if the table does.

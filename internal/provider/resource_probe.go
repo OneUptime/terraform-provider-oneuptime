@@ -52,6 +52,7 @@ type ProbeResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     Slug types.String `tfsdk:"slug"`
+    ReportedVersion types.String `tfsdk:"reported_version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ConnectionStatus types.String `tfsdk:"connection_status"`
     ChecksLateSince RFC3339Value `tfsdk:"checks_late_since"`
@@ -178,6 +179,10 @@ func (r *ProbeResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+            },
+            "reported_version": schema.StringAttribute{
+                MarkdownDescription: "The OneUptime release this probe last said it runs. Set by OneUptime from the probe's own requests. Empty until the probe connects, and for a probe older than 17.0.1, which does not say.",
+                Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "User ID who created this object (if this object was created by a User).",
@@ -361,6 +366,7 @@ func (r *ProbeResource) Create(ctx context.Context, req resource.CreateRequest, 
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
+        "reportedVersion": true,
         "createdByUserId": true,
         "connectionStatus": true,
         "checksLateSince": true,
@@ -745,6 +751,50 @@ func (r *ProbeResource) Create(ctx context.Context, req resource.CreateRequest, 
     } else {
         data.Slug = types.StringNull()
     }
+    if obj, ok := dataMap["reportedVersion"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ReportedVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ReportedVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ReportedVersion = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ReportedVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.ReportedVersion = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ReportedVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.ReportedVersion = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ReportedVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.ReportedVersion = types.StringNull()
+        }
+    } else if arr, ok := dataMap["reportedVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ReportedVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.ReportedVersion = types.StringNull()
+        }
+    } else if val, ok := dataMap["reportedVersion"].(string); ok {
+        data.ReportedVersion = types.StringValue(val)
+    } else {
+        data.ReportedVersion = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -964,6 +1014,7 @@ func (r *ProbeResource) Read(ctx context.Context, req resource.ReadRequest, resp
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
+        "reportedVersion": true,
         "createdByUserId": true,
         "connectionStatus": true,
         "checksLateSince": true,
@@ -1349,6 +1400,50 @@ func (r *ProbeResource) Read(ctx context.Context, req resource.ReadRequest, resp
     } else {
         data.Slug = types.StringNull()
     }
+    if obj, ok := dataMap["reportedVersion"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ReportedVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ReportedVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ReportedVersion = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ReportedVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.ReportedVersion = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ReportedVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.ReportedVersion = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ReportedVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.ReportedVersion = types.StringNull()
+        }
+    } else if arr, ok := dataMap["reportedVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ReportedVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.ReportedVersion = types.StringNull()
+        }
+    } else if val, ok := dataMap["reportedVersion"].(string); ok {
+        data.ReportedVersion = types.StringValue(val)
+    } else {
+        data.ReportedVersion = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1629,6 +1724,7 @@ func (r *ProbeResource) Update(ctx context.Context, req resource.UpdateRequest, 
         "createdAt": true,
         "updatedAt": true,
         "slug": true,
+        "reportedVersion": true,
         "createdByUserId": true,
         "connectionStatus": true,
         "checksLateSince": true,
@@ -2007,6 +2103,50 @@ func (r *ProbeResource) Update(ctx context.Context, req resource.UpdateRequest, 
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
+    }
+    if obj, ok := dataMap["reportedVersion"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ReportedVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ReportedVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ReportedVersion = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ReportedVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.ReportedVersion = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ReportedVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.ReportedVersion = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ReportedVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.ReportedVersion = types.StringNull()
+        }
+    } else if arr, ok := dataMap["reportedVersion"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ReportedVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.ReportedVersion = types.StringNull()
+        }
+    } else if val, ok := dataMap["reportedVersion"].(string); ok {
+        data.ReportedVersion = types.StringValue(val)
+    } else {
+        data.ReportedVersion = types.StringNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

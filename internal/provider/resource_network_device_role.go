@@ -118,7 +118,7 @@ func (r *NetworkDeviceRoleResource) schemaDefinition() schema.Schema {
                 },
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Where this role appears in the role picker and the topology map legend, lowest number first. A new role is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.",
+                MarkdownDescription: "Where this role appears in the role picker and the topology map legend, lowest number first. A new role is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{

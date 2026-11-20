@@ -56,6 +56,7 @@ type CloudConnectionResourceModel struct {
     StreamKeyCreatedAt RFC3339Value `tfsdk:"stream_key_created_at"`
     StreamSummary JSONSubsetValue `tfsdk:"stream_summary"`
     StreamState JSONSubsetValue `tfsdk:"stream_state"`
+    AddedMetrics JSONSubsetValue `tfsdk:"added_metrics"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -180,6 +181,11 @@ func (r *CloudConnectionResource) schemaDefinition() schema.Schema {
             },
             "stream_state": schema.StringAttribute{
                 MarkdownDescription: "Azure: the subscription holding the connection's event hubs, and where OneUptime has read each to. A JSON value: read it with `jsondecode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "added_metrics": schema.StringAttribute{
+                MarkdownDescription: "Metrics added to what the connection reads beyond each resource type's key metrics, for one resource or for every resource of a type. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -331,6 +337,7 @@ func (r *CloudConnectionResource) Create(ctx context.Context, req resource.Creat
         "streamKeyCreatedAt": true,
         "streamSummary": true,
         "streamState": true,
+        "addedMetrics": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -796,6 +803,50 @@ func (r *CloudConnectionResource) Create(ctx context.Context, req resource.Creat
     } else {
         data.StreamState = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["addedMetrics"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AddedMetrics = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AddedMetrics = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AddedMetrics = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AddedMetrics = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AddedMetrics = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AddedMetrics = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AddedMetrics = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AddedMetrics = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AddedMetrics = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["addedMetrics"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AddedMetrics = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AddedMetrics = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["addedMetrics"].(string); ok {
+        data.AddedMetrics = NewJSONSubsetValue(val)
+    } else {
+        data.AddedMetrics = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -889,6 +940,7 @@ func (r *CloudConnectionResource) Read(ctx context.Context, req resource.ReadReq
         "streamKeyCreatedAt": true,
         "streamSummary": true,
         "streamState": true,
+        "addedMetrics": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1355,6 +1407,50 @@ func (r *CloudConnectionResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.StreamState = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["addedMetrics"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AddedMetrics = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AddedMetrics = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AddedMetrics = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AddedMetrics = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AddedMetrics = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AddedMetrics = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AddedMetrics = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AddedMetrics = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AddedMetrics = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["addedMetrics"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AddedMetrics = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AddedMetrics = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["addedMetrics"].(string); ok {
+        data.AddedMetrics = NewJSONSubsetValue(val)
+    } else {
+        data.AddedMetrics = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1503,6 +1599,7 @@ func (r *CloudConnectionResource) Update(ctx context.Context, req resource.Updat
         "streamKeyCreatedAt": true,
         "streamSummary": true,
         "streamState": true,
+        "addedMetrics": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -1962,6 +2059,50 @@ func (r *CloudConnectionResource) Update(ctx context.Context, req resource.Updat
         data.StreamState = NewJSONSubsetValue(val)
     } else {
         data.StreamState = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["addedMetrics"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AddedMetrics = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AddedMetrics = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AddedMetrics = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AddedMetrics = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AddedMetrics = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AddedMetrics = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AddedMetrics = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AddedMetrics = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AddedMetrics = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["addedMetrics"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.AddedMetrics = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AddedMetrics = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["addedMetrics"].(string); ok {
+        data.AddedMetrics = NewJSONSubsetValue(val)
+    } else {
+        data.AddedMetrics = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

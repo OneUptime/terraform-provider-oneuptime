@@ -30,7 +30,8 @@ resource "oneuptime_monitor_secret" "example" {
 - `labels` (Set of String) When Monitor Access is Monitors With Labels, monitors that carry at least one of these labels can use this secret. Ignored otherwise. IDs of `oneuptime_label` resources.
 - `monitor_access` (String) Which monitors can use this secret. All Monitors: every monitor in this project, including monitors created later. Specific Monitors: only the monitors in Monitors. Monitors With Labels: monitors that carry at least one of the labels in Labels. Setting this empties whichever of Monitors and Labels it does not use. Allowed values: `All Monitors`, `Specific Monitors`, `Monitors With Labels`. Defaults to `Specific Monitors`.
 - `monitors` (Set of String) The monitors that can use this secret when Monitor Access is Specific Monitors. Ignored otherwise. IDs of `oneuptime_monitor` resources.
-- `secret_value` (String, Sensitive) Secret value that you want to store in this object. This value will be encrypted and only accessible by the probe.
+- `secret_type` (String) What the secret holds. Text: a password, API key or token, filled in as written. TOTP: an authenticator app's setup key or otpauth://totp link; a monitor gets the current one-time code, never the key. Changes only together with a new Secret Value, which is read for the new type. A plan that changes `secret_type` and keeps `secret_value` fails before anything is written: give `secret_value` its new value in the same change. Allowed values: `Text`, `TOTP`. Defaults to `Text`.
+- `secret_value` (String, Sensitive) Secret value that you want to store in this object. For a TOTP secret, the setup key or the otpauth://totp link, which is stored as an otpauth://totp link. This value will be encrypted and only accessible by the probe.
 
 ### Read-Only
 

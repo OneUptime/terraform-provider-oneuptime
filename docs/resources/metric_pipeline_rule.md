@@ -19,6 +19,21 @@ resource "oneuptime_metric_pipeline_rule" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`sort_order` is this metric pipeline rule's place among the metric pipeline rules of its project, lowest first. Setting it places this metric pipeline rule and moves no other, so a configuration that numbers every metric pipeline rule of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.metric_pipeline_rules`:
+
+```terraform
+sort_order = index(local.metric_pipeline_rules, each.key) + 1
+```
+
+- Give each metric pipeline rule a number of its own: two metric pipeline rules at one number are shown the older first.
+- A metric pipeline rule created without `sort_order` goes after the last one of its project.
+- Deleting a metric pipeline rule leaves a gap in the numbers, which changes nothing: metric pipeline rules go by their numbers, not by counting.
+- Moving a metric pipeline rule in the OneUptime Dashboard numbers the project's metric pipeline rules 1..n again; the next plan shows that as changes to `sort_order`.
+
+
 ## Schema
 
 ### Required
@@ -39,7 +54,7 @@ resource "oneuptime_metric_pipeline_rule" "example" {
 - `rename_to_key` (String) For RenameMetric: the new metric name. For RenameAttribute: the new attribute key.
 - `sample_percentage` (Number) For Sample: percentage of matched rows to keep (0-100). 100 keeps all. Defaults to `100`.
 - `service_id` (String) Optional service ID scoping this rule. Null means the rule is project-wide. The ID of a `oneuptime_service`.
-- `sort_order` (Number) Where this rule is evaluated among the project's metric pipeline rules, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `sort_order` (Number) Where this rule is evaluated among the project's metric pipeline rules, lowest number first. A new rule is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 
 ### Read-Only
 

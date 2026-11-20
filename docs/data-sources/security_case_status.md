@@ -38,7 +38,7 @@ data "oneuptime_security_case_status" "by_id" {
 - `is_contained_status` (Boolean) Is it the status the time to contain is measured to? From it down, a case counts as contained. A project has one.
 - `is_new_status` (Boolean) Is it the status every new case starts in? A project has one, and it can't be deleted or archived.
 - `name` (String) What the status is called, like Investigating or Triage.
-- `order` (Number) Where this status sits in the project's list of security case statuses: 1 is the top. A case in a status at or below the acknowledged (contained, closed) status counts as acknowledged (contained, closed), so the new, acknowledged, contained and closed statuses have to stay in that order. A new status without a number goes just above the closed status. Setting a number moves the status to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this status sits in the project's list of security case statuses: 1 is the top. A case in a status at or below the acknowledged (contained, closed) status counts as acknowledged (contained, closed), so the new, acknowledged, contained and closed statuses have to stay in that order. A new status without a number goes just above the closed status. Setting a number places the status there and moves no other: two at one number are read the older first. In the dashboard, drag the rows to reorder them.
 - `slug` (String) Friendly globally unique name for the status.
 
 ### Read-Only

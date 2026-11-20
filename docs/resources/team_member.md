@@ -47,6 +47,7 @@ OneUptime keeps addresses in lower case, and finds a person by theirs in any cas
 
 ### Optional
 
+- `invitee_name` (String) The name typed when the person was invited, shown in place of their own until they accept.
 - `user_email` (String) The email address of the person in `user_id`, instead of their ID. Someone who is not in the project yet is invited to it, as the dashboard's Invite does: OneUptime emails them, and they join when they accept. Give one of the two.
 - `user_id` (String) ID of the person in the team. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `user_email`.
 

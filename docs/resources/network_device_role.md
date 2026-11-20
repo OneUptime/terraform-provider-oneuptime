@@ -18,6 +18,21 @@ resource "oneuptime_network_device_role" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this network device role's place among the network device roles of its project, lowest first. Setting it places this network device role and moves no other, so a configuration that numbers every network device role of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.network_device_roles`:
+
+```terraform
+order = index(local.network_device_roles, each.key) + 1
+```
+
+- Give each network device role a number of its own: two network device roles at one number are shown the older first.
+- A network device role created without `order` goes after the last one of its project.
+- Deleting a network device role leaves a gap in the numbers, which changes nothing: network device roles go by their numbers, not by counting.
+- Moving a network device role in the OneUptime Dashboard numbers the project's network device roles 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -29,7 +44,7 @@ resource "oneuptime_network_device_role" "example" {
 - `description` (String) Friendly description that will help you remember.
 - `is_core_layer` (Boolean) Devices of this role sit at the top of the network - the tiered and radial topology layouts band them above everything else. Defaults to `false`.
 - `is_snmp_walkable` (Boolean) Devices of this role usually speak SNMP. Turn it off for roles that only answer a ping - adopting one from the topology map then defaults to a monitor rather than SNMP polling. Defaults to `true`.
-- `order` (Number) Where this role appears in the role picker and the topology map legend, lowest number first. A new role is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this role appears in the role picker and the topology map legend, lowest number first. A new role is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 - `topology_shape` (String) The shape devices of this role are drawn with on the network topology map.
 
 ### Read-Only

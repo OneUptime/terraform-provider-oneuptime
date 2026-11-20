@@ -33,6 +33,7 @@ type ServiceUserOwnerDataSourceModel struct {
     UserId types.String `tfsdk:"user_id"`
     ServiceId types.String `tfsdk:"service_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
     UserEmail types.String `tfsdk:"user_email"`
 }
 
@@ -42,7 +43,7 @@ func (d *ServiceUserOwnerDataSource) Metadata(ctx context.Context, req datasourc
 
 func (d *ServiceUserOwnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Add users as owners to your Service. Look up an existing service user owner by `id`, or by any of its other arguments (`created_by_user_id`, `service_id`, `user_email`, ...): each one set must match, and exactly one service user owner may match them all.",
+        MarkdownDescription: "Add users as owners to your Service. Look up an existing service user owner by `id`, or by any of its other arguments (`created_by_user_id`, `is_owner_notified`, `service_id`, ...): each one set must match, and exactly one service user owner may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -79,6 +80,11 @@ func (d *ServiceUserOwnerDataSource) Schema(ctx context.Context, req datasource.
                 Optional: true,
                 Computed: true,
                 Validators: dataSourceRecordIDValidators("oneuptime_user"),
+            },
+            "is_owner_notified": schema.BoolAttribute{
+                MarkdownDescription: "Are owners notified of this resource ownership?",
+                Optional: true,
+                Computed: true,
             },
             "user_email": schema.StringAttribute{
                 MarkdownDescription: "Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
@@ -137,6 +143,10 @@ func (d *ServiceUserOwnerDataSource) Read(ctx context.Context, req datasource.Re
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
     }
+    if !data.IsOwnerNotified.IsNull() && !data.IsOwnerNotified.IsUnknown() {
+        filters["isOwnerNotified"] = data.IsOwnerNotified.ValueBool()
+        filterNames = append(filterNames, "is_owner_notified = "+fmt.Sprintf("%t", data.IsOwnerNotified.ValueBool()))
+    }
     if !data.UserEmail.IsNull() && !data.UserEmail.IsUnknown() {
         personID, ok := personIDForLookup(ctx, d.client, data.UserEmail.ValueString(), "user_email", &resp.Diagnostics)
         if !ok {
@@ -168,6 +178,7 @@ func (d *ServiceUserOwnerDataSource) Read(ctx context.Context, req datasource.Re
         "userId": true,
         "serviceId": true,
         "createdByUserId": true,
+        "isOwnerNotified": true,
         "_id": true,
     }
 
@@ -396,6 +407,11 @@ func (d *ServiceUserOwnerDataSource) Read(ctx context.Context, req datasource.Re
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if val, ok := item["isOwnerNotified"].(bool); ok {
+        data.IsOwnerNotified = types.BoolValue(val)
+    } else {
+        data.IsOwnerNotified = types.BoolNull()
     }
     data.UserEmail = personEmailAfterLookup(ctx, d.client, data.UserId, data.UserEmail)
 

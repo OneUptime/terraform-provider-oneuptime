@@ -46,6 +46,8 @@ data "oneuptime_ai_run" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `llm_call_count` (Number) Number of LLM calls made during this run.
 - `llm_provider_id` (String) The LLM provider the rule that started this run picked for it. Empty when no rule picked one: the project's default provider, else the global one.
+- `llm_provider_type` (String) The type of the LLM provider whose model wrote this run's answer (OpenAI, Anthropic, Ollama...). Recorded when the run completes.
+- `model_name` (String) The model that wrote this run's answer, as its LLM provider named it. Recorded when the run completes; empty for runs that completed before OneUptime recorded it.
 - `monitor_id` (String) The monitor behind the alert that triggered this run — the dedupe key for per-monitor investigation windows.
 - `needs_user_input` (Boolean) True when the run ended by asking the person who started it a question, and waits for their answer.
 - `retry_reason` (String) What the attempt before failed with, for a code-fix run that was queued again by itself.

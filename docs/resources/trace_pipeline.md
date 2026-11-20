@@ -18,6 +18,21 @@ resource "oneuptime_trace_pipeline" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`sort_order` is this trace pipeline's place among the trace pipelines of its project, lowest first. Setting it places this trace pipeline and moves no other, so a configuration that numbers every trace pipeline of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.trace_pipelines`:
+
+```terraform
+sort_order = index(local.trace_pipelines, each.key) + 1
+```
+
+- Give each trace pipeline a number of its own: two trace pipelines at one number are shown the older first.
+- A trace pipeline created without `sort_order` goes after the last one of its project.
+- Deleting a trace pipeline leaves a gap in the numbers, which changes nothing: trace pipelines go by their numbers, not by counting.
+- Moving a trace pipeline in the OneUptime Dashboard numbers the project's trace pipelines 1..n again; the next plan shows that as changes to `sort_order`.
+
+
 ## Schema
 
 ### Required
@@ -29,7 +44,7 @@ resource "oneuptime_trace_pipeline" "example" {
 - `description` (String) Description of what this trace pipeline does.
 - `filter_query` (String) Filter expression that determines which spans this pipeline applies to.
 - `is_enabled` (Boolean) Whether this trace pipeline is active. Defaults to `true`.
-- `sort_order` (Number) Where this pipeline runs among the project's trace pipelines, lowest number first. A new pipeline is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `sort_order` (Number) Where this pipeline runs among the project's trace pipelines, lowest number first. A new pipeline is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 
 ### Read-Only
 

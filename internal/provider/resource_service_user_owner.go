@@ -41,6 +41,7 @@ type ServiceUserOwnerResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
     UserEmail types.String `tfsdk:"user_email"`
 }
 
@@ -104,6 +105,10 @@ func (r *ServiceUserOwnerResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+            },
+            "is_owner_notified": schema.BoolAttribute{
+                MarkdownDescription: "Are owners notified of this resource ownership?",
+                Computed: true,
             },
             "user_email": schema.StringAttribute{
                 MarkdownDescription: "The email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
@@ -260,6 +265,7 @@ func (r *ServiceUserOwnerResource) Create(ctx context.Context, req resource.Crea
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
+        "isOwnerNotified": true,
         "_id": true,
     }
 
@@ -457,6 +463,9 @@ func (r *ServiceUserOwnerResource) Create(ctx context.Context, req resource.Crea
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
+        data.IsOwnerNotified = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -496,6 +505,7 @@ func (r *ServiceUserOwnerResource) Read(ctx context.Context, req resource.ReadRe
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
+        "isOwnerNotified": true,
         "_id": true,
     }
 
@@ -698,6 +708,9 @@ func (r *ServiceUserOwnerResource) Read(ctx context.Context, req resource.ReadRe
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
+        data.IsOwnerNotified = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -776,6 +789,7 @@ func (r *ServiceUserOwnerResource) Update(ctx context.Context, req resource.Upda
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
+        "isOwnerNotified": true,
         "_id": true,
     }
 
@@ -967,6 +981,9 @@ func (r *ServiceUserOwnerResource) Update(ctx context.Context, req resource.Upda
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
+        data.IsOwnerNotified = types.BoolValue(val)
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

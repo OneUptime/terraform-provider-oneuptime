@@ -34,7 +34,7 @@ data "oneuptime_incident_severity" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_archived` (Boolean) Archived severities stay on the incidents and episodes that have them, but can't be picked again. A project keeps at least one severity that is not archived.
 - `name` (String) Any friendly name of this object.
-- `order` (Number) Where this severity ranks among the project's incident severities: 1 is the most severe. A new severity without a number goes to the end of the list. Setting a number moves the severity to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this severity ranks among the project's incident severities: 1 is the most severe. A new severity without a number goes to the end of the list. Setting a number places the severity there and moves no other: two at one number are read the older first. In the dashboard, drag the rows to reorder them.
 - `slug` (String) Friendly globally unique name for your object.
 
 ### Read-Only

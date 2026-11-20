@@ -18,6 +18,36 @@ resource "oneuptime_custom_role" "example" {
 }
 ```
 
+<a id="deleting-it"></a>
+## Deleting it
+
+OneUptime deletes a custom role that workflows run as only when the delete says what they run as instead, and refuses one that does not, naming the workflows. In Terraform, `workflows_run_as_on_delete` says it:
+
+```terraform
+resource "oneuptime_custom_role" "example" {
+  name = "Example custom role"
+
+  workflows_run_as_on_delete = "Default"
+}
+```
+
+or
+
+```terraform
+resource "oneuptime_custom_role" "example" {
+  name = "Example custom role"
+
+  workflows_run_as_on_delete                = "CustomRole"
+  workflows_run_as_custom_role_id_on_delete = oneuptime_custom_role.other.id
+}
+```
+
+- Set it, and run `terraform apply`, before you destroy the custom role or remove its block. Terraform deletes a resource with what its state holds, so a value set in the same apply that deletes or replaces the custom role is not sent yet.
+- Nothing is sent until the delete: setting or changing it never changes the custom role or anything that depends on it.
+- Left unset, the delete says nothing more, as before. When OneUptime needs it, the destroy is refused, the custom role stays in state, and the error says what to set.
+- OneUptime keeps none of it, so an import leaves it unset: the first plan after an import sets it in state, and changes nothing in OneUptime.
+- When this custom role and the one in `workflows_run_as_custom_role_id_on_delete` are destroyed together, Terraform deletes this one first, since it refers to the other, and what depended on it moves to the other custom role. Give that custom role its own `workflows_run_as_on_delete` too, or its delete is refused.
+
 ## Schema
 
 ### Required
@@ -27,6 +57,8 @@ resource "oneuptime_custom_role" "example" {
 ### Optional
 
 - `description` (String) What the role is for, in a sentence or two.
+- `workflows_run_as_custom_role_id_on_delete` (String) The ID of the other custom role the workflows run as, when `workflows_run_as_on_delete` is "CustomRole": one you could give a team, and not the role being deleted. The ID of a `oneuptime_custom_role`. Sent only when Terraform deletes the custom role, and changes nothing before: set it, and apply, before you destroy the custom role. See [Deleting it](#deleting-it).
+- `workflows_run_as_on_delete` (String) What the workflows that run as this custom role run as once it is deleted: "Default", the default permissions, or "CustomRole", another custom role you could give a team, named in `workflows_run_as_custom_role_id_on_delete`. Never Project Owner: deleting a role never raises what a workflow can do. Sent only when Terraform deletes the custom role, and changes nothing before: set it, and apply, before you destroy the custom role. See [Deleting it](#deleting-it). Allowed values: `Default`, `CustomRole`.
 
 ### Read-Only
 

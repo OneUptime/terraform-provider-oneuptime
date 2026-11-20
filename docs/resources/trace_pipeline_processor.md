@@ -19,6 +19,21 @@ resource "oneuptime_trace_pipeline_processor" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`sort_order` is this trace pipeline processor's place among the trace pipeline processors of its trace pipeline, lowest first. Setting it places this trace pipeline processor and moves no other, so a configuration that numbers every trace pipeline processor of a trace pipeline is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.trace_pipeline_processors`:
+
+```terraform
+sort_order = index(local.trace_pipeline_processors, each.key) + 1
+```
+
+- Give each trace pipeline processor a number of its own: two trace pipeline processors at one number are shown the older first.
+- A trace pipeline processor created without `sort_order` goes after the last one of its trace pipeline.
+- Deleting a trace pipeline processor leaves a gap in the numbers, which changes nothing: trace pipeline processors go by their numbers, not by counting.
+- Moving a trace pipeline processor in the OneUptime Dashboard numbers the trace pipeline's trace pipeline processors 1..n again; the next plan shows that as changes to `sort_order`.
+
+
 ## Schema
 
 ### Required
@@ -31,7 +46,7 @@ resource "oneuptime_trace_pipeline_processor" "example" {
 
 - `configuration` (String) Processor-specific configuration as JSON (e.g., source/target fields, mapping rules). A JSON value: write it with `jsonencode()`.
 - `is_enabled` (Boolean) Whether this processor is active. Defaults to `true`.
-- `sort_order` (Number) Where this processor runs within its pipeline, lowest number first. A new processor is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `sort_order` (Number) Where this processor runs within its pipeline, lowest number first. A new processor is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 
 ### Read-Only
 

@@ -43,4 +43,5 @@ data "oneuptime_team" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `custom_fields` (String) Custom Fields on this resource. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `scim_group_linked_at` (String) When a SCIM identity provider first took this team as one of its groups. Empty for a team no identity provider has taken.
 - `updated_at` (String) Date and Time when the object was updated.

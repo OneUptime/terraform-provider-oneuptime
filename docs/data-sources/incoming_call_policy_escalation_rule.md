@@ -36,7 +36,7 @@ data "oneuptime_incoming_call_policy_escalation_rule" "by_id" {
 - `incoming_call_policy_id` (String) ID of the parent Incoming Call Policy. The ID of a `oneuptime_incoming_call_policy`.
 - `name` (String) Rule name (e.g., 'Primary On-Call', 'Backup Engineer').
 - `on_call_duty_policy_schedule_id` (String) ID of the on-call schedule to route to (mutually exclusive with userId). The ID of a `oneuptime_on_call_policy_schedule`.
-- `order` (Number) Where this rule sits in the escalation, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this rule sits in the escalation, lowest number first. A new rule is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them.
 - `user_email` (String) Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
 - `user_id` (String) ID of the user to route to directly (mutually exclusive with onCallDutyPolicyScheduleId). The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.
 

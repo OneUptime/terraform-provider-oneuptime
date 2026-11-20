@@ -46,6 +46,9 @@ type DataPipelineDataSourceModel struct {
     TypicalRunDurationInSeconds types.Number `tfsdk:"typical_run_duration_in_seconds"`
     ExpectedRunIntervalInSeconds types.Number `tfsdk:"expected_run_interval_in_seconds"`
     LateAt types.String `tfsdk:"late_at"`
+    CircuitBreakerStopsOnLateTables types.Bool `tfsdk:"circuit_breaker_stops_on_late_tables"`
+    CircuitBreakerCheckedAt types.String `tfsdk:"circuit_breaker_checked_at"`
+    CircuitBreakerStoppedAt types.String `tfsdk:"circuit_breaker_stopped_at"`
     Inputs types.String `tfsdk:"inputs"`
     Outputs types.String `tfsdk:"outputs"`
     FirstSeenAt types.String `tfsdk:"first_seen_at"`
@@ -58,7 +61,7 @@ func (d *DataPipelineDataSource) Metadata(ctx context.Context, req datasource.Me
 
 func (d *DataPipelineDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A job that moves data - an Airflow task, a Spark job, a dbt model - as its OpenLineage events describe it, with how its last run went. Look up an existing data pipeline by `id`, or by any of its other arguments (`created_by_user_id`, `description`, `expected_run_interval_in_seconds`, ...): each one set must match, and exactly one data pipeline may match them all.",
+        MarkdownDescription: "A job that moves data - an Airflow task, a Spark job, a dbt model - as its OpenLineage events describe it, with how its last run went. Look up an existing data pipeline by `id`, or by any of its other arguments (`circuit_breaker_stops_on_late_tables`, `created_by_user_id`, `description`, ...): each one set must match, and exactly one data pipeline may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -151,6 +154,19 @@ func (d *DataPipelineDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "late_at": schema.StringAttribute{
                 MarkdownDescription: "When the pipeline is late if no run has started by then: its expected interval after its last start, plus a quarter of it and at least fifteen minutes. Empty until it has a schedule to judge by.",
+                Computed: true,
+            },
+            "circuit_breaker_stops_on_late_tables": schema.BoolAttribute{
+                MarkdownDescription: "Whether the pipeline's circuit breaker also stops a run when a table it reads is late. A failing check always stops it.",
+                Optional: true,
+                Computed: true,
+            },
+            "circuit_breaker_checked_at": schema.StringAttribute{
+                MarkdownDescription: "When the pipeline's circuit breaker was last asked whether it may run.",
+                Computed: true,
+            },
+            "circuit_breaker_stopped_at": schema.StringAttribute{
+                MarkdownDescription: "When the pipeline's circuit breaker stopped a run because a table it reads failed a check or was late. Empty once it says go again, or a run starts after it.",
                 Computed: true,
             },
             "inputs": schema.StringAttribute{
@@ -254,6 +270,10 @@ func (d *DataPipelineDataSource) Read(ctx context.Context, req datasource.ReadRe
         filters["expectedRunIntervalInSeconds"] = lookupNumber(data.ExpectedRunIntervalInSeconds)
         filterNames = append(filterNames, "expected_run_interval_in_seconds = "+data.ExpectedRunIntervalInSeconds.ValueBigFloat().String())
     }
+    if !data.CircuitBreakerStopsOnLateTables.IsNull() && !data.CircuitBreakerStopsOnLateTables.IsUnknown() {
+        filters["circuitBreakerStopsOnLateTables"] = data.CircuitBreakerStopsOnLateTables.ValueBool()
+        filterNames = append(filterNames, "circuit_breaker_stops_on_late_tables = "+fmt.Sprintf("%t", data.CircuitBreakerStopsOnLateTables.ValueBool()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -294,6 +314,9 @@ func (d *DataPipelineDataSource) Read(ctx context.Context, req datasource.ReadRe
         "typicalRunDurationInSeconds": true,
         "expectedRunIntervalInSeconds": true,
         "lateAt": true,
+        "circuitBreakerStopsOnLateTables": true,
+        "circuitBreakerCheckedAt": true,
+        "circuitBreakerStoppedAt": true,
         "inputs": true,
         "outputs": true,
         "firstSeenAt": true,
@@ -746,6 +769,59 @@ func (d *DataPipelineDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.LateAt = types.StringValue(val)
     } else {
         data.LateAt = types.StringNull()
+    }
+    if val, ok := item["circuitBreakerStopsOnLateTables"].(bool); ok {
+        data.CircuitBreakerStopsOnLateTables = types.BoolValue(val)
+    } else {
+        data.CircuitBreakerStopsOnLateTables = types.BoolNull()
+    }
+    if obj, ok := item["circuitBreakerCheckedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CircuitBreakerCheckedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CircuitBreakerCheckedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CircuitBreakerCheckedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CircuitBreakerCheckedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CircuitBreakerCheckedAt = types.StringNull()
+        }
+    } else if arr, ok := item["circuitBreakerCheckedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CircuitBreakerCheckedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CircuitBreakerCheckedAt = types.StringNull()
+        }
+    } else if val, ok := item["circuitBreakerCheckedAt"].(string); ok {
+        data.CircuitBreakerCheckedAt = types.StringValue(val)
+    } else {
+        data.CircuitBreakerCheckedAt = types.StringNull()
+    }
+    if obj, ok := item["circuitBreakerStoppedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CircuitBreakerStoppedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CircuitBreakerStoppedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CircuitBreakerStoppedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CircuitBreakerStoppedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CircuitBreakerStoppedAt = types.StringNull()
+        }
+    } else if arr, ok := item["circuitBreakerStoppedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CircuitBreakerStoppedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CircuitBreakerStoppedAt = types.StringNull()
+        }
+    } else if val, ok := item["circuitBreakerStoppedAt"].(string); ok {
+        data.CircuitBreakerStoppedAt = types.StringValue(val)
+    } else {
+        data.CircuitBreakerStoppedAt = types.StringNull()
     }
     if obj, ok := item["inputs"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

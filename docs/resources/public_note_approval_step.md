@@ -18,6 +18,21 @@ resource "oneuptime_public_note_approval_step" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this public note approval step's place among the public note approval steps of its project with the same event type, lowest first. Setting it places this public note approval step and moves no other, so a configuration that numbers every public note approval step of a project and event type is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.public_note_approval_steps`:
+
+```terraform
+order = index(local.public_note_approval_steps, each.key) + 1
+```
+
+- Give each public note approval step a number of its own: two public note approval steps at one number are shown the older first.
+- A public note approval step created without `order` goes after the last one of its project with the same event type.
+- Deleting a public note approval step leaves a gap in the numbers, which changes nothing: public note approval steps go by their numbers, not by counting.
+- Moving a public note approval step in the OneUptime Dashboard numbers the public note approval steps of the project with that event type 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -30,7 +45,7 @@ resource "oneuptime_public_note_approval_step" "example" {
 - `approver_user_emails` (Set of String) The email addresses of the people in `approver_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
 - `approver_users` (Set of String) People who may approve a public note for this step. Any one of them, or of the members of the teams below, is enough. IDs of `oneuptime_user` records. Or name them by email address, in `approver_user_emails`.
 - `name` (String) What the step is called, shown to approvers and authors (for example, Legal). Optional.
-- `order` (Number) Where this step sits among the approval steps, lowest number first: a public note goes through them in this order. A new step is added to the end. Setting a number another step already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this step sits among the approval steps, lowest number first: a public note goes through them in this order. A new step is added to the end. Setting a number places the step there and moves no other: two steps at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 
 ### Read-Only
 

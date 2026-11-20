@@ -54,4 +54,5 @@ data "oneuptime_detection_rule" "by_id" {
 - `last_evaluated_at` (String) When the detection engine last evaluated this rule. Null means it has never run.
 - `last_match_at` (String) When this rule most recently matched security events. Null means it has never matched.
 - `project_id` (String) ID of the project this detection rule belongs to. The ID of a `oneuptime_project`.
+- `response_steps` (String) What to do when the rule fires: up to 10 steps, each { id, phase, text }, where phase is Confirm, Contain or Fix. A case's Response Plan shows them ahead of its general steps. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

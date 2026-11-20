@@ -48,6 +48,7 @@ type ProjectDataSourceModel struct {
     WorkflowRunsInLast30Days types.Number `tfsdk:"workflow_runs_in_last30_days"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
     RequireSsoWithSsoProviderId types.String `tfsdk:"require_sso_with_sso_provider_id"`
+    ManageSignInWithSso types.Bool `tfsdk:"manage_sign_in_with_sso"`
     IncidentNumberPrefix types.String `tfsdk:"incident_number_prefix"`
     AlertNumberPrefix types.String `tfsdk:"alert_number_prefix"`
     ScheduledMaintenanceNumberPrefix types.String `tfsdk:"scheduled_maintenance_number_prefix"`
@@ -70,6 +71,7 @@ type ProjectDataSourceModel struct {
     DisableOnCallNotificationFallback types.Bool `tfsdk:"disable_on_call_notification_fallback"`
     DefaultPagingLadder types.String `tfsdk:"default_paging_ladder"`
     RequirePhoneMethodForOnCall types.Bool `tfsdk:"require_phone_method_for_on_call"`
+    DetectVoicemailOnCalls types.Bool `tfsdk:"detect_voicemail_on_calls"`
     EnableAutoRechargeSmsOrCallBalance types.Bool `tfsdk:"enable_auto_recharge_sms_or_call_balance"`
     AiCurrentBalanceInUsdCents types.Number `tfsdk:"ai_current_balance_in_usd_cents"`
     AutoAiRechargeByBalanceInUsd types.Number `tfsdk:"auto_ai_recharge_by_balance_in_usd"`
@@ -82,6 +84,7 @@ type ProjectDataSourceModel struct {
     AiRunMaxToolCalls types.Number `tfsdk:"ai_run_max_tool_calls"`
     AiRunMaxTokens types.Number `tfsdk:"ai_run_max_tokens"`
     AiRunTimeLimitInMinutes types.Number `tfsdk:"ai_run_time_limit_in_minutes"`
+    AiRunCommandTimeLimitInMinutes types.Number `tfsdk:"ai_run_command_time_limit_in_minutes"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
     EnableAutomaticSecurityCaseTriage types.Bool `tfsdk:"enable_automatic_security_case_triage"`
@@ -281,6 +284,11 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Optional: true,
                 Computed: true,
             },
+            "manage_sign_in_with_sso": schema.BoolAttribute{
+                MarkdownDescription: "When on, while the project requires SSO, people whose every project requires SSO and has this on set no password, passkeys or two-factor authentication in OneUptime.",
+                Optional: true,
+                Computed: true,
+            },
             "incident_number_prefix": schema.StringAttribute{
                 MarkdownDescription: "Custom prefix for incident numbers (e.g., 'INC-'). If empty, '#' is used. Up to 20 letters, numbers or - _ . / : #, not ending in a digit. Changing it does not renumber incidents that already exist.",
                 Optional: true,
@@ -390,6 +398,11 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Optional: true,
                 Computed: true,
             },
+            "detect_voicemail_on_calls": schema.BoolAttribute{
+                MarkdownDescription: "When on, Twilio checks whether a person or voicemail answered each on-call call. A call voicemail answered counts as not answered, and leaves a short message. Twilio charges for each answered call it checks.",
+                Optional: true,
+                Computed: true,
+            },
             "enable_auto_recharge_sms_or_call_balance": schema.BoolAttribute{
                 MarkdownDescription: "Enable auto recharge for SMS, Call, and WhatsApp balance for this project.",
                 Optional: true,
@@ -447,6 +460,11 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "ai_run_time_limit_in_minutes": schema.NumberAttribute{
                 MarkdownDescription: "How long one OneUptime AI run may take before it answers with what it found. An incident or alert investigation uses its own lane's time limit when that is set. Unset means the default, 120 minutes.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_run_command_time_limit_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "How long one command a code task runs on a Runner of the project's own may take, such as a slow install, build or test suite: at most 120 minutes, and never past the run's time limit. Unset means the default, 10 minutes.",
                 Optional: true,
                 Computed: true,
             },
@@ -957,6 +975,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["requireSsoWithSsoProviderId"] = data.RequireSsoWithSsoProviderId.ValueString()
         filterNames = append(filterNames, "require_sso_with_sso_provider_id = "+fmt.Sprintf("%q", data.RequireSsoWithSsoProviderId.ValueString()))
     }
+    if !data.ManageSignInWithSso.IsNull() && !data.ManageSignInWithSso.IsUnknown() {
+        filters["manageSignInWithSso"] = data.ManageSignInWithSso.ValueBool()
+        filterNames = append(filterNames, "manage_sign_in_with_sso = "+fmt.Sprintf("%t", data.ManageSignInWithSso.ValueBool()))
+    }
     if !data.IncidentNumberPrefix.IsNull() && !data.IncidentNumberPrefix.IsUnknown() {
         filters["incidentNumberPrefix"] = data.IncidentNumberPrefix.ValueString()
         filterNames = append(filterNames, "incident_number_prefix = "+fmt.Sprintf("%q", data.IncidentNumberPrefix.ValueString()))
@@ -1041,6 +1063,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["requirePhoneMethodForOnCall"] = data.RequirePhoneMethodForOnCall.ValueBool()
         filterNames = append(filterNames, "require_phone_method_for_on_call = "+fmt.Sprintf("%t", data.RequirePhoneMethodForOnCall.ValueBool()))
     }
+    if !data.DetectVoicemailOnCalls.IsNull() && !data.DetectVoicemailOnCalls.IsUnknown() {
+        filters["detectVoicemailOnCalls"] = data.DetectVoicemailOnCalls.ValueBool()
+        filterNames = append(filterNames, "detect_voicemail_on_calls = "+fmt.Sprintf("%t", data.DetectVoicemailOnCalls.ValueBool()))
+    }
     if !data.EnableAutoRechargeSmsOrCallBalance.IsNull() && !data.EnableAutoRechargeSmsOrCallBalance.IsUnknown() {
         filters["enableAutoRechargeSmsOrCallBalance"] = data.EnableAutoRechargeSmsOrCallBalance.ValueBool()
         filterNames = append(filterNames, "enable_auto_recharge_sms_or_call_balance = "+fmt.Sprintf("%t", data.EnableAutoRechargeSmsOrCallBalance.ValueBool()))
@@ -1088,6 +1114,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     if !data.AiRunTimeLimitInMinutes.IsNull() && !data.AiRunTimeLimitInMinutes.IsUnknown() {
         filters["aiRunTimeLimitInMinutes"] = lookupNumber(data.AiRunTimeLimitInMinutes)
         filterNames = append(filterNames, "ai_run_time_limit_in_minutes = "+data.AiRunTimeLimitInMinutes.ValueBigFloat().String())
+    }
+    if !data.AiRunCommandTimeLimitInMinutes.IsNull() && !data.AiRunCommandTimeLimitInMinutes.IsUnknown() {
+        filters["aiRunCommandTimeLimitInMinutes"] = lookupNumber(data.AiRunCommandTimeLimitInMinutes)
+        filterNames = append(filterNames, "ai_run_command_time_limit_in_minutes = "+data.AiRunCommandTimeLimitInMinutes.ValueBigFloat().String())
     }
     if !data.EnableAutomaticIncidentInvestigation.IsNull() && !data.EnableAutomaticIncidentInvestigation.IsUnknown() {
         filters["enableAutomaticIncidentInvestigation"] = data.EnableAutomaticIncidentInvestigation.ValueBool()
@@ -1423,6 +1453,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "workflowRunsInLast30Days": true,
         "requireSsoForLogin": true,
         "requireSsoWithSsoProviderId": true,
+        "manageSignInWithSso": true,
         "incidentNumberPrefix": true,
         "alertNumberPrefix": true,
         "scheduledMaintenanceNumberPrefix": true,
@@ -1445,6 +1476,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "disableOnCallNotificationFallback": true,
         "defaultPagingLadder": true,
         "requirePhoneMethodForOnCall": true,
+        "detectVoicemailOnCalls": true,
         "enableAutoRechargeSmsOrCallBalance": true,
         "aiCurrentBalanceInUSDCents": true,
         "autoAiRechargeByBalanceInUSD": true,
@@ -1457,6 +1489,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "aiRunMaxToolCalls": true,
         "aiRunMaxTokens": true,
         "aiRunTimeLimitInMinutes": true,
+        "aiRunCommandTimeLimitInMinutes": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
         "enableAutomaticSecurityCaseTriage": true,
@@ -2042,6 +2075,11 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.RequireSsoWithSsoProviderId = types.StringNull()
     }
+    if val, ok := item["manageSignInWithSso"].(bool); ok {
+        data.ManageSignInWithSso = types.BoolValue(val)
+    } else {
+        data.ManageSignInWithSso = types.BoolNull()
+    }
     if obj, ok := item["incidentNumberPrefix"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.IncidentNumberPrefix = types.StringValue(val)
@@ -2249,6 +2287,11 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.RequirePhoneMethodForOnCall = types.BoolNull()
     }
+    if val, ok := item["detectVoicemailOnCalls"].(bool); ok {
+        data.DetectVoicemailOnCalls = types.BoolValue(val)
+    } else {
+        data.DetectVoicemailOnCalls = types.BoolNull()
+    }
     if val, ok := item["enableAutoRechargeSmsOrCallBalance"].(bool); ok {
         data.EnableAutoRechargeSmsOrCallBalance = types.BoolValue(val)
     } else {
@@ -2292,6 +2335,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     data.AiRunMaxToolCalls = numberFromAPI(data.AiRunMaxToolCalls, item["aiRunMaxToolCalls"])
     data.AiRunMaxTokens = numberFromAPI(data.AiRunMaxTokens, item["aiRunMaxTokens"])
     data.AiRunTimeLimitInMinutes = numberFromAPI(data.AiRunTimeLimitInMinutes, item["aiRunTimeLimitInMinutes"])
+    data.AiRunCommandTimeLimitInMinutes = numberFromAPI(data.AiRunCommandTimeLimitInMinutes, item["aiRunCommandTimeLimitInMinutes"])
     if val, ok := item["enableAutomaticIncidentInvestigation"].(bool); ok {
         data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
     } else {

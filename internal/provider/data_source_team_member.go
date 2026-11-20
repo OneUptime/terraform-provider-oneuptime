@@ -34,6 +34,7 @@ type TeamMemberDataSourceModel struct {
     UserId types.String `tfsdk:"user_id"`
     HasAcceptedInvitation types.Bool `tfsdk:"has_accepted_invitation"`
     InvitationAcceptedAt types.String `tfsdk:"invitation_accepted_at"`
+    InviteeName types.String `tfsdk:"invitee_name"`
     UserEmail types.String `tfsdk:"user_email"`
 }
 
@@ -43,7 +44,7 @@ func (d *TeamMemberDataSource) Metadata(ctx context.Context, req datasource.Meta
 
 func (d *TeamMemberDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Add users to your teams. Look up an existing team member by `id`, or by any of its other arguments (`has_accepted_invitation`, `team_id`, `user_email`, ...): each one set must match, and exactly one team member may match them all.",
+        MarkdownDescription: "Add users to your teams. Look up an existing team member by `id`, or by any of its other arguments (`has_accepted_invitation`, `invitee_name`, `team_id`, ...): each one set must match, and exactly one team member may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -82,6 +83,11 @@ func (d *TeamMemberDataSource) Schema(ctx context.Context, req datasource.Schema
             },
             "invitation_accepted_at": schema.StringAttribute{
                 MarkdownDescription: "When the person accepted their invitation.",
+                Computed: true,
+            },
+            "invitee_name": schema.StringAttribute{
+                MarkdownDescription: "The name typed when the person was invited, shown in place of their own until they accept.",
+                Optional: true,
                 Computed: true,
             },
             "user_email": schema.StringAttribute{
@@ -141,6 +147,10 @@ func (d *TeamMemberDataSource) Read(ctx context.Context, req datasource.ReadRequ
         filters["hasAcceptedInvitation"] = data.HasAcceptedInvitation.ValueBool()
         filterNames = append(filterNames, "has_accepted_invitation = "+fmt.Sprintf("%t", data.HasAcceptedInvitation.ValueBool()))
     }
+    if !data.InviteeName.IsNull() && !data.InviteeName.IsUnknown() {
+        filters["inviteeName"] = data.InviteeName.ValueString()
+        filterNames = append(filterNames, "invitee_name = "+fmt.Sprintf("%q", data.InviteeName.ValueString()))
+    }
     if !data.UserEmail.IsNull() && !data.UserEmail.IsUnknown() {
         personID, ok := personIDForLookup(ctx, d.client, data.UserEmail.ValueString(), "user_email", &resp.Diagnostics)
         if !ok {
@@ -173,6 +183,7 @@ func (d *TeamMemberDataSource) Read(ctx context.Context, req datasource.ReadRequ
         "userId": true,
         "hasAcceptedInvitation": true,
         "invitationAcceptedAt": true,
+        "inviteeName": true,
         "_id": true,
     }
 
@@ -406,6 +417,30 @@ func (d *TeamMemberDataSource) Read(ctx context.Context, req datasource.ReadRequ
         data.InvitationAcceptedAt = types.StringValue(val)
     } else {
         data.InvitationAcceptedAt = types.StringNull()
+    }
+    if obj, ok := item["inviteeName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.InviteeName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.InviteeName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.InviteeName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.InviteeName = types.StringValue(string(jsonBytes))
+        } else {
+            data.InviteeName = types.StringNull()
+        }
+    } else if arr, ok := item["inviteeName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.InviteeName = types.StringValue(string(jsonBytes))
+        } else {
+            data.InviteeName = types.StringNull()
+        }
+    } else if val, ok := item["inviteeName"].(string); ok {
+        data.InviteeName = types.StringValue(val)
+    } else {
+        data.InviteeName = types.StringNull()
     }
     data.UserEmail = personEmailAfterLookup(ctx, d.client, data.UserId, data.UserEmail)
 

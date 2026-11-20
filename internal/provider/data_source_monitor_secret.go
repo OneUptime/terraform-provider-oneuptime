@@ -34,6 +34,7 @@ type MonitorSecretDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
+    SecretType types.String `tfsdk:"secret_type"`
     MonitorAccess types.String `tfsdk:"monitor_access"`
     Monitors types.Set `tfsdk:"monitors"`
     Labels types.Set `tfsdk:"labels"`
@@ -73,6 +74,11 @@ func (d *MonitorSecretDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Friendly description that will help you remember.",
+                Optional: true,
+                Computed: true,
+            },
+            "secret_type": schema.StringAttribute{
+                MarkdownDescription: "What the secret holds. Text: a password, API key or token, filled in as written. TOTP: an authenticator app's setup key or otpauth://totp link; a monitor gets the current one-time code, never the key. Changes only together with a new Secret Value, which is read for the new type.",
                 Optional: true,
                 Computed: true,
             },
@@ -144,6 +150,10 @@ func (d *MonitorSecretDataSource) Read(ctx context.Context, req datasource.ReadR
         filters["description"] = data.Description.ValueString()
         filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
     }
+    if !data.SecretType.IsNull() && !data.SecretType.IsUnknown() {
+        filters["secretType"] = data.SecretType.ValueString()
+        filterNames = append(filterNames, "secret_type = "+fmt.Sprintf("%q", data.SecretType.ValueString()))
+    }
     if !data.MonitorAccess.IsNull() && !data.MonitorAccess.IsUnknown() {
         filters["monitorAccess"] = data.MonitorAccess.ValueString()
         filterNames = append(filterNames, "monitor_access = "+fmt.Sprintf("%q", data.MonitorAccess.ValueString()))
@@ -174,6 +184,7 @@ func (d *MonitorSecretDataSource) Read(ctx context.Context, req datasource.ReadR
         "projectId": true,
         "name": true,
         "description": true,
+        "secretType": true,
         "monitorAccess": true,
         "monitors": true,
         "labels": true,
@@ -382,6 +393,30 @@ func (d *MonitorSecretDataSource) Read(ctx context.Context, req datasource.ReadR
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := item["secretType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecretType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SecretType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SecretType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SecretType = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecretType = types.StringNull()
+        }
+    } else if arr, ok := item["secretType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SecretType = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecretType = types.StringNull()
+        }
+    } else if val, ok := item["secretType"].(string); ok {
+        data.SecretType = types.StringValue(val)
+    } else {
+        data.SecretType = types.StringNull()
     }
     if obj, ok := item["monitorAccess"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

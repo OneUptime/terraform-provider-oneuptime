@@ -38,6 +38,7 @@ type TeamMemberResourceModel struct {
     TeamId types.String `tfsdk:"team_id"`
     ProjectId types.String `tfsdk:"project_id"`
     UserId types.String `tfsdk:"user_id"`
+    InviteeName types.String `tfsdk:"invitee_name"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     HasAcceptedInvitation types.Bool `tfsdk:"has_accepted_invitation"`
@@ -85,6 +86,15 @@ func (r *TeamMemberResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 Validators: personIDValidators("user_email", true),
+            },
+            "invitee_name": schema.StringAttribute{
+                MarkdownDescription: "The name typed when the person was invited, shown in place of their own until they accept.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was created.",
@@ -193,6 +203,9 @@ func (r *TeamMemberResource) Create(ctx context.Context, req resource.CreateRequ
     if !data.UserId.IsNull() && !data.UserId.IsUnknown() {
         requestDataMap["userId"] = data.UserId.ValueString()
     }
+    if !data.InviteeName.IsNull() && !data.InviteeName.IsUnknown() {
+        requestDataMap["inviteeName"] = data.InviteeName.ValueString()
+    }
     // Named by email address: invited by it (see people.go).
     if !data.UserEmail.IsNull() && !data.UserEmail.IsUnknown() {
         delete(teamMemberRequest["data"].(map[string]interface{}), "userId")
@@ -262,6 +275,7 @@ func (r *TeamMemberResource) Create(ctx context.Context, req resource.CreateRequ
         "teamId": true,
         "projectId": true,
         "userId": true,
+        "inviteeName": true,
         "createdAt": true,
         "updatedAt": true,
         "hasAcceptedInvitation": true,
@@ -397,6 +411,50 @@ func (r *TeamMemberResource) Create(ctx context.Context, req resource.CreateRequ
     } else {
         data.UserId = types.StringNull()
     }
+    if obj, ok := dataMap["inviteeName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.InviteeName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.InviteeName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.InviteeName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.InviteeName = types.StringValue(string(jsonBytes))
+            } else {
+                data.InviteeName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.InviteeName = types.StringValue(string(jsonBytes))
+            } else {
+                data.InviteeName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.InviteeName = types.StringValue(string(jsonBytes))
+        } else {
+            data.InviteeName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["inviteeName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.InviteeName = types.StringValue(string(jsonBytes))
+        } else {
+            data.InviteeName = types.StringNull()
+        }
+    } else if val, ok := dataMap["inviteeName"].(string); ok {
+        data.InviteeName = types.StringValue(val)
+    } else {
+        data.InviteeName = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -469,6 +527,7 @@ func (r *TeamMemberResource) Read(ctx context.Context, req resource.ReadRequest,
         "teamId": true,
         "projectId": true,
         "userId": true,
+        "inviteeName": true,
         "createdAt": true,
         "updatedAt": true,
         "hasAcceptedInvitation": true,
@@ -609,6 +668,50 @@ func (r *TeamMemberResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.UserId = types.StringNull()
     }
+    if obj, ok := dataMap["inviteeName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.InviteeName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.InviteeName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.InviteeName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.InviteeName = types.StringValue(string(jsonBytes))
+            } else {
+                data.InviteeName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.InviteeName = types.StringValue(string(jsonBytes))
+            } else {
+                data.InviteeName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.InviteeName = types.StringValue(string(jsonBytes))
+        } else {
+            data.InviteeName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["inviteeName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.InviteeName = types.StringValue(string(jsonBytes))
+        } else {
+            data.InviteeName = types.StringNull()
+        }
+    } else if val, ok := dataMap["inviteeName"].(string); ok {
+        data.InviteeName = types.StringValue(val)
+    } else {
+        data.InviteeName = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -720,6 +823,7 @@ func (r *TeamMemberResource) Update(ctx context.Context, req resource.UpdateRequ
         "teamId": true,
         "projectId": true,
         "userId": true,
+        "inviteeName": true,
         "createdAt": true,
         "updatedAt": true,
         "hasAcceptedInvitation": true,
@@ -850,6 +954,50 @@ func (r *TeamMemberResource) Update(ctx context.Context, req resource.UpdateRequ
     } else {
         data.UserId = types.StringNull()
     }
+    if obj, ok := dataMap["inviteeName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.InviteeName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.InviteeName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.InviteeName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.InviteeName = types.StringValue(string(jsonBytes))
+            } else {
+                data.InviteeName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.InviteeName = types.StringValue(string(jsonBytes))
+            } else {
+                data.InviteeName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.InviteeName = types.StringValue(string(jsonBytes))
+        } else {
+            data.InviteeName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["inviteeName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.InviteeName = types.StringValue(string(jsonBytes))
+        } else {
+            data.InviteeName = types.StringNull()
+        }
+    } else if val, ok := dataMap["inviteeName"].(string); ok {
+        data.InviteeName = types.StringValue(val)
+    } else {
+        data.InviteeName = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -965,6 +1113,9 @@ func (r *TeamMemberResource) ImportState(ctx context.Context, req resource.Impor
 func (r *TeamMemberResource) keepPlannedValues(data *TeamMemberResourceModel, plan *TeamMemberResourceModel, config *TeamMemberResourceModel) {
     if config.UserId.IsNull() && !plan.UserId.IsUnknown() {
         data.UserId = plan.UserId
+    }
+    if config.InviteeName.IsNull() && !plan.InviteeName.IsUnknown() {
+        data.InviteeName = plan.InviteeName
     }
     if config.UserEmail.IsNull() && !plan.UserEmail.IsUnknown() {
         data.UserEmail = plan.UserEmail

@@ -18,6 +18,21 @@ resource "oneuptime_incident_custom_field" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`sort_order` is this incident custom field's place among the incident custom fields of its project, lowest first. Setting it places this incident custom field and moves no other, so a configuration that numbers every incident custom field of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.incident_custom_fields`:
+
+```terraform
+sort_order = index(local.incident_custom_fields, each.key) + 1
+```
+
+- Give each incident custom field a number of its own: two incident custom fields at one number are shown the older first.
+- An incident custom field created without `sort_order` goes after the last one of its project.
+- Deleting an incident custom field leaves a gap in the numbers, which changes nothing: incident custom fields go by their numbers, not by counting.
+- Moving an incident custom field in the OneUptime Dashboard numbers the project's incident custom fields 1..n again; the next plan shows that as changes to `sort_order`.
+
+
 ## Schema
 
 ### Required
@@ -34,7 +49,7 @@ resource "oneuptime_incident_custom_field" "example" {
 - `map_from_custom_field_name` (String) Name of the custom field on the related resource this field copies its value from.
 - `map_from_resource_type` (String) Related resource this field copies its value from. Empty means values are entered by hand. Allowed values: `Monitor`.
 - `show_on_create` (Boolean) When on, this field is asked for in a Details step when an incident is declared from the dashboard, and incident templates can fill it in. Defaults to `false`.
-- `sort_order` (Number) Where this field appears among the incident's custom fields, lowest number first. A new field is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `sort_order` (Number) Where this field appears among the incident's custom fields, lowest number first. A new field is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 
 ### Read-Only
 

@@ -54,6 +54,7 @@ type DataAssetResourceModel struct {
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DataStoreName types.String `tfsdk:"data_store_name"`
     DataStoreKind types.String `tfsdk:"data_store_kind"`
+    EntitySetName types.String `tfsdk:"entity_set_name"`
     RowCountChangeTolerancePercent types.Number `tfsdk:"row_count_change_tolerance_percent"`
     Columns JSONSubsetValue `tfsdk:"columns"`
     DbtNode JSONSubsetValue `tfsdk:"dbt_node"`
@@ -190,6 +191,10 @@ func (r *DataAssetResource) schemaDefinition() schema.Schema {
             },
             "data_store_kind": schema.StringAttribute{
                 MarkdownDescription: "What kind of store this asset is in, such as PostgreSQL or Snowflake.",
+                Computed: true,
+            },
+            "entity_set_name": schema.StringAttribute{
+                MarkdownDescription: "A Microsoft Dataverse table's entity set: the name its Web API and Power BI's OData connectors call it by, such as accounts for the account table. Empty for every other database's tables.",
                 Computed: true,
             },
             "row_count_change_tolerance_percent": schema.NumberAttribute{
@@ -423,6 +428,7 @@ func (r *DataAssetResource) Create(ctx context.Context, req resource.CreateReque
         "updatedAt": true,
         "dataStoreName": true,
         "dataStoreKind": true,
+        "entitySetName": true,
         "rowCountChangeTolerancePercent": true,
         "columns": true,
         "dbtNode": true,
@@ -934,6 +940,50 @@ func (r *DataAssetResource) Create(ctx context.Context, req resource.CreateReque
     } else {
         data.DataStoreKind = types.StringNull()
     }
+    if obj, ok := dataMap["entitySetName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EntitySetName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EntitySetName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EntitySetName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EntitySetName = types.StringValue(string(jsonBytes))
+            } else {
+                data.EntitySetName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EntitySetName = types.StringValue(string(jsonBytes))
+            } else {
+                data.EntitySetName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EntitySetName = types.StringValue(string(jsonBytes))
+        } else {
+            data.EntitySetName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["entitySetName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.EntitySetName = types.StringValue(string(jsonBytes))
+        } else {
+            data.EntitySetName = types.StringNull()
+        }
+    } else if val, ok := dataMap["entitySetName"].(string); ok {
+        data.EntitySetName = types.StringValue(val)
+    } else {
+        data.EntitySetName = types.StringNull()
+    }
     data.RowCountChangeTolerancePercent = numberFromAPI(data.RowCountChangeTolerancePercent, dataMap["rowCountChangeTolerancePercent"])
     if obj, ok := dataMap["columns"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
@@ -1197,6 +1247,7 @@ func (r *DataAssetResource) Read(ctx context.Context, req resource.ReadRequest, 
         "updatedAt": true,
         "dataStoreName": true,
         "dataStoreKind": true,
+        "entitySetName": true,
         "rowCountChangeTolerancePercent": true,
         "columns": true,
         "dbtNode": true,
@@ -1709,6 +1760,50 @@ func (r *DataAssetResource) Read(ctx context.Context, req resource.ReadRequest, 
     } else {
         data.DataStoreKind = types.StringNull()
     }
+    if obj, ok := dataMap["entitySetName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EntitySetName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EntitySetName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EntitySetName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EntitySetName = types.StringValue(string(jsonBytes))
+            } else {
+                data.EntitySetName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EntitySetName = types.StringValue(string(jsonBytes))
+            } else {
+                data.EntitySetName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EntitySetName = types.StringValue(string(jsonBytes))
+        } else {
+            data.EntitySetName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["entitySetName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.EntitySetName = types.StringValue(string(jsonBytes))
+        } else {
+            data.EntitySetName = types.StringNull()
+        }
+    } else if val, ok := dataMap["entitySetName"].(string); ok {
+        data.EntitySetName = types.StringValue(val)
+    } else {
+        data.EntitySetName = types.StringNull()
+    }
     data.RowCountChangeTolerancePercent = numberFromAPI(data.RowCountChangeTolerancePercent, dataMap["rowCountChangeTolerancePercent"])
     if obj, ok := dataMap["columns"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
@@ -2016,6 +2111,7 @@ func (r *DataAssetResource) Update(ctx context.Context, req resource.UpdateReque
         "updatedAt": true,
         "dataStoreName": true,
         "dataStoreKind": true,
+        "entitySetName": true,
         "rowCountChangeTolerancePercent": true,
         "columns": true,
         "dbtNode": true,
@@ -2521,6 +2617,50 @@ func (r *DataAssetResource) Update(ctx context.Context, req resource.UpdateReque
         data.DataStoreKind = types.StringValue(val)
     } else {
         data.DataStoreKind = types.StringNull()
+    }
+    if obj, ok := dataMap["entitySetName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EntitySetName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EntitySetName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EntitySetName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EntitySetName = types.StringValue(string(jsonBytes))
+            } else {
+                data.EntitySetName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EntitySetName = types.StringValue(string(jsonBytes))
+            } else {
+                data.EntitySetName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EntitySetName = types.StringValue(string(jsonBytes))
+        } else {
+            data.EntitySetName = types.StringNull()
+        }
+    } else if arr, ok := dataMap["entitySetName"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.EntitySetName = types.StringValue(string(jsonBytes))
+        } else {
+            data.EntitySetName = types.StringNull()
+        }
+    } else if val, ok := dataMap["entitySetName"].(string); ok {
+        data.EntitySetName = types.StringValue(val)
+    } else {
+        data.EntitySetName = types.StringNull()
     }
     data.RowCountChangeTolerancePercent = numberFromAPI(data.RowCountChangeTolerancePercent, dataMap["rowCountChangeTolerancePercent"])
     if obj, ok := dataMap["columns"].(map[string]interface{}); ok {

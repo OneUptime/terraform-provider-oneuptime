@@ -79,6 +79,7 @@ type DataStoreDataSourceModel struct {
     TableHealthStatus types.String `tfsdk:"table_health_status"`
     TableHealthMessage types.String `tfsdk:"table_health_message"`
     TableHealthAssetCount types.Number `tfsdk:"table_health_asset_count"`
+    TableHealthSkippedTables types.String `tfsdk:"table_health_skipped_tables"`
     NewPersonalDataColumns types.String `tfsdk:"new_personal_data_columns"`
     FindingCount types.Number `tfsdk:"finding_count"`
     OpenIssueCount types.Number `tfsdk:"open_issue_count"`
@@ -344,6 +345,10 @@ func (d *DataStoreDataSource) Schema(ctx context.Context, req datasource.SchemaR
             "table_health_asset_count": schema.NumberAttribute{
                 MarkdownDescription: "How many tables and views the last collection found.",
                 Optional: true,
+                Computed: true,
+            },
+            "table_health_skipped_tables": schema.StringAttribute{
+                MarkdownDescription: "The tables the database keeps refusing, skipped until their next try: what is not read of each, why, and when it is asked again. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "new_personal_data_columns": schema.StringAttribute{
@@ -664,6 +669,7 @@ func (d *DataStoreDataSource) Read(ctx context.Context, req datasource.ReadReque
         "tableHealthStatus": true,
         "tableHealthMessage": true,
         "tableHealthAssetCount": true,
+        "tableHealthSkippedTables": true,
         "newPersonalDataColumns": true,
         "findingCount": true,
         "openIssueCount": true,
@@ -1791,6 +1797,30 @@ func (d *DataStoreDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.TableHealthMessage = types.StringNull()
     }
     data.TableHealthAssetCount = numberFromAPI(data.TableHealthAssetCount, item["tableHealthAssetCount"])
+    if obj, ok := item["tableHealthSkippedTables"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TableHealthSkippedTables = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TableHealthSkippedTables = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TableHealthSkippedTables = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TableHealthSkippedTables = types.StringValue(string(jsonBytes))
+        } else {
+            data.TableHealthSkippedTables = types.StringNull()
+        }
+    } else if arr, ok := item["tableHealthSkippedTables"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TableHealthSkippedTables = types.StringValue(string(jsonBytes))
+        } else {
+            data.TableHealthSkippedTables = types.StringNull()
+        }
+    } else if val, ok := item["tableHealthSkippedTables"].(string); ok {
+        data.TableHealthSkippedTables = types.StringValue(val)
+    } else {
+        data.TableHealthSkippedTables = types.StringNull()
+    }
     if obj, ok := item["newPersonalDataColumns"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.NewPersonalDataColumns = types.StringValue(val)

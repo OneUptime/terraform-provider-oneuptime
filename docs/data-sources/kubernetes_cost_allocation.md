@@ -28,10 +28,13 @@ data "oneuptime_kubernetes_cost_allocation" "by_id" {
 
 ### Optional
 
+- `bundled_engine_unused` (Boolean) Bundled Engine Unused.
 - `cluster_name` (String) Cluster Name.
 - `container_name` (String) Container Name.
 - `controller_kind` (String) Controller Kind.
 - `controller_name` (String) Controller Name.
+- `cost_engine` (String) Cost Engine.
+- `cost_engine_service` (String) Cost Engine Service.
 - `cpu_core_hours` (Number) CPU Core Hours.
 - `cpu_core_limit_average` (Number) CPU Core Limit Average.
 - `cpu_core_request_average` (Number) CPU Core Request Average.
@@ -39,6 +42,7 @@ data "oneuptime_kubernetes_cost_allocation" "by_id" {
 - `cpu_cost` (Number) CPU Cost.
 - `cpu_efficiency` (Number) CPU Efficiency.
 - `currency` (String) Currency.
+- `efficiency_weight` (Number) Efficiency Weight.
 - `external_cost` (Number) External Cost.
 - `gpu_cost` (Number) GPU Cost.
 - `gpu_hours` (Number) GPU Hours.
@@ -51,6 +55,8 @@ data "oneuptime_kubernetes_cost_allocation" "by_id" {
 - `network_cost` (Number) Network Cost.
 - `node_name` (String) Node Name.
 - `pod_name` (String) Pod Name.
+- `pricing_provider` (String) Pricing Provider.
+- `pricing_source` (String) Pricing Source.
 - `provider_id` (String) Provider ID.
 - `pv_byte_hours` (Number) PV Byte Hours.
 - `pv_cost` (Number) PV Cost.
@@ -66,6 +72,7 @@ data "oneuptime_kubernetes_cost_allocation" "by_id" {
 - `shipment_id` (String) Shipment ID.
 - `total_cost` (Number) Total Cost.
 - `total_efficiency` (Number) Total Efficiency.
+- `weighted_efficiency` (Number) Weighted Efficiency.
 - `window_end` (String) Window End.
 - `window_start` (String) Window Start.
 

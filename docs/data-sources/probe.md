@@ -34,6 +34,7 @@ data "oneuptime_probe" "by_id" {
 - `icon_file_id` (String) Probe Page Icon File ID. The ID of a `oneuptime_file`.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `name` (String) Any friendly name of this object.
+- `reported_version` (String) The OneUptime release this probe last said it runs. Set by OneUptime from the probe's own requests. Empty until the probe connects, and for a probe older than 17.0.1, which does not say.
 - `should_auto_enable_probe_on_new_monitors` (Boolean) Auto Enable Probe on New Monitors.
 - `slug` (String) Friendly globally unique name for your object.
 

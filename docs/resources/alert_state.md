@@ -19,6 +19,22 @@ resource "oneuptime_alert_state" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this alert state's place among the alert states of its project, lowest first. Setting it places this alert state and moves no other, so a configuration that numbers every alert state of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.alert_states`:
+
+```terraform
+order = index(local.alert_states, each.key) + 1
+```
+
+- Give each alert state a number of its own: two alert states at one number are shown the older first.
+- An alert state created without `order` goes just above the resolved state: it takes the resolved state's number, and the resolved state and the alert states right below it step down one. Give it `order` when the configuration numbers the others, or the next plan shows theirs changed.
+- The created state, acknowledged state and resolved state stay in that order, from the top: a write that would put two of them at one number, or out of order, is refused. An apply that moves them past each other's numbers can meet that refusal on one write; apply again and it finishes.
+- Deleting an alert state leaves a gap in the numbers, which changes nothing: alert states go by their numbers, not by counting.
+- Moving an alert state in the OneUptime Dashboard numbers the project's alert states 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -33,7 +49,7 @@ resource "oneuptime_alert_state" "example" {
 - `is_archived` (Boolean) Archived states stay on the alerts and episodes that are in them, but can't be picked again. The created, acknowledged and resolved states can't be archived. Defaults to `false`.
 - `is_created_state` (Boolean) Is it the created state of the alert?
 - `is_resolved_state` (Boolean) Is it the resolved state of the alert?
-- `order` (Number) Where this state sits in the project's list of alert states: 1 is the top. Alerts only ever move down the list, and an alert in a state at or below the acknowledged (or resolved) state counts as acknowledged (or resolved), so the created, acknowledged and resolved states have to stay in that order. A new state without a number goes just above the resolved state. Setting a number moves the state to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this state sits in the project's list of alert states: 1 is the top. Alerts only ever move down the list, and an alert in a state at or below the acknowledged (or resolved) state counts as acknowledged (or resolved), so the created, acknowledged and resolved states have to stay in that order. A new state without a number goes just above the resolved state. Setting a number places the state there and moves no other: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 
 ### Read-Only
 

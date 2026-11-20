@@ -1,0 +1,63 @@
+---
+page_title: "oneuptime_pipeline_owner_rule Resource - oneuptime"
+subcategory: "Other"
+description: |-
+  Rules for automatically assigning owners to data pipelines when matching pipelines are first seen.
+---
+
+# oneuptime_pipeline_owner_rule (Resource)
+
+Rules for automatically assigning owners to data pipelines when matching pipelines are first seen.
+
+## Example Usage
+
+```terraform
+resource "oneuptime_pipeline_owner_rule" "example" {
+  name        = "Example pipeline owner rule"
+  description = "Managed by Terraform"
+}
+```
+
+## Schema
+
+### Required
+
+- `name` (String) Name of this rule.
+
+### Optional
+
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
+- `description` (String) Description of this rule.
+- `is_enabled` (Boolean) Whether this rule is enabled. Defaults to `true`.
+- `name_regex_pattern` (String) Case-insensitive regex matched against the pipeline's name, such as orders_daily.load_orders.
+- `namespace_regex_pattern` (String) Case-insensitive regex matched against the pipeline's namespace: where it runs, such as airflow://prod.
+- `notify_owners` (Boolean) Send notifications to owner users and teams when they are added by this rule. Defaults to `true`.
+- `owner_teams` (Set of String) Teams to add as owners on the resource when this rule matches. IDs of `oneuptime_team` resources.
+- `owner_user_emails` (Set of String) The email addresses of the people in `owner_users`, instead of their IDs: each one of someone in this project, or invited to it. Give one of the two.
+- `owner_users` (Set of String) Users to add as owners on the resource when this rule matches. IDs of `oneuptime_user` records. Or name them by email address, in `owner_user_emails`.
+
+### Read-Only
+
+- `created_at` (String) Date and Time when the object was created.
+- `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `emptied_limits` (String) The lists this rule was limited to whose every record was deleted since: each list, the deleted records' names, how many and when. Deleting the last record a list held would make the rule match every record instead, so OneUptime switched the rule off and wrote this. It is cleared when the rule is switched on again; until a list named here holds a record again, switching the rule on must say what the list holds in the same update. Written by OneUptime; any value sent for it is refused. A JSON value: read it with `jsondecode()`.
+- `id` (String) Unique identifier for the resource.
+- `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `updated_at` (String) Date and Time when the object was updated.
+
+## Import
+
+Import an existing pipeline owner rule by its id, with an `import` block (Terraform 1.5+, OpenTofu 1.6+):
+
+```terraform
+import {
+  to = oneuptime_pipeline_owner_rule.example
+  id = "<id>"
+}
+```
+
+or on the command line:
+
+```shell
+terraform import oneuptime_pipeline_owner_rule.example <id>
+```

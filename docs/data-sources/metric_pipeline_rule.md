@@ -42,7 +42,7 @@ data "oneuptime_metric_pipeline_rule" "by_id" {
 - `rule_type` (String) One of: Filter, Drop, RenameMetric, RenameAttribute, AddAttribute, RemoveAttribute, RedactAttribute, Sample.
 - `sample_percentage` (Number) For Sample: percentage of matched rows to keep (0-100). 100 keeps all.
 - `service_id` (String) Optional service ID scoping this rule. Null means the rule is project-wide. The ID of a `oneuptime_service`.
-- `sort_order` (Number) Where this rule is evaluated among the project's metric pipeline rules, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `sort_order` (Number) Where this rule is evaluated among the project's metric pipeline rules, lowest number first. A new rule is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them.
 
 ### Read-Only
 

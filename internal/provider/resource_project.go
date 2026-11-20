@@ -89,6 +89,7 @@ type ProjectResourceModel struct {
     RecordAndTranscribeIncidentCalls types.Bool `tfsdk:"record_and_transcribe_incident_calls"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
     RequireSsoWithSsoProviderId types.String `tfsdk:"require_sso_with_sso_provider_id"`
+    ManageSignInWithSso types.Bool `tfsdk:"manage_sign_in_with_sso"`
     AutoRechargeSmsOrCallByBalanceInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_by_balance_in_usd"`
     AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_when_current_balance_falls_in_usd"`
     EnableSmsNotifications types.Bool `tfsdk:"enable_sms_notifications"`
@@ -98,6 +99,7 @@ type ProjectResourceModel struct {
     DisableOnCallNotificationFallback types.Bool `tfsdk:"disable_on_call_notification_fallback"`
     DefaultPagingLadder JSONSubsetValue `tfsdk:"default_paging_ladder"`
     RequirePhoneMethodForOnCall types.Bool `tfsdk:"require_phone_method_for_on_call"`
+    DetectVoicemailOnCalls types.Bool `tfsdk:"detect_voicemail_on_calls"`
     EnableAutoRechargeSmsOrCallBalance types.Bool `tfsdk:"enable_auto_recharge_sms_or_call_balance"`
     AutoAiRechargeByBalanceInUsd types.Number `tfsdk:"auto_ai_recharge_by_balance_in_usd"`
     AutoRechargeAiWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_ai_when_current_balance_falls_in_usd"`
@@ -109,6 +111,7 @@ type ProjectResourceModel struct {
     AiRunMaxToolCalls types.Number `tfsdk:"ai_run_max_tool_calls"`
     AiRunMaxTokens types.Number `tfsdk:"ai_run_max_tokens"`
     AiRunTimeLimitInMinutes types.Number `tfsdk:"ai_run_time_limit_in_minutes"`
+    AiRunCommandTimeLimitInMinutes types.Number `tfsdk:"ai_run_command_time_limit_in_minutes"`
     RequireTwoApprovalsForRiskierFixes types.Bool `tfsdk:"require_two_approvals_for_riskier_fixes"`
     AcknowledgeLinkedAlertsWhenIncidentAcknowledged types.Bool `tfsdk:"acknowledge_linked_alerts_when_incident_acknowledged"`
     ResolveLinkedAlertsWhenIncidentResolved types.Bool `tfsdk:"resolve_linked_alerts_when_incident_resolved"`
@@ -607,6 +610,15 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "manage_sign_in_with_sso": schema.BoolAttribute{
+                MarkdownDescription: "When on, while the project requires SSO, people whose every project requires SSO and has this on set no password, passkeys or two-factor authentication in OneUptime.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "auto_recharge_sms_or_call_by_balance_in_usd": schema.NumberAttribute{
                 MarkdownDescription: "Auto recharge amount in USD for SMS, Call, and WhatsApp.",
                 Optional: true,
@@ -690,6 +702,15 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "detect_voicemail_on_calls": schema.BoolAttribute{
+                MarkdownDescription: "When on, Twilio checks whether a person or voicemail answered each on-call call. A call voicemail answered counts as not answered, and leaves a short message. Twilio charges for each answered call it checks.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
                 },
@@ -787,6 +808,15 @@ func (r *ProjectResource) schemaDefinition() schema.Schema {
             },
             "ai_run_time_limit_in_minutes": schema.NumberAttribute{
                 MarkdownDescription: "How long one OneUptime AI run may take before it answers with what it found. An incident or alert investigation uses its own lane's time limit when that is set. Unset means the default, 120 minutes.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    NumberKeepSameAPINumber(),
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "ai_run_command_time_limit_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "How long one command a code task runs on a Runner of the project's own may take, such as a slow install, build or test suite: at most 120 minutes, and never past the run's time limit. Unset means the default, 10 minutes.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -1592,6 +1622,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "recordAndTranscribeIncidentCalls": true,
         "requireSsoForLogin": true,
         "requireSsoWithSsoProviderId": true,
+        "manageSignInWithSso": true,
         "autoRechargeSmsOrCallByBalanceInUSD": true,
         "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": true,
         "enableSmsNotifications": true,
@@ -1601,6 +1632,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "disableOnCallNotificationFallback": true,
         "defaultPagingLadder": true,
         "requirePhoneMethodForOnCall": true,
+        "detectVoicemailOnCalls": true,
         "enableAutoRechargeSmsOrCallBalance": true,
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
@@ -1612,6 +1644,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "aiRunMaxToolCalls": true,
         "aiRunMaxTokens": true,
         "aiRunTimeLimitInMinutes": true,
+        "aiRunCommandTimeLimitInMinutes": true,
         "requireTwoApprovalsForRiskierFixes": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
@@ -2364,6 +2397,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.RequireSsoWithSsoProviderId = types.StringNull()
     }
+    if val, ok := dataMap["manageSignInWithSso"].(bool); ok {
+        data.ManageSignInWithSso = types.BoolValue(val)
+    }
     data.AutoRechargeSmsOrCallByBalanceInUsd = numberFromAPI(data.AutoRechargeSmsOrCallByBalanceInUsd, dataMap["autoRechargeSmsOrCallByBalanceInUSD"])
     data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = numberFromAPI(data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd, dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"])
     if val, ok := dataMap["enableSmsNotifications"].(bool); ok {
@@ -2428,6 +2464,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if val, ok := dataMap["requirePhoneMethodForOnCall"].(bool); ok {
         data.RequirePhoneMethodForOnCall = types.BoolValue(val)
     }
+    if val, ok := dataMap["detectVoicemailOnCalls"].(bool); ok {
+        data.DetectVoicemailOnCalls = types.BoolValue(val)
+    }
     if val, ok := dataMap["enableAutoRechargeSmsOrCallBalance"].(bool); ok {
         data.EnableAutoRechargeSmsOrCallBalance = types.BoolValue(val)
     }
@@ -2486,6 +2525,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     data.AiRunMaxToolCalls = numberFromAPI(data.AiRunMaxToolCalls, dataMap["aiRunMaxToolCalls"])
     data.AiRunMaxTokens = numberFromAPI(data.AiRunMaxTokens, dataMap["aiRunMaxTokens"])
     data.AiRunTimeLimitInMinutes = numberFromAPI(data.AiRunTimeLimitInMinutes, dataMap["aiRunTimeLimitInMinutes"])
+    data.AiRunCommandTimeLimitInMinutes = numberFromAPI(data.AiRunCommandTimeLimitInMinutes, dataMap["aiRunCommandTimeLimitInMinutes"])
     if val, ok := dataMap["requireTwoApprovalsForRiskierFixes"].(bool); ok {
         data.RequireTwoApprovalsForRiskierFixes = types.BoolValue(val)
     }
@@ -3638,6 +3678,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "recordAndTranscribeIncidentCalls": true,
         "requireSsoForLogin": true,
         "requireSsoWithSsoProviderId": true,
+        "manageSignInWithSso": true,
         "autoRechargeSmsOrCallByBalanceInUSD": true,
         "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": true,
         "enableSmsNotifications": true,
@@ -3647,6 +3688,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "disableOnCallNotificationFallback": true,
         "defaultPagingLadder": true,
         "requirePhoneMethodForOnCall": true,
+        "detectVoicemailOnCalls": true,
         "enableAutoRechargeSmsOrCallBalance": true,
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
@@ -3658,6 +3700,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "aiRunMaxToolCalls": true,
         "aiRunMaxTokens": true,
         "aiRunTimeLimitInMinutes": true,
+        "aiRunCommandTimeLimitInMinutes": true,
         "requireTwoApprovalsForRiskierFixes": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
@@ -4411,6 +4454,9 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.RequireSsoWithSsoProviderId = types.StringNull()
     }
+    if val, ok := dataMap["manageSignInWithSso"].(bool); ok {
+        data.ManageSignInWithSso = types.BoolValue(val)
+    }
     data.AutoRechargeSmsOrCallByBalanceInUsd = numberFromAPI(data.AutoRechargeSmsOrCallByBalanceInUsd, dataMap["autoRechargeSmsOrCallByBalanceInUSD"])
     data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = numberFromAPI(data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd, dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"])
     if val, ok := dataMap["enableSmsNotifications"].(bool); ok {
@@ -4475,6 +4521,9 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     if val, ok := dataMap["requirePhoneMethodForOnCall"].(bool); ok {
         data.RequirePhoneMethodForOnCall = types.BoolValue(val)
     }
+    if val, ok := dataMap["detectVoicemailOnCalls"].(bool); ok {
+        data.DetectVoicemailOnCalls = types.BoolValue(val)
+    }
     if val, ok := dataMap["enableAutoRechargeSmsOrCallBalance"].(bool); ok {
         data.EnableAutoRechargeSmsOrCallBalance = types.BoolValue(val)
     }
@@ -4533,6 +4582,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     data.AiRunMaxToolCalls = numberFromAPI(data.AiRunMaxToolCalls, dataMap["aiRunMaxToolCalls"])
     data.AiRunMaxTokens = numberFromAPI(data.AiRunMaxTokens, dataMap["aiRunMaxTokens"])
     data.AiRunTimeLimitInMinutes = numberFromAPI(data.AiRunTimeLimitInMinutes, dataMap["aiRunTimeLimitInMinutes"])
+    data.AiRunCommandTimeLimitInMinutes = numberFromAPI(data.AiRunCommandTimeLimitInMinutes, dataMap["aiRunCommandTimeLimitInMinutes"])
     if val, ok := dataMap["requireTwoApprovalsForRiskierFixes"].(bool); ok {
         data.RequireTwoApprovalsForRiskierFixes = types.BoolValue(val)
     }
@@ -5684,6 +5734,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.RequireSsoWithSsoProviderId.IsUnknown() && !state.RequireSsoWithSsoProviderId.IsUnknown() && !data.RequireSsoWithSsoProviderId.Equal(state.RequireSsoWithSsoProviderId) {
         requestDataMap["requireSsoWithSsoProviderId"] = data.RequireSsoWithSsoProviderId.ValueString()
     }
+    if !data.ManageSignInWithSso.IsUnknown() && !state.ManageSignInWithSso.IsUnknown() && !data.ManageSignInWithSso.Equal(state.ManageSignInWithSso) {
+        requestDataMap["manageSignInWithSso"] = data.ManageSignInWithSso.ValueBool()
+    }
     if !data.IncidentNumberPrefix.IsUnknown() && !state.IncidentNumberPrefix.IsUnknown() && !data.IncidentNumberPrefix.Equal(state.IncidentNumberPrefix) {
         requestDataMap["incidentNumberPrefix"] = data.IncidentNumberPrefix.ValueString()
     }
@@ -5752,6 +5805,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.RequirePhoneMethodForOnCall.IsUnknown() && !state.RequirePhoneMethodForOnCall.IsUnknown() && !data.RequirePhoneMethodForOnCall.Equal(state.RequirePhoneMethodForOnCall) {
         requestDataMap["requirePhoneMethodForOnCall"] = data.RequirePhoneMethodForOnCall.ValueBool()
     }
+    if !data.DetectVoicemailOnCalls.IsUnknown() && !state.DetectVoicemailOnCalls.IsUnknown() && !data.DetectVoicemailOnCalls.Equal(state.DetectVoicemailOnCalls) {
+        requestDataMap["detectVoicemailOnCalls"] = data.DetectVoicemailOnCalls.ValueBool()
+    }
     if !data.EnableAutoRechargeSmsOrCallBalance.IsUnknown() && !state.EnableAutoRechargeSmsOrCallBalance.IsUnknown() && !data.EnableAutoRechargeSmsOrCallBalance.Equal(state.EnableAutoRechargeSmsOrCallBalance) {
         requestDataMap["enableAutoRechargeSmsOrCallBalance"] = data.EnableAutoRechargeSmsOrCallBalance.ValueBool()
     }
@@ -5784,6 +5840,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if !data.AiRunTimeLimitInMinutes.IsUnknown() && !state.AiRunTimeLimitInMinutes.IsUnknown() && !data.AiRunTimeLimitInMinutes.Equal(state.AiRunTimeLimitInMinutes) {
         requestDataMap["aiRunTimeLimitInMinutes"] = r.bigFloatToFloat64(data.AiRunTimeLimitInMinutes.ValueBigFloat())
+    }
+    if !data.AiRunCommandTimeLimitInMinutes.IsUnknown() && !state.AiRunCommandTimeLimitInMinutes.IsUnknown() && !data.AiRunCommandTimeLimitInMinutes.Equal(state.AiRunCommandTimeLimitInMinutes) {
+        requestDataMap["aiRunCommandTimeLimitInMinutes"] = r.bigFloatToFloat64(data.AiRunCommandTimeLimitInMinutes.ValueBigFloat())
     }
     if !data.EnableAutomaticIncidentInvestigation.IsUnknown() && !state.EnableAutomaticIncidentInvestigation.IsUnknown() && !data.EnableAutomaticIncidentInvestigation.Equal(state.EnableAutomaticIncidentInvestigation) {
         requestDataMap["enableAutomaticIncidentInvestigation"] = data.EnableAutomaticIncidentInvestigation.ValueBool()
@@ -6055,6 +6114,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "recordAndTranscribeIncidentCalls": true,
         "requireSsoForLogin": true,
         "requireSsoWithSsoProviderId": true,
+        "manageSignInWithSso": true,
         "autoRechargeSmsOrCallByBalanceInUSD": true,
         "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": true,
         "enableSmsNotifications": true,
@@ -6064,6 +6124,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "disableOnCallNotificationFallback": true,
         "defaultPagingLadder": true,
         "requirePhoneMethodForOnCall": true,
+        "detectVoicemailOnCalls": true,
         "enableAutoRechargeSmsOrCallBalance": true,
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
@@ -6075,6 +6136,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "aiRunMaxToolCalls": true,
         "aiRunMaxTokens": true,
         "aiRunTimeLimitInMinutes": true,
+        "aiRunCommandTimeLimitInMinutes": true,
         "requireTwoApprovalsForRiskierFixes": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
@@ -6822,6 +6884,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.RequireSsoWithSsoProviderId = types.StringNull()
     }
+    if val, ok := dataMap["manageSignInWithSso"].(bool); ok {
+        data.ManageSignInWithSso = types.BoolValue(val)
+    }
     data.AutoRechargeSmsOrCallByBalanceInUsd = numberFromAPI(data.AutoRechargeSmsOrCallByBalanceInUsd, dataMap["autoRechargeSmsOrCallByBalanceInUSD"])
     data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = numberFromAPI(data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd, dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"])
     if val, ok := dataMap["enableSmsNotifications"].(bool); ok {
@@ -6886,6 +6951,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if val, ok := dataMap["requirePhoneMethodForOnCall"].(bool); ok {
         data.RequirePhoneMethodForOnCall = types.BoolValue(val)
     }
+    if val, ok := dataMap["detectVoicemailOnCalls"].(bool); ok {
+        data.DetectVoicemailOnCalls = types.BoolValue(val)
+    }
     if val, ok := dataMap["enableAutoRechargeSmsOrCallBalance"].(bool); ok {
         data.EnableAutoRechargeSmsOrCallBalance = types.BoolValue(val)
     }
@@ -6944,6 +7012,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     data.AiRunMaxToolCalls = numberFromAPI(data.AiRunMaxToolCalls, dataMap["aiRunMaxToolCalls"])
     data.AiRunMaxTokens = numberFromAPI(data.AiRunMaxTokens, dataMap["aiRunMaxTokens"])
     data.AiRunTimeLimitInMinutes = numberFromAPI(data.AiRunTimeLimitInMinutes, dataMap["aiRunTimeLimitInMinutes"])
+    data.AiRunCommandTimeLimitInMinutes = numberFromAPI(data.AiRunCommandTimeLimitInMinutes, dataMap["aiRunCommandTimeLimitInMinutes"])
     if val, ok := dataMap["requireTwoApprovalsForRiskierFixes"].(bool); ok {
         data.RequireTwoApprovalsForRiskierFixes = types.BoolValue(val)
     }
@@ -8211,6 +8280,9 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     if config.RequireSsoWithSsoProviderId.IsNull() && !plan.RequireSsoWithSsoProviderId.IsUnknown() {
         data.RequireSsoWithSsoProviderId = plan.RequireSsoWithSsoProviderId
     }
+    if config.ManageSignInWithSso.IsNull() && !plan.ManageSignInWithSso.IsUnknown() {
+        data.ManageSignInWithSso = plan.ManageSignInWithSso
+    }
     if config.AutoRechargeSmsOrCallByBalanceInUsd.IsNull() && !plan.AutoRechargeSmsOrCallByBalanceInUsd.IsUnknown() {
         data.AutoRechargeSmsOrCallByBalanceInUsd = plan.AutoRechargeSmsOrCallByBalanceInUsd
     }
@@ -8237,6 +8309,9 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.RequirePhoneMethodForOnCall.IsNull() && !plan.RequirePhoneMethodForOnCall.IsUnknown() {
         data.RequirePhoneMethodForOnCall = plan.RequirePhoneMethodForOnCall
+    }
+    if config.DetectVoicemailOnCalls.IsNull() && !plan.DetectVoicemailOnCalls.IsUnknown() {
+        data.DetectVoicemailOnCalls = plan.DetectVoicemailOnCalls
     }
     if config.EnableAutoRechargeSmsOrCallBalance.IsNull() && !plan.EnableAutoRechargeSmsOrCallBalance.IsUnknown() {
         data.EnableAutoRechargeSmsOrCallBalance = plan.EnableAutoRechargeSmsOrCallBalance
@@ -8270,6 +8345,9 @@ func (r *ProjectResource) keepPlannedValues(data *ProjectResourceModel, plan *Pr
     }
     if config.AiRunTimeLimitInMinutes.IsNull() && !plan.AiRunTimeLimitInMinutes.IsUnknown() {
         data.AiRunTimeLimitInMinutes = plan.AiRunTimeLimitInMinutes
+    }
+    if config.AiRunCommandTimeLimitInMinutes.IsNull() && !plan.AiRunCommandTimeLimitInMinutes.IsUnknown() {
+        data.AiRunCommandTimeLimitInMinutes = plan.AiRunCommandTimeLimitInMinutes
     }
     if config.RequireTwoApprovalsForRiskierFixes.IsNull() && !plan.RequireTwoApprovalsForRiskierFixes.IsUnknown() {
         data.RequireTwoApprovalsForRiskierFixes = plan.RequireTwoApprovalsForRiskierFixes

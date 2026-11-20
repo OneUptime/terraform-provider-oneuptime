@@ -38,6 +38,7 @@ data "oneuptime_cloud_connection" "by_id" {
 
 ### Read-Only
 
+- `added_metrics` (String) Metrics added to what the connection reads beyond each resource type's key metrics, for one resource or for every resource of a type. A JSON value: read it with `jsondecode()`.
 - `config` (String) The cloud's settings that are not secret, such as a role ARN, a tenant or the regions to read. Keys are defined by the cloud. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `last_pull_result` (String) What the last read found: the accounts, the resources by type and region, and the metrics it wrote. A JSON value: read it with `jsondecode()`.

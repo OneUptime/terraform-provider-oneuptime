@@ -41,7 +41,6 @@ type IncidentTemplateTeamOwnerResourceModel struct {
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
 }
 
 func (r *IncidentTemplateTeamOwnerResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -106,10 +105,6 @@ func (r *IncidentTemplateTeamOwnerResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
-            },
-            "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of this resource ownership?",
-                Computed: true,
             },
         },
     }
@@ -225,7 +220,6 @@ func (r *IncidentTemplateTeamOwnerResource) Create(ctx context.Context, req reso
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
-        "isOwnerNotified": true,
         "_id": true,
     }
 
@@ -423,9 +417,6 @@ func (r *IncidentTemplateTeamOwnerResource) Create(ctx context.Context, req reso
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
-        data.IsOwnerNotified = types.BoolValue(val)
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -460,7 +451,6 @@ func (r *IncidentTemplateTeamOwnerResource) Read(ctx context.Context, req resour
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
-        "isOwnerNotified": true,
         "_id": true,
     }
 
@@ -659,9 +649,6 @@ func (r *IncidentTemplateTeamOwnerResource) Read(ctx context.Context, req resour
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
-        data.IsOwnerNotified = types.BoolValue(val)
-    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -725,7 +712,6 @@ func (r *IncidentTemplateTeamOwnerResource) Update(ctx context.Context, req reso
         "createdAt": true,
         "updatedAt": true,
         "createdByUserId": true,
-        "isOwnerNotified": true,
         "_id": true,
     }
 
@@ -917,9 +903,6 @@ func (r *IncidentTemplateTeamOwnerResource) Update(ctx context.Context, req reso
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
-        data.IsOwnerNotified = types.BoolValue(val)
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

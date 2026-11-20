@@ -17,6 +17,21 @@ resource "oneuptime_network_site_assignment_rule" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`priority` is this network site assignment rule's place among the network site assignment rules of its project, the highest number first. Setting it places this network site assignment rule and moves no other, so a configuration that numbers every network site assignment rule of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.network_site_assignment_rules`:
+
+```terraform
+priority = length(local.network_site_assignment_rules) - index(local.network_site_assignment_rules, each.key)
+```
+
+- Give each network site assignment rule a number of its own: two network site assignment rules at one number are shown the older first.
+- A network site assignment rule created without `priority` goes below the last one of its project, one number lower.
+- Deleting a network site assignment rule leaves a gap in the numbers, which changes nothing: network site assignment rules go by their numbers, not by counting.
+- Moving a network site assignment rule in the OneUptime Dashboard numbers the project's network site assignment rules n..1 again; the next plan shows that as changes to `priority`.
+
+
 ## Schema
 
 ### Required
@@ -27,7 +42,7 @@ resource "oneuptime_network_site_assignment_rule" "example" {
 
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource. A JSON value: write it with `jsonencode()`.
 - `hostname_pattern` (String) Devices whose hostname, SNMP system name, display name or DNS name matches this wildcard pattern are assigned to the site.
-- `priority` (Number) Where this rule sits in the list: when several rules match a device, the one highest in the list wins. The rule at the top has the highest number. A new rule is added to the end of the list, with the lowest number. Setting a number another rule already has puts this rule in that place, and the rules in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `priority` (Number) Where this rule sits in the list: when several rules match a device, the one highest in the list wins. The rule at the top has the highest number. A new rule is added to the end of the list, with the lowest number. Setting a number places this rule there and moves no other rule: two rules at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 - `subnet_cidr` (String) Devices and endpoints with an IP in this CIDR are assigned to the site.
 
 ### Read-Only

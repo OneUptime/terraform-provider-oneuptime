@@ -19,6 +19,22 @@ resource "oneuptime_incident_state" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this incident state's place among the incident states of its project, lowest first. Setting it places this incident state and moves no other, so a configuration that numbers every incident state of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.incident_states`:
+
+```terraform
+order = index(local.incident_states, each.key) + 1
+```
+
+- Give each incident state a number of its own: two incident states at one number are shown the older first.
+- An incident state created without `order` goes just above the resolved state: it takes the resolved state's number, and the resolved state and the incident states right below it step down one. Give it `order` when the configuration numbers the others, or the next plan shows theirs changed.
+- The created state, acknowledged state and resolved state stay in that order, from the top: a write that would put two of them at one number, or out of order, is refused. An apply that moves them past each other's numbers can meet that refusal on one write; apply again and it finishes.
+- Deleting an incident state leaves a gap in the numbers, which changes nothing: incident states go by their numbers, not by counting.
+- Moving an incident state in the OneUptime Dashboard numbers the project's incident states 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -33,7 +49,7 @@ resource "oneuptime_incident_state" "example" {
 - `is_archived` (Boolean) Archived states stay on the incidents and episodes that are in them, but can't be picked again. The created, acknowledged and resolved states can't be archived. Defaults to `false`.
 - `is_created_state` (Boolean) Is it the created state of the incident?
 - `is_resolved_state` (Boolean) Is it the resolved state of the incident?
-- `order` (Number) Where this state sits in the project's list of incident states: 1 is the top. Incidents only ever move down the list, and an incident in a state at or below the acknowledged (or resolved) state counts as acknowledged (or resolved), so the created, acknowledged and resolved states have to stay in that order. A new state without a number goes just above the resolved state. Setting a number moves the state to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this state sits in the project's list of incident states: 1 is the top. Incidents only ever move down the list, and an incident in a state at or below the acknowledged (or resolved) state counts as acknowledged (or resolved), so the created, acknowledged and resolved states have to stay in that order. A new state without a number goes just above the resolved state. Setting a number places the state there and moves no other: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 
 ### Read-Only
 

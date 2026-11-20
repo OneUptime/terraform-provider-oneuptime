@@ -18,6 +18,21 @@ resource "oneuptime_alert_incident_rule" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this alert incident rule's place among the alert incident rules of its project, lowest first. Setting it places this alert incident rule and moves no other, so a configuration that numbers every alert incident rule of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.alert_incident_rules`:
+
+```terraform
+order = index(local.alert_incident_rules, each.key) + 1
+```
+
+- Give each alert incident rule a number of its own: two alert incident rules at one number are shown the older first.
+- An alert incident rule created without `order` goes after the last one of its project.
+- Deleting an alert incident rule leaves a gap in the numbers, which changes nothing: alert incident rules go by their numbers, not by counting.
+- Moving an alert incident rule in the OneUptime Dashboard numbers the project's alert incident rules 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -39,7 +54,7 @@ resource "oneuptime_alert_incident_rule" "example" {
 - `monitor_labels` (Set of String) Only declare incidents from alerts raised by monitors that have at least one of these labels. Leave empty to match alerts regardless of monitor labels. IDs of `oneuptime_label` resources.
 - `monitor_name_pattern` (String) Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.
 - `monitors` (Set of String) Only declare incidents from alerts raised by these monitors. Leave empty to match alerts from any monitor. IDs of `oneuptime_monitor` resources.
-- `order` (Number) Where this rule sits in the list. Rules are checked from the top of the list down, lowest number first, and the first enabled one that matches an alert decides. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this rule sits in the list. Rules are checked from the top of the list down, lowest number first, and the first enabled one that matches an alert decides. A new rule is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 - `show_incident_on_status_page` (Boolean) Whether the incidents this rule declares are shown on the status pages that list their monitor, and their subscribers notified, as for any incident declared with Show on Status Page on. Defaults to `true`.
 
 ### Read-Only

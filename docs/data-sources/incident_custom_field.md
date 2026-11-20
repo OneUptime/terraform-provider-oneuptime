@@ -39,7 +39,7 @@ data "oneuptime_incident_custom_field" "by_id" {
 - `map_from_resource_type` (String) Related resource this field copies its value from. Empty means values are entered by hand.
 - `name` (String) Any friendly name of this object.
 - `show_on_create` (Boolean) When on, this field is asked for in a Details step when an incident is declared from the dashboard, and incident templates can fill it in.
-- `sort_order` (Number) Where this field appears among the incident's custom fields, lowest number first. A new field is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `sort_order` (Number) Where this field appears among the incident's custom fields, lowest number first. A new field is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them.
 - `variable_key` (String) The key this field is reached by in templates, as {{incident.customFields.<key>}}. Made from the field's name when it is created - lowercase letters, digits and underscores, with _2, _3 and so on added when another field already has it - and never changed afterwards, so renaming the field does not break templates that use it.
 
 ### Read-Only

@@ -41,7 +41,7 @@ data "oneuptime_security_case_priority" "by_id" {
 - `is_low_priority` (Boolean) Is it the priority Low detections open cases at? A project has one, and it can't be deleted or archived.
 - `is_medium_priority` (Boolean) Is it the priority Medium detections, and the cases people open, start at? A project has one; it can't be deleted or archived.
 - `name` (String) What the priority is called, like High or P1.
-- `order` (Number) Where this priority ranks among the project's security case priorities: 1 is the most urgent. Detections open their cases at the critical, high, medium, low and informational priorities, so those have to stay in that order. A new priority without a number goes to the end of the list. Setting a number moves the priority to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this priority ranks among the project's security case priorities: 1 is the most urgent. Detections open their cases at the critical, high, medium, low and informational priorities, so those have to stay in that order. A new priority without a number goes to the end of the list. Setting a number places the priority there and moves no other: two at one number are read the older first. In the dashboard, drag the rows to reorder them.
 - `slug` (String) Friendly globally unique name for the priority.
 
 ### Read-Only

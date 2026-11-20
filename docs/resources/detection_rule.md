@@ -37,6 +37,7 @@ resource "oneuptime_detection_rule" "example" {
 - `is_enabled` (Boolean) Whether this detection rule is evaluated. Defaults to `true`.
 - `is_real_time` (Boolean) Whether events are checked against this rule as they arrive, within seconds, instead of every evaluation interval. A rule that counts, and a correlation, count in windows as long as the evaluation interval and fire at most once in each. Not for a rule with a regular expression. Defaults to `false`.
 - `match_count_threshold` (Number) Fire only when a group's count — distinct values when a distinct count field is set, matching events otherwise — reaches this number within one evaluation window. 1 fires on any match. Defaults to `1`.
+- `response_steps` (String) What to do when the rule fires: up to 10 steps, each { id, phase, text }, where phase is Confirm, Contain or Fix. A case's Response Plan shows them ahead of its general steps. A JSON value: write it with `jsonencode()`.
 - `risk_score` (Number) What a match adds to the risk of the user, host or address it is about, from 0 to 100. Empty: by the rule's level.
 - `should_create_alert` (Boolean) Whether matches open OneUptime alerts. Defaults to `true`.
 - `should_create_case` (Boolean) Whether matches open security cases (or join the open case about the same entity), where the security team works them and playbooks respond. Defaults to `true`.

@@ -18,6 +18,21 @@ resource "oneuptime_postmortem_rule" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this postmortem rule's place among the postmortem rules of its project, lowest first. Setting it places this postmortem rule and moves no other, so a configuration that numbers every postmortem rule of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.postmortem_rules`:
+
+```terraform
+order = index(local.postmortem_rules, each.key) + 1
+```
+
+- Give each postmortem rule a number of its own: two postmortem rules at one number are shown the older first.
+- A postmortem rule created without `order` goes after the last one of its project.
+- Deleting a postmortem rule leaves a gap in the numbers, which changes nothing: postmortem rules go by their numbers, not by counting.
+- Moving a postmortem rule in the OneUptime Dashboard numbers the project's postmortem rules 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -35,7 +50,7 @@ resource "oneuptime_postmortem_rule" "example" {
 - `llm_provider_id` (String) ID of the LLM provider OneUptime AI uses for everything this rule drafts. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.
 - `monitor_labels` (Set of String) Match only when one of the incident's monitors carries at least one of these labels - the natural way to scope rules to environments (e.g. staging vs production). Leave empty to match any monitor label. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) Match only incidents from these monitors. Leave empty to match any monitor. IDs of `oneuptime_monitor` resources.
-- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 - `postmortem_templates` (Set of String) The postmortem templates a draft for the incidents this rule matches may follow. Leave empty for OneUptime AI's standard outline. With more than one, OneUptime AI picks the one that fits the incident best. At most 10. IDs of `oneuptime_incident_postmortem_template` resources.
 - `title_pattern` (String) Case-insensitive regex matched against the incident's title. Leave empty to match any title.
 

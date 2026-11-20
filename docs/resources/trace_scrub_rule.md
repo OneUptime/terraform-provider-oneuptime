@@ -19,6 +19,21 @@ resource "oneuptime_trace_scrub_rule" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`sort_order` is this trace scrub rule's place among the trace scrub rules of its project, lowest first. Setting it places this trace scrub rule and moves no other, so a configuration that numbers every trace scrub rule of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.trace_scrub_rules`:
+
+```terraform
+sort_order = index(local.trace_scrub_rules, each.key) + 1
+```
+
+- Give each trace scrub rule a number of its own: two trace scrub rules at one number are shown the older first.
+- A trace scrub rule created without `sort_order` goes after the last one of its project.
+- Deleting a trace scrub rule leaves a gap in the numbers, which changes nothing: trace scrub rules go by their numbers, not by counting.
+- Moving a trace scrub rule in the OneUptime Dashboard numbers the project's trace scrub rules 1..n again; the next plan shows that as changes to `sort_order`.
+
+
 ## Schema
 
 ### Required
@@ -33,7 +48,7 @@ resource "oneuptime_trace_scrub_rule" "example" {
 - `fields_to_scrub` (String) Which span fields to scrub: 'name' (the span name), 'attributes' (attribute values), 'events' (span event attributes), or 'all', the default. A sensitiveKeys rule always scrubs attribute and event attribute values, whatever this says. Defaults to `all`.
 - `is_enabled` (Boolean) Whether this scrub rule is active. Defaults to `true`.
 - `scrub_action` (String) How to scrub matched data: 'redact' replaces it with [REDACTED] (the default), 'mask' partially hides it, 'hash' replaces it with a short hash of the value. Allowed values: `mask`, `hash`, `redact`. Defaults to `redact`.
-- `sort_order` (Number) Where this rule is applied among the project's span scrub rules, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `sort_order` (Number) Where this rule is applied among the project's span scrub rules, lowest number first. A new rule is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 
 ### Read-Only
 

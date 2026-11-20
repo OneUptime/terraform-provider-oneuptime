@@ -52,6 +52,9 @@ type RumApplicationDataSourceModel struct {
     SessionReplayMaskingMode types.String `tfsdk:"session_replay_masking_mode"`
     SessionReplayMaskSelectors types.String `tfsdk:"session_replay_mask_selectors"`
     SessionReplayBlockSelectors types.String `tfsdk:"session_replay_block_selectors"`
+    SessionReplayRecordOnlyPages types.String `tfsdk:"session_replay_record_only_pages"`
+    SessionReplayNeverRecordPages types.String `tfsdk:"session_replay_never_record_pages"`
+    SessionReplayReadableEventProperties types.String `tfsdk:"session_replay_readable_event_properties"`
     SessionReplayIgnoreErrorPatterns types.String `tfsdk:"session_replay_ignore_error_patterns"`
     SessionReplayTracePropagationOrigins types.String `tfsdk:"session_replay_trace_propagation_origins"`
     SessionReplaySameOriginTracePropagation types.Bool `tfsdk:"session_replay_same_origin_trace_propagation"`
@@ -195,6 +198,18 @@ func (d *RumApplicationDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "session_replay_block_selectors": schema.StringAttribute{
                 MarkdownDescription: "CSS selectors the recorder excludes from the DOM snapshot entirely, so the subtree is never captured rather than captured and masked. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "session_replay_record_only_pages": schema.StringAttribute{
+                MarkdownDescription: "Page paths the browser recorder records, a star standing for any characters, such as /checkout*. Empty records every page. Any other page is not recorded at all. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "session_replay_never_record_pages": schema.StringAttribute{
+                MarkdownDescription: "Page paths the browser recorder never records, even when the record-only list names them, a star standing for any characters, such as /admin*. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "session_replay_readable_event_properties": schema.StringAttribute{
+                MarkdownDescription: "Event property keys whose values stay as written under every masking mode, but only while a value is a short token (letters, digits and _ . : / -, at most 32 characters). Matched as written. Any other value is masked. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "session_replay_ignore_error_patterns": schema.StringAttribute{
@@ -507,6 +522,9 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         "sessionReplayMaskingMode": true,
         "sessionReplayMaskSelectors": true,
         "sessionReplayBlockSelectors": true,
+        "sessionReplayRecordOnlyPages": true,
+        "sessionReplayNeverRecordPages": true,
+        "sessionReplayReadableEventProperties": true,
         "sessionReplayIgnoreErrorPatterns": true,
         "sessionReplayTracePropagationOrigins": true,
         "sessionReplaySameOriginTracePropagation": true,
@@ -1126,6 +1144,78 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         data.SessionReplayBlockSelectors = types.StringValue(val)
     } else {
         data.SessionReplayBlockSelectors = types.StringNull()
+    }
+    if obj, ok := item["sessionReplayRecordOnlyPages"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionReplayRecordOnlyPages = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SessionReplayRecordOnlyPages = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SessionReplayRecordOnlyPages = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SessionReplayRecordOnlyPages = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayRecordOnlyPages = types.StringNull()
+        }
+    } else if arr, ok := item["sessionReplayRecordOnlyPages"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SessionReplayRecordOnlyPages = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayRecordOnlyPages = types.StringNull()
+        }
+    } else if val, ok := item["sessionReplayRecordOnlyPages"].(string); ok {
+        data.SessionReplayRecordOnlyPages = types.StringValue(val)
+    } else {
+        data.SessionReplayRecordOnlyPages = types.StringNull()
+    }
+    if obj, ok := item["sessionReplayNeverRecordPages"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionReplayNeverRecordPages = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SessionReplayNeverRecordPages = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SessionReplayNeverRecordPages = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SessionReplayNeverRecordPages = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayNeverRecordPages = types.StringNull()
+        }
+    } else if arr, ok := item["sessionReplayNeverRecordPages"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SessionReplayNeverRecordPages = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayNeverRecordPages = types.StringNull()
+        }
+    } else if val, ok := item["sessionReplayNeverRecordPages"].(string); ok {
+        data.SessionReplayNeverRecordPages = types.StringValue(val)
+    } else {
+        data.SessionReplayNeverRecordPages = types.StringNull()
+    }
+    if obj, ok := item["sessionReplayReadableEventProperties"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionReplayReadableEventProperties = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SessionReplayReadableEventProperties = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SessionReplayReadableEventProperties = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SessionReplayReadableEventProperties = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayReadableEventProperties = types.StringNull()
+        }
+    } else if arr, ok := item["sessionReplayReadableEventProperties"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SessionReplayReadableEventProperties = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionReplayReadableEventProperties = types.StringNull()
+        }
+    } else if val, ok := item["sessionReplayReadableEventProperties"].(string); ok {
+        data.SessionReplayReadableEventProperties = types.StringValue(val)
+    } else {
+        data.SessionReplayReadableEventProperties = types.StringNull()
     }
     if obj, ok := item["sessionReplayIgnoreErrorPatterns"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

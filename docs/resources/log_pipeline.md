@@ -18,6 +18,21 @@ resource "oneuptime_log_pipeline" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`sort_order` is this log pipeline's place among the log pipelines of its project, lowest first. Setting it places this log pipeline and moves no other, so a configuration that numbers every log pipeline of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.log_pipelines`:
+
+```terraform
+sort_order = index(local.log_pipelines, each.key) + 1
+```
+
+- Give each log pipeline a number of its own: two log pipelines at one number are shown the older first.
+- A log pipeline created without `sort_order` goes after the last one of its project.
+- Deleting a log pipeline leaves a gap in the numbers, which changes nothing: log pipelines go by their numbers, not by counting.
+- Moving a log pipeline in the OneUptime Dashboard numbers the project's log pipelines 1..n again; the next plan shows that as changes to `sort_order`.
+
+
 ## Schema
 
 ### Required
@@ -29,7 +44,7 @@ resource "oneuptime_log_pipeline" "example" {
 - `description` (String) Description of what this log pipeline does.
 - `filter_query` (String) Filter expression that determines which logs this pipeline applies to.
 - `is_enabled` (Boolean) Whether this log pipeline is active. Defaults to `true`.
-- `sort_order` (Number) Where this pipeline runs among the project's log pipelines, lowest number first. A new pipeline is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `sort_order` (Number) Where this pipeline runs among the project's log pipelines, lowest number first. A new pipeline is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 
 ### Read-Only
 

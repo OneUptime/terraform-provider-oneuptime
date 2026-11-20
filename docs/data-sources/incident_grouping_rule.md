@@ -56,7 +56,7 @@ data "oneuptime_incident_grouping_rule" "by_id" {
 - `monitor_description_pattern` (String) Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.
 - `monitor_name_pattern` (String) Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.
 - `name` (String) Name of this incident grouping rule.
-- `priority` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `priority` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first. A new rule is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them.
 - `reopen_window_minutes` (Number) Time window in minutes to reopen a recently resolved episode instead of creating a new one.
 - `resolve_delay_minutes` (Number) Grace period in minutes before auto-resolving an episode after all incidents are resolved.
 - `show_episode_on_status_page` (Boolean) Should episodes created by this rule be shown on the status page?

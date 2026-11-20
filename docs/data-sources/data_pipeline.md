@@ -28,6 +28,7 @@ data "oneuptime_data_pipeline" "by_id" {
 
 ### Optional
 
+- `circuit_breaker_stops_on_late_tables` (Boolean) Whether the pipeline's circuit breaker also stops a run when a table it reads is late. A failing check always stops it.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) What the pipeline does and who relies on it, in your own words.
 - `expected_run_interval_in_seconds` (Number) The longest the pipeline goes between runs on its schedule, in seconds: the longest gap between the starts of its last 50 runs, once there are five.
@@ -44,6 +45,8 @@ data "oneuptime_data_pipeline" "by_id" {
 
 ### Read-Only
 
+- `circuit_breaker_checked_at` (String) When the pipeline's circuit breaker was last asked whether it may run.
+- `circuit_breaker_stopped_at` (String) When the pipeline's circuit breaker stopped a run because a table it reads failed a check or was late. Empty once it says go again, or a run starts after it.
 - `created_at` (String) Date and Time when the object was created.
 - `first_seen_at` (String) When the pipeline's first event arrived.
 - `inputs` (String) The datasets the pipeline reads, as namespace and name. A JSON value: read it with `jsondecode()`.

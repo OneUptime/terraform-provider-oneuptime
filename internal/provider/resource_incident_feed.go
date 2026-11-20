@@ -103,7 +103,7 @@ func (r *IncidentFeedResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "Incident Feed Event.",
                 Required: true,
                 Validators: []validator.String{
-                    stringvalidator.OneOf("PublicNote", "SubscriberNotificationSent", "OwnerNotificationSent", "OwnerUserAdded", "OwnerTeamAdded", "IncidentCreated", "IncidentStateChanged", "PrivateNote", "IncidentUpdated", "RootCause", "RemediationNotes", "PostmortemNote", "OwnerUserRemoved", "OwnerTeamRemoved", "OnCallPolicy", "OnCallNotification", "IncidentMemberAdded", "IncidentMemberRemoved", "AlertLinked", "AlertUnlinked", "LabelRuleExecuted", "OwnerRuleExecuted", "PrivacyRuleExecuted", "OnCallRuleExecuted", "AutoRemediation", "VideoCallStarted", "VideoCallFailed", "VideoCallTranscriptAdded", "VideoCallSummary", "ChannelMemberAdded", "PublicNoteApproval"),
+                    stringvalidator.OneOf("PublicNote", "SubscriberNotificationSent", "OwnerNotificationSent", "OwnerUserAdded", "OwnerTeamAdded", "IncidentCreated", "IncidentStateChanged", "PrivateNote", "IncidentUpdated", "RootCause", "RemediationNotes", "PostmortemNote", "OwnerUserRemoved", "OwnerTeamRemoved", "OnCallPolicy", "OnCallNotification", "IncidentMemberAdded", "IncidentMemberRemoved", "AlertLinked", "AlertUnlinked", "LabelRuleExecuted", "OwnerRuleExecuted", "PrivacyRuleExecuted", "OnCallRuleExecuted", "AutoRemediation", "VideoCallStarted", "VideoCallFailed", "VideoCallTranscriptAdded", "VideoCallTranscriptRemoved", "VideoCallSummary", "ChannelMemberAdded", "PublicNoteApproval"),
                 },
             },
             "display_color": schema.StringAttribute{

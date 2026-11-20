@@ -58,6 +58,7 @@ type MonitorDataSourceModel struct {
     Services types.Set `tfsdk:"services"`
     MonitorTemplateId types.String `tfsdk:"monitor_template_id"`
     AutoProvisionedNetworkDeviceId types.String `tfsdk:"auto_provisioned_network_device_id"`
+    NetworkDeviceId types.String `tfsdk:"network_device_id"`
     NetworkAlertPolicyId types.String `tfsdk:"network_alert_policy_id"`
     MonitorType types.String `tfsdk:"monitor_type"`
     CurrentMonitorStatusId types.String `tfsdk:"current_monitor_status_id"`
@@ -246,6 +247,12 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "auto_provisioned_network_device_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the Network Device that caused this monitor to be provisioned automatically. The ID of a `oneuptime_network_device`.",
+                Optional: true,
+                Computed: true,
+                Validators: recordIDValidators("oneuptime_network_device"),
+            },
+            "network_device_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the network device this monitor checks, when a person made it for that device. Null for a monitor that checks no device, and for one an import made (see Auto-Provisioned Network Device ID). The ID of a `oneuptime_network_device`.",
                 Optional: true,
                 Computed: true,
                 Validators: recordIDValidators("oneuptime_network_device"),
@@ -464,6 +471,10 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["autoProvisionedNetworkDeviceId"] = data.AutoProvisionedNetworkDeviceId.ValueString()
         filterNames = append(filterNames, "auto_provisioned_network_device_id = "+fmt.Sprintf("%q", data.AutoProvisionedNetworkDeviceId.ValueString()))
     }
+    if !data.NetworkDeviceId.IsNull() && !data.NetworkDeviceId.IsUnknown() {
+        filters["networkDeviceId"] = data.NetworkDeviceId.ValueString()
+        filterNames = append(filterNames, "network_device_id = "+fmt.Sprintf("%q", data.NetworkDeviceId.ValueString()))
+    }
     if !data.NetworkAlertPolicyId.IsNull() && !data.NetworkAlertPolicyId.IsUnknown() {
         filters["networkAlertPolicyId"] = data.NetworkAlertPolicyId.ValueString()
         filterNames = append(filterNames, "network_alert_policy_id = "+fmt.Sprintf("%q", data.NetworkAlertPolicyId.ValueString()))
@@ -566,6 +577,7 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "services": true,
         "monitorTemplateId": true,
         "autoProvisionedNetworkDeviceId": true,
+        "networkDeviceId": true,
         "networkAlertPolicyId": true,
         "monitorType": true,
         "currentMonitorStatusId": true,
@@ -1358,6 +1370,30 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.AutoProvisionedNetworkDeviceId = types.StringValue(val)
     } else {
         data.AutoProvisionedNetworkDeviceId = types.StringNull()
+    }
+    if obj, ok := item["networkDeviceId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NetworkDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.NetworkDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.NetworkDeviceId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NetworkDeviceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.NetworkDeviceId = types.StringNull()
+        }
+    } else if arr, ok := item["networkDeviceId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.NetworkDeviceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.NetworkDeviceId = types.StringNull()
+        }
+    } else if val, ok := item["networkDeviceId"].(string); ok {
+        data.NetworkDeviceId = types.StringValue(val)
+    } else {
+        data.NetworkDeviceId = types.StringNull()
     }
     if obj, ok := item["networkAlertPolicyId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

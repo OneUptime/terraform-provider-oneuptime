@@ -32,7 +32,7 @@ data "oneuptime_public_note_approval_step" "by_id" {
 - `event_type` (String) Whose public notes this step approves: Incident (the public notes of incidents and incident episodes) or ScheduledMaintenance (the public notes of maintenance events).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `name` (String) What the step is called, shown to approvers and authors (for example, Legal). Optional.
-- `order` (Number) Where this step sits among the approval steps, lowest number first: a public note goes through them in this order. A new step is added to the end. Setting a number another step already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this step sits among the approval steps, lowest number first: a public note goes through them in this order. A new step is added to the end. Setting a number places the step there and moves no other: two steps at one number are read the older first. In the dashboard, drag the rows to reorder them.
 
 ### Read-Only
 

@@ -38,6 +38,7 @@ type DataAssetDataSourceModel struct {
     AssetKey types.String `tfsdk:"asset_key"`
     SchemaName types.String `tfsdk:"schema_name"`
     Name types.String `tfsdk:"name"`
+    EntitySetName types.String `tfsdk:"entity_set_name"`
     AssetKind types.String `tfsdk:"asset_kind"`
     Description types.String `tfsdk:"description"`
     Labels types.Set `tfsdk:"labels"`
@@ -116,6 +117,11 @@ func (d *DataAssetDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "The table's or view's own name, such as orders.",
+                Optional: true,
+                Computed: true,
+            },
+            "entity_set_name": schema.StringAttribute{
+                MarkdownDescription: "A Microsoft Dataverse table's entity set: the name its Web API and Power BI's OData connectors call it by, such as accounts for the account table. Empty for every other database's tables.",
                 Optional: true,
                 Computed: true,
             },
@@ -284,6 +290,10 @@ func (d *DataAssetDataSource) Read(ctx context.Context, req datasource.ReadReque
         filters["name"] = data.Name.ValueString()
         filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
     }
+    if !data.EntitySetName.IsNull() && !data.EntitySetName.IsUnknown() {
+        filters["entitySetName"] = data.EntitySetName.ValueString()
+        filterNames = append(filterNames, "entity_set_name = "+fmt.Sprintf("%q", data.EntitySetName.ValueString()))
+    }
     if !data.AssetKind.IsNull() && !data.AssetKind.IsUnknown() {
         filters["assetKind"] = data.AssetKind.ValueString()
         filterNames = append(filterNames, "asset_kind = "+fmt.Sprintf("%q", data.AssetKind.ValueString()))
@@ -358,6 +368,7 @@ func (d *DataAssetDataSource) Read(ctx context.Context, req datasource.ReadReque
         "assetKey": true,
         "schemaName": true,
         "name": true,
+        "entitySetName": true,
         "assetKind": true,
         "description": true,
         "labels": true,
@@ -680,6 +691,30 @@ func (d *DataAssetDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
+    }
+    if obj, ok := item["entitySetName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EntitySetName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.EntitySetName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.EntitySetName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EntitySetName = types.StringValue(string(jsonBytes))
+        } else {
+            data.EntitySetName = types.StringNull()
+        }
+    } else if arr, ok := item["entitySetName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.EntitySetName = types.StringValue(string(jsonBytes))
+        } else {
+            data.EntitySetName = types.StringNull()
+        }
+    } else if val, ok := item["entitySetName"].(string); ok {
+        data.EntitySetName = types.StringValue(val)
+    } else {
+        data.EntitySetName = types.StringNull()
     }
     if obj, ok := item["assetKind"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -44,6 +44,7 @@ type MonitorSecretResourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
+    SecretType types.String `tfsdk:"secret_type"`
     SecretValue types.String `tfsdk:"secret_value"`
     MonitorAccess types.String `tfsdk:"monitor_access"`
     Monitors types.Set `tfsdk:"monitors"`
@@ -92,8 +93,20 @@ func (r *MonitorSecretResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "secret_type": schema.StringAttribute{
+                MarkdownDescription: "What the secret holds. Text: a password, API key or token, filled in as written. TOTP: an authenticator app's setup key or otpauth://totp link; a monitor gets the current one-time code, never the key. Changes only together with a new Secret Value, which is read for the new type. A plan that changes `secret_type` and keeps `secret_value` fails before anything is written: give `secret_value` its new value in the same change.",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("Text"),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Text", "TOTP"),
+                },
+            },
             "secret_value": schema.StringAttribute{
-                MarkdownDescription: "Secret value that you want to store in this object. This value will be encrypted and only accessible by the probe.",
+                MarkdownDescription: "Secret value that you want to store in this object. For a TOTP secret, the setup key or the otpauth://totp link, which is stored as an otpauth://totp link. This value will be encrypted and only accessible by the probe.",
                 Optional: true,
                 Sensitive: true,
             },
@@ -155,11 +168,15 @@ func (r *MonitorSecretResource) schemaDefinition() schema.Schema {
 
 // ModifyPlan keeps the state when nothing a configuration sets changes (see
 // importsettle.go).
+// It refuses a plan that changes secret_type and keeps secret_value (see
+// changestogether.go).
 func (r *MonitorSecretResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
     // Destroying: nothing to plan.
     if req.Plan.Raw.IsNull() {
         return
     }
+
+    requireChangedTogether(ctx, req, resp, "secret_type", "secret_value")
 
     keepStateWhenNothingChanges(ctx, req, resp)
 }
@@ -218,6 +235,9 @@ func (r *MonitorSecretResource) Create(ctx context.Context, req resource.CreateR
     }
     if !data.Description.IsNull() && !data.Description.IsUnknown() {
         requestDataMap["description"] = data.Description.ValueString()
+    }
+    if !data.SecretType.IsNull() && !data.SecretType.IsUnknown() {
+        requestDataMap["secretType"] = data.SecretType.ValueString()
     }
     if !data.SecretValue.IsNull() && !data.SecretValue.IsUnknown() {
         requestDataMap["secretValue"] = data.SecretValue.ValueString()
@@ -280,6 +300,7 @@ func (r *MonitorSecretResource) Create(ctx context.Context, req resource.CreateR
         "projectId": true,
         "name": true,
         "description": true,
+        "secretType": true,
         "monitorAccess": true,
         "monitors": true,
         "labels": true,
@@ -416,6 +437,50 @@ func (r *MonitorSecretResource) Create(ctx context.Context, req resource.CreateR
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["secretType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecretType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SecretType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SecretType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SecretType = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecretType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SecretType = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecretType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SecretType = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecretType = types.StringNull()
+        }
+    } else if arr, ok := dataMap["secretType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SecretType = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecretType = types.StringNull()
+        }
+    } else if val, ok := dataMap["secretType"].(string); ok {
+        data.SecretType = types.StringValue(val)
+    } else {
+        data.SecretType = types.StringNull()
     }
     if obj, ok := dataMap["monitorAccess"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -625,6 +690,7 @@ func (r *MonitorSecretResource) Read(ctx context.Context, req resource.ReadReque
         "projectId": true,
         "name": true,
         "description": true,
+        "secretType": true,
         "monitorAccess": true,
         "monitors": true,
         "labels": true,
@@ -762,6 +828,50 @@ func (r *MonitorSecretResource) Read(ctx context.Context, req resource.ReadReque
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["secretType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecretType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SecretType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SecretType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SecretType = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecretType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SecretType = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecretType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SecretType = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecretType = types.StringNull()
+        }
+    } else if arr, ok := dataMap["secretType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SecretType = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecretType = types.StringNull()
+        }
+    } else if val, ok := dataMap["secretType"].(string); ok {
+        data.SecretType = types.StringValue(val)
+    } else {
+        data.SecretType = types.StringNull()
     }
     if obj, ok := dataMap["monitorAccess"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -986,6 +1096,9 @@ func (r *MonitorSecretResource) Update(ctx context.Context, req resource.UpdateR
     if !data.Description.IsUnknown() && !state.Description.IsUnknown() && !data.Description.Equal(state.Description) {
         requestDataMap["description"] = data.Description.ValueString()
     }
+    if !data.SecretType.IsUnknown() && !state.SecretType.IsUnknown() && !data.SecretType.Equal(state.SecretType) {
+        requestDataMap["secretType"] = data.SecretType.ValueString()
+    }
     if !data.SecretValue.IsUnknown() && !state.SecretValue.IsUnknown() && !data.SecretValue.Equal(state.SecretValue) {
         requestDataMap["secretValue"] = data.SecretValue.ValueString()
     }
@@ -1024,6 +1137,7 @@ func (r *MonitorSecretResource) Update(ctx context.Context, req resource.UpdateR
         "projectId": true,
         "name": true,
         "description": true,
+        "secretType": true,
         "monitorAccess": true,
         "monitors": true,
         "labels": true,
@@ -1155,6 +1269,50 @@ func (r *MonitorSecretResource) Update(ctx context.Context, req resource.UpdateR
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["secretType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecretType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SecretType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SecretType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SecretType = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecretType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SecretType = types.StringValue(string(jsonBytes))
+            } else {
+                data.SecretType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SecretType = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecretType = types.StringNull()
+        }
+    } else if arr, ok := dataMap["secretType"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.SecretType = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecretType = types.StringNull()
+        }
+    } else if val, ok := dataMap["secretType"].(string); ok {
+        data.SecretType = types.StringValue(val)
+    } else {
+        data.SecretType = types.StringNull()
     }
     if obj, ok := dataMap["monitorAccess"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1389,6 +1547,9 @@ func (r *MonitorSecretResource) ImportState(ctx context.Context, req resource.Im
 func (r *MonitorSecretResource) keepPlannedValues(data *MonitorSecretResourceModel, plan *MonitorSecretResourceModel, config *MonitorSecretResourceModel) {
     if config.Description.IsNull() && !plan.Description.IsUnknown() {
         data.Description = plan.Description
+    }
+    if config.SecretType.IsNull() && !plan.SecretType.IsUnknown() {
+        data.SecretType = plan.SecretType
     }
     if config.MonitorAccess.IsNull() && !plan.MonitorAccess.IsUnknown() {
         data.MonitorAccess = plan.MonitorAccess

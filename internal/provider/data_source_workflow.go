@@ -43,6 +43,11 @@ type WorkflowDataSourceModel struct {
     Graph types.String `tfsdk:"graph"`
     GraphRevision types.Number `tfsdk:"graph_revision"`
     Labels types.Set `tfsdk:"labels"`
+    RunAs types.String `tfsdk:"run_as"`
+    RunAsCustomRoleId types.String `tfsdk:"run_as_custom_role_id"`
+    RunAsGivenByUserId types.String `tfsdk:"run_as_given_by_user_id"`
+    RunAsGivenByApiKeyId types.String `tfsdk:"run_as_given_by_api_key_id"`
+    RunAsGivenAt types.String `tfsdk:"run_as_given_at"`
     WebhookSecretKey types.String `tfsdk:"webhook_secret_key"`
     IncomingEmailSecretKey types.String `tfsdk:"incoming_email_secret_key"`
     IsWebhookSigningSecretSet types.Bool `tfsdk:"is_webhook_signing_secret_set"`
@@ -131,6 +136,33 @@ func (d *WorkflowDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
                 Computed: true,
                 ElementType: types.StringType,
+            },
+            "run_as": schema.StringAttribute{
+                MarkdownDescription: "What the workflow's steps can do in the project. Default: what a Project Admin can, except change who has access. ProjectOwner: what a Project Owner can. CustomRole: exactly what the custom role in runAsCustomRoleId allows. Only a person or a project API key that has those permissions can choose anything but Default, and only such a person or key can then change the workflow or run it by hand.",
+                Optional: true,
+                Computed: true,
+            },
+            "run_as_custom_role_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the custom role the workflow's steps act as, when Run As is CustomRole. Empty otherwise. The ID of a `oneuptime_custom_role`.",
+                Optional: true,
+                Computed: true,
+                Validators: recordIDValidators("oneuptime_custom_role"),
+            },
+            "run_as_given_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the person whose permissions the workflow runs with when it runs as more than Default. Set by OneUptime. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
+                Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
+            },
+            "run_as_given_by_api_key_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the project API key whose permissions the workflow runs with when it runs as more than Default and a key gave them. Set by OneUptime. The ID of a `oneuptime_api_key`.",
+                Optional: true,
+                Computed: true,
+                Validators: recordIDValidators("oneuptime_api_key"),
+            },
+            "run_as_given_at": schema.StringAttribute{
+                MarkdownDescription: "When the person in runAsGivenByUserId last gave the workflow its permissions. Set by OneUptime.",
+                Computed: true,
             },
             "webhook_secret_key": schema.StringAttribute{
                 MarkdownDescription: "The secret part of the Webhook trigger's URL (/workflow/trigger/<key>). Anyone who has the URL can start the workflow, so only people who can edit the workflow can read the key. Generated when the workflow is created; set a new value to reset the URL.",
@@ -231,6 +263,22 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         filters["graphRevision"] = lookupNumber(data.GraphRevision)
         filterNames = append(filterNames, "graph_revision = "+data.GraphRevision.ValueBigFloat().String())
     }
+    if !data.RunAs.IsNull() && !data.RunAs.IsUnknown() {
+        filters["runAs"] = data.RunAs.ValueString()
+        filterNames = append(filterNames, "run_as = "+fmt.Sprintf("%q", data.RunAs.ValueString()))
+    }
+    if !data.RunAsCustomRoleId.IsNull() && !data.RunAsCustomRoleId.IsUnknown() {
+        filters["runAsCustomRoleId"] = data.RunAsCustomRoleId.ValueString()
+        filterNames = append(filterNames, "run_as_custom_role_id = "+fmt.Sprintf("%q", data.RunAsCustomRoleId.ValueString()))
+    }
+    if !data.RunAsGivenByUserId.IsNull() && !data.RunAsGivenByUserId.IsUnknown() {
+        filters["runAsGivenByUserId"] = data.RunAsGivenByUserId.ValueString()
+        filterNames = append(filterNames, "run_as_given_by_user_id = "+fmt.Sprintf("%q", data.RunAsGivenByUserId.ValueString()))
+    }
+    if !data.RunAsGivenByApiKeyId.IsNull() && !data.RunAsGivenByApiKeyId.IsUnknown() {
+        filters["runAsGivenByApiKeyId"] = data.RunAsGivenByApiKeyId.ValueString()
+        filterNames = append(filterNames, "run_as_given_by_api_key_id = "+fmt.Sprintf("%q", data.RunAsGivenByApiKeyId.ValueString()))
+    }
     if !data.IsWebhookSigningSecretSet.IsNull() && !data.IsWebhookSigningSecretSet.IsUnknown() {
         filters["isWebhookSigningSecretSet"] = data.IsWebhookSigningSecretSet.ValueBool()
         filterNames = append(filterNames, "is_webhook_signing_secret_set = "+fmt.Sprintf("%t", data.IsWebhookSigningSecretSet.ValueBool()))
@@ -270,6 +318,11 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         "graph": true,
         "graphRevision": true,
         "labels": true,
+        "runAs": true,
+        "runAsCustomRoleId": true,
+        "runAsGivenByUserId": true,
+        "runAsGivenByApiKeyId": true,
+        "runAsGivenAt": true,
         "webhookSecretKey": true,
         "incomingEmailSecretKey": true,
         "isWebhookSigningSecretSet": true,
@@ -635,6 +688,126 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.Labels = types.SetValueMust(types.StringType, setItems)
     } else {
         data.Labels = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["runAs"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAs = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RunAs = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RunAs = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunAs = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAs = types.StringNull()
+        }
+    } else if arr, ok := item["runAs"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RunAs = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAs = types.StringNull()
+        }
+    } else if val, ok := item["runAs"].(string); ok {
+        data.RunAs = types.StringValue(val)
+    } else {
+        data.RunAs = types.StringNull()
+    }
+    if obj, ok := item["runAsCustomRoleId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAsCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RunAsCustomRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RunAsCustomRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunAsCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsCustomRoleId = types.StringNull()
+        }
+    } else if arr, ok := item["runAsCustomRoleId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RunAsCustomRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsCustomRoleId = types.StringNull()
+        }
+    } else if val, ok := item["runAsCustomRoleId"].(string); ok {
+        data.RunAsCustomRoleId = types.StringValue(val)
+    } else {
+        data.RunAsCustomRoleId = types.StringNull()
+    }
+    if obj, ok := item["runAsGivenByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAsGivenByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RunAsGivenByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RunAsGivenByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunAsGivenByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["runAsGivenByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RunAsGivenByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByUserId = types.StringNull()
+        }
+    } else if val, ok := item["runAsGivenByUserId"].(string); ok {
+        data.RunAsGivenByUserId = types.StringValue(val)
+    } else {
+        data.RunAsGivenByUserId = types.StringNull()
+    }
+    if obj, ok := item["runAsGivenByApiKeyId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAsGivenByApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RunAsGivenByApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RunAsGivenByApiKeyId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByApiKeyId = types.StringNull()
+        }
+    } else if arr, ok := item["runAsGivenByApiKeyId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByApiKeyId = types.StringNull()
+        }
+    } else if val, ok := item["runAsGivenByApiKeyId"].(string); ok {
+        data.RunAsGivenByApiKeyId = types.StringValue(val)
+    } else {
+        data.RunAsGivenByApiKeyId = types.StringNull()
+    }
+    if obj, ok := item["runAsGivenAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAsGivenAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RunAsGivenAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RunAsGivenAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunAsGivenAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenAt = types.StringNull()
+        }
+    } else if arr, ok := item["runAsGivenAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RunAsGivenAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenAt = types.StringNull()
+        }
+    } else if val, ok := item["runAsGivenAt"].(string); ok {
+        data.RunAsGivenAt = types.StringValue(val)
+    } else {
+        data.RunAsGivenAt = types.StringNull()
     }
     if obj, ok := item["webhookSecretKey"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

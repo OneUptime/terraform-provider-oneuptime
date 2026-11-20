@@ -95,6 +95,7 @@ type DataStoreResourceModel struct {
     TableHealthStatus types.String `tfsdk:"table_health_status"`
     TableHealthMessage types.String `tfsdk:"table_health_message"`
     TableHealthAssetCount types.Number `tfsdk:"table_health_asset_count"`
+    TableHealthSkippedTables JSONSubsetValue `tfsdk:"table_health_skipped_tables"`
     NewPersonalDataColumns JSONSubsetValue `tfsdk:"new_personal_data_columns"`
     FindingCount types.Number `tfsdk:"finding_count"`
     OpenIssueCount types.Number `tfsdk:"open_issue_count"`
@@ -152,7 +153,7 @@ func (r *DataStoreResource) schemaDefinition() schema.Schema {
                     stringplanmodifier.RequiresReplace(),
                 },
                 Validators: []validator.String{
-                    stringvalidator.OneOf("AWS S3 Bucket", "AWS RDS Instance", "AWS Aurora Cluster", "AWS RDS Snapshot", "AWS DynamoDB Table", "AWS Redshift Cluster", "AWS DocumentDB Cluster", "AWS OpenSearch Domain", "AWS ElastiCache Cluster", "AWS EFS File System", "Azure Storage Account", "Azure SQL Database", "Azure Cosmos DB Account", "Azure PostgreSQL Server", "Azure MySQL Server", "Google Cloud Storage Bucket", "Google Cloud SQL Instance", "Google BigQuery Dataset", "Google Firestore Database", "Google Spanner Instance", "Google Bigtable Instance", "PostgreSQL", "MySQL", "MongoDB", "SQL Server", "Oracle", "Redis", "Elasticsearch", "Snowflake", "ClickHouse", "Databricks", "Amazon Athena", "Microsoft Dataverse", "Logs", "Traces", "Exceptions", "Session Replays", "AI Conversations"),
+                    stringvalidator.OneOf("AWS S3 Bucket", "AWS RDS Instance", "AWS Aurora Cluster", "AWS RDS Snapshot", "AWS DynamoDB Table", "AWS Redshift Cluster", "AWS DocumentDB Cluster", "AWS OpenSearch Domain", "AWS ElastiCache Cluster", "AWS EFS File System", "Azure Storage Account", "Azure SQL Database", "Azure Cosmos DB Account", "Azure PostgreSQL Server", "Azure MySQL Server", "Google Cloud Storage Bucket", "Google Cloud SQL Instance", "Google BigQuery Dataset", "Google Firestore Database", "Google Spanner Instance", "Google Bigtable Instance", "PostgreSQL", "MySQL", "MongoDB", "SQL Server", "Oracle", "Redis", "Elasticsearch", "Snowflake", "ClickHouse", "Databricks", "Amazon Athena", "Microsoft Dataverse", "Logs", "Traces", "Exceptions", "Session Replays", "AI Conversations", "Metrics"),
                 },
             },
             "environment": schema.StringAttribute{
@@ -435,6 +436,11 @@ func (r *DataStoreResource) schemaDefinition() schema.Schema {
                 MarkdownDescription: "How many tables and views the last collection found.",
                 Computed: true,
             },
+            "table_health_skipped_tables": schema.StringAttribute{
+                MarkdownDescription: "The tables the database keeps refusing, skipped until their next try: what is not read of each, why, and when it is asked again. A JSON value: read it with `jsondecode()`.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
             "new_personal_data_columns": schema.StringAttribute{
                 MarkdownDescription: "Columns added lately whose names say they hold personal data, as a collection saw them appear. A JSON value: read it with `jsondecode()`.",
                 CustomType: JSONSubsetType{},
@@ -689,6 +695,7 @@ func (r *DataStoreResource) Create(ctx context.Context, req resource.CreateReque
         "tableHealthStatus": true,
         "tableHealthMessage": true,
         "tableHealthAssetCount": true,
+        "tableHealthSkippedTables": true,
         "newPersonalDataColumns": true,
         "findingCount": true,
         "openIssueCount": true,
@@ -2329,6 +2336,50 @@ func (r *DataStoreResource) Create(ctx context.Context, req resource.CreateReque
         data.TableHealthMessage = types.StringNull()
     }
     data.TableHealthAssetCount = numberFromAPI(data.TableHealthAssetCount, dataMap["tableHealthAssetCount"])
+    if obj, ok := dataMap["tableHealthSkippedTables"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TableHealthSkippedTables = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TableHealthSkippedTables = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TableHealthSkippedTables = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TableHealthSkippedTables = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TableHealthSkippedTables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TableHealthSkippedTables = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TableHealthSkippedTables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TableHealthSkippedTables = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TableHealthSkippedTables = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["tableHealthSkippedTables"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TableHealthSkippedTables = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TableHealthSkippedTables = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["tableHealthSkippedTables"].(string); ok {
+        data.TableHealthSkippedTables = NewJSONSubsetValue(val)
+    } else {
+        data.TableHealthSkippedTables = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["newPersonalDataColumns"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2573,6 +2624,7 @@ func (r *DataStoreResource) Read(ctx context.Context, req resource.ReadRequest, 
         "tableHealthStatus": true,
         "tableHealthMessage": true,
         "tableHealthAssetCount": true,
+        "tableHealthSkippedTables": true,
         "newPersonalDataColumns": true,
         "findingCount": true,
         "openIssueCount": true,
@@ -4214,6 +4266,50 @@ func (r *DataStoreResource) Read(ctx context.Context, req resource.ReadRequest, 
         data.TableHealthMessage = types.StringNull()
     }
     data.TableHealthAssetCount = numberFromAPI(data.TableHealthAssetCount, dataMap["tableHealthAssetCount"])
+    if obj, ok := dataMap["tableHealthSkippedTables"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TableHealthSkippedTables = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TableHealthSkippedTables = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TableHealthSkippedTables = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TableHealthSkippedTables = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TableHealthSkippedTables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TableHealthSkippedTables = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TableHealthSkippedTables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TableHealthSkippedTables = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TableHealthSkippedTables = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["tableHealthSkippedTables"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TableHealthSkippedTables = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TableHealthSkippedTables = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["tableHealthSkippedTables"].(string); ok {
+        data.TableHealthSkippedTables = NewJSONSubsetValue(val)
+    } else {
+        data.TableHealthSkippedTables = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["newPersonalDataColumns"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4549,6 +4645,7 @@ func (r *DataStoreResource) Update(ctx context.Context, req resource.UpdateReque
         "tableHealthStatus": true,
         "tableHealthMessage": true,
         "tableHealthAssetCount": true,
+        "tableHealthSkippedTables": true,
         "newPersonalDataColumns": true,
         "findingCount": true,
         "openIssueCount": true,
@@ -6184,6 +6281,50 @@ func (r *DataStoreResource) Update(ctx context.Context, req resource.UpdateReque
         data.TableHealthMessage = types.StringNull()
     }
     data.TableHealthAssetCount = numberFromAPI(data.TableHealthAssetCount, dataMap["tableHealthAssetCount"])
+    if obj, ok := dataMap["tableHealthSkippedTables"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TableHealthSkippedTables = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TableHealthSkippedTables = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TableHealthSkippedTables = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TableHealthSkippedTables = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TableHealthSkippedTables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TableHealthSkippedTables = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TableHealthSkippedTables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TableHealthSkippedTables = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TableHealthSkippedTables = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["tableHealthSkippedTables"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.TableHealthSkippedTables = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TableHealthSkippedTables = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["tableHealthSkippedTables"].(string); ok {
+        data.TableHealthSkippedTables = NewJSONSubsetValue(val)
+    } else {
+        data.TableHealthSkippedTables = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["newPersonalDataColumns"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {

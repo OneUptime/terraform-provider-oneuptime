@@ -31,6 +31,7 @@ data "oneuptime_team_member" "by_id" {
 
 - `has_accepted_invitation` (Boolean) Whether the person has joined: false while their invitation waits, true once they accept it. Someone in the project already joins at once.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `invitee_name` (String) The name typed when the person was invited, shown in place of their own until they accept.
 - `team_id` (String) ID of the team the person is in. The ID of a `oneuptime_team`.
 - `user_email` (String) Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
 - `user_id` (String) ID of the person in the team. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `user_email`.

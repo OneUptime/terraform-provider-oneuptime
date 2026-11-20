@@ -145,7 +145,7 @@ func (r *IncidentCustomFieldResource) schemaDefinition() schema.Schema {
                 },
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Where this field appears among the incident's custom fields, lowest number first. A new field is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.",
+                MarkdownDescription: "Where this field appears among the incident's custom fields, lowest number first. A new field is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{

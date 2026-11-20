@@ -19,6 +19,21 @@ resource "oneuptime_alert_reminder_rule" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this alert reminder rule's place among the alert reminder rules of its project, lowest first. Setting it places this alert reminder rule and moves no other, so a configuration that numbers every alert reminder rule of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.alert_reminder_rules`:
+
+```terraform
+order = index(local.alert_reminder_rules, each.key) + 1
+```
+
+- Give each alert reminder rule a number of its own: two alert reminder rules at one number are shown the older first.
+- An alert reminder rule created without `order` goes after the last one of its project.
+- Deleting an alert reminder rule leaves a gap in the numbers, which changes nothing: alert reminder rules go by their numbers, not by counting.
+- Moving an alert reminder rule in the OneUptime Dashboard numbers the project's alert reminder rules 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -33,7 +48,7 @@ resource "oneuptime_alert_reminder_rule" "example" {
 - `description` (String) Description of this reminder rule.
 - `is_enabled` (Boolean) Whether this reminder rule is enabled. Defaults to `true`.
 - `labels` (Set of String) Only apply this reminder rule to alerts with these labels. Leave empty to match alerts with any labels. IDs of `oneuptime_label` resources.
-- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 - `stop_reminders_on_state` (String) Stop sending reminders once the alert reaches this state. Select Acknowledged to stop reminders when the alert is acknowledged, or Resolved to keep reminding until the alert is resolved. Allowed values: `Acknowledged`, `Resolved`. Defaults to `Resolved`.
 
 ### Read-Only

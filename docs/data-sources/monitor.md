@@ -50,6 +50,7 @@ data "oneuptime_monitor" "by_id" {
 - `monitoring_interval` (String) How often would you like OneUptime to monitor this resource? A 5-field cron expression, not a label: "*/5 * * * *" is every five minutes.
 - `name` (String) Any friendly name for this monitor.
 - `network_alert_policy_id` (String) ID of the Network Alert Policy that provisioned this monitor, when one did. The ID of a `oneuptime_network_alert_policy`.
+- `network_device_id` (String) ID of the network device this monitor checks, when a person made it for that device. Null for a monitor that checks no device, and for one an import made (see Auto-Provisioned Network Device ID). The ID of a `oneuptime_network_device`.
 - `slug` (String) Friendly globally unique name for your object.
 
 ### Read-Only

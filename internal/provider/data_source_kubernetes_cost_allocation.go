@@ -67,9 +67,16 @@ type KubernetesCostAllocationDataSourceModel struct {
     CpuEfficiency types.Number `tfsdk:"cpu_efficiency"`
     RamEfficiency types.Number `tfsdk:"ram_efficiency"`
     TotalEfficiency types.Number `tfsdk:"total_efficiency"`
+    EfficiencyWeight types.Number `tfsdk:"efficiency_weight"`
+    WeightedEfficiency types.Number `tfsdk:"weighted_efficiency"`
     Currency types.String `tfsdk:"currency"`
     ShipmentId types.String `tfsdk:"shipment_id"`
     ShipmentChunk types.Number `tfsdk:"shipment_chunk"`
+    CostEngine types.String `tfsdk:"cost_engine"`
+    CostEngineService types.String `tfsdk:"cost_engine_service"`
+    BundledEngineUnused types.Bool `tfsdk:"bundled_engine_unused"`
+    PricingSource types.String `tfsdk:"pricing_source"`
+    PricingProvider types.String `tfsdk:"pricing_provider"`
 }
 
 func (d *KubernetesCostAllocationDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -78,7 +85,7 @@ func (d *KubernetesCostAllocationDataSource) Metadata(ctx context.Context, req d
 
 func (d *KubernetesCostAllocationDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "API endpoints for Kubernetes Cost Allocation Look up an existing kubernetes cost allocation by `id`, or by any of its other arguments (`cluster_name`, `container_name`, `controller_kind`, ...): each one set must match, and exactly one kubernetes cost allocation may match them all.",
+        MarkdownDescription: "API endpoints for Kubernetes Cost Allocation Look up an existing kubernetes cost allocation by `id`, or by any of its other arguments (`bundled_engine_unused`, `cluster_name`, `container_name`, ...): each one set must match, and exactly one kubernetes cost allocation may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -275,6 +282,16 @@ func (d *KubernetesCostAllocationDataSource) Schema(ctx context.Context, req dat
                 Optional: true,
                 Computed: true,
             },
+            "efficiency_weight": schema.NumberAttribute{
+                MarkdownDescription: "Efficiency Weight.",
+                Optional: true,
+                Computed: true,
+            },
+            "weighted_efficiency": schema.NumberAttribute{
+                MarkdownDescription: "Weighted Efficiency.",
+                Optional: true,
+                Computed: true,
+            },
             "currency": schema.StringAttribute{
                 MarkdownDescription: "Currency.",
                 Optional: true,
@@ -287,6 +304,31 @@ func (d *KubernetesCostAllocationDataSource) Schema(ctx context.Context, req dat
             },
             "shipment_chunk": schema.NumberAttribute{
                 MarkdownDescription: "Shipment Chunk.",
+                Optional: true,
+                Computed: true,
+            },
+            "cost_engine": schema.StringAttribute{
+                MarkdownDescription: "Cost Engine.",
+                Optional: true,
+                Computed: true,
+            },
+            "cost_engine_service": schema.StringAttribute{
+                MarkdownDescription: "Cost Engine Service.",
+                Optional: true,
+                Computed: true,
+            },
+            "bundled_engine_unused": schema.BoolAttribute{
+                MarkdownDescription: "Bundled Engine Unused.",
+                Optional: true,
+                Computed: true,
+            },
+            "pricing_source": schema.StringAttribute{
+                MarkdownDescription: "Pricing Source.",
+                Optional: true,
+                Computed: true,
+            },
+            "pricing_provider": schema.StringAttribute{
+                MarkdownDescription: "Pricing Provider.",
                 Optional: true,
                 Computed: true,
             },
@@ -473,6 +515,14 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         filters["totalEfficiency"] = lookupNumber(data.TotalEfficiency)
         filterNames = append(filterNames, "total_efficiency = "+data.TotalEfficiency.ValueBigFloat().String())
     }
+    if !data.EfficiencyWeight.IsNull() && !data.EfficiencyWeight.IsUnknown() {
+        filters["efficiencyWeight"] = lookupNumber(data.EfficiencyWeight)
+        filterNames = append(filterNames, "efficiency_weight = "+data.EfficiencyWeight.ValueBigFloat().String())
+    }
+    if !data.WeightedEfficiency.IsNull() && !data.WeightedEfficiency.IsUnknown() {
+        filters["weightedEfficiency"] = lookupNumber(data.WeightedEfficiency)
+        filterNames = append(filterNames, "weighted_efficiency = "+data.WeightedEfficiency.ValueBigFloat().String())
+    }
     if !data.Currency.IsNull() && !data.Currency.IsUnknown() {
         filters["currency"] = data.Currency.ValueString()
         filterNames = append(filterNames, "currency = "+fmt.Sprintf("%q", data.Currency.ValueString()))
@@ -484,6 +534,26 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
     if !data.ShipmentChunk.IsNull() && !data.ShipmentChunk.IsUnknown() {
         filters["shipmentChunk"] = lookupNumber(data.ShipmentChunk)
         filterNames = append(filterNames, "shipment_chunk = "+data.ShipmentChunk.ValueBigFloat().String())
+    }
+    if !data.CostEngine.IsNull() && !data.CostEngine.IsUnknown() {
+        filters["costEngine"] = data.CostEngine.ValueString()
+        filterNames = append(filterNames, "cost_engine = "+fmt.Sprintf("%q", data.CostEngine.ValueString()))
+    }
+    if !data.CostEngineService.IsNull() && !data.CostEngineService.IsUnknown() {
+        filters["costEngineService"] = data.CostEngineService.ValueString()
+        filterNames = append(filterNames, "cost_engine_service = "+fmt.Sprintf("%q", data.CostEngineService.ValueString()))
+    }
+    if !data.BundledEngineUnused.IsNull() && !data.BundledEngineUnused.IsUnknown() {
+        filters["bundledEngineUnused"] = data.BundledEngineUnused.ValueBool()
+        filterNames = append(filterNames, "bundled_engine_unused = "+fmt.Sprintf("%t", data.BundledEngineUnused.ValueBool()))
+    }
+    if !data.PricingSource.IsNull() && !data.PricingSource.IsUnknown() {
+        filters["pricingSource"] = data.PricingSource.ValueString()
+        filterNames = append(filterNames, "pricing_source = "+fmt.Sprintf("%q", data.PricingSource.ValueString()))
+    }
+    if !data.PricingProvider.IsNull() && !data.PricingProvider.IsUnknown() {
+        filters["pricingProvider"] = data.PricingProvider.ValueString()
+        filterNames = append(filterNames, "pricing_provider = "+fmt.Sprintf("%q", data.PricingProvider.ValueString()))
     }
 
     if hasId && len(filters) > 0 {
@@ -540,9 +610,16 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         "cpuEfficiency": true,
         "ramEfficiency": true,
         "totalEfficiency": true,
+        "efficiencyWeight": true,
+        "weightedEfficiency": true,
         "currency": true,
         "shipmentId": true,
         "shipmentChunk": true,
+        "costEngine": true,
+        "costEngineService": true,
+        "bundledEngineUnused": true,
+        "pricingSource": true,
+        "pricingProvider": true,
         "_id": true,
     }
 
@@ -1011,6 +1088,8 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
     data.CpuEfficiency = numberFromAPI(data.CpuEfficiency, item["cpuEfficiency"])
     data.RamEfficiency = numberFromAPI(data.RamEfficiency, item["ramEfficiency"])
     data.TotalEfficiency = numberFromAPI(data.TotalEfficiency, item["totalEfficiency"])
+    data.EfficiencyWeight = numberFromAPI(data.EfficiencyWeight, item["efficiencyWeight"])
+    data.WeightedEfficiency = numberFromAPI(data.WeightedEfficiency, item["weightedEfficiency"])
     if obj, ok := item["currency"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Currency = types.StringValue(val)
@@ -1060,6 +1139,107 @@ func (d *KubernetesCostAllocationDataSource) Read(ctx context.Context, req datas
         data.ShipmentId = types.StringNull()
     }
     data.ShipmentChunk = numberFromAPI(data.ShipmentChunk, item["shipmentChunk"])
+    if obj, ok := item["costEngine"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CostEngine = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CostEngine = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CostEngine = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CostEngine = types.StringValue(string(jsonBytes))
+        } else {
+            data.CostEngine = types.StringNull()
+        }
+    } else if arr, ok := item["costEngine"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CostEngine = types.StringValue(string(jsonBytes))
+        } else {
+            data.CostEngine = types.StringNull()
+        }
+    } else if val, ok := item["costEngine"].(string); ok {
+        data.CostEngine = types.StringValue(val)
+    } else {
+        data.CostEngine = types.StringNull()
+    }
+    if obj, ok := item["costEngineService"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CostEngineService = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CostEngineService = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CostEngineService = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CostEngineService = types.StringValue(string(jsonBytes))
+        } else {
+            data.CostEngineService = types.StringNull()
+        }
+    } else if arr, ok := item["costEngineService"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CostEngineService = types.StringValue(string(jsonBytes))
+        } else {
+            data.CostEngineService = types.StringNull()
+        }
+    } else if val, ok := item["costEngineService"].(string); ok {
+        data.CostEngineService = types.StringValue(val)
+    } else {
+        data.CostEngineService = types.StringNull()
+    }
+    if val, ok := item["bundledEngineUnused"].(bool); ok {
+        data.BundledEngineUnused = types.BoolValue(val)
+    } else {
+        data.BundledEngineUnused = types.BoolNull()
+    }
+    if obj, ok := item["pricingSource"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PricingSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PricingSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PricingSource = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PricingSource = types.StringValue(string(jsonBytes))
+        } else {
+            data.PricingSource = types.StringNull()
+        }
+    } else if arr, ok := item["pricingSource"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PricingSource = types.StringValue(string(jsonBytes))
+        } else {
+            data.PricingSource = types.StringNull()
+        }
+    } else if val, ok := item["pricingSource"].(string); ok {
+        data.PricingSource = types.StringValue(val)
+    } else {
+        data.PricingSource = types.StringNull()
+    }
+    if obj, ok := item["pricingProvider"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PricingProvider = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PricingProvider = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PricingProvider = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PricingProvider = types.StringValue(string(jsonBytes))
+        } else {
+            data.PricingProvider = types.StringNull()
+        }
+    } else if arr, ok := item["pricingProvider"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PricingProvider = types.StringValue(string(jsonBytes))
+        } else {
+            data.PricingProvider = types.StringNull()
+        }
+    } else if val, ok := item["pricingProvider"].(string); ok {
+        data.PricingProvider = types.StringValue(val)
+    } else {
+        data.PricingProvider = types.StringNull()
+    }
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "read a data source")

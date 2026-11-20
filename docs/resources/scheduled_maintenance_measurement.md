@@ -20,6 +20,21 @@ resource "oneuptime_scheduled_maintenance_measurement" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this scheduled maintenance measurement's place among the scheduled maintenance measurements of its project, lowest first. Setting it places this scheduled maintenance measurement and moves no other, so a configuration that numbers every scheduled maintenance measurement of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.scheduled_maintenance_measurements`:
+
+```terraform
+order = index(local.scheduled_maintenance_measurements, each.key) + 1
+```
+
+- Give each scheduled maintenance measurement a number of its own: two scheduled maintenance measurements at one number are shown the older first.
+- A scheduled maintenance measurement created without `order` goes after the last one of its project.
+- Deleting a scheduled maintenance measurement leaves a gap in the numbers, which changes nothing: scheduled maintenance measurements go by their numbers, not by counting.
+- Moving a scheduled maintenance measurement in the OneUptime Dashboard numbers the project's scheduled maintenance measurements 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -37,7 +52,7 @@ resource "oneuptime_scheduled_maintenance_measurement" "example" {
 - `end_state_occurrence` (String) Which entry to use when the end state is entered more than once - the first time it was entered, or the last. Allowed values: `First`, `Last`. Defaults to `First`.
 - `is_enabled` (Boolean) Whether this measurement is computed for maintenance events. Defaults to `true`.
 - `key` (String) Stable, machine readable identifier for this measurement, unique within the project: lowercase letters, numbers and hyphens. Leave it out and it is made from the name - Time to Start becomes time-to-start, with -2, -3 and so on added when another measurement already has it. It is part of the metric name, so it cannot be changed once the measurement is created; to rename a measurement, change the Name instead.
-- `order` (Number) Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 - `show_on_scheduled_maintenance_view` (Boolean) Whether this measurement is shown on the maintenance event page. Defaults to `true`.
 - `start_scheduled_maintenance_state_id` (String) ID of the state whose entry starts this measurement, when the start anchor is a specific state. The ID of a `oneuptime_scheduled_maintenance_state`.
 - `start_scheduled_maintenance_state_role` (String) The role of the state that starts this measurement (Scheduled, Ongoing, Ended or Resolved), when the start anchor is a state role. Resolving by role keeps working when a project renames or replaces the state. Allowed values: `Scheduled`, `Ongoing`, `Ended`, `Resolved`.

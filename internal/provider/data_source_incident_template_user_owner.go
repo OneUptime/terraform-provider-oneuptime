@@ -33,7 +33,6 @@ type IncidentTemplateUserOwnerDataSourceModel struct {
     UserId types.String `tfsdk:"user_id"`
     IncidentTemplateId types.String `tfsdk:"incident_template_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
     UserEmail types.String `tfsdk:"user_email"`
 }
 
@@ -43,7 +42,7 @@ func (d *IncidentTemplateUserOwnerDataSource) Metadata(ctx context.Context, req 
 
 func (d *IncidentTemplateUserOwnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Add users as owners to your incident templates. Look up an existing incident template user owner by `id`, or by any of its other arguments (`created_by_user_id`, `incident_template_id`, `is_owner_notified`, ...): each one set must match, and exactly one incident template user owner may match them all.",
+        MarkdownDescription: "Add users as owners to your incident templates. Look up an existing incident template user owner by `id`, or by any of its other arguments (`created_by_user_id`, `incident_template_id`, `user_email`, ...): each one set must match, and exactly one incident template user owner may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -80,11 +79,6 @@ func (d *IncidentTemplateUserOwnerDataSource) Schema(ctx context.Context, req da
                 Optional: true,
                 Computed: true,
                 Validators: dataSourceRecordIDValidators("oneuptime_user"),
-            },
-            "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of this resource ownership?",
-                Optional: true,
-                Computed: true,
             },
             "user_email": schema.StringAttribute{
                 MarkdownDescription: "Look it up by the email address of the person in `user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.",
@@ -143,10 +137,6 @@ func (d *IncidentTemplateUserOwnerDataSource) Read(ctx context.Context, req data
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
     }
-    if !data.IsOwnerNotified.IsNull() && !data.IsOwnerNotified.IsUnknown() {
-        filters["isOwnerNotified"] = data.IsOwnerNotified.ValueBool()
-        filterNames = append(filterNames, "is_owner_notified = "+fmt.Sprintf("%t", data.IsOwnerNotified.ValueBool()))
-    }
     if !data.UserEmail.IsNull() && !data.UserEmail.IsUnknown() {
         personID, ok := personIDForLookup(ctx, d.client, data.UserEmail.ValueString(), "user_email", &resp.Diagnostics)
         if !ok {
@@ -178,7 +168,6 @@ func (d *IncidentTemplateUserOwnerDataSource) Read(ctx context.Context, req data
         "userId": true,
         "incidentTemplateId": true,
         "createdByUserId": true,
-        "isOwnerNotified": true,
         "_id": true,
     }
 
@@ -407,11 +396,6 @@ func (d *IncidentTemplateUserOwnerDataSource) Read(ctx context.Context, req data
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if val, ok := item["isOwnerNotified"].(bool); ok {
-        data.IsOwnerNotified = types.BoolValue(val)
-    } else {
-        data.IsOwnerNotified = types.BoolNull()
     }
     data.UserEmail = personEmailAfterLookup(ctx, d.client, data.UserId, data.UserEmail)
 

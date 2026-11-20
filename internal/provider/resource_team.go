@@ -49,6 +49,7 @@ type TeamResourceModel struct {
     IsTeamDeleteable types.Bool `tfsdk:"is_team_deleteable"`
     ShouldHaveAtLeastOneMember types.Bool `tfsdk:"should_have_at_least_one_member"`
     IsTeamEditable types.Bool `tfsdk:"is_team_editable"`
+    ScimGroupLinkedAt RFC3339Value `tfsdk:"scim_group_linked_at"`
 }
 
 func (r *TeamResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -157,6 +158,11 @@ func (r *TeamResource) schemaDefinition() schema.Schema {
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
                 },
+            },
+            "scim_group_linked_at": schema.StringAttribute{
+                MarkdownDescription: "When a SCIM identity provider first took this team as one of its groups. Empty for a team no identity provider has taken.",
+                CustomType: RFC3339Type{},
+                Computed: true,
             },
         },
     }
@@ -289,6 +295,7 @@ func (r *TeamResource) Create(ctx context.Context, req resource.CreateRequest, r
         "isTeamDeleteable": true,
         "shouldHaveAtLeastOneMember": true,
         "isTeamEditable": true,
+        "scimGroupLinkedAt": true,
         "_id": true,
     }
 
@@ -594,6 +601,17 @@ func (r *TeamResource) Create(ctx context.Context, req resource.CreateRequest, r
     } else {
         data.IsTeamEditable = types.BoolNull()
     }
+    if obj, ok := dataMap["scimGroupLinkedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ScimGroupLinkedAt = NewRFC3339Value(val)
+        } else {
+            data.ScimGroupLinkedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["scimGroupLinkedAt"].(string); ok && val != "" {
+        data.ScimGroupLinkedAt = NewRFC3339Value(val)
+    } else {
+        data.ScimGroupLinkedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -639,6 +657,7 @@ func (r *TeamResource) Read(ctx context.Context, req resource.ReadRequest, resp 
         "isTeamDeleteable": true,
         "shouldHaveAtLeastOneMember": true,
         "isTeamEditable": true,
+        "scimGroupLinkedAt": true,
         "_id": true,
     }
 
@@ -945,6 +964,17 @@ func (r *TeamResource) Read(ctx context.Context, req resource.ReadRequest, resp 
     } else {
         data.IsTeamEditable = types.BoolNull()
     }
+    if obj, ok := dataMap["scimGroupLinkedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ScimGroupLinkedAt = NewRFC3339Value(val)
+        } else {
+            data.ScimGroupLinkedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["scimGroupLinkedAt"].(string); ok && val != "" {
+        data.ScimGroupLinkedAt = NewRFC3339Value(val)
+    } else {
+        data.ScimGroupLinkedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1042,6 +1072,7 @@ func (r *TeamResource) Update(ctx context.Context, req resource.UpdateRequest, r
         "isTeamDeleteable": true,
         "shouldHaveAtLeastOneMember": true,
         "isTeamEditable": true,
+        "scimGroupLinkedAt": true,
         "_id": true,
     }
 
@@ -1341,6 +1372,17 @@ func (r *TeamResource) Update(ctx context.Context, req resource.UpdateRequest, r
         data.IsTeamEditable = types.BoolValue(val)
     } else {
         data.IsTeamEditable = types.BoolNull()
+    }
+    if obj, ok := dataMap["scimGroupLinkedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ScimGroupLinkedAt = NewRFC3339Value(val)
+        } else {
+            data.ScimGroupLinkedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["scimGroupLinkedAt"].(string); ok && val != "" {
+        data.ScimGroupLinkedAt = NewRFC3339Value(val)
+    } else {
+        data.ScimGroupLinkedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

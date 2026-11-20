@@ -19,6 +19,22 @@ resource "oneuptime_scheduled_maintenance_state" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this scheduled maintenance state's place among the scheduled maintenance states of its project, lowest first. Setting it places this scheduled maintenance state and moves no other, so a configuration that numbers every scheduled maintenance state of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.scheduled_maintenance_states`:
+
+```terraform
+order = index(local.scheduled_maintenance_states, each.key) + 1
+```
+
+- Give each scheduled maintenance state a number of its own: two scheduled maintenance states at one number are shown the older first.
+- A scheduled maintenance state created without `order` goes just above the completed state: it takes the completed state's number, and the completed state and the scheduled maintenance states right below it step down one. Give it `order` when the configuration numbers the others, or the next plan shows theirs changed.
+- The scheduled state, ongoing state, ended state and completed state stay in that order, from the top: a write that would put two of them at one number, or out of order, is refused. An apply that moves them past each other's numbers can meet that refusal on one write; apply again and it finishes.
+- Deleting a scheduled maintenance state leaves a gap in the numbers, which changes nothing: scheduled maintenance states go by their numbers, not by counting.
+- Moving a scheduled maintenance state in the OneUptime Dashboard numbers the project's scheduled maintenance states 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -34,7 +50,7 @@ resource "oneuptime_scheduled_maintenance_state" "example" {
 - `is_ongoing_state` (Boolean) Is this state a ongoing state? Defaults to `false`.
 - `is_resolved_state` (Boolean) Is this state a resolved state? Defaults to `false`.
 - `is_scheduled_state` (Boolean) Is this state a scheduled state? Defaults to `false`.
-- `order` (Number) Where this state sits in the project's list of scheduled maintenance states: 1 is the top. Events only ever move down the list, so the scheduled, ongoing, ended and completed states have to stay in that order. A new state without a number goes just above the completed state. Setting a number moves the state to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this state sits in the project's list of scheduled maintenance states: 1 is the top. Events only ever move down the list, so the scheduled, ongoing, ended and completed states have to stay in that order. A new state without a number goes just above the completed state. Setting a number places the state there and moves no other: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 
 ### Read-Only
 

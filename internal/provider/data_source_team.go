@@ -39,6 +39,7 @@ type TeamDataSourceModel struct {
     ShouldHaveAtLeastOneMember types.Bool `tfsdk:"should_have_at_least_one_member"`
     IsTeamEditable types.Bool `tfsdk:"is_team_editable"`
     CustomFields types.String `tfsdk:"custom_fields"`
+    ScimGroupLinkedAt types.String `tfsdk:"scim_group_linked_at"`
 }
 
 func (d *TeamDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -110,6 +111,10 @@ func (d *TeamDataSource) Schema(ctx context.Context, req datasource.SchemaReques
             },
             "custom_fields": schema.StringAttribute{
                 MarkdownDescription: "Custom Fields on this resource. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "scim_group_linked_at": schema.StringAttribute{
+                MarkdownDescription: "When a SCIM identity provider first took this team as one of its groups. Empty for a team no identity provider has taken.",
                 Computed: true,
             },
         },
@@ -212,6 +217,7 @@ func (d *TeamDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         "shouldHaveAtLeastOneMember": true,
         "isTeamEditable": true,
         "customFields": true,
+        "scimGroupLinkedAt": true,
         "_id": true,
     }
 
@@ -508,6 +514,30 @@ func (d *TeamDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         data.CustomFields = types.StringValue(val)
     } else {
         data.CustomFields = types.StringNull()
+    }
+    if obj, ok := item["scimGroupLinkedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScimGroupLinkedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ScimGroupLinkedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ScimGroupLinkedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ScimGroupLinkedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScimGroupLinkedAt = types.StringNull()
+        }
+    } else if arr, ok := item["scimGroupLinkedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ScimGroupLinkedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScimGroupLinkedAt = types.StringNull()
+        }
+    } else if val, ok := item["scimGroupLinkedAt"].(string); ok {
+        data.ScimGroupLinkedAt = types.StringValue(val)
+    } else {
+        data.ScimGroupLinkedAt = types.StringNull()
     }
 
     // Write logs using the tflog package

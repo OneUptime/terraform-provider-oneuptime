@@ -34,6 +34,7 @@ resource "oneuptime_cloud_connection" "example" {
 
 ### Read-Only
 
+- `added_metrics` (String) Metrics added to what the connection reads beyond each resource type's key metrics, for one resource or for every resource of a type. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) ID of the user who created this connection. The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.

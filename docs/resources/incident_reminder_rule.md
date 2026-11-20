@@ -19,6 +19,21 @@ resource "oneuptime_incident_reminder_rule" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`order` is this incident reminder rule's place among the incident reminder rules of its project, lowest first. Setting it places this incident reminder rule and moves no other, so a configuration that numbers every incident reminder rule of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.incident_reminder_rules`:
+
+```terraform
+order = index(local.incident_reminder_rules, each.key) + 1
+```
+
+- Give each incident reminder rule a number of its own: two incident reminder rules at one number are shown the older first.
+- An incident reminder rule created without `order` goes after the last one of its project.
+- Deleting an incident reminder rule leaves a gap in the numbers, which changes nothing: incident reminder rules go by their numbers, not by counting.
+- Moving an incident reminder rule in the OneUptime Dashboard numbers the project's incident reminder rules 1..n again; the next plan shows that as changes to `order`.
+
+
 ## Schema
 
 ### Required
@@ -33,7 +48,7 @@ resource "oneuptime_incident_reminder_rule" "example" {
 - `incident_severities` (Set of String) Only apply this reminder rule to incidents with these severities. Leave empty to match incidents of any severity. IDs of `oneuptime_incident_severity` resources.
 - `is_enabled` (Boolean) Whether this reminder rule is enabled. Defaults to `true`.
 - `labels` (Set of String) Only apply this reminder rule to incidents with these labels. Leave empty to match incidents with any labels. IDs of `oneuptime_label` resources.
-- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 - `stop_reminders_on_state` (String) Stop sending reminders once the incident reaches this state. Select Acknowledged to stop reminders when the incident is acknowledged, or Resolved to keep reminding until the incident is resolved. Allowed values: `Acknowledged`, `Resolved`. Defaults to `Resolved`.
 
 ### Read-Only

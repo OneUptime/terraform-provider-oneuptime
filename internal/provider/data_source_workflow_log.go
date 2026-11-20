@@ -40,6 +40,11 @@ type WorkflowLogDataSourceModel struct {
     IsTestRun types.Bool `tfsdk:"is_test_run"`
     CanRunAgain types.Bool `tfsdk:"can_run_again"`
     StartedByUserId types.String `tfsdk:"started_by_user_id"`
+    RunAs types.String `tfsdk:"run_as"`
+    RunAsCustomRoleName types.String `tfsdk:"run_as_custom_role_name"`
+    RunAsGivenByUserId types.String `tfsdk:"run_as_given_by_user_id"`
+    RunAsGivenByApiKeyId types.String `tfsdk:"run_as_given_by_api_key_id"`
+    RunAsGivenByApiKeyName types.String `tfsdk:"run_as_given_by_api_key_name"`
 }
 
 func (d *WorkflowLogDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -116,6 +121,32 @@ func (d *WorkflowLogDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
                 Validators: dataSourceRecordIDValidators("oneuptime_user"),
             },
+            "run_as": schema.StringAttribute{
+                MarkdownDescription: "What the run's steps could do in the project: Default, ProjectOwner or CustomRole (runAsCustomRoleName names the role). Set by OneUptime as the run starts.",
+                Optional: true,
+                Computed: true,
+            },
+            "run_as_custom_role_name": schema.StringAttribute{
+                MarkdownDescription: "The name of the custom role the run's steps acted as, as it was when the run started. Empty unless the run ran as a custom role.",
+                Optional: true,
+                Computed: true,
+            },
+            "run_as_given_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the person whose permissions the run ran with, when it ran as more than Default. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
+                Computed: true,
+                Validators: dataSourceRecordIDValidators("oneuptime_user"),
+            },
+            "run_as_given_by_api_key_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the project API key whose permissions the run ran with, when it ran as more than Default and a key gave them.",
+                Optional: true,
+                Computed: true,
+            },
+            "run_as_given_by_api_key_name": schema.StringAttribute{
+                MarkdownDescription: "The name of the project API key whose permissions the run ran with, as it was when the run started. Empty unless a key gave them.",
+                Optional: true,
+                Computed: true,
+            },
         },
     }
 }
@@ -179,6 +210,26 @@ func (d *WorkflowLogDataSource) Read(ctx context.Context, req datasource.ReadReq
         filters["startedByUserId"] = data.StartedByUserId.ValueString()
         filterNames = append(filterNames, "started_by_user_id = "+fmt.Sprintf("%q", data.StartedByUserId.ValueString()))
     }
+    if !data.RunAs.IsNull() && !data.RunAs.IsUnknown() {
+        filters["runAs"] = data.RunAs.ValueString()
+        filterNames = append(filterNames, "run_as = "+fmt.Sprintf("%q", data.RunAs.ValueString()))
+    }
+    if !data.RunAsCustomRoleName.IsNull() && !data.RunAsCustomRoleName.IsUnknown() {
+        filters["runAsCustomRoleName"] = data.RunAsCustomRoleName.ValueString()
+        filterNames = append(filterNames, "run_as_custom_role_name = "+fmt.Sprintf("%q", data.RunAsCustomRoleName.ValueString()))
+    }
+    if !data.RunAsGivenByUserId.IsNull() && !data.RunAsGivenByUserId.IsUnknown() {
+        filters["runAsGivenByUserId"] = data.RunAsGivenByUserId.ValueString()
+        filterNames = append(filterNames, "run_as_given_by_user_id = "+fmt.Sprintf("%q", data.RunAsGivenByUserId.ValueString()))
+    }
+    if !data.RunAsGivenByApiKeyId.IsNull() && !data.RunAsGivenByApiKeyId.IsUnknown() {
+        filters["runAsGivenByApiKeyId"] = data.RunAsGivenByApiKeyId.ValueString()
+        filterNames = append(filterNames, "run_as_given_by_api_key_id = "+fmt.Sprintf("%q", data.RunAsGivenByApiKeyId.ValueString()))
+    }
+    if !data.RunAsGivenByApiKeyName.IsNull() && !data.RunAsGivenByApiKeyName.IsUnknown() {
+        filters["runAsGivenByApiKeyName"] = data.RunAsGivenByApiKeyName.ValueString()
+        filterNames = append(filterNames, "run_as_given_by_api_key_name = "+fmt.Sprintf("%q", data.RunAsGivenByApiKeyName.ValueString()))
+    }
 
     if hasId && len(filters) > 0 {
         resp.Diagnostics.AddError(
@@ -209,6 +260,11 @@ func (d *WorkflowLogDataSource) Read(ctx context.Context, req datasource.ReadReq
         "isTestRun": true,
         "canRunAgain": true,
         "startedByUserId": true,
+        "runAs": true,
+        "runAsCustomRoleName": true,
+        "runAsGivenByUserId": true,
+        "runAsGivenByApiKeyId": true,
+        "runAsGivenByApiKeyName": true,
         "_id": true,
     }
 
@@ -567,6 +623,126 @@ func (d *WorkflowLogDataSource) Read(ctx context.Context, req datasource.ReadReq
         data.StartedByUserId = types.StringValue(val)
     } else {
         data.StartedByUserId = types.StringNull()
+    }
+    if obj, ok := item["runAs"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAs = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RunAs = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RunAs = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunAs = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAs = types.StringNull()
+        }
+    } else if arr, ok := item["runAs"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RunAs = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAs = types.StringNull()
+        }
+    } else if val, ok := item["runAs"].(string); ok {
+        data.RunAs = types.StringValue(val)
+    } else {
+        data.RunAs = types.StringNull()
+    }
+    if obj, ok := item["runAsCustomRoleName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAsCustomRoleName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RunAsCustomRoleName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RunAsCustomRoleName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunAsCustomRoleName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsCustomRoleName = types.StringNull()
+        }
+    } else if arr, ok := item["runAsCustomRoleName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RunAsCustomRoleName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsCustomRoleName = types.StringNull()
+        }
+    } else if val, ok := item["runAsCustomRoleName"].(string); ok {
+        data.RunAsCustomRoleName = types.StringValue(val)
+    } else {
+        data.RunAsCustomRoleName = types.StringNull()
+    }
+    if obj, ok := item["runAsGivenByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAsGivenByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RunAsGivenByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RunAsGivenByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunAsGivenByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["runAsGivenByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RunAsGivenByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByUserId = types.StringNull()
+        }
+    } else if val, ok := item["runAsGivenByUserId"].(string); ok {
+        data.RunAsGivenByUserId = types.StringValue(val)
+    } else {
+        data.RunAsGivenByUserId = types.StringNull()
+    }
+    if obj, ok := item["runAsGivenByApiKeyId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAsGivenByApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RunAsGivenByApiKeyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RunAsGivenByApiKeyId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByApiKeyId = types.StringNull()
+        }
+    } else if arr, ok := item["runAsGivenByApiKeyId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RunAsGivenByApiKeyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByApiKeyId = types.StringNull()
+        }
+    } else if val, ok := item["runAsGivenByApiKeyId"].(string); ok {
+        data.RunAsGivenByApiKeyId = types.StringValue(val)
+    } else {
+        data.RunAsGivenByApiKeyId = types.StringNull()
+    }
+    if obj, ok := item["runAsGivenByApiKeyName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunAsGivenByApiKeyName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RunAsGivenByApiKeyName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RunAsGivenByApiKeyName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunAsGivenByApiKeyName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByApiKeyName = types.StringNull()
+        }
+    } else if arr, ok := item["runAsGivenByApiKeyName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RunAsGivenByApiKeyName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunAsGivenByApiKeyName = types.StringNull()
+        }
+    } else if val, ok := item["runAsGivenByApiKeyName"].(string); ok {
+        data.RunAsGivenByApiKeyName = types.StringValue(val)
+    } else {
+        data.RunAsGivenByApiKeyName = types.StringNull()
     }
 
     // Write logs using the tflog package

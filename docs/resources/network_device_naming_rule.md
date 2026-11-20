@@ -19,6 +19,21 @@ resource "oneuptime_network_device_naming_rule" "example" {
 }
 ```
 
+<a id="order"></a>
+## Order
+
+`priority` is this network device naming rule's place among the network device naming rules of its project, the highest number first. Setting it places this network device naming rule and moves no other, so a configuration that numbers every network device naming rule of a project is applied exactly as written, whatever order the provider's writes land in, and the next plan is empty. For example, over a `for_each` of `local.network_device_naming_rules`:
+
+```terraform
+priority = length(local.network_device_naming_rules) - index(local.network_device_naming_rules, each.key)
+```
+
+- Give each network device naming rule a number of its own: two network device naming rules at one number are shown the older first.
+- A network device naming rule created without `priority` goes below the last one of its project, one number lower.
+- Deleting a network device naming rule leaves a gap in the numbers, which changes nothing: network device naming rules go by their numbers, not by counting.
+- Moving a network device naming rule in the OneUptime Dashboard numbers the project's network device naming rules n..1 again; the next plan shows that as changes to `priority`.
+
+
 ## Schema
 
 ### Required
@@ -36,7 +51,7 @@ resource "oneuptime_network_device_naming_rule" "example" {
 - `lookup_entries` (String) Rows of a key and the value it stands for, put where the name pattern says {lookup}. A device whose key has no row is left to the next rule. A JSON value: write it with `jsonencode()`.
 - `lookup_key` (String) What the rows of the lookup table are keyed by: lastIpOctet (the last part of the device's IP address), ipAddress, macAddress or discoveredName.
 - `mac_address_pattern` (String) Regex or * wildcard pattern (case-insensitive) matched against the device's MAC address, in any spelling: 00:05:0b*, 00-05-0B* and 00050b* match the same devices. Leave empty to match any MAC address.
-- `priority` (Number) Where this rule sits in the list: the first enabled rule from the top that matches a device, and has every value its name pattern needs, names it. The rule at the top has the highest number. A new rule is added to the end of the list, with the lowest number. Setting a number another rule already has puts this rule in that place, and the rules in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `priority` (Number) Where this rule sits in the list: the first enabled rule from the top that matches a device, and has every value its name pattern needs, names it. The rule at the top has the highest number. A new rule is added to the end of the list, with the lowest number. Setting a number places this rule there and moves no other rule: two rules at one number are read the older first. In the dashboard, drag the rows to reorder them. See [Order](#order).
 - `sites` (Set of String) Only devices in one of these sites, or in a site below one of them. Leave empty to match devices in any site, or in none. IDs of `oneuptime_network_site` resources.
 - `vendor_pattern` (String) Regex or * wildcard pattern (case-insensitive) matched against who made the device. Leave empty to match any vendor.
 

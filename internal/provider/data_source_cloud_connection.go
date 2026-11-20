@@ -43,6 +43,7 @@ type CloudConnectionDataSourceModel struct {
     StreamKeyCreatedAt types.String `tfsdk:"stream_key_created_at"`
     StreamSummary types.String `tfsdk:"stream_summary"`
     StreamState types.String `tfsdk:"stream_state"`
+    AddedMetrics types.String `tfsdk:"added_metrics"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -128,6 +129,10 @@ func (d *CloudConnectionDataSource) Schema(ctx context.Context, req datasource.S
             },
             "stream_state": schema.StringAttribute{
                 MarkdownDescription: "Azure: the subscription holding the connection's event hubs, and where OneUptime has read each to. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "added_metrics": schema.StringAttribute{
+                MarkdownDescription: "Metrics added to what the connection reads beyond each resource type's key metrics, for one resource or for every resource of a type. A JSON value: read it with `jsondecode()`.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -232,6 +237,7 @@ func (d *CloudConnectionDataSource) Read(ctx context.Context, req datasource.Rea
         "streamKeyCreatedAt": true,
         "streamSummary": true,
         "streamState": true,
+        "addedMetrics": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -682,6 +688,30 @@ func (d *CloudConnectionDataSource) Read(ctx context.Context, req datasource.Rea
         data.StreamState = types.StringValue(val)
     } else {
         data.StreamState = types.StringNull()
+    }
+    if obj, ok := item["addedMetrics"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AddedMetrics = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AddedMetrics = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AddedMetrics = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AddedMetrics = types.StringValue(string(jsonBytes))
+        } else {
+            data.AddedMetrics = types.StringNull()
+        }
+    } else if arr, ok := item["addedMetrics"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AddedMetrics = types.StringValue(string(jsonBytes))
+        } else {
+            data.AddedMetrics = types.StringNull()
+        }
+    } else if val, ok := item["addedMetrics"].(string); ok {
+        data.AddedMetrics = types.StringValue(val)
+    } else {
+        data.AddedMetrics = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

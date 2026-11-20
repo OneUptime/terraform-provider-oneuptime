@@ -91,4 +91,5 @@ data "oneuptime_data_store" "by_id" {
 - `subject_countries` (String) Countries whose people's data the store holds, from country-bound data types (ISO 3166-1 alpha-2). A JSON value: read it with `jsondecode()`.
 - `table_health_attempted_at` (String) When the last collection of the store's tables ended, whether it collected them or failed.
 - `table_health_collected_at` (String) When Data Observability last collected the store's tables.
+- `table_health_skipped_tables` (String) The tables the database keeps refusing, skipped until their next try: what is not read of each, why, and when it is asked again. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

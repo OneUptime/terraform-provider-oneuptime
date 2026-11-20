@@ -35,7 +35,7 @@ data "oneuptime_postmortem_rule" "by_id" {
 - `is_enabled` (Boolean) Whether this rule is enabled. A disabled rule is skipped, as if it were not there.
 - `llm_provider_id` (String) ID of the LLM provider OneUptime AI uses for everything this rule drafts. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.
 - `name` (String) Name of this postmortem rule.
-- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them.
+- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them.
 - `title_pattern` (String) Case-insensitive regex matched against the incident's title. Leave empty to match any title.
 
 ### Read-Only
