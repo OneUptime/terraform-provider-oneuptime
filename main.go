@@ -8,6 +8,9 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/providerserver"
 
     "github.com/oneuptime/terraform-provider-oneuptime/internal/provider"
+    // Every package of generated resources and data sources, which hand
+    // what they hold to internal/provider (its shards.go).
+    _ "github.com/oneuptime/terraform-provider-oneuptime/internal/provider/all"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website

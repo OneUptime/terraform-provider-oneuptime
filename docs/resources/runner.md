@@ -26,9 +26,7 @@ resource "oneuptime_runner" "example" {
 
 ### Optional
 
-- `agent_version` (String) Self-reported version of the Runner binary. Updated on each heartbeat.
 - `can_run_runbooks` (Boolean) Whether this Runner executes runbook steps. On by default — this is why most Runners are installed. It cannot be turned on for an in-cluster Runner the Kubernetes agent chart registered, which runs kubectl only. Defaults to `true`.
-- `connection_status` (String) Connected if the agent has heartbeated recently. Allowed values: `connected`, `disconnected`.
 - `description` (String) Optional description for this agent.
 - `is_project_default` (Boolean) Whether this is the project's default Runner: runbook steps that pick no Runner run on it instead of the Global Runner. Defaults to `false`.
 - `key` (String, Sensitive) Secret key the agent presents on every request. Anyone who can read this key can claim work as this Runner and receive its secrets in plaintext. Never share it; reset it to revoke the agent. Leave it out and OneUptime generates one.
@@ -36,8 +34,10 @@ resource "oneuptime_runner" "example" {
 
 ### Read-Only
 
+- `agent_version` (String) Self-reported version of the Runner binary. Updated on each heartbeat.
 - `can_run_ai_commands` (Boolean) Whether OneUptime AI may run commands through this Runner: read-only kubectl while investigating a cluster it is bound to, and policy-checked remediation commands (Bash, kubectl) that either match an allowlist or wait for one-click human approval. Set by OneUptime: on once an auto remediation rule picks this Runner, and on for the in-cluster Runner the Kubernetes agent chart installs.
 - `can_run_code_fixes` (Boolean) For a global Runner: whether it takes OneUptime AI's code fixes, with a token for each repository. On by default; a master admin turns it off.
+- `connection_status` (String) Connected if the agent has heartbeated recently.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `host_info` (String) Self-reported host info (hostname, OS, arch). Updated on each heartbeat. A JSON value: read it with `jsondecode()`.

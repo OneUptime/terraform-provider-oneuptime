@@ -30,14 +30,14 @@ resource "oneuptime_data_asset" "example" {
 
 ### Optional
 
-- `asset_kind` (String) Whether it is a table, a view, a materialized view, a partitioned table or a foreign table. Allowed values: `Table`, `View`, `Materialized View`, `Partitioned Table`, `Foreign Table`, `Storage Path`. Defaults to `Table`.
 - `description` (String) What the asset holds and who relies on it, in your own words.
 - `freshness_column` (String) A timestamp column that says when a row was written. Its latest value says when the table last changed, where the database's own counters cannot.
-- `labels` (Set of String) Labels to group and filter tables by. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter tables by. OneUptime adds to it too, on its own: the entries listed here are added and taken off, and every other entry stays. Left out, it keeps the entries OneUptime gives it. IDs of `oneuptime_label` resources.
 - `schema_name` (String) The schema (or database, or dataset) the asset is in, such as public.
 
 ### Read-Only
 
+- `asset_kind` (String) Whether it is a table, a view, a materialized view, a partitioned table or a foreign table.
 - `column_count` (Number) How many columns the asset has.
 - `columns` (String) The asset's columns at its last collection: each one's name, type, whether it allows empty values, and its position. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.

@@ -23,7 +23,7 @@ resource "oneuptime_ai_agent_task_pull_request" "example" {
 
 ### Required
 
-- `pull_request_state` (String) Current state of the pull request (open, closed, merged). Allowed values: `open`, `closed`, `merged`.
+- `pull_request_state` (String) Current state of the pull request (open, closed, merged). OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent. Allowed values: `open`, `closed`, `merged`.
 - `title` (String) Title of the pull request.
 
 ### Optional

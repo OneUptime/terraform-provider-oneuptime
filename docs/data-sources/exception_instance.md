@@ -30,6 +30,7 @@ data "oneuptime_exception_instance" "by_id" {
 
 - `attributes` (String) Attributes.
 - `container_entity_key` (String) Container Entity Key.
+- `duplicate_of` (String) Duplicate Of.
 - `environment` (String) Environment.
 - `escaped` (Boolean) Exception Escaped.
 - `exception_type` (String) Exception Type.

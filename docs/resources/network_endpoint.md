@@ -26,8 +26,7 @@ resource "oneuptime_network_endpoint" "example" {
 ### Optional
 
 - `classification` (String) User-editable classification of this endpoint (POS, Kiosk, Camera, Printer, ...).
-- `ip_address` (String) Last IP address seen for this endpoint in ARP tables. Managed by the server.
-- `site_id` (String) ID of the Network Site this endpoint belongs to. The ID of a `oneuptime_network_site`.
+- `site_id` (String) ID of the Network Site this endpoint belongs to. OneUptime changes it too, on its own: left out, it keeps the value OneUptime gives it. The ID of a `oneuptime_network_site`.
 - `vendor` (String) Hardware vendor derived from the MAC OUI prefix. Managed by the server.
 
 ### Read-Only
@@ -42,6 +41,7 @@ resource "oneuptime_network_endpoint" "example" {
 - `first_seen_at` (String) When this endpoint was first discovered on the network.
 - `hostname` (String) What a network controller calls this endpoint, such as the name in its Meraki client list. Managed by the server.
 - `id` (String) Unique identifier for the resource.
+- `ip_address` (String) Last IP address seen for this endpoint in ARP tables. Managed by the server.
 - `last_seen_at` (String) When this endpoint was last seen in an ARP or FDB walk, or in a network controller's client list. While a walk keeps seeing it unchanged, this is refreshed every 15 minutes, so it is accurate to within 15 minutes and one poll.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

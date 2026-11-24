@@ -57,6 +57,7 @@ OneUptime keeps addresses in lower case, and finds a person by theirs in any cas
 - `has_accepted_invitation` (Boolean) Whether the person has joined: false while their invitation waits, true once they accept it. Someone in the project already joins at once.
 - `id` (String) Unique identifier for the resource.
 - `invitation_accepted_at` (String) When the person accepted their invitation.
+- `invitee_email` (String) The address the person was invited at, shown in place of their account's own until they accept.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.
 

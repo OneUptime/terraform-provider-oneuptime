@@ -32,7 +32,6 @@ resource "oneuptime_ai_agent" "example" {
 - `is_default` (Boolean) Is this the default AI Agent for the project? When set, this agent will be used for automated tasks. Defaults to `false`.
 - `key` (String, Sensitive) The secret the AI agent connects with, its AI_AGENT_KEY. Leave it out and OneUptime generates one.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
-- `last_alive` (String) When the AI agent last checked in. Set by OneUptime.
 
 ### Read-Only
 
@@ -40,6 +39,7 @@ resource "oneuptime_ai_agent" "example" {
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User).
 - `id` (String) Unique identifier for the resource.
+- `last_alive` (String) When the AI agent last checked in. Set by OneUptime.
 - `project_id` (String) ID of the project the AI agent belongs to. A global AI agent belongs to none.
 - `slug` (String) Friendly globally unique name for your object.
 - `updated_at` (String) Date and Time when the object was updated.

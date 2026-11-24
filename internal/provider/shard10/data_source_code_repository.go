@@ -1,0 +1,1040 @@
+package shard10
+
+import (
+    . "github.com/oneuptime/terraform-provider-oneuptime/internal/provider"
+    "context"
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "github.com/hashicorp/terraform-plugin-framework/attr"
+    "sort"
+
+    "github.com/hashicorp/terraform-plugin-framework/datasource"
+    "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+    "github.com/hashicorp/terraform-plugin-framework/types"
+    "github.com/hashicorp/terraform-plugin-log/tflog"
+)
+
+// Ensure provider defined types fully satisfy framework interfaces.
+var _ datasource.DataSource = &CodeRepositoryDataSource{}
+
+func NewCodeRepositoryDataSource() datasource.DataSource {
+    return &CodeRepositoryDataSource{}
+}
+
+// CodeRepositoryDataSource defines the data source implementation.
+type CodeRepositoryDataSource struct {
+    client *Client
+}
+
+// CodeRepositoryDataSourceModel describes the data source data model.
+type CodeRepositoryDataSourceModel struct {
+    Id types.String `tfsdk:"id"`
+    CreatedAt types.String `tfsdk:"created_at"`
+    UpdatedAt types.String `tfsdk:"updated_at"`
+    ProjectId types.String `tfsdk:"project_id"`
+    Name types.String `tfsdk:"name"`
+    Slug types.String `tfsdk:"slug"`
+    Description types.String `tfsdk:"description"`
+    RepositoryHostedAt types.String `tfsdk:"repository_hosted_at"`
+    OrganizationName types.String `tfsdk:"organization_name"`
+    RepositoryName types.String `tfsdk:"repository_name"`
+    MainBranchName types.String `tfsdk:"main_branch_name"`
+    SetupCommand types.String `tfsdk:"setup_command"`
+    BuildCommand types.String `tfsdk:"build_command"`
+    TestCommand types.String `tfsdk:"test_command"`
+    RunnerId types.String `tfsdk:"runner_id"`
+    IsGlobalRunnerPicked types.Bool `tfsdk:"is_global_runner_picked"`
+    MaxOpenFixPullRequests types.Number `tfsdk:"max_open_fix_pull_requests"`
+    IsGitHubCommandsEnabled types.Bool `tfsdk:"is_git_hub_commands_enabled"`
+    GitHubTriggerLabel types.String `tfsdk:"git_hub_trigger_label"`
+    IsProductionReviewEnabled types.Bool `tfsdk:"is_production_review_enabled"`
+    ProductionReviewPullRequestContent types.String `tfsdk:"production_review_pull_request_content"`
+    ProductionReviewLlmProviderId types.String `tfsdk:"production_review_llm_provider_id"`
+    RepositoryUrl types.String `tfsdk:"repository_url"`
+    GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
+    GitLabProjectId types.String `tfsdk:"git_lab_project_id"`
+    MintedTokenRefusedAt types.String `tfsdk:"minted_token_refused_at"`
+    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    Labels types.Set `tfsdk:"labels"`
+}
+
+func (d *CodeRepositoryDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_code_repository"
+}
+
+func (d *CodeRepositoryDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+    resp.Schema = schema.Schema{
+        MarkdownDescription: "Connect and manage code repositories from GitHub, GitLab, Forgejo, Gitea and any other Git server Look up an existing code repository by `id`, or by any of its other arguments (`name`, `build_command`, `created_by_user_id`, ...): each one set must match, and exactly one code repository may match them all.",
+
+        Attributes: map[string]schema.Attribute{
+            "id": schema.StringAttribute{
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
+                Optional: true,
+                Computed: true,
+            },
+            "created_at": schema.StringAttribute{
+                MarkdownDescription: "Date and Time when the object was created.",
+                Computed: true,
+            },
+            "updated_at": schema.StringAttribute{
+                MarkdownDescription: "Date and Time when the object was updated.",
+                Computed: true,
+            },
+            "project_id": schema.StringAttribute{
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "A friendly name for this code repository.",
+                Optional: true,
+                Computed: true,
+            },
+            "slug": schema.StringAttribute{
+                MarkdownDescription: "Friendly globally unique name for your object.",
+                Optional: true,
+                Computed: true,
+            },
+            "description": schema.StringAttribute{
+                MarkdownDescription: "A description of this code repository.",
+                Optional: true,
+                Computed: true,
+            },
+            "repository_hosted_at": schema.StringAttribute{
+                MarkdownDescription: "Where this repository is hosted, and so how OneUptime reaches it: GitHub (the GitHub App), GitLab, Forgejo (Forgejo, Gitea and Codeberg) or Git (any Git server over HTTPS).",
+                Optional: true,
+                Computed: true,
+            },
+            "organization_name": schema.StringAttribute{
+                MarkdownDescription: "The organization, group or user that owns this repository, as its host names it (a GitLab group's full path, such as my-group/backend).",
+                Optional: true,
+                Computed: true,
+            },
+            "repository_name": schema.StringAttribute{
+                MarkdownDescription: "The name of the repository.",
+                Optional: true,
+                Computed: true,
+            },
+            "main_branch_name": schema.StringAttribute{
+                MarkdownDescription: "The name of the main/default branch.",
+                Optional: true,
+                Computed: true,
+            },
+            "setup_command": schema.StringAttribute{
+                MarkdownDescription: "Optional. Leave it empty: the code agent learns how to set up, build and test the repository from the repository itself (its AGENTS.md first) and checks its change that way. When set, a Runner of the project's own also runs it at the repository root, in the cloned workspace, to install dependencies before the build and test commands check an AI-authored fix (e.g. 'npm ci').",
+                Optional: true,
+                Computed: true,
+            },
+            "build_command": schema.StringAttribute{
+                MarkdownDescription: "Optional. Leave it empty: the code agent learns how to build the repository from the repository itself (its AGENTS.md first) and checks its change that way. When set, a Runner of the project's own also runs it at the repository root to check that an AI-authored fix builds (e.g. 'npm run build'); a failure is fed back to the code agent for bounded repair attempts before the pull request opens.",
+                Optional: true,
+                Computed: true,
+            },
+            "test_command": schema.StringAttribute{
+                MarkdownDescription: "Optional. Leave it empty: the code agent learns how to test the repository from the repository itself (its AGENTS.md first) and checks its change that way. When set, a Runner of the project's own also runs it at the repository root to run the test suite against an AI-authored fix (e.g. 'npm test'); a failure is fed back to the code agent for bounded repair attempts before the pull request opens.",
+                Optional: true,
+                Computed: true,
+            },
+            "runner_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the Runner AI works in this repository on: one of the project's own Runners. Empty means the project's default Runner when it has one, and otherwise a global Runner, one OneUptime runs for every project. The ID of a `oneuptime_runner`.",
+                Optional: true,
+                Computed: true,
+                Validators: RecordIDValidators("oneuptime_runner"),
+            },
+            "is_global_runner_picked": schema.BoolAttribute{
+                MarkdownDescription: "Whether this repository runs on a global Runner, one OneUptime runs for every project, even when the project has a default Runner. Read only when the repository picks no Runner of its own. Unset, a repository that picks no Runner follows the project's default Runner, and runs on a global Runner while there is none.",
+                Optional: true,
+                Computed: true,
+            },
+            "max_open_fix_pull_requests": schema.NumberAttribute{
+                MarkdownDescription: "Maximum AI-authored fix pull requests that may be open on this repository at the same time. At the cap, new AI fix runs are refused a repository token, so they cannot push branches or open pull requests. Unset means no cap; 0 blocks AI fix pull requests for this repository entirely.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_git_hub_commands_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether the OneUptime GitHub App acts on mentions, assignments and trigger labels in this repository. Only people with write access to the repository can command it, and it never merges anything. On by default.",
+                Optional: true,
+                Computed: true,
+            },
+            "git_hub_trigger_label": schema.StringAttribute{
+                MarkdownDescription: "The issue label that hands an issue to the OneUptime GitHub App. Adding this label to an issue starts the same work an '@mention implement this' would, which is how you assign work to the app from the GitHub UI. Unset means 'oneuptime'.",
+                Optional: true,
+                Computed: true,
+            },
+            "is_production_review_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether OneUptime comments on this repository's pull requests with what production says about the code they change: the exceptions thrown in it, how busy and slow the operations it runs are, and the incidents and deploys around it. Only pull requests from people who can write to the repository are reviewed on their own.",
+                Optional: true,
+                Computed: true,
+            },
+            "production_review_pull_request_content": schema.StringAttribute{
+                MarkdownDescription: "What a production review posts on a pull request. Review (the default): the review, or only a link to it in OneUptime on a public repository. Link: only a link, whatever the repository. ReviewEvenIfPublic: the review, even on a public repository.",
+                Optional: true,
+                Computed: true,
+            },
+            "production_review_llm_provider_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the LLM provider OneUptime AI reads this repository's pull requests with in its production reviews. Empty: the project's default provider, else the global one. The ID of a `oneuptime_llm_provider`.",
+                Optional: true,
+                Computed: true,
+                Validators: RecordIDValidators("oneuptime_llm_provider"),
+            },
+            "repository_url": schema.StringAttribute{
+                MarkdownDescription: "The repository's address: its page on GitHub, GitLab or Forgejo, or the HTTPS address a Git repository is cloned with.",
+                Optional: true,
+                Computed: true,
+            },
+            "git_hub_app_installation_id": schema.StringAttribute{
+                MarkdownDescription: "The GitHub App installation ID used to authenticate with this repository.",
+                Optional: true,
+                Computed: true,
+            },
+            "git_lab_project_id": schema.StringAttribute{
+                MarkdownDescription: "The GitLab project ID OneUptime reads this repository by. Set when the repository is connected.",
+                Optional: true,
+                Computed: true,
+            },
+            "minted_token_refused_at": schema.StringAttribute{
+                MarkdownDescription: "When the repository's host last refused to make the short-lived access token an AI code fix pushes with. Empty while it makes one. Set by OneUptime, and cleared when the connection's token is replaced.",
+                Computed: true,
+            },
+            "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
+                Computed: true,
+                Validators: DataSourceRecordIDValidators("oneuptime_user"),
+            },
+            "labels": schema.SetAttribute{
+                MarkdownDescription: "Labels to group and filter by. IDs of `oneuptime_label` resources.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+        },
+    }
+}
+
+func (d *CodeRepositoryDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+    // Prevent panic if the provider has not been configured.
+    if req.ProviderData == nil {
+        return
+    }
+
+    client, ok := req.ProviderData.(*Client)
+
+    if !ok {
+        resp.Diagnostics.AddError(
+            "Unexpected Data Source Configure Type",
+            fmt.Sprintf("Expected *Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+        )
+
+        return
+    }
+
+    d.client = client
+}
+
+func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data CodeRepositoryDataSourceModel
+
+    // Read Terraform configuration data into the model
+    resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        filters["name"] = data.Name.ValueString()
+        filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
+    }
+    if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
+        filters["slug"] = data.Slug.ValueString()
+        filterNames = append(filterNames, "slug = "+fmt.Sprintf("%q", data.Slug.ValueString()))
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        filters["description"] = data.Description.ValueString()
+        filterNames = append(filterNames, "description = "+fmt.Sprintf("%q", data.Description.ValueString()))
+    }
+    if !data.RepositoryHostedAt.IsNull() && !data.RepositoryHostedAt.IsUnknown() {
+        filters["repositoryHostedAt"] = data.RepositoryHostedAt.ValueString()
+        filterNames = append(filterNames, "repository_hosted_at = "+fmt.Sprintf("%q", data.RepositoryHostedAt.ValueString()))
+    }
+    if !data.OrganizationName.IsNull() && !data.OrganizationName.IsUnknown() {
+        filters["organizationName"] = data.OrganizationName.ValueString()
+        filterNames = append(filterNames, "organization_name = "+fmt.Sprintf("%q", data.OrganizationName.ValueString()))
+    }
+    if !data.RepositoryName.IsNull() && !data.RepositoryName.IsUnknown() {
+        filters["repositoryName"] = data.RepositoryName.ValueString()
+        filterNames = append(filterNames, "repository_name = "+fmt.Sprintf("%q", data.RepositoryName.ValueString()))
+    }
+    if !data.MainBranchName.IsNull() && !data.MainBranchName.IsUnknown() {
+        filters["mainBranchName"] = data.MainBranchName.ValueString()
+        filterNames = append(filterNames, "main_branch_name = "+fmt.Sprintf("%q", data.MainBranchName.ValueString()))
+    }
+    if !data.SetupCommand.IsNull() && !data.SetupCommand.IsUnknown() {
+        filters["setupCommand"] = data.SetupCommand.ValueString()
+        filterNames = append(filterNames, "setup_command = "+fmt.Sprintf("%q", data.SetupCommand.ValueString()))
+    }
+    if !data.BuildCommand.IsNull() && !data.BuildCommand.IsUnknown() {
+        filters["buildCommand"] = data.BuildCommand.ValueString()
+        filterNames = append(filterNames, "build_command = "+fmt.Sprintf("%q", data.BuildCommand.ValueString()))
+    }
+    if !data.TestCommand.IsNull() && !data.TestCommand.IsUnknown() {
+        filters["testCommand"] = data.TestCommand.ValueString()
+        filterNames = append(filterNames, "test_command = "+fmt.Sprintf("%q", data.TestCommand.ValueString()))
+    }
+    if !data.RunnerId.IsNull() && !data.RunnerId.IsUnknown() {
+        filters["runnerId"] = data.RunnerId.ValueString()
+        filterNames = append(filterNames, "runner_id = "+fmt.Sprintf("%q", data.RunnerId.ValueString()))
+    }
+    if !data.IsGlobalRunnerPicked.IsNull() && !data.IsGlobalRunnerPicked.IsUnknown() {
+        filters["isGlobalRunnerPicked"] = data.IsGlobalRunnerPicked.ValueBool()
+        filterNames = append(filterNames, "is_global_runner_picked = "+fmt.Sprintf("%t", data.IsGlobalRunnerPicked.ValueBool()))
+    }
+    if !data.MaxOpenFixPullRequests.IsNull() && !data.MaxOpenFixPullRequests.IsUnknown() {
+        filters["maxOpenFixPullRequests"] = LookupNumber(data.MaxOpenFixPullRequests)
+        filterNames = append(filterNames, "max_open_fix_pull_requests = "+data.MaxOpenFixPullRequests.ValueBigFloat().String())
+    }
+    if !data.IsGitHubCommandsEnabled.IsNull() && !data.IsGitHubCommandsEnabled.IsUnknown() {
+        filters["isGitHubCommandsEnabled"] = data.IsGitHubCommandsEnabled.ValueBool()
+        filterNames = append(filterNames, "is_git_hub_commands_enabled = "+fmt.Sprintf("%t", data.IsGitHubCommandsEnabled.ValueBool()))
+    }
+    if !data.GitHubTriggerLabel.IsNull() && !data.GitHubTriggerLabel.IsUnknown() {
+        filters["gitHubTriggerLabel"] = data.GitHubTriggerLabel.ValueString()
+        filterNames = append(filterNames, "git_hub_trigger_label = "+fmt.Sprintf("%q", data.GitHubTriggerLabel.ValueString()))
+    }
+    if !data.IsProductionReviewEnabled.IsNull() && !data.IsProductionReviewEnabled.IsUnknown() {
+        filters["isProductionReviewEnabled"] = data.IsProductionReviewEnabled.ValueBool()
+        filterNames = append(filterNames, "is_production_review_enabled = "+fmt.Sprintf("%t", data.IsProductionReviewEnabled.ValueBool()))
+    }
+    if !data.ProductionReviewPullRequestContent.IsNull() && !data.ProductionReviewPullRequestContent.IsUnknown() {
+        filters["productionReviewPullRequestContent"] = data.ProductionReviewPullRequestContent.ValueString()
+        filterNames = append(filterNames, "production_review_pull_request_content = "+fmt.Sprintf("%q", data.ProductionReviewPullRequestContent.ValueString()))
+    }
+    if !data.ProductionReviewLlmProviderId.IsNull() && !data.ProductionReviewLlmProviderId.IsUnknown() {
+        filters["productionReviewLlmProviderId"] = data.ProductionReviewLlmProviderId.ValueString()
+        filterNames = append(filterNames, "production_review_llm_provider_id = "+fmt.Sprintf("%q", data.ProductionReviewLlmProviderId.ValueString()))
+    }
+    if !data.RepositoryUrl.IsNull() && !data.RepositoryUrl.IsUnknown() {
+        filters["repositoryUrl"] = data.RepositoryUrl.ValueString()
+        filterNames = append(filterNames, "repository_url = "+fmt.Sprintf("%q", data.RepositoryUrl.ValueString()))
+    }
+    if !data.GitHubAppInstallationId.IsNull() && !data.GitHubAppInstallationId.IsUnknown() {
+        filters["gitHubAppInstallationId"] = data.GitHubAppInstallationId.ValueString()
+        filterNames = append(filterNames, "git_hub_app_installation_id = "+fmt.Sprintf("%q", data.GitHubAppInstallationId.ValueString()))
+    }
+    if !data.GitLabProjectId.IsNull() && !data.GitLabProjectId.IsUnknown() {
+        filters["gitLabProjectId"] = data.GitLabProjectId.ValueString()
+        filterNames = append(filterNames, "git_lab_project_id = "+fmt.Sprintf("%q", data.GitLabProjectId.ValueString()))
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        filters["createdByUserId"] = data.CreatedByUserId.ValueString()
+        filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Look the code repository up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the code repository up by.",
+        )
+        return
+    }
+
+    selectParam := map[string]interface{}{
+        "createdAt": true,
+        "updatedAt": true,
+        "projectId": true,
+        "name": true,
+        "slug": true,
+        "description": true,
+        "repositoryHostedAt": true,
+        "organizationName": true,
+        "repositoryName": true,
+        "mainBranchName": true,
+        "setupCommand": true,
+        "buildCommand": true,
+        "testCommand": true,
+        "runnerId": true,
+        "isGlobalRunnerPicked": true,
+        "maxOpenFixPullRequests": true,
+        "isGitHubCommandsEnabled": true,
+        "gitHubTriggerLabel": true,
+        "isProductionReviewEnabled": true,
+        "productionReviewPullRequestContent": true,
+        "productionReviewLlmProviderId": true,
+        "repositoryUrl": true,
+        "gitHubAppInstallationId": true,
+        "gitLabProjectId": true,
+        "mintedTokenRefusedAt": true,
+        "createdByUserId": true,
+        "labels": true,
+        "_id": true,
+    }
+
+    var item map[string]interface{}
+    if hasId {
+        readPath := "/code-repository/" + data.Id.ValueString() + "/get-item"
+        httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
+        if err != nil {
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read code_repository, got error: %s", err))
+            return
+        }
+        if httpResp.StatusCode == http.StatusNotFound {
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No code repository found with id %q.", data.Id.ValueString()))
+            return
+        }
+        var itemResponse map[string]interface{}
+        if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read code_repository: %s", err))
+            return
+        }
+        if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
+            item = wrapper
+        } else {
+            item = itemResponse
+        }
+    }
+    if !hasId {
+        listBody := map[string]interface{}{
+            "query":  filters,
+            "select": selectParam,
+            // limit 2 is enough to detect ambiguity without paging.
+            "limit": 2,
+        }
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/code-repository/get-list", listBody)
+        if err != nil {
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list code_repository, got error: %s", err))
+            return
+        }
+        var listResponse map[string]interface{}
+        if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list code_repository: %s", err))
+            return
+        }
+        items, _ := listResponse["data"].([]interface{})
+        if len(items) == 0 {
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No code repository matches %s.", DescribeLookup(filterNames)))
+            return
+        }
+        if len(items) > 1 {
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one code repository matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", DescribeLookup(filterNames)))
+            return
+        }
+        first, ok := items[0].(map[string]interface{})
+        if !ok {
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for code_repository.")
+            return
+        }
+        item = first
+    }
+
+    // Update the model with response data
+    if obj, ok := item["_id"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Id = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Id = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Id = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
+    } else if val, ok := item["_id"].(string); ok {
+        data.Id = types.StringValue(val)
+    } else {
+        data.Id = types.StringNull()
+    }
+    if obj, ok := item["createdAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CreatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["createdAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if val, ok := item["createdAt"].(string); ok {
+        data.CreatedAt = types.StringValue(val)
+    } else {
+        data.CreatedAt = types.StringNull()
+    }
+    if obj, ok := item["updatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UpdatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.UpdatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
+    } else if arr, ok := item["updatedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
+    } else if val, ok := item["updatedAt"].(string); ok {
+        data.UpdatedAt = types.StringValue(val)
+    } else {
+        data.UpdatedAt = types.StringNull()
+    }
+    if obj, ok := item["projectId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProjectId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProjectId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if val, ok := item["projectId"].(string); ok {
+        data.ProjectId = types.StringValue(val)
+    } else {
+        data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := item["name"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
+    }
+    if obj, ok := item["slug"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Slug = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Slug = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
+    } else if arr, ok := item["slug"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
+    } else if val, ok := item["slug"].(string); ok {
+        data.Slug = types.StringValue(val)
+    } else {
+        data.Slug = types.StringNull()
+    }
+    if obj, ok := item["description"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Description = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Description = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Description = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := item["description"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if val, ok := item["description"].(string); ok {
+        data.Description = types.StringValue(val)
+    } else {
+        data.Description = types.StringNull()
+    }
+    if obj, ok := item["repositoryHostedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RepositoryHostedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RepositoryHostedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RepositoryHostedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RepositoryHostedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.RepositoryHostedAt = types.StringNull()
+        }
+    } else if arr, ok := item["repositoryHostedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RepositoryHostedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.RepositoryHostedAt = types.StringNull()
+        }
+    } else if val, ok := item["repositoryHostedAt"].(string); ok {
+        data.RepositoryHostedAt = types.StringValue(val)
+    } else {
+        data.RepositoryHostedAt = types.StringNull()
+    }
+    if obj, ok := item["organizationName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OrganizationName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.OrganizationName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.OrganizationName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OrganizationName = types.StringValue(string(jsonBytes))
+        } else {
+            data.OrganizationName = types.StringNull()
+        }
+    } else if arr, ok := item["organizationName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.OrganizationName = types.StringValue(string(jsonBytes))
+        } else {
+            data.OrganizationName = types.StringNull()
+        }
+    } else if val, ok := item["organizationName"].(string); ok {
+        data.OrganizationName = types.StringValue(val)
+    } else {
+        data.OrganizationName = types.StringNull()
+    }
+    if obj, ok := item["repositoryName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RepositoryName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RepositoryName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RepositoryName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RepositoryName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RepositoryName = types.StringNull()
+        }
+    } else if arr, ok := item["repositoryName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RepositoryName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RepositoryName = types.StringNull()
+        }
+    } else if val, ok := item["repositoryName"].(string); ok {
+        data.RepositoryName = types.StringValue(val)
+    } else {
+        data.RepositoryName = types.StringNull()
+    }
+    if obj, ok := item["mainBranchName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MainBranchName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MainBranchName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MainBranchName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MainBranchName = types.StringValue(string(jsonBytes))
+        } else {
+            data.MainBranchName = types.StringNull()
+        }
+    } else if arr, ok := item["mainBranchName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.MainBranchName = types.StringValue(string(jsonBytes))
+        } else {
+            data.MainBranchName = types.StringNull()
+        }
+    } else if val, ok := item["mainBranchName"].(string); ok {
+        data.MainBranchName = types.StringValue(val)
+    } else {
+        data.MainBranchName = types.StringNull()
+    }
+    if obj, ok := item["setupCommand"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SetupCommand = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SetupCommand = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SetupCommand = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SetupCommand = types.StringValue(string(jsonBytes))
+        } else {
+            data.SetupCommand = types.StringNull()
+        }
+    } else if arr, ok := item["setupCommand"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SetupCommand = types.StringValue(string(jsonBytes))
+        } else {
+            data.SetupCommand = types.StringNull()
+        }
+    } else if val, ok := item["setupCommand"].(string); ok {
+        data.SetupCommand = types.StringValue(val)
+    } else {
+        data.SetupCommand = types.StringNull()
+    }
+    if obj, ok := item["buildCommand"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.BuildCommand = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.BuildCommand = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.BuildCommand = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.BuildCommand = types.StringValue(string(jsonBytes))
+        } else {
+            data.BuildCommand = types.StringNull()
+        }
+    } else if arr, ok := item["buildCommand"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.BuildCommand = types.StringValue(string(jsonBytes))
+        } else {
+            data.BuildCommand = types.StringNull()
+        }
+    } else if val, ok := item["buildCommand"].(string); ok {
+        data.BuildCommand = types.StringValue(val)
+    } else {
+        data.BuildCommand = types.StringNull()
+    }
+    if obj, ok := item["testCommand"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TestCommand = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TestCommand = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TestCommand = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TestCommand = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestCommand = types.StringNull()
+        }
+    } else if arr, ok := item["testCommand"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TestCommand = types.StringValue(string(jsonBytes))
+        } else {
+            data.TestCommand = types.StringNull()
+        }
+    } else if val, ok := item["testCommand"].(string); ok {
+        data.TestCommand = types.StringValue(val)
+    } else {
+        data.TestCommand = types.StringNull()
+    }
+    if obj, ok := item["runnerId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RunnerId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RunnerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerId = types.StringNull()
+        }
+    } else if arr, ok := item["runnerId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RunnerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerId = types.StringNull()
+        }
+    } else if val, ok := item["runnerId"].(string); ok {
+        data.RunnerId = types.StringValue(val)
+    } else {
+        data.RunnerId = types.StringNull()
+    }
+    if val, ok := item["isGlobalRunnerPicked"].(bool); ok {
+        data.IsGlobalRunnerPicked = types.BoolValue(val)
+    } else {
+        data.IsGlobalRunnerPicked = types.BoolNull()
+    }
+    data.MaxOpenFixPullRequests = NumberFromAPI(data.MaxOpenFixPullRequests, item["maxOpenFixPullRequests"])
+    if val, ok := item["isGitHubCommandsEnabled"].(bool); ok {
+        data.IsGitHubCommandsEnabled = types.BoolValue(val)
+    } else {
+        data.IsGitHubCommandsEnabled = types.BoolNull()
+    }
+    if obj, ok := item["gitHubTriggerLabel"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.GitHubTriggerLabel = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.GitHubTriggerLabel = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.GitHubTriggerLabel = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.GitHubTriggerLabel = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitHubTriggerLabel = types.StringNull()
+        }
+    } else if arr, ok := item["gitHubTriggerLabel"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.GitHubTriggerLabel = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitHubTriggerLabel = types.StringNull()
+        }
+    } else if val, ok := item["gitHubTriggerLabel"].(string); ok {
+        data.GitHubTriggerLabel = types.StringValue(val)
+    } else {
+        data.GitHubTriggerLabel = types.StringNull()
+    }
+    if val, ok := item["isProductionReviewEnabled"].(bool); ok {
+        data.IsProductionReviewEnabled = types.BoolValue(val)
+    } else {
+        data.IsProductionReviewEnabled = types.BoolNull()
+    }
+    if obj, ok := item["productionReviewPullRequestContent"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionReviewPullRequestContent = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProductionReviewPullRequestContent = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProductionReviewPullRequestContent = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProductionReviewPullRequestContent = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionReviewPullRequestContent = types.StringNull()
+        }
+    } else if arr, ok := item["productionReviewPullRequestContent"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProductionReviewPullRequestContent = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionReviewPullRequestContent = types.StringNull()
+        }
+    } else if val, ok := item["productionReviewPullRequestContent"].(string); ok {
+        data.ProductionReviewPullRequestContent = types.StringValue(val)
+    } else {
+        data.ProductionReviewPullRequestContent = types.StringNull()
+    }
+    if obj, ok := item["productionReviewLlmProviderId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductionReviewLlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProductionReviewLlmProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProductionReviewLlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProductionReviewLlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionReviewLlmProviderId = types.StringNull()
+        }
+    } else if arr, ok := item["productionReviewLlmProviderId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProductionReviewLlmProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductionReviewLlmProviderId = types.StringNull()
+        }
+    } else if val, ok := item["productionReviewLlmProviderId"].(string); ok {
+        data.ProductionReviewLlmProviderId = types.StringValue(val)
+    } else {
+        data.ProductionReviewLlmProviderId = types.StringNull()
+    }
+    if obj, ok := item["repositoryUrl"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RepositoryUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RepositoryUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RepositoryUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RepositoryUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.RepositoryUrl = types.StringNull()
+        }
+    } else if arr, ok := item["repositoryUrl"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RepositoryUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.RepositoryUrl = types.StringNull()
+        }
+    } else if val, ok := item["repositoryUrl"].(string); ok {
+        data.RepositoryUrl = types.StringValue(val)
+    } else {
+        data.RepositoryUrl = types.StringNull()
+    }
+    if obj, ok := item["gitHubAppInstallationId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.GitHubAppInstallationId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.GitHubAppInstallationId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitHubAppInstallationId = types.StringNull()
+        }
+    } else if arr, ok := item["gitHubAppInstallationId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitHubAppInstallationId = types.StringNull()
+        }
+    } else if val, ok := item["gitHubAppInstallationId"].(string); ok {
+        data.GitHubAppInstallationId = types.StringValue(val)
+    } else {
+        data.GitHubAppInstallationId = types.StringNull()
+    }
+    if obj, ok := item["gitLabProjectId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.GitLabProjectId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.GitLabProjectId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.GitLabProjectId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.GitLabProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitLabProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["gitLabProjectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.GitLabProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitLabProjectId = types.StringNull()
+        }
+    } else if val, ok := item["gitLabProjectId"].(string); ok {
+        data.GitLabProjectId = types.StringValue(val)
+    } else {
+        data.GitLabProjectId = types.StringNull()
+    }
+    if obj, ok := item["mintedTokenRefusedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MintedTokenRefusedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MintedTokenRefusedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MintedTokenRefusedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MintedTokenRefusedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.MintedTokenRefusedAt = types.StringNull()
+        }
+    } else if arr, ok := item["mintedTokenRefusedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.MintedTokenRefusedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.MintedTokenRefusedAt = types.StringNull()
+        }
+    } else if val, ok := item["mintedTokenRefusedAt"].(string); ok {
+        data.MintedTokenRefusedAt = types.StringValue(val)
+    } else {
+        data.MintedTokenRefusedAt = types.StringNull()
+    }
+    if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
+    }
+    if val, ok := item["labels"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.Labels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.Labels = types.SetNull(types.StringType)
+    }
+
+    // Write logs using the tflog package
+    tflog.Trace(ctx, "read a data source")
+
+    // Save data into Terraform state
+    resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}

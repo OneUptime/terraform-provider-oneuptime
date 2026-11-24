@@ -30,7 +30,7 @@ resource "oneuptime_serverless_function" "example" {
 
 - `description` (String) Friendly description that will help you remember.
 - `is_archived` (Boolean) Is this serverless function archived? Archived serverless functions are hidden from lists but keep collecting telemetry. Defaults to `false`.
-- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. OneUptime adds to it too, on its own: the entries listed here are added and taken off, and every other entry stays. Left out, it keeps the entries OneUptime gives it. IDs of `oneuptime_label` resources.
 - `retain_telemetry_data_for_days` (Number) Number of days to retain telemetry data for this function. Leave blank to use the project-wide default.
 - `telemetry_retention_config` (String) Per-pillar retention overrides for this function. Unset fields fall back to the function default, then the project's retention settings. A JSON value: write it with `jsonencode()`.
 

@@ -54,6 +54,7 @@ data "oneuptime_network_site" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
+- `labels` (Set of String) Labels to group and filter sites by. IDs of `oneuptime_label` resources.
 - `last_rollup_at` (String) When the health rollup for this site was last computed.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

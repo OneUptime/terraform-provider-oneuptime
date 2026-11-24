@@ -37,6 +37,8 @@ data "oneuptime_form" "by_id" {
 - `logo_alt_text` (String) What the logo says, read out by screen readers: usually your organization's name. Leave it empty and screen readers skip the logo.
 - `logo_file_id` (String) ID of the file the form's public page shows as its logo: upload the image to /api/file first. Leave it empty to show the OneUptime logo. The ID of a `oneuptime_file`.
 - `name` (String) The form's name, shown as the heading of its public page. Unique within the project.
+- `require_sign_in` (Boolean) Only this form's private users can open and submit it on its public link, once they sign in with a password or single sign-on.
+- `require_sso_for_login` (Boolean) While the form asks its visitors to sign in, only its single sign-on lets them in: private users' passwords no longer do.
 - `share_key` (String) The key in the form's public link, /accounts/form/<shareKey>. Generated when the form is created. Resetting the link in the dashboard replaces it, and the old link stops working.
 - `success_message` (String) Shown after the form is submitted, together with the number of what the submission created. Markdown.
 - `target_type` (String) What each submission creates: Incident, or ScheduledMaintenance (a maintenance event).

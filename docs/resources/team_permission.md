@@ -13,7 +13,8 @@ Permissions for your OneUptime team
 
 ```terraform
 resource "oneuptime_team_permission" "example" {
-  team_id = oneuptime_team.example.id
+  team_id    = oneuptime_team.example.id
+  permission = "IncidentMember"
 }
 ```
 
@@ -27,7 +28,7 @@ resource "oneuptime_team_permission" "example" {
 
 - `is_block_permission` (Boolean) When on, the permission is taken away from the team's members instead of given. A block permission always wins over one that gives it. Defaults to `false`.
 - `labels` (Set of String) Labels that limit the permission to the resources carrying one of them. Empty means every resource. IDs of `oneuptime_label` resources.
-- `permission` (String) Permission. You can find list of permissions on the Permissions page. A JSON value: write it with `jsonencode()`.
+- `permission` (String) Permission. You can find list of permissions on the Permissions page. A permission's key, such as `"IncidentMember"`. Written with `jsonencode()`, as earlier versions of this provider asked, it is the same permission.
 - `scope` (String) Scope of this permission row. One of: All, Owned, Labels. Defaults to All so new permissions apply to every resource in the project unless explicitly narrowed. Allowed values: `All`, `Owned`, `Labels`. Defaults to `All`.
 
 ### Read-Only

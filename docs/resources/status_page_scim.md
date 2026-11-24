@@ -33,14 +33,14 @@ resource "oneuptime_status_page_scim" "example" {
 - `auto_deprovision_users` (Boolean) Automatically remove status page users when they are removed via SCIM. Defaults to `true`.
 - `auto_provision_users` (Boolean) Automatically create status page users when they are added via SCIM. Defaults to `true`.
 - `description` (String) Friendly description to help you remember.
-- `oauth_client_secret_expires_at` (String) When the connection's OAuth 2.0 client secret stops working. No access token is issued with an expired secret.
-- `oauth_previous_client_secret_expires_at` (String) When the previous OAuth 2.0 client secret stops working, unless it is deleted before.
 
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
+- `oauth_client_secret_expires_at` (String) When the connection's OAuth 2.0 client secret stops working. No access token is issued with an expired secret.
+- `oauth_previous_client_secret_expires_at` (String) When the previous OAuth 2.0 client secret stops working, unless it is deleted before.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.
 

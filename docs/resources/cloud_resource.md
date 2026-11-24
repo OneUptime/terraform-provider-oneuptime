@@ -28,13 +28,13 @@ resource "oneuptime_cloud_resource" "example" {
 
 ### Optional
 
-- `cloud_account_id` (String) Last-seen cloud.account.id OpenTelemetry resource attribute.
-- `cloud_platform` (String) Last-seen cloud.platform OpenTelemetry resource attribute, e.g. aws_ecs, gcp_cloud_run, azure_container_apps.
-- `cloud_provider` (String) Last-seen cloud.provider OpenTelemetry resource attribute, e.g. aws, gcp, azure.
-- `cloud_region` (String) Last-seen cloud.region OpenTelemetry resource attribute, e.g. us-east-1.
+- `cloud_account_id` (String) Last-seen cloud.account.id OpenTelemetry resource attribute. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
+- `cloud_platform` (String) Last-seen cloud.platform OpenTelemetry resource attribute, e.g. aws_ecs, gcp_cloud_run, azure_container_apps. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
+- `cloud_provider` (String) Last-seen cloud.provider OpenTelemetry resource attribute, e.g. aws, gcp, azure. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
+- `cloud_region` (String) Last-seen cloud.region OpenTelemetry resource attribute, e.g. us-east-1. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
 - `description` (String) Friendly description that will help you remember.
-- `is_archived` (Boolean) Is this cloud resource archived? Archived cloud resources are hidden from lists but keep collecting telemetry. Defaults to `false`.
-- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `is_archived` (Boolean) Is this cloud resource archived? Archived cloud resources are hidden from lists but keep collecting telemetry. OneUptime changes it too, on its own: left out, it keeps the value OneUptime gives it. Defaults to `false`.
+- `labels` (Set of String) Labels to group and filter by. OneUptime adds to it too, on its own: the entries listed here are added and taken off, and every other entry stays. Left out, it keeps the entries OneUptime gives it. IDs of `oneuptime_label` resources.
 - `retain_telemetry_data_for_days` (Number) Number of days to retain telemetry data for this resource. Leave blank to use the project-wide default.
 - `telemetry_retention_config` (String) Per-pillar retention overrides for this resource. Unset fields fall back to the resource default, then the project's retention settings. A JSON value: write it with `jsonencode()`.
 

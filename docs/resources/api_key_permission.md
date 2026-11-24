@@ -14,6 +14,7 @@ Permissions for your API Keys
 ```terraform
 resource "oneuptime_api_key_permission" "example" {
   api_key_id = oneuptime_api_key.example.id
+  permission = "IncidentMember"
 }
 ```
 
@@ -27,7 +28,7 @@ resource "oneuptime_api_key_permission" "example" {
 
 - `is_block_permission` (Boolean) When on, the permission is taken away instead of given. A block permission always wins over one that gives it. Defaults to `false`.
 - `labels` (Set of String) Labels that limit the permission to the resources carrying one of them. Empty means every resource. IDs of `oneuptime_label` resources.
-- `permission` (String) Permission. You can find list of permissions on the Permissions page. A JSON value: write it with `jsonencode()`.
+- `permission` (String) Permission. You can find list of permissions on the Permissions page. A permission's key, such as `"IncidentMember"`. Written with `jsonencode()`, as earlier versions of this provider asked, it is the same permission.
 
 ### Read-Only
 

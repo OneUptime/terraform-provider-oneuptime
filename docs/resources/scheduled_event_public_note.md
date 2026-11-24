@@ -28,7 +28,6 @@ resource "oneuptime_scheduled_event_public_note" "example" {
 - `attachments` (Set of String) Files attached to this note. IDs of `oneuptime_file` resources.
 - `note` (String) Notes in markdown.
 - `posted_at` (String) Date and time when the note was posted.
-- `posted_from_slack_message_id` (String) Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.
 - `should_status_page_subscribers_be_notified_on_note_created` (Boolean) Should subscribers be notified about this note? If left out, this follows the maintenance event: true when subscribers were notified that the event was created, false when it was created without notifying them.
 
 ### Read-Only
@@ -41,6 +40,7 @@ resource "oneuptime_scheduled_event_public_note" "example" {
 - `is_owner_notified` (Boolean) Are owners notified of this resource ownership?
 - `is_published` (Boolean) Whether this note is published: shown on status pages and sent to subscribers. False while it waits for approval, or after it was rejected, when the project asks for public notes to be approved.
 - `pending_note` (String) An edit of this published note that waits for approval, in markdown. Status pages show the note as it was approved until the edit is approved. Empty when no edit waits.
+- `posted_from_slack_message_id` (String) Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.
 - `posted_with_scheduled_maintenance_state_id` (String) The state the maintenance event moved to when this note was posted with that state change. Subscribers are told this state with the note. Empty for a note posted on its own. The ID of a `oneuptime_scheduled_maintenance_state`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `saved_from_chat_message` (String) When this note was saved from a Slack or Microsoft Teams message - pinned, or given a note emoji - the chat it was posted in (workspaceType), who wrote it (authorName, and authorUserId when their chat account is connected to OneUptime) and when it was posted there (postedAt). Written by OneUptime; the note's creator is whoever saved it. A JSON value: read it with `jsondecode()`.

@@ -27,7 +27,7 @@ resource "oneuptime_monitor_status_event" "example" {
 
 ### Optional
 
-- `ends_at` (String) When did this status change end?
+- `ends_at` (String) When did this status change end? OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
 - `root_cause` (String) What is the root cause of this status change?
 - `starts_at` (String) When did this status change?
 

@@ -30,8 +30,8 @@ resource "oneuptime_alert" "example" {
 
 - `ceph_clusters` (Set of String) List of Ceph clusters affected by this alert. IDs of `oneuptime_ceph_cluster` resources.
 - `cloud_resources` (Set of String) List of cloud resources affected by this alert. IDs of `oneuptime_cloud_resource` resources.
-- `current_alert_state_id` (String) Current Alert State ID. The ID of a `oneuptime_alert_state`.
-- `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
+- `current_alert_state_id` (String) Current Alert State ID. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent. The ID of a `oneuptime_alert_state`.
+- `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`. OneUptime changes it too, on its own: left out, it keeps the value OneUptime gives it.
 - `database_servers` (Set of String) List of databases affected by this alert. IDs of `oneuptime_database` resources.
 - `description` (String) Short description of this alert. This will be visible on the status page. This is in markdown.
 - `docker_hosts` (Set of String) List of Docker hosts affected by this alert. IDs of `oneuptime_docker_host` resources.
@@ -41,15 +41,15 @@ resource "oneuptime_alert" "example" {
 - `hosts` (Set of String) List of hosts affected by this alert. IDs of `oneuptime_host` resources.
 - `impact_started_at` (String) When customer impact actually began. Left blank until someone records it - never inferred, because a guessed value is worse than no value.
 - `iot_fleets` (Set of String) List of IoT fleets affected by this alert. IDs of `oneuptime_iot_fleet` resources.
-- `is_private` (Boolean) If true, this alert is only visible to its owners (users in 'owner users' and members of 'owner teams'), Project Admins, and Project Owners. Defaults to `false`.
+- `is_private` (Boolean) If true, this alert is only visible to its owners (users in 'owner users' and members of 'owner teams'), Project Admins, and Project Owners. OneUptime changes it too, on its own: left out, it keeps the value OneUptime gives it. Defaults to `false`.
 - `kubernetes_clusters` (Set of String) List of Kubernetes clusters affected by this alert. IDs of `oneuptime_kubernetes_cluster` resources.
 - `kubernetes_containers` (Set of String) List of Kubernetes containers affected by this alert.
 - `kubernetes_resources` (Set of String) List of Kubernetes resources (pods, deployments, nodes, etc.) affected by this alert.
-- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. OneUptime adds to it too, on its own: the entries listed here are added and taken off, and every other entry stays. Left out, it keeps the entries OneUptime gives it. IDs of `oneuptime_label` resources.
 - `monitor_id` (String) ID of the monitor this alert belongs to. The ID of a `oneuptime_monitor`.
 - `monitor_status_when_this_alert_was_created_id` (String) Monitor Status ID when this alert was created. The ID of a `oneuptime_monitor_status`.
 - `network_devices` (Set of String) List of network devices affected by this alert. IDs of `oneuptime_network_device` resources.
-- `on_call_duty_policies` (Set of String) List of on-call policies affected by this alert. IDs of `oneuptime_on_call_policy` resources.
+- `on_call_duty_policies` (Set of String) List of on-call policies affected by this alert. OneUptime adds to it too, on its own: the entries listed here are added and taken off, and every other entry stays. Left out, it keeps the entries OneUptime gives it. IDs of `oneuptime_on_call_policy` resources.
 - `open_stack_clouds` (Set of String) List of OpenStack clouds affected by this alert. IDs of `oneuptime_openstack_cloud` resources.
 - `podman_hosts` (Set of String) List of Podman hosts affected by this alert. IDs of `oneuptime_podman_host` resources.
 - `podman_resources` (Set of String) List of Podman resources (containers, images, networks, volumes) affected by this alert.

@@ -25,13 +25,13 @@ resource "oneuptime_domain" "example" {
 
 ### Optional
 
-- `domain_verification_text` (String) Verification text that you need to add to your domains TXT record to veify the domain.
-- `is_verified` (Boolean) Is this domain verified? Defaults to `false`.
+- `is_verified` (Boolean) Is this domain verified? OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent. Defaults to `false`.
 
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `domain_verification_text` (String) Verification text that you need to add to your domains TXT record to veify the domain.
 - `id` (String) Unique identifier for the resource.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `slug` (String) Friendly globally unique name for your object.

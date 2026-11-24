@@ -39,6 +39,7 @@ data "oneuptime_scheduled_maintenance_template" "by_id" {
 - `slug` (String) Friendly globally unique name for your object.
 - `template_description` (String) Description of the Scheduled Maintenance Template.
 - `template_name` (String) Name of the Scheduled Maintenance Template.
+- `timezone` (String) The IANA time zone the recurring schedule is read in, such as Europe/Berlin or America/New_York. Every event keeps the first event's time of day there, also after the clocks change for daylight saving time, and a monthly event keeps its day of the month. Left out when the template is created, it is the time zone in the creator's profile, or UTC when no person creates it (an API key or a workflow). Templates created before templates had a time zone are read in UTC.
 - `title` (String) Title of this scheduled event.
 
 ### Read-Only

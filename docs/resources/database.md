@@ -13,10 +13,9 @@ Database servers this project runs or talks to. Each database is discovered from
 
 ```terraform
 resource "oneuptime_database" "example" {
-  name                = "Example database"
-  database_identifier = "postgresql|orders-db.internal:5432"
-  db_system           = "postgresql"
-  description         = "Managed by Terraform"
+  name        = "Example database"
+  db_system   = "postgresql"
+  description = "Managed by Terraform"
 }
 ```
 
@@ -24,19 +23,17 @@ resource "oneuptime_database" "example" {
 
 ### Required
 
-- `database_identifier` (String) Stable identity of this database within the project: the engine family and its canonical endpoint joined with '|' (e.g. postgresql|orders-db.internal:5432), or the workload form for databases discovered on Kubernetes / Docker / Podman (e.g. postgresql|kubernetes:prod-cluster/data/statefulset/orders-db). A fork keys like the engine it forks (a MariaDB database is mysql|..., a Valkey one redis|...), so learning which of the two a database is never changes its identity. Computed by the server for manually added databases.
 - `db_system` (String) Database engine family as an OpenTelemetry db.system.name value, e.g. postgresql, mysql, redis, mongodb, microsoft.sql_server.
 - `name` (String) Name of this database. Discovered databases are named after their engine and endpoint, e.g. PostgreSQL orders-db.internal:5432. Not unique - rename freely.
 
 ### Optional
 
 - `ai_command_allowlist` (String) Optional JSON array of command patterns that Automatic mode may run on this database server without approval even though they are riskier changes. Each pattern is one command line for this database server's agent (db, a fixed catalog of diagnostics, never free-form SQL) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this database server is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit AI Rule; anyone who may edit the database server can remove patterns or clear the list. A JSON value: write it with `jsonencode()`.
-- `ai_remediation_mode` (String) Disabled: AI never proposes or runs a change on this database server. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the database server's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). Anyone who may edit the database server can lower the mode; raising it needs Project Owner, Project Admin or Edit AI Rule. Allowed values: `Disabled`, `RequireApproval`, `Automatic`, `BypassApproval`. Defaults to `Disabled`.
+- `ai_remediation_mode` (String) Disabled: AI never proposes or runs a change on this database server. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the database server's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). Anyone who may edit the database server can lower the mode; raising it needs Project Owner, Project Admin or Edit AI Rule. OneUptime changes it too, on its own: left out, it keeps the value OneUptime gives it. Allowed values: `Disabled`, `RequireApproval`, `Automatic`, `BypassApproval`. Defaults to `Disabled`.
 - `description` (String) Friendly description for this database.
-- `discovery_source` (String) How this database was first discovered: collector, client-spans, kubernetes, docker, podman or manual.
-- `is_ai_investigation_enabled` (Boolean) When on, OneUptime AI runs read-only commands (db diagnostics from a fixed catalog such as ping, version and sessions; never free-form SQL) on this database server, through its Database AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the database server can turn it on or off. Defaults to `true`.
-- `is_archived` (Boolean) Is this database archived? Archived databases are hidden from lists but keep collecting telemetry. Defaults to `false`.
-- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `is_ai_investigation_enabled` (Boolean) When on, OneUptime AI runs read-only commands (db diagnostics from a fixed catalog such as ping, version and sessions; never free-form SQL) on this database server, through its Database AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the database server can turn it on or off. OneUptime changes it too, on its own: left out, it keeps the value OneUptime gives it. Defaults to `true`.
+- `is_archived` (Boolean) Is this database archived? Archived databases are hidden from lists but keep collecting telemetry. OneUptime changes it too, on its own: left out, it keeps the value OneUptime gives it. Defaults to `false`.
+- `labels` (Set of String) Labels to group and filter by. OneUptime adds to it too, on its own: the entries listed here are added and taken off, and every other entry stays. Left out, it keeps the entries OneUptime gives it. IDs of `oneuptime_label` resources.
 - `retain_telemetry_data_for_days` (Number) Number of days to retain telemetry collected from this database by a collector / agent. Leave blank to use the project-wide default.
 - `server_address` (String) Host name or IP address of the primary endpoint of this database (the OpenTelemetry server.address attribute).
 - `server_port` (Number) Port of the primary endpoint of this database (the OpenTelemetry server.port attribute). Defaults to the engine's standard port when not given.
@@ -56,8 +53,10 @@ resource "oneuptime_database" "example" {
 - `collector_last_seen_at` (String) When engine telemetry from a collector / agent was last received for this database.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `database_identifier` (String) Stable identity of this database within the project: the engine family and its canonical endpoint joined with '|' (e.g. postgresql|orders-db.internal:5432), or the workload form for databases discovered on Kubernetes / Docker / Podman (e.g. postgresql|kubernetes:prod-cluster/data/statefulset/orders-db). A fork keys like the engine it forks (a MariaDB database is mysql|..., a Valkey one redis|...), so learning which of the two a database is never changes its identity. Computed by the server for manually added databases.
 - `db_system_source` (String) What the database engine was last determined from: manual, collector, container or client-spans. Stronger evidence may correct the engine; weaker evidence never changes it.
 - `db_version` (String) Engine version last reported for this database, from the collector receiver or the container image tag.
+- `discovery_source` (String) How this database was first discovered: collector, client-spans, kubernetes, docker, podman or manual.
 - `docker_host_id` (String) ID of the Docker host this database runs on, when it was discovered as a container on a monitored host. The ID of a `oneuptime_docker_host`.
 - `engine_health` (String) healthy, degraded or unhealthy: the engine's latest readings against its recommended alerts' lines. Set by the server.
 - `engine_readings` (String) The engine's latest readings of the queries its recommended alerts read, per reporting agent. Set by the server. A JSON value: read it with `jsondecode()`.

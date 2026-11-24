@@ -28,6 +28,7 @@ data "oneuptime_inventory_item" "by_id" {
 
 ### Optional
 
+- `agent_permissions_status` (String) Whether the OneUptime Android agent still lacks a grant on the device - READ_LOGS, READ_DROPBOX_DATA or usage access - or has them all.
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Free-text description. Primarily for manually created entities, where there are no telemetry attributes to explain what the thing is.
@@ -39,6 +40,7 @@ data "oneuptime_inventory_item" "by_id" {
 - `is_archived` (Boolean) Is this item archived? Archived items are hidden from the default list but keep their identity and keep collecting telemetry.
 - `resource_id` (String) Polymorphic pointer id to the rich typed row named by resourceType, if any.
 - `resource_type` (String) Polymorphic pointer type to a rich typed row, if one exists (Service / Host / DockerHost / KubernetesCluster).
+- `security_patch_status` (String) An Android device's security patch: up to date when its patch level is 90 days old or newer, out of date when older.
 - `source` (String) How this row came to exist: discovered from telemetry, mirrored from a OneUptime inventory table, or created manually by a user. Determines whether stale-entity pruning applies.
 
 ### Read-Only

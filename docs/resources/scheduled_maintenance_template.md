@@ -50,6 +50,7 @@ resource "oneuptime_scheduled_maintenance_template" "example" {
 - `should_status_page_subscribers_be_notified_when_event_changed_to_ended` (Boolean) Should subscribers be notified about this event event is changed to ended? Defaults to `true`.
 - `should_status_page_subscribers_be_notified_when_event_changed_to_ongoing` (Boolean) Should subscribers be notified about this event event is changed to ongoing? Defaults to `true`.
 - `status_pages` (Set of String) List of status pages to show this event on. IDs of `oneuptime_status_page` resources.
+- `timezone` (String) The IANA time zone the recurring schedule is read in, such as Europe/Berlin or America/New_York. Every event keeps the first event's time of day there, also after the clocks change for daylight saving time, and a monthly event keeps its day of the month. Left out when the template is created, it is the time zone in the creator's profile, or UTC when no person creates it (an API key or a workflow). Templates created before templates had a time zone are read in UTC.
 
 ### Read-Only
 

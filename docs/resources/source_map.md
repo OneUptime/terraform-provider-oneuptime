@@ -29,16 +29,13 @@ resource "oneuptime_source_map" "example" {
 - `service_id` (String) ID of the telemetry service this source map belongs to. The ID of a `oneuptime_service`.
 - `service_version` (String) The release this source map belongs to. Must exactly match the service.version OpenTelemetry resource attribute sent with the telemetry.
 
-### Optional
-
-- `size_in_bytes` (Number) Size of the source map JSON in bytes.
-
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `size_in_bytes` (Number) Size of the source map JSON in bytes.
 - `updated_at` (String) Date and Time when the object was updated.
 
 ## Import

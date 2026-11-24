@@ -28,8 +28,8 @@ resource "oneuptime_status_page_subscriber" "example" {
 - `internal_note` (String) Any notes or text you would like to add to this subscriber object. This is for internal use only.
 - `is_subscribed_to_all_event_types` (Boolean) Is Subscriber Subscribed to All Event Types (like Incidents, Maintenance Events, Announcements) on this status page? Defaults to `true`.
 - `is_subscribed_to_all_resources` (Boolean) Is Subscriber Subscribed to All Resources on this status page? Defaults to `true`.
-- `is_subscription_confirmed` (Boolean) Has subscriber confirmed their subscription? (for example, by clicking on a confirmation link in an email). Defaults to `false`.
-- `is_unsubscribed` (Boolean) Is Subscriber Unsubscribed? Defaults to `false`.
+- `is_subscription_confirmed` (Boolean) Has subscriber confirmed their subscription? (for example, by clicking on a confirmation link in an email). OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent. Defaults to `false`.
+- `is_unsubscribed` (Boolean) Is Subscriber Unsubscribed? OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent. Defaults to `false`.
 - `language` (String) The language this subscriber is notified in. Empty means the status page's default language.
 - `microsoft_teams_incoming_webhook_url` (String, Sensitive) Microsoft Teams incoming webhook URL to send notifications to Teams channel. Write-only: kept encrypted and never returned by the API.
 - `microsoft_teams_workspace_name` (String) Name of the Microsoft Teams workspace for validation and identification.
@@ -41,7 +41,6 @@ resource "oneuptime_status_page_subscriber" "example" {
 - `subscriber_email` (String) Email address of the subscriber.
 - `subscriber_phone` (String) Phone number of subscriber.
 - `subscriber_webhook` (String, Sensitive) Webhook to ping when events happen on Status Page. Kept encrypted at rest.
-- `subscription_confirmation_token` (String, Sensitive) Token used to confirm subscription. This is a random token that is sent to the subscriber's email address to confirm their subscription.
 
 ### Read-Only
 

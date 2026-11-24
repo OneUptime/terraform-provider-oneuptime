@@ -38,8 +38,6 @@ resource "oneuptime_workspace_notification_summary" "example" {
 - `description` (String) Description of the Summary Rule.
 - `filter_condition` (String) How to combine filters - Any or All. Allowed values: `All`, `Any`.
 - `filters` (String) Which items the summary includes. An owner condition, such as Incident Owner, names people and teams of this project by ID. A JSON value: write it with `jsonencode()`.
-- `last_sent_at` (String) When the last summary was sent.
-- `next_send_at` (String) When the next summary should be sent.
 - `recurring_interval` (String) How often should the summary be sent? A JSON value: write it with `jsonencode()`.
 - `send_first_report_at` (String) When should the first summary report be sent? Subsequent reports will follow the recurring interval from this date.
 - `summary_items` (String) Checklist of items to include in the summary. A JSON value: write it with `jsonencode()`.
@@ -51,6 +49,8 @@ resource "oneuptime_workspace_notification_summary" "example" {
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
+- `last_sent_at` (String) When the last summary was sent.
+- `next_send_at` (String) When the next summary should be sent.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.
 

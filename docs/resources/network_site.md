@@ -29,14 +29,11 @@ resource "oneuptime_network_site" "example" {
 - `address` (String) Street address of this site, shown on map views.
 - `alert_severity_id` (String) ID of the severity used for site-unhealthy alerts. The ID of a `oneuptime_alert_severity`.
 - `code` (String) A short code for this site, such as a store or unit number. Naming rules can put it in device names with {site.code}.
-- `current_monitor_status_id` (String) Whats the current rolled-up status ID of this site? Computed from the devices and child sites below it. The ID of a `oneuptime_monitor_status`.
-- `depth` (Number) Number of ancestors above this site (0 for root sites). Managed by the server on parent changes.
 - `description` (String) Friendly description for this network site.
 - `health_rollup_policy` (String) How this site's status is derived from the devices beneath it: WorstStatus (any device offline makes the site offline) or PercentThreshold (the share of devices that are down decides). Allowed values: `WorstStatus`, `PercentThreshold`.
-- `last_rollup_at` (String) When the health rollup for this site was last computed.
+- `labels` (Set of String) Labels to group and filter sites by. IDs of `oneuptime_label` resources.
 - `latitude` (Number) Latitude of this site, for US and world map views.
 - `longitude` (Number) Longitude of this site, for US and world map views.
-- `materialized_path` (String) Slash-separated ancestor IDs of this site (e.g. '/rootId/childId/'). Managed by the server on parent changes; used for subtree queries and rollups.
 - `network_site_type_id` (String) ID of the Network Site Type this site belongs to. The ID of a `oneuptime_network_site_type`.
 - `offline_threshold_percent` (Number) With the PercentThreshold rollup policy: the share of reporting devices beneath this site that must be non-operational before the site itself is marked offline. Below it (but above zero) the site is degraded.
 - `parent_site_id` (String) ID of the parent Network Site this site is nested under (empty for root sites). The ID of a `oneuptime_network_site`.
@@ -50,7 +47,11 @@ resource "oneuptime_network_site" "example" {
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `current_active_alert_id` (String) ID of the currently open site-unhealthy alert, if any. Managed by the rollup engine.
+- `current_monitor_status_id` (String) Whats the current rolled-up status ID of this site? Computed from the devices and child sites below it. The ID of a `oneuptime_monitor_status`.
+- `depth` (Number) Number of ancestors above this site (0 for root sites). Managed by the server on parent changes.
 - `id` (String) Unique identifier for the resource.
+- `last_rollup_at` (String) When the health rollup for this site was last computed.
+- `materialized_path` (String) Slash-separated ancestor IDs of this site (e.g. '/rootId/childId/'). Managed by the server on parent changes; used for subtree queries and rollups.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `slug` (String) Friendly globally unique name for your object.
 - `updated_at` (String) Date and Time when the object was updated.

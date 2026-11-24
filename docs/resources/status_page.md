@@ -61,7 +61,7 @@ resource "oneuptime_status_page" "example" {
 - `is_archived` (Boolean) Archived status pages are hidden from the Status Pages list, are not served to visitors, and send nothing to their subscribers. Unarchiving puts them back online. Defaults to `false`.
 - `is_public_status_page` (Boolean) Is this status page public? Defaults to `true`.
 - `is_report_enabled` (Boolean) Whether this status page's email subscribers get reports. Turned on without a schedule, reports go out on the 1st of every month at 09:00 in the report timezone, each covering the calendar month before it. Defaults to `false`.
-- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. OneUptime adds to it too, on its own: the entries listed here are added and taken off, and every other entry stays. Left out, it keeps the entries OneUptime gives it. IDs of `oneuptime_label` resources.
 - `limit_subscribers_to_private_users` (Boolean) Only people who can sign in to this status page can be its subscribers, each with the email address they sign in with: no other address, and no phone, Slack, Microsoft Teams or webhook. A subscriber whose address is not a private user of this page - one removed since, by SCIM or by hand - is sent nothing. Defaults to `false`.
 - `logo_alt_text` (String) Alternative text for the logo image, read by screen readers for accessibility.
 - `logo_file_id` (String) Status Page Logo File ID. The ID of a `oneuptime_file`.
@@ -78,7 +78,6 @@ resource "oneuptime_status_page" "example" {
 - `report_start_date_time` (String) When the first report goes out. Every later one follows it by the recurring interval, at the same time of day. Left out when reports are turned on, it is 09:00 in the report timezone at the start of the next period of the interval: the next 1st of the month for a monthly schedule (the default), the next Monday for a weekly one, the next day for a daily one and the next 1 January for a yearly one. An hourly schedule starts at the next full hour.
 - `report_timezone` (String) The timezone report periods and send times are resolved in. A monthly report in this timezone runs from the 1st at 00:00 to the last day at 23:59. Defaults to `UTC`.
 - `require_sso_for_login` (Boolean) Should SSO be required to login to Private Status Page. Defaults to `false`.
-- `send_next_report_by` (String) When the next report goes out. The server works it out from the schedule.
 - `send_subscriber_notifications` (Boolean) Does this status page tell its subscribers anything? Off, it sends them nothing - no message about an incident, an episode, scheduled maintenance or an announcement, and no report - however the event was created. Its subscribers are kept, and the channel switches still decide how visitors can sign up. Defaults to `true`.
 - `show_announcement_history_in_days` (Number) How many days of announcement history should be shown on the status page (in days)? Defaults to `14`.
 - `show_announcements_on_status_page` (Boolean) Show Announcements on Status Page? Defaults to `true`.
@@ -109,6 +108,7 @@ resource "oneuptime_status_page" "example" {
 - `id` (String) Unique identifier for the resource.
 - `is_owner_notified_of_resource_creation` (Boolean) Are owners notified of when this resource is created?
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `send_next_report_by` (String) When the next report goes out. The server works it out from the schedule.
 - `slug` (String) Friendly globally unique name for your object.
 - `updated_at` (String) Date and Time when the object was updated.
 

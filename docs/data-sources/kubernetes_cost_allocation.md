@@ -47,10 +47,12 @@ data "oneuptime_kubernetes_cost_allocation" "by_id" {
 - `gpu_cost` (Number) GPU Cost.
 - `gpu_hours` (Number) GPU Hours.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `is_cost_adjustment` (Boolean) Is Cost Adjustment.
 - `k8s_cluster_entity_key` (String) Kubernetes Cluster Entity Key.
 - `kubernetes_cluster_id` (String) Kubernetes Cluster ID.
 - `labels` (String) Labels.
 - `load_balancer_cost` (Number) Load Balancer Cost.
+- `memory_peaks_from` (String) Memory Peaks From.
 - `namespace` (String) Namespace.
 - `network_cost` (Number) Network Cost.
 - `node_name` (String) Node Name.

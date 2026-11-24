@@ -34,6 +34,7 @@ provider "oneuptime" {
 ### Optional
 
 - `api_key` (String, Sensitive) An API key of the project to manage, from its **Settings** > **API Keys**. Falls back to the `ONEUPTIME_API_KEY` environment variable; the provider stops before any plan when neither is set.
+- `exclusive_lists` (Boolean) How a configuration holds a list OneUptime adds to as well, such as a record's `labels`, which label rules add to. Left out or `false`, Terraform adds and takes off the entries the configuration lists and leaves every other entry: one OneUptime or a person adds stays. `true` makes the configuration's list the record's whole list, as earlier versions of the provider did: Terraform takes off every entry the configuration does not list, one a rule added included.
 - `oneuptime_url` (String) The address of your OneUptime: https://oneuptime.com, or your own installation's. Leave out /api: the provider adds it. Falls back to the `ONEUPTIME_URL` environment variable, then to https://oneuptime.com.
 
 ## Start Here
@@ -74,6 +75,7 @@ These resources were renamed to read the way the product names them: IoT and vCe
 |----------|----------|
 | `oneuptime_ai_agent_owner_team` | [`oneuptime_ai_agent_team_owner`](./resources/ai_agent_team_owner) |
 | `oneuptime_auto_remediation_rule` | [`oneuptime_ai_rule`](./resources/ai_rule) |
+| `oneuptime_d_sym` | [`oneuptime_dsym_file`](./resources/dsym_file) |
 | `oneuptime_schedules_on_call_duty_escalation_rule` | [`oneuptime_escalation_rule_schedule`](./resources/escalation_rule_schedule) |
 | `oneuptime_team_on_call_duty_escalation_rule` | [`oneuptime_escalation_rule_team`](./resources/escalation_rule_team) |
 | `oneuptime_users_on_call_duty_escalation_rule` | [`oneuptime_escalation_rule_user`](./resources/escalation_rule_user) |

@@ -58,7 +58,7 @@ This repository ships hand-written modules under [`modules/`](https://github.com
 
 ```terraform
 module "storefront" {
-  source = "github.com/OneUptime/terraform-provider-oneuptime//modules/monitoring-and-incident-response?ref=v17.1.0"
+  source = "github.com/OneUptime/terraform-provider-oneuptime//modules/monitoring-and-incident-response?ref=v17.2.0"
 
   service_name          = "storefront"
   status_page_is_public = true

@@ -25,13 +25,13 @@ resource "oneuptime_on_call_user_group" "example" {
 ### Required
 
 - `on_call_duty_policy_schedules` (Set of String) The on-call schedules the group follows: it holds whoever is on call in any of them right now. IDs of `oneuptime_on_call_policy_schedule` resources.
-- `workspace_group_id` (String) The group's id in the workspace: a Slack user group id, such as S0604QSJC, or a Microsoft Teams tag id.
+- `workspace_group_id` (String) The group's id in the workspace: a Slack user group id, such as S0604QSJC, or a Microsoft Teams tag id. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
 - `workspace_type` (String) Where the group is: Slack (a user group) or MicrosoftTeams (a tag in a team). Allowed values: `Slack`, `MicrosoftTeams`, `Mattermost`.
 
 ### Optional
 
-- `handle` (String) Slack only: the handle people type to mention the group, without the @, such as payments-oncall.
-- `name` (String) The group's name in the workspace, such as Payments on-call. Read from Slack or Microsoft Teams when the group is linked.
+- `handle` (String) Slack only: the handle people type to mention the group, without the @, such as payments-oncall. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
+- `name` (String) The group's name in the workspace, such as Payments on-call. Read from Slack or Microsoft Teams when the group is linked. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
 - `workspace_team_id` (String) Microsoft Teams: the team the tag is in (its Microsoft 365 group id). Slack installed for a whole Enterprise organization: the workspace the user group is in (T...). Empty for a Slack user group of a project connected to one workspace.
 
 ### Read-Only

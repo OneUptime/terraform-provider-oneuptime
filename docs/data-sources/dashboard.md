@@ -42,6 +42,8 @@ data "oneuptime_dashboard" "by_id" {
 - `name` (String) Any friendly name of this object.
 - `page_description` (String) Description of the public dashboard page. This will be used for SEO.
 - `page_title` (String) Title of the public dashboard page. This will be used for SEO and the browser tab.
+- `require_sign_in` (Boolean) Only this dashboard's private users can open its public link, once they sign in with a password or single sign-on.
+- `require_sso_for_login` (Boolean) While the dashboard asks its visitors to sign in, only its single sign-on lets them in: private users' passwords no longer do.
 - `slug` (String) Friendly globally unique name for your object.
 - `theme` (String) How the public dashboard looks to visitors: Light, Dark, or System (light or dark, as each visitor's device is set). Visitors can switch between light and dark from its toolbar. A dashboard created without a theme starts with System.
 

@@ -35,24 +35,24 @@ resource "oneuptime_iot_fleet" "example" {
 
 ### Optional
 
-- `agent_version` (String) Version of the IoT agent reporting telemetry, as self-reported via the oneuptime.agent.version resource attribute.
 - `description` (String) Friendly description for this IoT fleet.
-- `device_count` (Number) Cached count of devices in this fleet.
 - `is_archived` (Boolean) Is this IoT fleet archived? Archived IoT fleets are hidden from lists but keep collecting telemetry. Defaults to `false`.
-- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
-- `last_seen_at` (String) When metrics were last received from this fleet.
-- `online_device_count` (Number) Cached count of devices currently online (iot_device_up == 1) in this fleet. Rendered as 'Devices X/Y online' next to deviceCount.
-- `otel_collector_status` (String) Connection status of the OTel Collector agent (connected or disconnected).
+- `labels` (Set of String) Labels to group and filter by. OneUptime adds to it too, on its own: the entries listed here are added and taken off, and every other entry stays. Left out, it keeps the entries OneUptime gives it. IDs of `oneuptime_label` resources.
 - `retain_telemetry_data_for_days` (Number) Number of days to retain telemetry data for this IoT fleet. Leave blank to use the project-wide default.
 - `telemetry_retention_config` (String) Per-pillar retention overrides for this IoT fleet (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the IoT fleet default, then the project's retention settings. A JSON value: write it with `jsonencode()`.
 
 ### Read-Only
 
+- `agent_version` (String) Version of the IoT agent reporting telemetry, as self-reported via the oneuptime.agent.version resource attribute.
 - `archived_at` (String) When was this IoT fleet archived?
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `device_count` (Number) Cached count of devices in this fleet.
 - `id` (String) Unique identifier for the resource.
+- `last_seen_at` (String) When metrics were last received from this fleet.
+- `online_device_count` (Number) Cached count of devices currently online (iot_device_up == 1) in this fleet. Rendered as 'Devices X/Y online' next to deviceCount.
+- `otel_collector_status` (String) Connection status of the OTel Collector agent (connected or disconnected).
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `slug` (String) Friendly globally unique name for your object.
 - `updated_at` (String) Date and Time when the object was updated.

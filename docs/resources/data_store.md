@@ -24,18 +24,18 @@ resource "oneuptime_data_store" "example" {
 ### Required
 
 - `kind` (String) What kind of store it is: an S3 bucket, an RDS instance, a PostgreSQL database, a service's logs. Allowed values: `AWS S3 Bucket`, `AWS RDS Instance`, `AWS Aurora Cluster`, `AWS RDS Snapshot`, `AWS DynamoDB Table`, `AWS Redshift Cluster`, `AWS DocumentDB Cluster`, `AWS OpenSearch Domain`, `AWS ElastiCache Cluster`, `AWS EFS File System`, `Azure Storage Account`, `Azure SQL Database`, `Azure Cosmos DB Account`, `Azure PostgreSQL Server`, `Azure MySQL Server`, `Google Cloud Storage Bucket`, `Google Cloud SQL Instance`, `Google BigQuery Dataset`, `Google Firestore Database`, `Google Spanner Instance`, `Google Bigtable Instance`, `PostgreSQL`, `MySQL`, `MongoDB`, `SQL Server`, `Oracle`, `Redis`, `Elasticsearch`, `Snowflake`, `ClickHouse`, `Databricks`, `Amazon Athena`, `Microsoft Dataverse`, `Logs`, `Traces`, `Exceptions`, `Session Replays`, `AI Conversations`, `Metrics`.
-- `name` (String) The store's name: a bucket, database, dataset or service name.
+- `name` (String) The store's name: a bucket, database, dataset or service name. OneUptime changes it too, on its own: left out, it keeps the value OneUptime gives it.
 
 ### Optional
 
 - `connection_string` (String, Sensitive) For a database scanned by OneUptime's workers: a read-only connection string. Encrypted at rest and never returned by the API.
 - `description` (String) What the store is for, in your team's words.
-- `environment` (String) Which environment the store serves: Production, Staging, Development, Test or Unknown. Read from its tags and name; people may set it. Allowed values: `Production`, `Staging`, `Development`, `Test`, `Unknown`. Defaults to `Unknown`.
+- `environment` (String) Which environment the store serves: Production, Staging, Development, Test or Unknown. Read from its tags and name; people may set it. OneUptime changes it too, on its own: left out, it keeps the value OneUptime gives it. Allowed values: `Production`, `Staging`, `Development`, `Test`, `Unknown`. Defaults to `Unknown`.
 - `is_ai_data` (Boolean) The store holds data used to train or ground an AI model. Defaults to `false`.
 - `is_content_scan_enabled` (Boolean) Whether Data Security samples the store's content. Configuration checks run either way. Defaults to `true`.
 - `is_public_by_design` (Boolean) The store is meant to be public, such as a website's assets. Public access checks pass for it. Defaults to `false`.
 - `is_table_health_enabled` (Boolean) Data Observability collects the store's tables every few minutes: their columns, row counts, sizes and when they last changed. Only the catalog is read, never a row. Defaults to `true`.
-- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. OneUptime adds to it too, on its own: the entries listed here are added and taken off, and every other entry stays. Left out, it keeps the entries OneUptime gives it. IDs of `oneuptime_label` resources.
 - `probe_connection_variable` (String) For a database scanned from a probe: the environment variable on that probe that holds its connection string. The connection string itself never reaches OneUptime.
 - `purpose` (String) Why the store holds personal data, for the GDPR record of processing.
 - `retention` (String) How long data is kept in the store, for the GDPR record of processing.

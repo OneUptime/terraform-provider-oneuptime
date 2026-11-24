@@ -33,8 +33,8 @@ resource "oneuptime_scheduled_maintenance_event" "example" {
 - `ceph_clusters` (Set of String) List of Ceph clusters affected by this event. IDs of `oneuptime_ceph_cluster` resources.
 - `change_monitor_status_to_id` (String) Relation to Monitor Status Object ID. The monitors attached to this event change to this status when the event starts, and back to operational when it ends. It can be changed until the event starts. The ID of a `oneuptime_monitor_status`.
 - `cloud_resources` (Set of String) List of cloud resources affected by this event. Their monitors open no incident or alert while it is in progress. IDs of `oneuptime_cloud_resource` resources.
-- `current_scheduled_maintenance_state_id` (String) Scheduled Maintenance State ID. The state the event currently is in. The ID of a `oneuptime_scheduled_maintenance_state`.
-- `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`.
+- `current_scheduled_maintenance_state_id` (String) Scheduled Maintenance State ID. The state the event currently is in. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent. The ID of a `oneuptime_scheduled_maintenance_state`.
+- `custom_fields` (String) Custom Fields on this resource. A JSON value: write it with `jsonencode()`. OneUptime changes it too, on its own: left out, it keeps the value OneUptime gives it.
 - `data_store_ids` (String) The databases Data Observability watches that this maintenance affects: their data alerts stay quiet while it is on. A JSON value: write it with `jsonencode()`.
 - `database_servers` (Set of String) List of databases affected by this event. IDs of `oneuptime_database` resources.
 - `description` (String) Description of this scheduled event that will show up on Status Page. This is in markdown.
@@ -45,10 +45,9 @@ resource "oneuptime_scheduled_maintenance_event" "example" {
 - `iot_fleets` (Set of String) List of IoT fleets affected by this event. IDs of `oneuptime_iot_fleet` resources.
 - `is_visible_on_status_page` (Boolean) Should this incident be visible on the status page? Defaults to `true`.
 - `kubernetes_clusters` (Set of String) List of Kubernetes clusters affected by this event. IDs of `oneuptime_kubernetes_cluster` resources.
-- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. OneUptime adds to it too, on its own: the entries listed here are added and taken off, and every other entry stays. Left out, it keeps the entries OneUptime gives it. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) List of monitors attached to this event. IDs of `oneuptime_monitor` resources.
 - `network_sites` (Set of String) List of network sites affected by this event. Their descendants are covered too. IDs of `oneuptime_network_site` resources.
-- `next_subscriber_notification_before_the_event_at` (String) When will the next notification to subscribers be sent out?
 - `open_stack_clouds` (Set of String) List of OpenStack clouds affected by this event. IDs of `oneuptime_openstack_cloud` resources.
 - `open_stack_parts` (String) The hypervisors and availability zones of an OpenStack cloud this maintenance is on. Only what those parts say stays quiet while it is on, and the cloud's other parts go on paging. Without any, an event linked to a cloud is about the whole of it. A JSON value: write it with `jsonencode()`.
 - `podman_hosts` (Set of String) List of Podman hosts affected by this event. IDs of `oneuptime_podman_host` resources.
@@ -70,6 +69,7 @@ resource "oneuptime_scheduled_maintenance_event" "example" {
 - `id` (String) Unique identifier for the resource.
 - `is_owner_notified_of_resource_creation` (Boolean) Are owners notified of when this resource is created?
 - `next_reminder_notification_at` (String) When will the next reminder notification be sent to owners of this maintenance event? This is set automatically based on the reminder rules configured for this project.
+- `next_subscriber_notification_before_the_event_at` (String) When will the next notification to subscribers be sent out?
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `reminder_notification_sent_count` (Number) How many reminder notifications have been sent to owners of this maintenance event so far.
 - `scheduled_maintenance_number` (Number) Scheduled Maintenance Number.

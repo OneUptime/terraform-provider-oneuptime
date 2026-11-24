@@ -51,6 +51,7 @@ data "oneuptime_monitor" "by_id" {
 - `name` (String) Any friendly name for this monitor.
 - `network_alert_policy_id` (String) ID of the Network Alert Policy that provisioned this monitor, when one did. The ID of a `oneuptime_network_alert_policy`.
 - `network_device_id` (String) ID of the network device this monitor checks, when a person made it for that device. Null for a monitor that checks no device, and for one an import made (see Auto-Provisioned Network Device ID). The ID of a `oneuptime_network_device`.
+- `network_device_tie_source` (String) Who set Network Device: Automatic (OneUptime, by the address the monitor checks seen from its probes) or Person. OneUptime updates an automatic one when the monitor's probes change, and never one a person set. Empty on a monitor tied before this was recorded.
 - `slug` (String) Friendly globally unique name for your object.
 
 ### Read-Only

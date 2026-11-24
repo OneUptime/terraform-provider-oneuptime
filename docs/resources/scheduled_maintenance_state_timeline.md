@@ -27,7 +27,7 @@ resource "oneuptime_scheduled_maintenance_state_timeline" "example" {
 
 ### Optional
 
-- `ends_at` (String) When did this status change end?
+- `ends_at` (String) When did this status change end? OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
 - `should_status_page_subscribers_be_notified` (Boolean) Should subscribers be notified about this state change?
 - `starts_at` (String) When did this status change? Correct this when the recorded time is wrong - every measurement derived from this timeline is recomputed from the corrected value.
 

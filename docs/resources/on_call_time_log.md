@@ -26,7 +26,7 @@ resource "oneuptime_on_call_time_log" "example" {
 
 ### Optional
 
-- `ends_at` (String) When does this end?
+- `ends_at` (String) When does this end? OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
 - `more_info` (String) More information about this log record.
 - `on_call_duty_policy_escalation_rule_id` (String) ID of your On-Call Policy Escalation Rule ID where this escalation rule belongs.
 - `on_call_duty_policy_id` (String) ID of your On-Call Policy where this escalation rule belongs.

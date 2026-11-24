@@ -33,6 +33,8 @@ resource "oneuptime_form" "example" {
 - `is_enabled` (Boolean) Whether the form's link works. While it is off, the public page shows a not-available message and nothing can be submitted. Defaults to `true`.
 - `logo_alt_text` (String) What the logo says, read out by screen readers: usually your organization's name. Leave it empty and screen readers skip the logo.
 - `logo_file_id` (String) ID of the file the form's public page shows as its logo: upload the image to /api/file first. Leave it empty to show the OneUptime logo. The ID of a `oneuptime_file`.
+- `require_sign_in` (Boolean) Only this form's private users can open and submit it on its public link, once they sign in with a password or single sign-on. Defaults to `false`.
+- `require_sso_for_login` (Boolean) While the form asks its visitors to sign in, only its single sign-on lets them in: private users' passwords no longer do. Defaults to `false`.
 - `success_message` (String) Shown after the form is submitted, together with the number of what the submission created. Markdown.
 - `target_settings` (String) What every submission starts with besides the answers. For incidents: defaultTitle, incidentSeverityId, incidentTemplateId, monitorIds, labelIds, onCallDutyPolicyIds, ownerUserIds and ownerTeamIds. For maintenance events: defaultTitle, monitorIds, statusPageIds, labelIds, ownerUserIds, ownerTeamIds, showOnStatusPages and notifySubscribers. A JSON value: write it with `jsonencode()`.
 - `target_type` (String) What each submission creates: Incident, or ScheduledMaintenance (a maintenance event). Allowed values: `Incident`, `ScheduledMaintenance`. Defaults to `Incident`.

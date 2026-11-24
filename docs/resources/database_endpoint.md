@@ -25,18 +25,15 @@ resource "oneuptime_database_endpoint" "example" {
 - `database_server_id` (String) ID of the database this endpoint belongs to. The ID of a `oneuptime_database`.
 - `endpoint` (String) Canonical endpoint of the database: host:port, with an @cluster qualifier for Kubernetes-internal names and private IPs (e.g. orders-db.data.svc.cluster.local:5432@prod-cluster). What you type is canonicalized; the default port of the engine is filled in.
 
-### Optional
-
-- `is_primary` (Boolean) Is this the endpoint the database was created from? The primary endpoint cannot be removed. Defaults to `false`.
-- `source` (String) Who added this endpoint: auto (found in telemetry), workload (a Service name of the Kubernetes workload the database runs as) or user (added as an alias by a person).
-
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
+- `is_primary` (Boolean) Is this the endpoint the database was created from? The primary endpoint cannot be removed.
 - `last_matched_at` (String) When telemetry or discovery last matched this endpoint to its database, refreshed at most once an hour. For a workload endpoint, when the workload last produced it.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `source` (String) Who added this endpoint: auto (found in telemetry), workload (a Service name of the Kubernetes workload the database runs as) or user (added as an alias by a person).
 - `updated_at` (String) Date and Time when the object was updated.
 
 ## Import

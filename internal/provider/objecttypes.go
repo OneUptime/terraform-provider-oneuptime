@@ -1,8 +1,8 @@
 package provider
 
-// validOneUptimeObjectTypes lists every {_type: ...} wrapper the OneUptime
+// ValidOneUptimeObjectTypes lists every {_type: ...} wrapper the OneUptime
 // API emits. Generated from Common/Types/JSON.ts ObjectType.
-var validOneUptimeObjectTypes = map[string]bool{
+var ValidOneUptimeObjectTypes = map[string]bool{
         "ObjectID": true,
         "Decimal": true,
         "Name": true,

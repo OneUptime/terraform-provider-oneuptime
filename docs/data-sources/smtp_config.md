@@ -29,7 +29,9 @@ data "oneuptime_smtp_config" "by_id" {
 ### Optional
 
 - `amazon_ses_access_key_id` (String) The access key ID of an IAM user or role allowed to send with Amazon SES (ses:SendEmail). Required when Transport is Amazon SES.
+- `amazon_ses_authentication_type` (String) How OneUptime signs in to Amazon SES: 'Access Key' with the access key ID and secret access key, or 'IAM Role' with an IAM role in your own AWS account (Amazon SES Role ARN), which OneUptime signs in to with this project's external ID. Read only when Transport is Amazon SES.
 - `amazon_ses_region` (String) The AWS Region your sender identity is verified in, such as us-east-1. Required when Transport is Amazon SES.
+- `amazon_ses_role_arn` (String) The ARN of the IAM role in your AWS account that OneUptime signs in to, when Amazon SES Authentication Type is 'IAM Role'. Its trust policy must let OneUptime's AWS account in with this project's external ID, and the role must be allowed ses:SendEmail.
 - `auth_type` (String) The type of authentication to use for this SMTP server. Options: Username and Password, OAuth, or None.
 - `client_id` (String) The Client ID from your OAuth application registration. Required for OAuth authentication.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).

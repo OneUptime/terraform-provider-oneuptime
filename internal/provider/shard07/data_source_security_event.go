@@ -1,0 +1,1553 @@
+package shard07
+
+import (
+    . "github.com/oneuptime/terraform-provider-oneuptime/internal/provider"
+    "context"
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "github.com/hashicorp/terraform-plugin-framework/attr"
+    "sort"
+
+    "github.com/hashicorp/terraform-plugin-framework/datasource"
+    "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+    "github.com/hashicorp/terraform-plugin-framework/types"
+    "github.com/hashicorp/terraform-plugin-log/tflog"
+)
+
+// Ensure provider defined types fully satisfy framework interfaces.
+var _ datasource.DataSource = &SecurityEventDataSource{}
+
+func NewSecurityEventDataSource() datasource.DataSource {
+    return &SecurityEventDataSource{}
+}
+
+// SecurityEventDataSource defines the data source implementation.
+type SecurityEventDataSource struct {
+    client *Client
+}
+
+// SecurityEventDataSourceModel describes the data source data model.
+type SecurityEventDataSourceModel struct {
+    Id types.String `tfsdk:"id"`
+    ProjectId types.String `tfsdk:"project_id"`
+    PrimaryEntityId types.String `tfsdk:"primary_entity_id"`
+    PrimaryEntityType types.String `tfsdk:"primary_entity_type"`
+    Time types.String `tfsdk:"time"`
+    EventUid types.String `tfsdk:"event_uid"`
+    CategoryUid types.Number `tfsdk:"category_uid"`
+    CategoryName types.String `tfsdk:"category_name"`
+    ClassUid types.Number `tfsdk:"class_uid"`
+    ClassName types.String `tfsdk:"class_name"`
+    ActivityName types.String `tfsdk:"activity_name"`
+    SeverityId types.Number `tfsdk:"severity_id"`
+    SeverityName types.String `tfsdk:"severity_name"`
+    StatusName types.String `tfsdk:"status_name"`
+    Message types.String `tfsdk:"message"`
+    VendorName types.String `tfsdk:"vendor_name"`
+    ProductName types.String `tfsdk:"product_name"`
+    RuleId types.String `tfsdk:"rule_id"`
+    RuleName types.String `tfsdk:"rule_name"`
+    MitreTactics types.Set `tfsdk:"mitre_tactics"`
+    MitreTechniques types.Set `tfsdk:"mitre_techniques"`
+    PrincipalUser types.String `tfsdk:"principal_user"`
+    PrincipalHost types.String `tfsdk:"principal_host"`
+    PrincipalIp types.String `tfsdk:"principal_ip"`
+    PrincipalProcess types.String `tfsdk:"principal_process"`
+    ProcessName types.String `tfsdk:"process_name"`
+    ProcessPath types.String `tfsdk:"process_path"`
+    ProcessCommandLine types.String `tfsdk:"process_command_line"`
+    ParentProcessName types.String `tfsdk:"parent_process_name"`
+    ParentProcessPath types.String `tfsdk:"parent_process_path"`
+    ParentProcessCommandLine types.String `tfsdk:"parent_process_command_line"`
+    TargetUser types.String `tfsdk:"target_user"`
+    TargetHost types.String `tfsdk:"target_host"`
+    TargetIp types.String `tfsdk:"target_ip"`
+    TargetPort types.Number `tfsdk:"target_port"`
+    TargetResource types.String `tfsdk:"target_resource"`
+    Observables types.Set `tfsdk:"observables"`
+    TraceId types.String `tfsdk:"trace_id"`
+    SpanId types.String `tfsdk:"span_id"`
+    SessionId types.String `tfsdk:"session_id"`
+    RequestOutcome types.String `tfsdk:"request_outcome"`
+    Attributes types.String `tfsdk:"attributes"`
+    AttributeKeys types.Set `tfsdk:"attribute_keys"`
+}
+
+func (d *SecurityEventDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_security_event"
+}
+
+func (d *SecurityEventDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+    resp.Schema = schema.Schema{
+        MarkdownDescription: "API endpoints for Security Event Look up an existing security event by `id`, or by any of its other arguments (`activity_name`, `attributes`, `category_name`, ...): each one set must match, and exactly one security event may match them all.",
+
+        Attributes: map[string]schema.Attribute{
+            "id": schema.StringAttribute{
+                MarkdownDescription: "Look up by unique identifier. Leave unset to look up by the other arguments instead.",
+                Optional: true,
+                Computed: true,
+            },
+            "project_id": schema.StringAttribute{
+                MarkdownDescription: "Project ID.",
+                Computed: true,
+            },
+            "primary_entity_id": schema.StringAttribute{
+                MarkdownDescription: "Source ID.",
+                Optional: true,
+                Computed: true,
+            },
+            "primary_entity_type": schema.StringAttribute{
+                MarkdownDescription: "Source Type.",
+                Optional: true,
+                Computed: true,
+            },
+            "time": schema.StringAttribute{
+                MarkdownDescription: "Time.",
+                Optional: true,
+                Computed: true,
+            },
+            "event_uid": schema.StringAttribute{
+                MarkdownDescription: "Event UID.",
+                Optional: true,
+                Computed: true,
+            },
+            "category_uid": schema.NumberAttribute{
+                MarkdownDescription: "Category UID.",
+                Optional: true,
+                Computed: true,
+            },
+            "category_name": schema.StringAttribute{
+                MarkdownDescription: "Category.",
+                Optional: true,
+                Computed: true,
+            },
+            "class_uid": schema.NumberAttribute{
+                MarkdownDescription: "Class UID.",
+                Optional: true,
+                Computed: true,
+            },
+            "class_name": schema.StringAttribute{
+                MarkdownDescription: "Event Class.",
+                Optional: true,
+                Computed: true,
+            },
+            "activity_name": schema.StringAttribute{
+                MarkdownDescription: "Activity.",
+                Optional: true,
+                Computed: true,
+            },
+            "severity_id": schema.NumberAttribute{
+                MarkdownDescription: "Severity ID.",
+                Optional: true,
+                Computed: true,
+            },
+            "severity_name": schema.StringAttribute{
+                MarkdownDescription: "Severity.",
+                Optional: true,
+                Computed: true,
+            },
+            "status_name": schema.StringAttribute{
+                MarkdownDescription: "Status.",
+                Optional: true,
+                Computed: true,
+            },
+            "message": schema.StringAttribute{
+                MarkdownDescription: "Message.",
+                Optional: true,
+                Computed: true,
+            },
+            "vendor_name": schema.StringAttribute{
+                MarkdownDescription: "Vendor.",
+                Optional: true,
+                Computed: true,
+            },
+            "product_name": schema.StringAttribute{
+                MarkdownDescription: "Product.",
+                Optional: true,
+                Computed: true,
+            },
+            "rule_id": schema.StringAttribute{
+                MarkdownDescription: "Rule ID.",
+                Optional: true,
+                Computed: true,
+            },
+            "rule_name": schema.StringAttribute{
+                MarkdownDescription: "Rule Name.",
+                Optional: true,
+                Computed: true,
+            },
+            "mitre_tactics": schema.SetAttribute{
+                MarkdownDescription: "MITRE Tactics.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "mitre_techniques": schema.SetAttribute{
+                MarkdownDescription: "MITRE Techniques.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "principal_user": schema.StringAttribute{
+                MarkdownDescription: "Principal User.",
+                Optional: true,
+                Computed: true,
+            },
+            "principal_host": schema.StringAttribute{
+                MarkdownDescription: "Principal Host.",
+                Optional: true,
+                Computed: true,
+            },
+            "principal_ip": schema.StringAttribute{
+                MarkdownDescription: "Principal IP.",
+                Optional: true,
+                Computed: true,
+            },
+            "principal_process": schema.StringAttribute{
+                MarkdownDescription: "Principal Process.",
+                Optional: true,
+                Computed: true,
+            },
+            "process_name": schema.StringAttribute{
+                MarkdownDescription: "Process.",
+                Optional: true,
+                Computed: true,
+            },
+            "process_path": schema.StringAttribute{
+                MarkdownDescription: "Process Path.",
+                Optional: true,
+                Computed: true,
+            },
+            "process_command_line": schema.StringAttribute{
+                MarkdownDescription: "Command Line.",
+                Optional: true,
+                Computed: true,
+            },
+            "parent_process_name": schema.StringAttribute{
+                MarkdownDescription: "Parent Process.",
+                Optional: true,
+                Computed: true,
+            },
+            "parent_process_path": schema.StringAttribute{
+                MarkdownDescription: "Parent Process Path.",
+                Optional: true,
+                Computed: true,
+            },
+            "parent_process_command_line": schema.StringAttribute{
+                MarkdownDescription: "Parent Command Line.",
+                Optional: true,
+                Computed: true,
+            },
+            "target_user": schema.StringAttribute{
+                MarkdownDescription: "Target User.",
+                Optional: true,
+                Computed: true,
+            },
+            "target_host": schema.StringAttribute{
+                MarkdownDescription: "Target Host.",
+                Optional: true,
+                Computed: true,
+            },
+            "target_ip": schema.StringAttribute{
+                MarkdownDescription: "Target IP.",
+                Optional: true,
+                Computed: true,
+            },
+            "target_port": schema.NumberAttribute{
+                MarkdownDescription: "Target Port.",
+                Optional: true,
+                Computed: true,
+            },
+            "target_resource": schema.StringAttribute{
+                MarkdownDescription: "Target Resource.",
+                Optional: true,
+                Computed: true,
+            },
+            "observables": schema.SetAttribute{
+                MarkdownDescription: "Observables.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "trace_id": schema.StringAttribute{
+                MarkdownDescription: "Trace ID.",
+                Optional: true,
+                Computed: true,
+            },
+            "span_id": schema.StringAttribute{
+                MarkdownDescription: "Span ID.",
+                Optional: true,
+                Computed: true,
+            },
+            "session_id": schema.StringAttribute{
+                MarkdownDescription: "Session ID.",
+                Optional: true,
+                Computed: true,
+            },
+            "request_outcome": schema.StringAttribute{
+                MarkdownDescription: "Request Outcome.",
+                Optional: true,
+                Computed: true,
+            },
+            "attributes": schema.StringAttribute{
+                MarkdownDescription: "Attributes.",
+                Optional: true,
+                Computed: true,
+            },
+            "attribute_keys": schema.SetAttribute{
+                MarkdownDescription: "Attribute Keys.",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+        },
+    }
+}
+
+func (d *SecurityEventDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+    // Prevent panic if the provider has not been configured.
+    if req.ProviderData == nil {
+        return
+    }
+
+    client, ok := req.ProviderData.(*Client)
+
+    if !ok {
+        resp.Diagnostics.AddError(
+            "Unexpected Data Source Configure Type",
+            fmt.Sprintf("Expected *Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+        )
+
+        return
+    }
+
+    d.client = client
+}
+
+func (d *SecurityEventDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data SecurityEventDataSourceModel
+
+    // Read Terraform configuration data into the model
+    resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    hasId := !data.Id.IsNull() && !data.Id.IsUnknown() && data.Id.ValueString() != ""
+
+    // Every other argument set in configuration narrows the lookup.
+    filters := map[string]interface{}{}
+    filterNames := []string{}
+    if !data.PrimaryEntityId.IsNull() && !data.PrimaryEntityId.IsUnknown() {
+        filters["primaryEntityId"] = data.PrimaryEntityId.ValueString()
+        filterNames = append(filterNames, "primary_entity_id = "+fmt.Sprintf("%q", data.PrimaryEntityId.ValueString()))
+    }
+    if !data.PrimaryEntityType.IsNull() && !data.PrimaryEntityType.IsUnknown() {
+        filters["primaryEntityType"] = data.PrimaryEntityType.ValueString()
+        filterNames = append(filterNames, "primary_entity_type = "+fmt.Sprintf("%q", data.PrimaryEntityType.ValueString()))
+    }
+    if !data.Time.IsNull() && !data.Time.IsUnknown() {
+        filters["time"] = data.Time.ValueString()
+        filterNames = append(filterNames, "time = "+fmt.Sprintf("%q", data.Time.ValueString()))
+    }
+    if !data.EventUid.IsNull() && !data.EventUid.IsUnknown() {
+        filters["eventUid"] = data.EventUid.ValueString()
+        filterNames = append(filterNames, "event_uid = "+fmt.Sprintf("%q", data.EventUid.ValueString()))
+    }
+    if !data.CategoryUid.IsNull() && !data.CategoryUid.IsUnknown() {
+        filters["categoryUid"] = LookupNumber(data.CategoryUid)
+        filterNames = append(filterNames, "category_uid = "+data.CategoryUid.ValueBigFloat().String())
+    }
+    if !data.CategoryName.IsNull() && !data.CategoryName.IsUnknown() {
+        filters["categoryName"] = data.CategoryName.ValueString()
+        filterNames = append(filterNames, "category_name = "+fmt.Sprintf("%q", data.CategoryName.ValueString()))
+    }
+    if !data.ClassUid.IsNull() && !data.ClassUid.IsUnknown() {
+        filters["classUid"] = LookupNumber(data.ClassUid)
+        filterNames = append(filterNames, "class_uid = "+data.ClassUid.ValueBigFloat().String())
+    }
+    if !data.ClassName.IsNull() && !data.ClassName.IsUnknown() {
+        filters["className"] = data.ClassName.ValueString()
+        filterNames = append(filterNames, "class_name = "+fmt.Sprintf("%q", data.ClassName.ValueString()))
+    }
+    if !data.ActivityName.IsNull() && !data.ActivityName.IsUnknown() {
+        filters["activityName"] = data.ActivityName.ValueString()
+        filterNames = append(filterNames, "activity_name = "+fmt.Sprintf("%q", data.ActivityName.ValueString()))
+    }
+    if !data.SeverityId.IsNull() && !data.SeverityId.IsUnknown() {
+        filters["severityId"] = LookupNumber(data.SeverityId)
+        filterNames = append(filterNames, "severity_id = "+data.SeverityId.ValueBigFloat().String())
+    }
+    if !data.SeverityName.IsNull() && !data.SeverityName.IsUnknown() {
+        filters["severityName"] = data.SeverityName.ValueString()
+        filterNames = append(filterNames, "severity_name = "+fmt.Sprintf("%q", data.SeverityName.ValueString()))
+    }
+    if !data.StatusName.IsNull() && !data.StatusName.IsUnknown() {
+        filters["statusName"] = data.StatusName.ValueString()
+        filterNames = append(filterNames, "status_name = "+fmt.Sprintf("%q", data.StatusName.ValueString()))
+    }
+    if !data.Message.IsNull() && !data.Message.IsUnknown() {
+        filters["message"] = data.Message.ValueString()
+        filterNames = append(filterNames, "message = "+fmt.Sprintf("%q", data.Message.ValueString()))
+    }
+    if !data.VendorName.IsNull() && !data.VendorName.IsUnknown() {
+        filters["vendorName"] = data.VendorName.ValueString()
+        filterNames = append(filterNames, "vendor_name = "+fmt.Sprintf("%q", data.VendorName.ValueString()))
+    }
+    if !data.ProductName.IsNull() && !data.ProductName.IsUnknown() {
+        filters["productName"] = data.ProductName.ValueString()
+        filterNames = append(filterNames, "product_name = "+fmt.Sprintf("%q", data.ProductName.ValueString()))
+    }
+    if !data.RuleId.IsNull() && !data.RuleId.IsUnknown() {
+        filters["ruleId"] = data.RuleId.ValueString()
+        filterNames = append(filterNames, "rule_id = "+fmt.Sprintf("%q", data.RuleId.ValueString()))
+    }
+    if !data.RuleName.IsNull() && !data.RuleName.IsUnknown() {
+        filters["ruleName"] = data.RuleName.ValueString()
+        filterNames = append(filterNames, "rule_name = "+fmt.Sprintf("%q", data.RuleName.ValueString()))
+    }
+    if !data.PrincipalUser.IsNull() && !data.PrincipalUser.IsUnknown() {
+        filters["principalUser"] = data.PrincipalUser.ValueString()
+        filterNames = append(filterNames, "principal_user = "+fmt.Sprintf("%q", data.PrincipalUser.ValueString()))
+    }
+    if !data.PrincipalHost.IsNull() && !data.PrincipalHost.IsUnknown() {
+        filters["principalHost"] = data.PrincipalHost.ValueString()
+        filterNames = append(filterNames, "principal_host = "+fmt.Sprintf("%q", data.PrincipalHost.ValueString()))
+    }
+    if !data.PrincipalIp.IsNull() && !data.PrincipalIp.IsUnknown() {
+        filters["principalIp"] = data.PrincipalIp.ValueString()
+        filterNames = append(filterNames, "principal_ip = "+fmt.Sprintf("%q", data.PrincipalIp.ValueString()))
+    }
+    if !data.PrincipalProcess.IsNull() && !data.PrincipalProcess.IsUnknown() {
+        filters["principalProcess"] = data.PrincipalProcess.ValueString()
+        filterNames = append(filterNames, "principal_process = "+fmt.Sprintf("%q", data.PrincipalProcess.ValueString()))
+    }
+    if !data.ProcessName.IsNull() && !data.ProcessName.IsUnknown() {
+        filters["processName"] = data.ProcessName.ValueString()
+        filterNames = append(filterNames, "process_name = "+fmt.Sprintf("%q", data.ProcessName.ValueString()))
+    }
+    if !data.ProcessPath.IsNull() && !data.ProcessPath.IsUnknown() {
+        filters["processPath"] = data.ProcessPath.ValueString()
+        filterNames = append(filterNames, "process_path = "+fmt.Sprintf("%q", data.ProcessPath.ValueString()))
+    }
+    if !data.ProcessCommandLine.IsNull() && !data.ProcessCommandLine.IsUnknown() {
+        filters["processCommandLine"] = data.ProcessCommandLine.ValueString()
+        filterNames = append(filterNames, "process_command_line = "+fmt.Sprintf("%q", data.ProcessCommandLine.ValueString()))
+    }
+    if !data.ParentProcessName.IsNull() && !data.ParentProcessName.IsUnknown() {
+        filters["parentProcessName"] = data.ParentProcessName.ValueString()
+        filterNames = append(filterNames, "parent_process_name = "+fmt.Sprintf("%q", data.ParentProcessName.ValueString()))
+    }
+    if !data.ParentProcessPath.IsNull() && !data.ParentProcessPath.IsUnknown() {
+        filters["parentProcessPath"] = data.ParentProcessPath.ValueString()
+        filterNames = append(filterNames, "parent_process_path = "+fmt.Sprintf("%q", data.ParentProcessPath.ValueString()))
+    }
+    if !data.ParentProcessCommandLine.IsNull() && !data.ParentProcessCommandLine.IsUnknown() {
+        filters["parentProcessCommandLine"] = data.ParentProcessCommandLine.ValueString()
+        filterNames = append(filterNames, "parent_process_command_line = "+fmt.Sprintf("%q", data.ParentProcessCommandLine.ValueString()))
+    }
+    if !data.TargetUser.IsNull() && !data.TargetUser.IsUnknown() {
+        filters["targetUser"] = data.TargetUser.ValueString()
+        filterNames = append(filterNames, "target_user = "+fmt.Sprintf("%q", data.TargetUser.ValueString()))
+    }
+    if !data.TargetHost.IsNull() && !data.TargetHost.IsUnknown() {
+        filters["targetHost"] = data.TargetHost.ValueString()
+        filterNames = append(filterNames, "target_host = "+fmt.Sprintf("%q", data.TargetHost.ValueString()))
+    }
+    if !data.TargetIp.IsNull() && !data.TargetIp.IsUnknown() {
+        filters["targetIp"] = data.TargetIp.ValueString()
+        filterNames = append(filterNames, "target_ip = "+fmt.Sprintf("%q", data.TargetIp.ValueString()))
+    }
+    if !data.TargetPort.IsNull() && !data.TargetPort.IsUnknown() {
+        filters["targetPort"] = LookupNumber(data.TargetPort)
+        filterNames = append(filterNames, "target_port = "+data.TargetPort.ValueBigFloat().String())
+    }
+    if !data.TargetResource.IsNull() && !data.TargetResource.IsUnknown() {
+        filters["targetResource"] = data.TargetResource.ValueString()
+        filterNames = append(filterNames, "target_resource = "+fmt.Sprintf("%q", data.TargetResource.ValueString()))
+    }
+    if !data.TraceId.IsNull() && !data.TraceId.IsUnknown() {
+        filters["traceId"] = data.TraceId.ValueString()
+        filterNames = append(filterNames, "trace_id = "+fmt.Sprintf("%q", data.TraceId.ValueString()))
+    }
+    if !data.SpanId.IsNull() && !data.SpanId.IsUnknown() {
+        filters["spanId"] = data.SpanId.ValueString()
+        filterNames = append(filterNames, "span_id = "+fmt.Sprintf("%q", data.SpanId.ValueString()))
+    }
+    if !data.SessionId.IsNull() && !data.SessionId.IsUnknown() {
+        filters["sessionId"] = data.SessionId.ValueString()
+        filterNames = append(filterNames, "session_id = "+fmt.Sprintf("%q", data.SessionId.ValueString()))
+    }
+    if !data.RequestOutcome.IsNull() && !data.RequestOutcome.IsUnknown() {
+        filters["requestOutcome"] = data.RequestOutcome.ValueString()
+        filterNames = append(filterNames, "request_outcome = "+fmt.Sprintf("%q", data.RequestOutcome.ValueString()))
+    }
+    if !data.Attributes.IsNull() && !data.Attributes.IsUnknown() {
+        filters["attributes"] = data.Attributes.ValueString()
+        filterNames = append(filterNames, "attributes = "+fmt.Sprintf("%q", data.Attributes.ValueString()))
+    }
+
+    if hasId && len(filters) > 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Look the security event up either by `id` or by its other arguments, not both.",
+        )
+        return
+    }
+    if !hasId && len(filters) == 0 {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Set `id`, or at least one other argument to look the security event up by.",
+        )
+        return
+    }
+
+    selectParam := map[string]interface{}{
+        "projectId": true,
+        "primaryEntityId": true,
+        "primaryEntityType": true,
+        "time": true,
+        "eventUid": true,
+        "categoryUid": true,
+        "categoryName": true,
+        "classUid": true,
+        "className": true,
+        "activityName": true,
+        "severityId": true,
+        "severityName": true,
+        "statusName": true,
+        "message": true,
+        "vendorName": true,
+        "productName": true,
+        "ruleId": true,
+        "ruleName": true,
+        "mitreTactics": true,
+        "mitreTechniques": true,
+        "principalUser": true,
+        "principalHost": true,
+        "principalIp": true,
+        "principalProcess": true,
+        "processName": true,
+        "processPath": true,
+        "processCommandLine": true,
+        "parentProcessName": true,
+        "parentProcessPath": true,
+        "parentProcessCommandLine": true,
+        "targetUser": true,
+        "targetHost": true,
+        "targetIp": true,
+        "targetPort": true,
+        "targetResource": true,
+        "observables": true,
+        "traceId": true,
+        "spanId": true,
+        "sessionId": true,
+        "requestOutcome": true,
+        "attributes": true,
+        "attributeKeys": true,
+        "_id": true,
+    }
+
+    var item map[string]interface{}
+    if hasId {
+        readPath := "/security-events/" + data.Id.ValueString() + "/get-item"
+        httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
+        if err != nil {
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read security_event, got error: %s", err))
+            return
+        }
+        if httpResp.StatusCode == http.StatusNotFound {
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No security event found with id %q.", data.Id.ValueString()))
+            return
+        }
+        var itemResponse map[string]interface{}
+        if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read security_event: %s", err))
+            return
+        }
+        if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
+            item = wrapper
+        } else {
+            item = itemResponse
+        }
+    }
+    if !hasId {
+        listBody := map[string]interface{}{
+            "query":  filters,
+            "select": selectParam,
+            // limit 2 is enough to detect ambiguity without paging.
+            "limit": 2,
+        }
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/security-events/get-list", listBody)
+        if err != nil {
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list security_event, got error: %s", err))
+            return
+        }
+        var listResponse map[string]interface{}
+        if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list security_event: %s", err))
+            return
+        }
+        items, _ := listResponse["data"].([]interface{})
+        if len(items) == 0 {
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No security event matches %s.", DescribeLookup(filterNames)))
+            return
+        }
+        if len(items) > 1 {
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one security event matches %s. Set more arguments to narrow the lookup down to one, or look it up by id.", DescribeLookup(filterNames)))
+            return
+        }
+        first, ok := items[0].(map[string]interface{})
+        if !ok {
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for security_event.")
+            return
+        }
+        item = first
+    }
+
+    // Update the model with response data
+    if obj, ok := item["_id"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Id = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Id = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Id = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
+    } else if arr, ok := item["_id"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
+    } else if val, ok := item["_id"].(string); ok {
+        data.Id = types.StringValue(val)
+    } else {
+        data.Id = types.StringNull()
+    }
+    if obj, ok := item["projectId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProjectId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProjectId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if arr, ok := item["projectId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if val, ok := item["projectId"].(string); ok {
+        data.ProjectId = types.StringValue(val)
+    } else {
+        data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["primaryEntityId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PrimaryEntityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PrimaryEntityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PrimaryEntityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PrimaryEntityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PrimaryEntityId = types.StringNull()
+        }
+    } else if arr, ok := item["primaryEntityId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PrimaryEntityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PrimaryEntityId = types.StringNull()
+        }
+    } else if val, ok := item["primaryEntityId"].(string); ok {
+        data.PrimaryEntityId = types.StringValue(val)
+    } else {
+        data.PrimaryEntityId = types.StringNull()
+    }
+    if obj, ok := item["primaryEntityType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PrimaryEntityType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PrimaryEntityType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PrimaryEntityType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PrimaryEntityType = types.StringValue(string(jsonBytes))
+        } else {
+            data.PrimaryEntityType = types.StringNull()
+        }
+    } else if arr, ok := item["primaryEntityType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PrimaryEntityType = types.StringValue(string(jsonBytes))
+        } else {
+            data.PrimaryEntityType = types.StringNull()
+        }
+    } else if val, ok := item["primaryEntityType"].(string); ok {
+        data.PrimaryEntityType = types.StringValue(val)
+    } else {
+        data.PrimaryEntityType = types.StringNull()
+    }
+    if obj, ok := item["time"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Time = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Time = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Time = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Time = types.StringValue(string(jsonBytes))
+        } else {
+            data.Time = types.StringNull()
+        }
+    } else if arr, ok := item["time"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Time = types.StringValue(string(jsonBytes))
+        } else {
+            data.Time = types.StringNull()
+        }
+    } else if val, ok := item["time"].(string); ok {
+        data.Time = types.StringValue(val)
+    } else {
+        data.Time = types.StringNull()
+    }
+    if obj, ok := item["eventUid"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EventUid = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.EventUid = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.EventUid = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.EventUid = types.StringValue(string(jsonBytes))
+        } else {
+            data.EventUid = types.StringNull()
+        }
+    } else if arr, ok := item["eventUid"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.EventUid = types.StringValue(string(jsonBytes))
+        } else {
+            data.EventUid = types.StringNull()
+        }
+    } else if val, ok := item["eventUid"].(string); ok {
+        data.EventUid = types.StringValue(val)
+    } else {
+        data.EventUid = types.StringNull()
+    }
+    data.CategoryUid = NumberFromAPI(data.CategoryUid, item["categoryUid"])
+    if obj, ok := item["categoryName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CategoryName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CategoryName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CategoryName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CategoryName = types.StringValue(string(jsonBytes))
+        } else {
+            data.CategoryName = types.StringNull()
+        }
+    } else if arr, ok := item["categoryName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CategoryName = types.StringValue(string(jsonBytes))
+        } else {
+            data.CategoryName = types.StringNull()
+        }
+    } else if val, ok := item["categoryName"].(string); ok {
+        data.CategoryName = types.StringValue(val)
+    } else {
+        data.CategoryName = types.StringNull()
+    }
+    data.ClassUid = NumberFromAPI(data.ClassUid, item["classUid"])
+    if obj, ok := item["className"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ClassName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ClassName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ClassName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ClassName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ClassName = types.StringNull()
+        }
+    } else if arr, ok := item["className"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ClassName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ClassName = types.StringNull()
+        }
+    } else if val, ok := item["className"].(string); ok {
+        data.ClassName = types.StringValue(val)
+    } else {
+        data.ClassName = types.StringNull()
+    }
+    if obj, ok := item["activityName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ActivityName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ActivityName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ActivityName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ActivityName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ActivityName = types.StringNull()
+        }
+    } else if arr, ok := item["activityName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ActivityName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ActivityName = types.StringNull()
+        }
+    } else if val, ok := item["activityName"].(string); ok {
+        data.ActivityName = types.StringValue(val)
+    } else {
+        data.ActivityName = types.StringNull()
+    }
+    data.SeverityId = NumberFromAPI(data.SeverityId, item["severityId"])
+    if obj, ok := item["severityName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SeverityName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SeverityName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SeverityName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SeverityName = types.StringValue(string(jsonBytes))
+        } else {
+            data.SeverityName = types.StringNull()
+        }
+    } else if arr, ok := item["severityName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SeverityName = types.StringValue(string(jsonBytes))
+        } else {
+            data.SeverityName = types.StringNull()
+        }
+    } else if val, ok := item["severityName"].(string); ok {
+        data.SeverityName = types.StringValue(val)
+    } else {
+        data.SeverityName = types.StringNull()
+    }
+    if obj, ok := item["statusName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.StatusName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.StatusName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.StatusName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.StatusName = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusName = types.StringNull()
+        }
+    } else if arr, ok := item["statusName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.StatusName = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusName = types.StringNull()
+        }
+    } else if val, ok := item["statusName"].(string); ok {
+        data.StatusName = types.StringValue(val)
+    } else {
+        data.StatusName = types.StringNull()
+    }
+    if obj, ok := item["message"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Message = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Message = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Message = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Message = types.StringValue(string(jsonBytes))
+        } else {
+            data.Message = types.StringNull()
+        }
+    } else if arr, ok := item["message"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Message = types.StringValue(string(jsonBytes))
+        } else {
+            data.Message = types.StringNull()
+        }
+    } else if val, ok := item["message"].(string); ok {
+        data.Message = types.StringValue(val)
+    } else {
+        data.Message = types.StringNull()
+    }
+    if obj, ok := item["vendorName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VendorName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.VendorName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.VendorName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.VendorName = types.StringValue(string(jsonBytes))
+        } else {
+            data.VendorName = types.StringNull()
+        }
+    } else if arr, ok := item["vendorName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.VendorName = types.StringValue(string(jsonBytes))
+        } else {
+            data.VendorName = types.StringNull()
+        }
+    } else if val, ok := item["vendorName"].(string); ok {
+        data.VendorName = types.StringValue(val)
+    } else {
+        data.VendorName = types.StringNull()
+    }
+    if obj, ok := item["productName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProductName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProductName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProductName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProductName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductName = types.StringNull()
+        }
+    } else if arr, ok := item["productName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProductName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProductName = types.StringNull()
+        }
+    } else if val, ok := item["productName"].(string); ok {
+        data.ProductName = types.StringValue(val)
+    } else {
+        data.ProductName = types.StringNull()
+    }
+    if obj, ok := item["ruleId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RuleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RuleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RuleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RuleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RuleId = types.StringNull()
+        }
+    } else if arr, ok := item["ruleId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RuleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RuleId = types.StringNull()
+        }
+    } else if val, ok := item["ruleId"].(string); ok {
+        data.RuleId = types.StringValue(val)
+    } else {
+        data.RuleId = types.StringNull()
+    }
+    if obj, ok := item["ruleName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RuleName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RuleName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RuleName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RuleName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RuleName = types.StringNull()
+        }
+    } else if arr, ok := item["ruleName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RuleName = types.StringValue(string(jsonBytes))
+        } else {
+            data.RuleName = types.StringNull()
+        }
+    } else if val, ok := item["ruleName"].(string); ok {
+        data.RuleName = types.StringValue(val)
+    } else {
+        data.RuleName = types.StringNull()
+    }
+    if val, ok := item["mitreTactics"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.MitreTactics = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.MitreTactics = types.SetNull(types.StringType)
+    }
+    if val, ok := item["mitreTechniques"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.MitreTechniques = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.MitreTechniques = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["principalUser"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PrincipalUser = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PrincipalUser = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PrincipalUser = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PrincipalUser = types.StringValue(string(jsonBytes))
+        } else {
+            data.PrincipalUser = types.StringNull()
+        }
+    } else if arr, ok := item["principalUser"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PrincipalUser = types.StringValue(string(jsonBytes))
+        } else {
+            data.PrincipalUser = types.StringNull()
+        }
+    } else if val, ok := item["principalUser"].(string); ok {
+        data.PrincipalUser = types.StringValue(val)
+    } else {
+        data.PrincipalUser = types.StringNull()
+    }
+    if obj, ok := item["principalHost"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PrincipalHost = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PrincipalHost = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PrincipalHost = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PrincipalHost = types.StringValue(string(jsonBytes))
+        } else {
+            data.PrincipalHost = types.StringNull()
+        }
+    } else if arr, ok := item["principalHost"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PrincipalHost = types.StringValue(string(jsonBytes))
+        } else {
+            data.PrincipalHost = types.StringNull()
+        }
+    } else if val, ok := item["principalHost"].(string); ok {
+        data.PrincipalHost = types.StringValue(val)
+    } else {
+        data.PrincipalHost = types.StringNull()
+    }
+    if obj, ok := item["principalIp"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PrincipalIp = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PrincipalIp = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PrincipalIp = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PrincipalIp = types.StringValue(string(jsonBytes))
+        } else {
+            data.PrincipalIp = types.StringNull()
+        }
+    } else if arr, ok := item["principalIp"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PrincipalIp = types.StringValue(string(jsonBytes))
+        } else {
+            data.PrincipalIp = types.StringNull()
+        }
+    } else if val, ok := item["principalIp"].(string); ok {
+        data.PrincipalIp = types.StringValue(val)
+    } else {
+        data.PrincipalIp = types.StringNull()
+    }
+    if obj, ok := item["principalProcess"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PrincipalProcess = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PrincipalProcess = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PrincipalProcess = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PrincipalProcess = types.StringValue(string(jsonBytes))
+        } else {
+            data.PrincipalProcess = types.StringNull()
+        }
+    } else if arr, ok := item["principalProcess"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.PrincipalProcess = types.StringValue(string(jsonBytes))
+        } else {
+            data.PrincipalProcess = types.StringNull()
+        }
+    } else if val, ok := item["principalProcess"].(string); ok {
+        data.PrincipalProcess = types.StringValue(val)
+    } else {
+        data.PrincipalProcess = types.StringNull()
+    }
+    if obj, ok := item["processName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProcessName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProcessName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProcessName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProcessName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProcessName = types.StringNull()
+        }
+    } else if arr, ok := item["processName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProcessName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProcessName = types.StringNull()
+        }
+    } else if val, ok := item["processName"].(string); ok {
+        data.ProcessName = types.StringValue(val)
+    } else {
+        data.ProcessName = types.StringNull()
+    }
+    if obj, ok := item["processPath"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProcessPath = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProcessPath = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProcessPath = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProcessPath = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProcessPath = types.StringNull()
+        }
+    } else if arr, ok := item["processPath"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProcessPath = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProcessPath = types.StringNull()
+        }
+    } else if val, ok := item["processPath"].(string); ok {
+        data.ProcessPath = types.StringValue(val)
+    } else {
+        data.ProcessPath = types.StringNull()
+    }
+    if obj, ok := item["processCommandLine"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProcessCommandLine = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProcessCommandLine = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProcessCommandLine = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProcessCommandLine = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProcessCommandLine = types.StringNull()
+        }
+    } else if arr, ok := item["processCommandLine"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ProcessCommandLine = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProcessCommandLine = types.StringNull()
+        }
+    } else if val, ok := item["processCommandLine"].(string); ok {
+        data.ProcessCommandLine = types.StringValue(val)
+    } else {
+        data.ProcessCommandLine = types.StringNull()
+    }
+    if obj, ok := item["parentProcessName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ParentProcessName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ParentProcessName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ParentProcessName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ParentProcessName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ParentProcessName = types.StringNull()
+        }
+    } else if arr, ok := item["parentProcessName"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ParentProcessName = types.StringValue(string(jsonBytes))
+        } else {
+            data.ParentProcessName = types.StringNull()
+        }
+    } else if val, ok := item["parentProcessName"].(string); ok {
+        data.ParentProcessName = types.StringValue(val)
+    } else {
+        data.ParentProcessName = types.StringNull()
+    }
+    if obj, ok := item["parentProcessPath"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ParentProcessPath = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ParentProcessPath = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ParentProcessPath = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ParentProcessPath = types.StringValue(string(jsonBytes))
+        } else {
+            data.ParentProcessPath = types.StringNull()
+        }
+    } else if arr, ok := item["parentProcessPath"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ParentProcessPath = types.StringValue(string(jsonBytes))
+        } else {
+            data.ParentProcessPath = types.StringNull()
+        }
+    } else if val, ok := item["parentProcessPath"].(string); ok {
+        data.ParentProcessPath = types.StringValue(val)
+    } else {
+        data.ParentProcessPath = types.StringNull()
+    }
+    if obj, ok := item["parentProcessCommandLine"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ParentProcessCommandLine = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ParentProcessCommandLine = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ParentProcessCommandLine = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ParentProcessCommandLine = types.StringValue(string(jsonBytes))
+        } else {
+            data.ParentProcessCommandLine = types.StringNull()
+        }
+    } else if arr, ok := item["parentProcessCommandLine"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ParentProcessCommandLine = types.StringValue(string(jsonBytes))
+        } else {
+            data.ParentProcessCommandLine = types.StringNull()
+        }
+    } else if val, ok := item["parentProcessCommandLine"].(string); ok {
+        data.ParentProcessCommandLine = types.StringValue(val)
+    } else {
+        data.ParentProcessCommandLine = types.StringNull()
+    }
+    if obj, ok := item["targetUser"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TargetUser = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TargetUser = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TargetUser = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TargetUser = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetUser = types.StringNull()
+        }
+    } else if arr, ok := item["targetUser"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TargetUser = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetUser = types.StringNull()
+        }
+    } else if val, ok := item["targetUser"].(string); ok {
+        data.TargetUser = types.StringValue(val)
+    } else {
+        data.TargetUser = types.StringNull()
+    }
+    if obj, ok := item["targetHost"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TargetHost = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TargetHost = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TargetHost = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TargetHost = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetHost = types.StringNull()
+        }
+    } else if arr, ok := item["targetHost"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TargetHost = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetHost = types.StringNull()
+        }
+    } else if val, ok := item["targetHost"].(string); ok {
+        data.TargetHost = types.StringValue(val)
+    } else {
+        data.TargetHost = types.StringNull()
+    }
+    if obj, ok := item["targetIp"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TargetIp = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TargetIp = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TargetIp = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TargetIp = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetIp = types.StringNull()
+        }
+    } else if arr, ok := item["targetIp"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TargetIp = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetIp = types.StringNull()
+        }
+    } else if val, ok := item["targetIp"].(string); ok {
+        data.TargetIp = types.StringValue(val)
+    } else {
+        data.TargetIp = types.StringNull()
+    }
+    data.TargetPort = NumberFromAPI(data.TargetPort, item["targetPort"])
+    if obj, ok := item["targetResource"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TargetResource = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TargetResource = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TargetResource = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TargetResource = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetResource = types.StringNull()
+        }
+    } else if arr, ok := item["targetResource"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TargetResource = types.StringValue(string(jsonBytes))
+        } else {
+            data.TargetResource = types.StringNull()
+        }
+    } else if val, ok := item["targetResource"].(string); ok {
+        data.TargetResource = types.StringValue(val)
+    } else {
+        data.TargetResource = types.StringNull()
+    }
+    if val, ok := item["observables"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.Observables = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.Observables = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["traceId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TraceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TraceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TraceId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TraceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TraceId = types.StringNull()
+        }
+    } else if arr, ok := item["traceId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TraceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TraceId = types.StringNull()
+        }
+    } else if val, ok := item["traceId"].(string); ok {
+        data.TraceId = types.StringValue(val)
+    } else {
+        data.TraceId = types.StringNull()
+    }
+    if obj, ok := item["spanId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SpanId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SpanId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SpanId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SpanId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SpanId = types.StringNull()
+        }
+    } else if arr, ok := item["spanId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SpanId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SpanId = types.StringNull()
+        }
+    } else if val, ok := item["spanId"].(string); ok {
+        data.SpanId = types.StringValue(val)
+    } else {
+        data.SpanId = types.StringNull()
+    }
+    if obj, ok := item["sessionId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SessionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SessionId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SessionId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SessionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionId = types.StringNull()
+        }
+    } else if arr, ok := item["sessionId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SessionId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SessionId = types.StringNull()
+        }
+    } else if val, ok := item["sessionId"].(string); ok {
+        data.SessionId = types.StringValue(val)
+    } else {
+        data.SessionId = types.StringNull()
+    }
+    if obj, ok := item["requestOutcome"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RequestOutcome = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RequestOutcome = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RequestOutcome = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RequestOutcome = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequestOutcome = types.StringNull()
+        }
+    } else if arr, ok := item["requestOutcome"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.RequestOutcome = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequestOutcome = types.StringNull()
+        }
+    } else if val, ok := item["requestOutcome"].(string); ok {
+        data.RequestOutcome = types.StringValue(val)
+    } else {
+        data.RequestOutcome = types.StringNull()
+    }
+    if obj, ok := item["attributes"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Attributes = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Attributes = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Attributes = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Attributes = types.StringValue(string(jsonBytes))
+        } else {
+            data.Attributes = types.StringNull()
+        }
+    } else if arr, ok := item["attributes"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Attributes = types.StringValue(string(jsonBytes))
+        } else {
+            data.Attributes = types.StringNull()
+        }
+    } else if val, ok := item["attributes"].(string); ok {
+        data.Attributes = types.StringValue(val)
+    } else {
+        data.Attributes = types.StringNull()
+    }
+    if val, ok := item["attributeKeys"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.AttributeKeys = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.AttributeKeys = types.SetNull(types.StringType)
+    }
+
+    // Write logs using the tflog package
+    tflog.Trace(ctx, "read a data source")
+
+    // Save data into Terraform state
+    resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}

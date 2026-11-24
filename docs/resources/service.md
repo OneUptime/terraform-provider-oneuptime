@@ -28,7 +28,7 @@ resource "oneuptime_service" "example" {
 
 - `description` (String) Friendly description that will help you remember.
 - `is_archived` (Boolean) Is this service archived? Archived services are hidden from lists but keep collecting telemetry. Defaults to `false`.
-- `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `labels` (Set of String) Labels to group and filter by. OneUptime adds to it too, on its own: the entries listed here are added and taken off, and every other entry stays. Left out, it keeps the entries OneUptime gives it. IDs of `oneuptime_label` resources.
 - `metric_cardinality_budget` (Number) Max number of distinct metric series this service may emit per metric. When exceeded, the highest-cardinality attribute is auto-bucketed. Null inherits the project default.
 - `metric_downsampling_retention_days` (String) Per-tier retention override (raw, 1m, 5m, 1h, 1d) in days. Null fields inherit the project default. A JSON value: write it with `jsonencode()`.
 - `retain_telemetry_data_for_days` (Number) Number of days to retain telemetry data for this service. Leave blank to use the project-wide default.

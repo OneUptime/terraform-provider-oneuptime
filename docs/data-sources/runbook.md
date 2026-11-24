@@ -48,5 +48,5 @@ data "oneuptime_runbook" "by_id" {
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `schedule_next_run_at` (String) When the runbook's schedule starts its next run. Worked out by OneUptime; empty while the schedule is off.
 - `schedule_queued_run_at` (String) The scheduled time a run is waiting for the current run to end for, when "If a Run Is Still Going" is "RunAfter". Set and cleared by OneUptime.
-- `steps` (String) Ordered list of steps to run for this runbook. Each step is one of Manual, JavaScript, HTTP request, Bash or AI. A JSON value: read it with `jsondecode()`.
+- `steps` (String) Ordered list of steps to run for this runbook: Manual, JavaScript, HTTP request, Bash, SSH, kubectl or AI steps, each with its settings in its config. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

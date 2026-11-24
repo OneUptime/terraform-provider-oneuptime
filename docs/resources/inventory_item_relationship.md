@@ -29,19 +29,16 @@ resource "oneuptime_inventory_item_relationship" "example" {
 - `source` (String) Whether this edge was derived from telemetry or drawn manually by a user. Determines whether stale-edge pruning applies. Allowed values: `discovered`, `inventory`, `manual`.
 - `to_entity_key` (String) Stable identity key of the target entity of this edge.
 
-### Optional
+### Read-Only
 
 - `avg_duration_ms` (Number) Average call duration in milliseconds over this edge in the most recent computation window (depends-on edges only).
 - `call_count` (Number) Calls observed over this edge in the most recent computation window (depends-on edges only).
-- `error_count` (Number) Errored calls observed over this edge in the most recent computation window (depends-on edges only).
-- `first_seen_at` (String) When this relationship was first observed in telemetry.
-- `last_seen_at` (String) Most recent time this relationship was observed (bumped, throttled). Drives staleness pruning.
-
-### Read-Only
-
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
+- `error_count` (Number) Errored calls observed over this edge in the most recent computation window (depends-on edges only).
+- `first_seen_at` (String) When this relationship was first observed in telemetry.
 - `id` (String) Unique identifier for the resource.
+- `last_seen_at` (String) Most recent time this relationship was observed (bumped, throttled). Drives staleness pruning.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.
 

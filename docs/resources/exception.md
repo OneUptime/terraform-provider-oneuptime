@@ -28,21 +28,20 @@ resource "oneuptime_exception" "example" {
 - `assign_to_team_id` (String) Team ID who this exception is assigned to. The ID of a `oneuptime_team`.
 - `assign_to_user_email` (String) The email address of the person in `assign_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
 - `assign_to_user_id` (String) User ID who this exception is assigned to. The ID of a `oneuptime_user` (see the data source). Or name them by email address, in `assign_to_user_email`.
-- `environment` (String) Deployment environment from deployment.environment resource attribute.
-- `exception_type` (String) Type of the exception that was thrown by the telemetry service.
+- `environment` (String) Deployment environment from deployment.environment resource attribute. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
+- `exception_type` (String) Type of the exception that was thrown by the telemetry service. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
 - `fingerprint` (String) Finger print of the exception that was thrown by the telemetry service.
-- `first_seen_at` (String) When the earliest occurrence of this exception happened.
-- `first_seen_in_release` (String) The service version / release in which this exception was first observed.
-- `is_archived` (Boolean) Is this exception archived? Defaults to `false`.
-- `is_resolved` (Boolean) Is this exception resolved? Defaults to `false`.
-- `last_seen_at` (String) When the latest occurrence of this exception happened.
-- `last_seen_in_release` (String) The most recent service version / release in which this exception was observed.
-- `message` (String) Exception message that was thrown by the telemetry service.
-- `occurance_count` (Number) Number of times this exception has occurred. Defaults to `1`.
+- `first_seen_at` (String) When the earliest occurrence of this exception happened. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
+- `first_seen_in_release` (String) The service version / release in which this exception was first observed. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
+- `is_archived` (Boolean) Is this exception archived? OneUptime changes it too, on its own: left out, it keeps the value OneUptime gives it. Defaults to `false`.
+- `is_resolved` (Boolean) Is this exception resolved? OneUptime changes it too, on its own: left out, it keeps the value OneUptime gives it. Defaults to `false`.
+- `last_seen_at` (String) When the latest occurrence of this exception happened. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
+- `last_seen_in_release` (String) The most recent service version / release in which this exception was observed. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
+- `message` (String) Exception message that was thrown by the telemetry service. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
+- `occurance_count` (Number) Number of times this exception has occurred. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent. Defaults to `1`.
 - `primary_entity_type` (String) Resource type that produced this exception (e.g. OpenTelemetry service, Host, DockerHost, KubernetesCluster, or Unknown for unattributed telemetry). Allowed values: `OpenTelemetry`, `Monitor`, `NetworkDevice`, `Alert`, `Incident`, `ScheduledMaintenance`, `ServiceLevelObjective`, `Host`, `DockerHost`, `PodmanHost`, `KubernetesCluster`, `ProxmoxCluster`, `OpenStackCloud`, `CephCluster`, `StorageArray`, `DockerSwarmCluster`, `VMwareVCenter`, `IoTDevice`, `ServerlessFunction`, `CloudResource`, `RealUserMonitor`, `DatabaseServer`, `DataStore`, `DataPipeline`, `DataProduct`, `DataReconciliation`, `DataBiConnection`, `DeviceManagementConnection`, `Unknown`.
-- `regressed_at` (String) When this exception last came back after it was resolved. Empty when it has not come back since someone last resolved or reopened it.
-- `resolved_in_release_after` (String) Set when the exception was resolved in the next release: the release it was resolved after. Occurrences from this release do not reopen the exception; an occurrence from any other release does.
-- `stack_trace` (String) Stack trace of the exception that was thrown by the telemetry service.
+- `resolved_in_release_after` (String) Set when the exception was resolved in the next release: the release it was resolved after. Occurrences from this release do not reopen the exception; an occurrence from any other release does. OneUptime changes it too, on its own: left out, it keeps the value OneUptime gives it.
+- `stack_trace` (String) Stack trace of the exception that was thrown by the telemetry service. OneUptime keeps it up to date once the record exists: the value given here is the one the record starts with, and a later change of it is never sent.
 
 ### Read-Only
 
@@ -63,6 +62,7 @@ resource "oneuptime_exception" "example" {
 - `merged_by_user_id` (String) ID of the user who merged this exception into another. The ID of a `oneuptime_user` (see the data source).
 - `merged_into_telemetry_exception_id` (String) ID of the exception this one was merged into as the same bug. Empty for an exception that was not merged. The ID of a `oneuptime_exception`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `regressed_at` (String) When this exception last came back after it was resolved. Empty when it has not come back since someone last resolved or reopened it.
 - `unhandled` (Boolean) True when at least one occurrence of this exception escaped its span scope (was unhandled, per OTel exception.escaped).
 - `updated_at` (String) Date and Time when the object was updated.
 

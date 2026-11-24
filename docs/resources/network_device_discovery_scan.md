@@ -51,7 +51,7 @@ resource "oneuptime_network_device_discovery_scan" "example" {
 - `completed_at` (String) When the scanning probe completed (or failed) this scan. Managed by the scanning probe.
 - `created_at` (String) Date and Time when the object was created.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
-- `discovered_devices` (String) Devices found by this scan: array of {ipAddress, sysName, sysDescr, isAlreadyRegistered}. Managed by the scanning probe. A JSON value: read it with `jsondecode()`.
+- `discovered_devices` (String) Devices found by this scan: array of {ipAddress, sysName, sysDescr, ...}, as the scanning probe reported them. On a read, each host also carries isAlreadyRegistered, registeredDeviceId and sharedAddress, worked out from the project's devices at that moment and never stored. A JSON value: read it with `jsondecode()`.
 - `id` (String) Unique identifier for the resource.
 - `next_scan_at` (String) When a recurring scan is next due to run. Managed by the server.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

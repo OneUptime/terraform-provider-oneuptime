@@ -1,0 +1,2420 @@
+package shard02
+
+import (
+    . "github.com/oneuptime/terraform-provider-oneuptime/internal/provider"
+    "context"
+    "fmt"
+    "github.com/hashicorp/terraform-plugin-framework/resource"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+    "github.com/hashicorp/terraform-plugin-framework/types"
+    "github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+    "github.com/hashicorp/terraform-plugin-log/tflog"
+    "math/big"
+    "net/http"
+    "github.com/hashicorp/terraform-plugin-framework/path"
+    "encoding/json"
+    "net/url"
+    "strings"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+    "github.com/hashicorp/terraform-plugin-framework/attr"
+    "sort"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+)
+
+// Ensure provider defined types fully satisfy framework interfaces.
+var _ resource.Resource = &RunbookResource{}
+var _ resource.ResourceWithImportState = &RunbookResource{}
+var _ resource.ResourceWithModifyPlan = &RunbookResource{}
+
+func NewRunbookResource() resource.Resource {
+    return &RunbookResource{}
+}
+
+// RunbookResource defines the resource implementation.
+type RunbookResource struct {
+    client *Client
+}
+
+// RunbookResourceModel describes the resource data model.
+type RunbookResourceModel struct {
+    Id types.String `tfsdk:"id"`
+    ProjectId types.String `tfsdk:"project_id"`
+    Name types.String `tfsdk:"name"`
+    Description types.String `tfsdk:"description"`
+    IsEnabled types.Bool `tfsdk:"is_enabled"`
+    Steps JSONSubsetValue `tfsdk:"steps"`
+    Labels types.Set `tfsdk:"labels"`
+    IsScheduleEnabled types.Bool `tfsdk:"is_schedule_enabled"`
+    ScheduleCron types.String `tfsdk:"schedule_cron"`
+    ScheduleTimezone types.String `tfsdk:"schedule_timezone"`
+    ScheduleOverlapPolicy types.String `tfsdk:"schedule_overlap_policy"`
+    ScheduleMissedRunPolicy types.String `tfsdk:"schedule_missed_run_policy"`
+    IsWebhookEnabled types.Bool `tfsdk:"is_webhook_enabled"`
+    CreatedAt RFC3339Value `tfsdk:"created_at"`
+    UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    Slug types.String `tfsdk:"slug"`
+    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    ScheduleNextRunAt RFC3339Value `tfsdk:"schedule_next_run_at"`
+    ScheduleQueuedRunAt RFC3339Value `tfsdk:"schedule_queued_run_at"`
+}
+
+func (r *RunbookResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_runbook"
+}
+
+func (r *RunbookResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+    resp.Schema = r.schemaDefinition()
+}
+
+func (r *RunbookResource) schemaDefinition() schema.Schema {
+    return schema.Schema{
+        MarkdownDescription: "Reusable response procedures (manual checklists or scripts) that can be attached to incidents, alerts, or scheduled maintenance.",
+
+        Attributes: map[string]schema.Attribute{
+            "id": schema.StringAttribute{
+                MarkdownDescription: "Unique identifier for the resource.",
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "project_id": schema.StringAttribute{
+                MarkdownDescription: "ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.",
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Any friendly name of this object.",
+                Required: true,
+            },
+            "description": schema.StringAttribute{
+                MarkdownDescription: "Friendly description that will help you remember.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "is_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Is this runbook enabled?",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "steps": schema.StringAttribute{
+                MarkdownDescription: "Ordered list of steps to run for this runbook: Manual, JavaScript, HTTP request, Bash, SSH, kubectl or AI steps, each with its settings in its config. A JSON value: write it with `jsonencode()`.",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    JSONSubsetKeepImported(),
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
+            "labels": schema.SetAttribute{
+                MarkdownDescription: "Labels to group and filter by. OneUptime adds to it too, on its own: the entries listed here are added and taken off, and every other entry stays. Left out, it keeps the entries OneUptime gives it. IDs of `oneuptime_label` resources.",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+                Validators: RecordIDSetValidators("oneuptime_label"),
+            },
+            "is_schedule_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether the runbook runs on its schedule (Schedule Cron, read in Schedule Time Zone). Turning it on takes permission to run the runbook as well as to edit it.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "schedule_cron": schema.StringAttribute{
+                MarkdownDescription: "When the runbook runs on its schedule: a five-field cron expression (minute, hour, day of month, month, day of week), read on the wall clock of Schedule Time Zone. Runbooks run at most once a minute.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "schedule_timezone": schema.StringAttribute{
+                MarkdownDescription: "The IANA time zone the schedule is read in, such as Europe/London or America/New_York. A 09:00 schedule runs at 09:00 there all year, also after the clocks change for daylight saving time. Left out, it is UTC.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "schedule_overlap_policy": schema.StringAttribute{
+                MarkdownDescription: "What a scheduled time does while a run of the runbook is still queued, running or waiting for someone: \"Skip\" (the default) starts nothing for that time, \"RunAfter\" starts one run as soon as the current run ends.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("Skip", "RunAfter"),
+                },
+            },
+            "schedule_missed_run_policy": schema.StringAttribute{
+                MarkdownDescription: "What happens to scheduled times OneUptime could not start a run at, because it was down: \"RunOnce\" (the default) starts one run when it is back, \"Skip\" starts none.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    stringvalidator.OneOf("RunOnce", "Skip"),
+                },
+            },
+            "is_webhook_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether a POST request to the runbook's webhook URL starts a run. The URL holds a secret key OneUptime generates when this is first turned on, shown on the runbook's Triggers page to people who may edit and run the runbook. Turning it on takes permission to run the runbook as well as to edit it.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "created_at": schema.StringAttribute{
+                MarkdownDescription: "Date and Time when the object was created.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "updated_at": schema.StringAttribute{
+                MarkdownDescription: "Date and Time when the object was updated.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "slug": schema.StringAttribute{
+                MarkdownDescription: "Friendly globally unique name for your object.",
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).",
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "schedule_next_run_at": schema.StringAttribute{
+                MarkdownDescription: "When the runbook's schedule starts its next run. Worked out by OneUptime; empty while the schedule is off.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "schedule_queued_run_at": schema.StringAttribute{
+                MarkdownDescription: "The scheduled time a run is waiting for the current run to end for, when \"If a Run Is Still Going\" is \"RunAfter\". Set and cleared by OneUptime.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+        },
+    }
+}
+
+// ModifyPlan keeps the state when nothing a configuration sets changes (see
+// importsettle.go).
+func (r *RunbookResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+    // Destroying: nothing to plan.
+    if req.Plan.Raw.IsNull() {
+        return
+    }
+
+    // Under Crossplane, what a manifest leaves out is the record's (see crossplane.go).
+    KeepLeftOutUnderCrossplane(ctx, req, resp)
+
+    // What people and OneUptime both change: OneUptime's change is never one
+    // to undo (see shared.go).
+    PlanShared(ctx, req, resp, r.client, []SharedAttribute{
+        {Name: "labels", Entries: true},
+    })
+
+    KeepStateWhenNothingChanges(ctx, req, resp)
+}
+
+func (r *RunbookResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+    // Prevent panic if the provider has not been configured.
+    if req.ProviderData == nil {
+        return
+    }
+
+    client, ok := req.ProviderData.(*Client)
+
+    if !ok {
+        resp.Diagnostics.AddError(
+            "Unexpected Resource Configure Type",
+            fmt.Sprintf("Expected *Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+        )
+
+        return
+    }
+
+    r.client = client
+}
+
+
+func (r *RunbookResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+    var data RunbookResourceModel
+
+    // Read Terraform plan data into the model
+    resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config RunbookResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
+
+
+    // Create API request body. Unset (null/unknown) optional fields are
+    // omitted so server-side defaults apply instead of being overwritten
+    // with zero values.
+    runbookRequest := map[string]interface{}{
+        "data": map[string]interface{}{},
+    }
+    requestDataMap := runbookRequest["data"].(map[string]interface{})
+
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        requestDataMap["name"] = data.Name.ValueString()
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        requestDataMap["description"] = data.Description.ValueString()
+    }
+    if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
+        requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
+    }
+    if parsedSteps := r.parseJSONField(data.Steps); parsedSteps != nil {
+        requestDataMap["steps"] = parsedSteps
+    }
+    if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+        requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
+    }
+    if !data.IsScheduleEnabled.IsNull() && !data.IsScheduleEnabled.IsUnknown() {
+        requestDataMap["isScheduleEnabled"] = data.IsScheduleEnabled.ValueBool()
+    }
+    if !data.ScheduleCron.IsNull() && !data.ScheduleCron.IsUnknown() {
+        requestDataMap["scheduleCron"] = data.ScheduleCron.ValueString()
+    }
+    if !data.ScheduleTimezone.IsNull() && !data.ScheduleTimezone.IsUnknown() {
+        requestDataMap["scheduleTimezone"] = data.ScheduleTimezone.ValueString()
+    }
+    if !data.ScheduleOverlapPolicy.IsNull() && !data.ScheduleOverlapPolicy.IsUnknown() {
+        requestDataMap["scheduleOverlapPolicy"] = data.ScheduleOverlapPolicy.ValueString()
+    }
+    if !data.ScheduleMissedRunPolicy.IsNull() && !data.ScheduleMissedRunPolicy.IsUnknown() {
+        requestDataMap["scheduleMissedRunPolicy"] = data.ScheduleMissedRunPolicy.ValueString()
+    }
+    if !data.IsWebhookEnabled.IsNull() && !data.IsWebhookEnabled.IsUnknown() {
+        requestDataMap["isWebhookEnabled"] = data.IsWebhookEnabled.ValueBool()
+    }
+
+    // Make API call
+    httpResp, err := r.client.Post(ctx, "/runbook", runbookRequest)
+    if err != nil {
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create runbook, got error: %s", err))
+        return
+    }
+
+    var runbookResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &runbookResponse)
+    if err != nil {
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create runbook: %s", err))
+        return
+    }
+
+    // What OneUptime left out because only it writes it, if anything (see entries.go).
+    resp.Diagnostics.Append(FieldsLeftOutWarning(httpResp, "runbook")...)
+
+    // Extract the new resource id from the create response.
+    createdId := ""
+    if wrapper, ok := runbookResponse["data"].(map[string]interface{}); ok {
+        if val, ok := wrapper["_id"].(string); ok {
+            createdId = val
+        }
+    } else if val, ok := runbookResponse["_id"].(string); ok {
+        createdId = val
+    }
+    if createdId == "" {
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for runbook did not contain an id. This is a bug in the provider or the API; please report it.")
+        return
+    }
+    data.Id = types.StringValue(createdId)
+
+
+    /*
+     * The server has committed the row. Persist what we know to state BEFORE
+     * the read-back: if the read-back fails and we return without setting
+     * state, Terraform never learns the resource exists and the created
+     * runbook is orphaned server-side — never refreshed, never
+     * destroyed. Delete already refuses to drop state on failure for the
+     * same reason; Create must not either.
+     */
+    resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    // Re-read the resource so state reflects server-normalized values.
+    selectParam := map[string]interface{}{
+        "projectId": true,
+        "name": true,
+        "description": true,
+        "isEnabled": true,
+        "steps": true,
+        "labels": true,
+        "isScheduleEnabled": true,
+        "scheduleCron": true,
+        "scheduleTimezone": true,
+        "scheduleOverlapPolicy": true,
+        "scheduleMissedRunPolicy": true,
+        "isWebhookEnabled": true,
+        "createdAt": true,
+        "updatedAt": true,
+        "slug": true,
+        "createdByUserId": true,
+        "scheduleNextRunAt": true,
+        "scheduleQueuedRunAt": true,
+        "_id": true,
+    }
+
+    readResp, err := r.client.PostWithSelect(ctx, "/runbook/" + data.Id.ValueString() + "/get-item", selectParam)
+    if err != nil {
+        /*
+         * State already owns the id, so the resource is tracked and the next
+         * refresh reconciles the remaining attributes. Warn rather than
+         * error: erroring here would strand a real resource.
+         */
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created runbook but could not read it back; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    var readResponse map[string]interface{}
+    err = r.client.ParseResponse(readResp, &readResponse)
+    if err != nil {
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created runbook but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    // Update the model with the authoritative read response
+    // Extract data from response wrapper
+    var dataMap map[string]interface{}
+    if wrapper, ok := readResponse["data"].(map[string]interface{}); ok {
+        // Response is wrapped in a data field
+        dataMap = wrapper
+    } else {
+        // Response is the direct object
+        dataMap = readResponse
+    }
+
+    if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok {
+            data.ProjectId = types.StringValue(val)
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if val, ok := dataMap["projectId"].(string); ok {
+        data.ProjectId = types.StringValue(val)
+    } else {
+        data.ProjectId = types.StringNull()
+    }
+    if obj, ok := dataMap["name"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Name = types.StringValue(string(jsonBytes))
+            } else {
+                data.Name = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Name = types.StringValue(string(jsonBytes))
+            } else {
+                data.Name = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := dataMap["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
+    }
+    if obj, ok := dataMap["description"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Description = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Description = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Description = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Description = types.StringValue(string(jsonBytes))
+            } else {
+                data.Description = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Description = types.StringValue(string(jsonBytes))
+            } else {
+                data.Description = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if val, ok := dataMap["description"].(string); ok {
+        data.Description = types.StringValue(val)
+    } else {
+        data.Description = types.StringNull()
+    }
+    if val, ok := dataMap["isEnabled"].(bool); ok {
+        data.IsEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["steps"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Steps = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Steps = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Steps = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Steps = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Steps = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Steps = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Steps = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Steps = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Steps = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["steps"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Steps = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Steps = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["steps"].(string); ok {
+        data.Steps = NewJSONSubsetValue(val)
+    } else {
+        data.Steps = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["labels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.Labels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["isScheduleEnabled"].(bool); ok {
+        data.IsScheduleEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["scheduleCron"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleCron = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleCron = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleCron = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleCron = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleCron = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleCron = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduleCron"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScheduleCron = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleCron = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleCron"].(string); ok {
+        data.ScheduleCron = types.StringValue(val)
+    } else {
+        data.ScheduleCron = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleTimezone"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleTimezone = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduleTimezone"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleTimezone = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleTimezone"].(string); ok {
+        data.ScheduleTimezone = types.StringValue(val)
+    } else {
+        data.ScheduleTimezone = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleOverlapPolicy"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleOverlapPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleOverlapPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleOverlapPolicy = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduleOverlapPolicy"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleOverlapPolicy = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleOverlapPolicy"].(string); ok {
+        data.ScheduleOverlapPolicy = types.StringValue(val)
+    } else {
+        data.ScheduleOverlapPolicy = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleMissedRunPolicy"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleMissedRunPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleMissedRunPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleMissedRunPolicy = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduleMissedRunPolicy"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleMissedRunPolicy = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleMissedRunPolicy"].(string); ok {
+        data.ScheduleMissedRunPolicy = types.StringValue(val)
+    } else {
+        data.ScheduleMissedRunPolicy = types.StringNull()
+    }
+    if val, ok := dataMap["isWebhookEnabled"].(bool); ok {
+        data.IsWebhookEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
+        } else {
+            data.CreatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
+        data.CreatedAt = NewRFC3339Value(val)
+    } else {
+        data.CreatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.UpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
+        data.UpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Slug = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Slug = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Slug = types.StringValue(string(jsonBytes))
+            } else {
+                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Slug = types.StringValue(string(jsonBytes))
+            } else {
+                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
+    } else if val, ok := dataMap["slug"].(string); ok {
+        data.Slug = types.StringValue(val)
+    } else {
+        data.Slug = types.StringNull()
+    }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleNextRunAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ScheduleNextRunAt = NewRFC3339Value(val)
+        } else {
+            data.ScheduleNextRunAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["scheduleNextRunAt"].(string); ok && val != "" {
+        data.ScheduleNextRunAt = NewRFC3339Value(val)
+    } else {
+        data.ScheduleNextRunAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["scheduleQueuedRunAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ScheduleQueuedRunAt = NewRFC3339Value(val)
+        } else {
+            data.ScheduleQueuedRunAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["scheduleQueuedRunAt"].(string); ok && val != "" {
+        data.ScheduleQueuedRunAt = NewRFC3339Value(val)
+    } else {
+        data.ScheduleQueuedRunAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["_id"].(string); ok {
+        data.Id = types.StringValue(val)
+    } else {
+        data.Id = types.StringNull()
+    }
+    // The read response is authoritative, but never let it clobber the id we just received.
+    data.Id = types.StringValue(createdId)
+
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
+    // A list OneUptime adds to as well holds the entries the configuration declares (see entries.go).
+    resp.Diagnostics.Append(r.heldEntriesAfterWrite(ctx, nil, &data, &plan, &config, true).Write(ctx, resp.Private)...)
+
+    // Write logs using the tflog package
+    tflog.Trace(ctx, "created a resource")
+
+
+    // Nothing a create made was imported (see importsettle.go).
+    resp.Diagnostics.Append(ForgetImportedFromServer(ctx, resp.Private)...)
+    // Save data into Terraform state
+    resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *RunbookResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+    var data RunbookResourceModel
+
+    // Read Terraform prior state data into the model
+    resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    // The state before the read: the entries the configuration declared (see entries.go).
+    prior := data
+
+    // Create select parameter to get full object
+    selectParam := map[string]interface{}{
+        "projectId": true,
+        "name": true,
+        "description": true,
+        "isEnabled": true,
+        "steps": true,
+        "labels": true,
+        "isScheduleEnabled": true,
+        "scheduleCron": true,
+        "scheduleTimezone": true,
+        "scheduleOverlapPolicy": true,
+        "scheduleMissedRunPolicy": true,
+        "isWebhookEnabled": true,
+        "createdAt": true,
+        "updatedAt": true,
+        "slug": true,
+        "createdByUserId": true,
+        "scheduleNextRunAt": true,
+        "scheduleQueuedRunAt": true,
+        "_id": true,
+    }
+
+    // Make API call with select parameter
+    httpResp, err := r.client.PostWithSelect(ctx, "/runbook/" + data.Id.ValueString() + "/get-item", selectParam)
+    if err != nil {
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read runbook, got error: %s", err))
+        return
+    }
+
+    if httpResp.StatusCode == http.StatusNotFound {
+        resp.State.RemoveResource(ctx)
+        return
+    }
+
+    var runbookResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &runbookResponse)
+    if err != nil {
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse runbook response, got error: %s", err))
+        return
+    }
+
+    // Update the model with response data
+    // Extract data from response wrapper
+    var dataMap map[string]interface{}
+    if wrapper, ok := runbookResponse["data"].(map[string]interface{}); ok {
+        // Response is wrapped in a data field
+        dataMap = wrapper
+    } else {
+        // Response is the direct object
+        dataMap = runbookResponse
+    }
+
+    if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok {
+            data.ProjectId = types.StringValue(val)
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if val, ok := dataMap["projectId"].(string); ok {
+        data.ProjectId = types.StringValue(val)
+    } else {
+        data.ProjectId = types.StringNull()
+    }
+    if obj, ok := dataMap["name"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Name = types.StringValue(string(jsonBytes))
+            } else {
+                data.Name = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Name = types.StringValue(string(jsonBytes))
+            } else {
+                data.Name = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := dataMap["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
+    }
+    if obj, ok := dataMap["description"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Description = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Description = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Description = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Description = types.StringValue(string(jsonBytes))
+            } else {
+                data.Description = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Description = types.StringValue(string(jsonBytes))
+            } else {
+                data.Description = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if val, ok := dataMap["description"].(string); ok {
+        data.Description = types.StringValue(val)
+    } else {
+        data.Description = types.StringNull()
+    }
+    if val, ok := dataMap["isEnabled"].(bool); ok {
+        data.IsEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["steps"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Steps = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Steps = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Steps = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Steps = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Steps = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Steps = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Steps = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Steps = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Steps = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["steps"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Steps = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Steps = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["steps"].(string); ok {
+        data.Steps = NewJSONSubsetValue(val)
+    } else {
+        data.Steps = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["labels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.Labels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["isScheduleEnabled"].(bool); ok {
+        data.IsScheduleEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["scheduleCron"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleCron = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleCron = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleCron = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleCron = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleCron = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleCron = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduleCron"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScheduleCron = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleCron = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleCron"].(string); ok {
+        data.ScheduleCron = types.StringValue(val)
+    } else {
+        data.ScheduleCron = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleTimezone"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleTimezone = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduleTimezone"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleTimezone = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleTimezone"].(string); ok {
+        data.ScheduleTimezone = types.StringValue(val)
+    } else {
+        data.ScheduleTimezone = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleOverlapPolicy"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleOverlapPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleOverlapPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleOverlapPolicy = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduleOverlapPolicy"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleOverlapPolicy = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleOverlapPolicy"].(string); ok {
+        data.ScheduleOverlapPolicy = types.StringValue(val)
+    } else {
+        data.ScheduleOverlapPolicy = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleMissedRunPolicy"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleMissedRunPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleMissedRunPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleMissedRunPolicy = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduleMissedRunPolicy"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleMissedRunPolicy = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleMissedRunPolicy"].(string); ok {
+        data.ScheduleMissedRunPolicy = types.StringValue(val)
+    } else {
+        data.ScheduleMissedRunPolicy = types.StringNull()
+    }
+    if val, ok := dataMap["isWebhookEnabled"].(bool); ok {
+        data.IsWebhookEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
+        } else {
+            data.CreatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
+        data.CreatedAt = NewRFC3339Value(val)
+    } else {
+        data.CreatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.UpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
+        data.UpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Slug = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Slug = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Slug = types.StringValue(string(jsonBytes))
+            } else {
+                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Slug = types.StringValue(string(jsonBytes))
+            } else {
+                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
+    } else if val, ok := dataMap["slug"].(string); ok {
+        data.Slug = types.StringValue(val)
+    } else {
+        data.Slug = types.StringNull()
+    }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleNextRunAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ScheduleNextRunAt = NewRFC3339Value(val)
+        } else {
+            data.ScheduleNextRunAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["scheduleNextRunAt"].(string); ok && val != "" {
+        data.ScheduleNextRunAt = NewRFC3339Value(val)
+    } else {
+        data.ScheduleNextRunAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["scheduleQueuedRunAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ScheduleQueuedRunAt = NewRFC3339Value(val)
+        } else {
+            data.ScheduleQueuedRunAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["scheduleQueuedRunAt"].(string); ok && val != "" {
+        data.ScheduleQueuedRunAt = NewRFC3339Value(val)
+    } else {
+        data.ScheduleQueuedRunAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["_id"].(string); ok {
+        data.Id = types.StringValue(val)
+    } else {
+        data.Id = types.StringNull()
+    }
+
+    // A list OneUptime adds to as well holds the entries the configuration declares (see entries.go).
+    r.heldEntriesAfterRead(ctx, req.Private, &data, &prior)
+
+    // Save updated data into Terraform state
+    resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *RunbookResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+    var data RunbookResourceModel
+    var state RunbookResourceModel
+
+    // Read Terraform current state data to get the ID
+    resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    // Read Terraform plan data to get the new values
+    resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    // Use the ID from the current state
+    data.Id = state.Id
+
+    // The attributes this update writes from the configuration (see importsettle.go).
+    writtenFromConfig := map[string]bool{
+        "steps": !data.Steps.Equal(state.Steps),
+    }
+
+    // What the configuration sets, and what Terraform planned (see keepPlannedValues).
+    var config RunbookResourceModel
+    resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+    plan := data
+
+    // Create API request body
+    runbookRequest := map[string]interface{}{
+        "data": map[string]interface{}{},
+    }
+    requestDataMap := runbookRequest["data"].(map[string]interface{})
+    // The entries this update adds to a list OneUptime adds to as well, and takes off it (see entries.go).
+    listChanges := NewEntryChanges()
+
+    if !data.Name.IsUnknown() && !state.Name.IsUnknown() && !data.Name.Equal(state.Name) {
+        requestDataMap["name"] = data.Name.ValueString()
+    }
+    if !data.Description.IsUnknown() && !state.Description.IsUnknown() && !data.Description.Equal(state.Description) {
+        requestDataMap["description"] = data.Description.ValueString()
+    }
+    if !data.IsEnabled.IsUnknown() && !state.IsEnabled.IsUnknown() && !data.IsEnabled.Equal(state.IsEnabled) {
+        requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
+    }
+    if !data.Steps.IsUnknown() && !state.Steps.IsUnknown() && !data.Steps.Equal(state.Steps) {
+        var stepsData interface{}
+        if err := json.Unmarshal([]byte(data.Steps.ValueString()), &stepsData); err == nil {
+            requestDataMap["steps"] = stepsData
+        } else {
+            requestDataMap["steps"] = data.Steps.ValueString()
+        }
+    }
+    if !data.Labels.IsUnknown() && !state.Labels.IsUnknown() && !data.Labels.Equal(state.Labels) {
+        if r.client.ChangesEntriesOneByOne() {
+            listChanges.Diff("labels", "labels", data.Labels, state.Labels)
+        } else {
+            requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
+        }
+    }
+    if !data.IsScheduleEnabled.IsUnknown() && !state.IsScheduleEnabled.IsUnknown() && !data.IsScheduleEnabled.Equal(state.IsScheduleEnabled) {
+        requestDataMap["isScheduleEnabled"] = data.IsScheduleEnabled.ValueBool()
+    }
+    if !data.ScheduleCron.IsUnknown() && !state.ScheduleCron.IsUnknown() && !data.ScheduleCron.Equal(state.ScheduleCron) {
+        requestDataMap["scheduleCron"] = data.ScheduleCron.ValueString()
+    }
+    if !data.ScheduleTimezone.IsUnknown() && !state.ScheduleTimezone.IsUnknown() && !data.ScheduleTimezone.Equal(state.ScheduleTimezone) {
+        requestDataMap["scheduleTimezone"] = data.ScheduleTimezone.ValueString()
+    }
+    if !data.ScheduleOverlapPolicy.IsUnknown() && !state.ScheduleOverlapPolicy.IsUnknown() && !data.ScheduleOverlapPolicy.Equal(state.ScheduleOverlapPolicy) {
+        requestDataMap["scheduleOverlapPolicy"] = data.ScheduleOverlapPolicy.ValueString()
+    }
+    if !data.ScheduleMissedRunPolicy.IsUnknown() && !state.ScheduleMissedRunPolicy.IsUnknown() && !data.ScheduleMissedRunPolicy.Equal(state.ScheduleMissedRunPolicy) {
+        requestDataMap["scheduleMissedRunPolicy"] = data.ScheduleMissedRunPolicy.ValueString()
+    }
+    if !data.IsWebhookEnabled.IsUnknown() && !state.IsWebhookEnabled.IsUnknown() && !data.IsWebhookEnabled.Equal(state.IsWebhookEnabled) {
+        requestDataMap["isWebhookEnabled"] = data.IsWebhookEnabled.ValueBool()
+    }
+    listChanges.AddTo(runbookRequest)
+
+    // Only call the API when there are changed fields to send. An empty
+    // update body is rejected by the API; state is still refreshed below so
+    // this method never writes unverified plan values into state.
+    if len(runbookRequest["data"].(map[string]interface{})) > 0 || listChanges.Any() {
+        httpResp, err := r.client.Put(ctx, "/runbook/" + data.Id.ValueString() + "", runbookRequest)
+        if err != nil {
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update runbook, got error: %s", err))
+            return
+        }
+
+        // Parse the update response
+        var runbookResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &runbookResponse)
+        if err != nil {
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update runbook: %s", err))
+            return
+        }
+        _ = runbookResponse
+    }
+
+    // After successful update, fetch the current state by calling Read with select parameter
+    selectParam := map[string]interface{}{
+        "projectId": true,
+        "name": true,
+        "description": true,
+        "isEnabled": true,
+        "steps": true,
+        "labels": true,
+        "isScheduleEnabled": true,
+        "scheduleCron": true,
+        "scheduleTimezone": true,
+        "scheduleOverlapPolicy": true,
+        "scheduleMissedRunPolicy": true,
+        "isWebhookEnabled": true,
+        "createdAt": true,
+        "updatedAt": true,
+        "slug": true,
+        "createdByUserId": true,
+        "scheduleNextRunAt": true,
+        "scheduleQueuedRunAt": true,
+        "_id": true,
+    }
+
+    readResp, err := r.client.PostWithSelect(ctx, "/runbook/" + data.Id.ValueString() + "/get-item", selectParam)
+    if err != nil {
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read runbook after update, got error: %s", err))
+        return
+    }
+
+    var readResponse map[string]interface{}
+    err = r.client.ParseResponse(readResp, &readResponse)
+    if err != nil {
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read runbook after update: %s", err))
+        return
+    }
+
+    // Update the model with response data from the Read operation
+    // Extract data from response wrapper
+    var dataMap map[string]interface{}
+    if wrapper, ok := readResponse["data"].(map[string]interface{}); ok {
+        // Response is wrapped in a data field
+        dataMap = wrapper
+    } else {
+        // Response is the direct object
+        dataMap = readResponse
+    }
+
+    if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok {
+            data.ProjectId = types.StringValue(val)
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if val, ok := dataMap["projectId"].(string); ok {
+        data.ProjectId = types.StringValue(val)
+    } else {
+        data.ProjectId = types.StringNull()
+    }
+    if obj, ok := dataMap["name"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Name = types.StringValue(string(jsonBytes))
+            } else {
+                data.Name = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Name = types.StringValue(string(jsonBytes))
+            } else {
+                data.Name = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if arr, ok := dataMap["name"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := dataMap["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
+    }
+    if obj, ok := dataMap["description"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Description = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Description = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Description = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Description = types.StringValue(string(jsonBytes))
+            } else {
+                data.Description = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Description = types.StringValue(string(jsonBytes))
+            } else {
+                data.Description = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if arr, ok := dataMap["description"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if val, ok := dataMap["description"].(string); ok {
+        data.Description = types.StringValue(val)
+    } else {
+        data.Description = types.StringNull()
+    }
+    if val, ok := dataMap["isEnabled"].(bool); ok {
+        data.IsEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["steps"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Steps = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Steps = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Steps = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Steps = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Steps = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Steps = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Steps = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Steps = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Steps = NewJSONSubsetNull()
+        }
+    } else if arr, ok := dataMap["steps"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Steps = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Steps = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["steps"].(string); ok {
+        data.Steps = NewJSONSubsetValue(val)
+    } else {
+        data.Steps = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["labels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.Labels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["isScheduleEnabled"].(bool); ok {
+        data.IsScheduleEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["scheduleCron"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleCron = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleCron = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleCron = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleCron = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleCron = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleCron = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleCron = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduleCron"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScheduleCron = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleCron = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleCron"].(string); ok {
+        data.ScheduleCron = types.StringValue(val)
+    } else {
+        data.ScheduleCron = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleTimezone"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleTimezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleTimezone = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleTimezone = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduleTimezone"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScheduleTimezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleTimezone = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleTimezone"].(string); ok {
+        data.ScheduleTimezone = types.StringValue(val)
+    } else {
+        data.ScheduleTimezone = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleOverlapPolicy"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleOverlapPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleOverlapPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleOverlapPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleOverlapPolicy = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduleOverlapPolicy"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScheduleOverlapPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleOverlapPolicy = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleOverlapPolicy"].(string); ok {
+        data.ScheduleOverlapPolicy = types.StringValue(val)
+    } else {
+        data.ScheduleOverlapPolicy = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleMissedRunPolicy"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleMissedRunPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleMissedRunPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleMissedRunPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleMissedRunPolicy = types.StringNull()
+        }
+    } else if arr, ok := dataMap["scheduleMissedRunPolicy"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.ScheduleMissedRunPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleMissedRunPolicy = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleMissedRunPolicy"].(string); ok {
+        data.ScheduleMissedRunPolicy = types.StringValue(val)
+    } else {
+        data.ScheduleMissedRunPolicy = types.StringNull()
+    }
+    if val, ok := dataMap["isWebhookEnabled"].(bool); ok {
+        data.IsWebhookEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
+        } else {
+            data.CreatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
+        data.CreatedAt = NewRFC3339Value(val)
+    } else {
+        data.CreatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.UpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
+        data.UpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Slug = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Slug = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Slug = types.StringValue(string(jsonBytes))
+            } else {
+                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Slug = types.StringValue(string(jsonBytes))
+            } else {
+                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
+    } else if arr, ok := dataMap["slug"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
+    } else if val, ok := dataMap["slug"].(string); ok {
+        data.Slug = types.StringValue(val)
+    } else {
+        data.Slug = types.StringNull()
+    }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if arr, ok := dataMap["createdByUserId"].([]interface{}); ok {
+        // A JSON array column: the array, as JSON
+        if jsonBytes, err := json.Marshal(r.normalizeURLWrappers(arr)); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleNextRunAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ScheduleNextRunAt = NewRFC3339Value(val)
+        } else {
+            data.ScheduleNextRunAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["scheduleNextRunAt"].(string); ok && val != "" {
+        data.ScheduleNextRunAt = NewRFC3339Value(val)
+    } else {
+        data.ScheduleNextRunAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["scheduleQueuedRunAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ScheduleQueuedRunAt = NewRFC3339Value(val)
+        } else {
+            data.ScheduleQueuedRunAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["scheduleQueuedRunAt"].(string); ok && val != "" {
+        data.ScheduleQueuedRunAt = NewRFC3339Value(val)
+    } else {
+        data.ScheduleQueuedRunAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["_id"].(string); ok {
+        data.Id = types.StringValue(val)
+    } else {
+        data.Id = types.StringNull()
+    }
+    data.Id = state.Id
+
+    // Unconfigured attributes keep their planned value; see keepPlannedValues.
+    r.keepPlannedValues(&data, &plan, &config)
+
+    // What this update added to a list OneUptime adds to as well is there, and what it took off is gone (see entries.go).
+    resp.Diagnostics.Append(listChanges.Check("labels", data.Labels)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    // A list OneUptime adds to as well holds the entries the configuration declares (see entries.go).
+    resp.Diagnostics.Append(r.heldEntriesAfterWrite(ctx, req.Private, &data, &plan, &config, false).Write(ctx, resp.Private)...)
+
+    // What this update wrote is what the configuration says now (see importsettle.go).
+    resp.Diagnostics.Append(KeepImportedFromServer(ctx, resp.Private, writtenFromConfig)...)
+
+    // Save updated data into Terraform state
+    resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *RunbookResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+    var data RunbookResourceModel
+
+    // Read Terraform prior state data into the model
+    resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    // Make API call
+    httpResp, err := r.client.Delete(ctx, "/runbook/" + data.Id.ValueString() + "")
+    if err != nil {
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete runbook, got error: %s", err))
+        return
+    }
+
+    // A failed delete must keep the resource in state — silently dropping it
+    // orphans real infrastructure. 404 means it is already gone.
+    if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
+        err = r.client.ParseResponse(httpResp, nil)
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete runbook: %s", err))
+        return
+    }
+    if httpResp.Body != nil {
+        httpResp.Body.Close()
+    }
+}
+
+
+func (r *RunbookResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // These hold the record as OneUptime keeps it, keys it fills in itself
+    // included, until an update writes them (see importsettle.go).
+    resp.Diagnostics.Append(MarkImportedFromServer(ctx, resp.Private, []string{"steps"})...)
+
+    // An import adopts the record's entries of each list OneUptime adds to as well (see entries.go).
+    if r.client.HoldsDeclaredEntries() {
+        resp.Diagnostics.Append(DeclaredEntries{"labels": true}.Write(ctx, resp.Private)...)
+    }
+}
+
+
+// keepPlannedValues puts back, after a create or an update, the planned value
+// of each optional attribute the configuration leaves out. The server keeps
+// some of these up to date on its own (when it last checked a heartbeat, the
+// status a probe last reported...), so the value read back after the write can
+// already differ from the plan, and Terraform would fail the apply with
+// "Provider produced inconsistent result after apply". The next refresh reads
+// the server's value, which is never a diff for an attribute nobody configured.
+func (r *RunbookResource) keepPlannedValues(data *RunbookResourceModel, plan *RunbookResourceModel, config *RunbookResourceModel) {
+    if config.Description.IsNull() && !plan.Description.IsUnknown() {
+        data.Description = plan.Description
+    }
+    if config.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
+        data.IsEnabled = plan.IsEnabled
+    }
+    if config.Steps.IsNull() && !plan.Steps.IsUnknown() {
+        data.Steps = plan.Steps
+    }
+    if config.Labels.IsNull() && !plan.Labels.IsUnknown() {
+        data.Labels = plan.Labels
+    }
+    if config.IsScheduleEnabled.IsNull() && !plan.IsScheduleEnabled.IsUnknown() {
+        data.IsScheduleEnabled = plan.IsScheduleEnabled
+    }
+    if config.ScheduleCron.IsNull() && !plan.ScheduleCron.IsUnknown() {
+        data.ScheduleCron = plan.ScheduleCron
+    }
+    if config.ScheduleTimezone.IsNull() && !plan.ScheduleTimezone.IsUnknown() {
+        data.ScheduleTimezone = plan.ScheduleTimezone
+    }
+    if config.ScheduleOverlapPolicy.IsNull() && !plan.ScheduleOverlapPolicy.IsUnknown() {
+        data.ScheduleOverlapPolicy = plan.ScheduleOverlapPolicy
+    }
+    if config.ScheduleMissedRunPolicy.IsNull() && !plan.ScheduleMissedRunPolicy.IsUnknown() {
+        data.ScheduleMissedRunPolicy = plan.ScheduleMissedRunPolicy
+    }
+    if config.IsWebhookEnabled.IsNull() && !plan.IsWebhookEnabled.IsUnknown() {
+        data.IsWebhookEnabled = plan.IsWebhookEnabled
+    }
+}
+
+// heldEntriesAfterRead holds each list OneUptime adds to as well (labels) to
+// the entries the configuration declares that the record still has, after
+// a read (see entries.go).
+func (r *RunbookResource) heldEntriesAfterRead(ctx context.Context, private PrivateState, data *RunbookResourceModel, prior *RunbookResourceModel) {
+    declared := ReadDeclaredEntries(ctx, private)
+    data.Labels = SetEntriesAfterRead(r.client, declared, "labels", prior.Labels, data.Labels)
+}
+
+// heldEntriesAfterWrite is the state of each such list after a create or an
+// update, and which of them the configuration declares from then on (see
+// entries.go): the caller keeps them in the private state.
+func (r *RunbookResource) heldEntriesAfterWrite(ctx context.Context, before PrivateState, data *RunbookResourceModel, plan *RunbookResourceModel, config *RunbookResourceModel, isCreate bool) DeclaredEntries {
+    declared := DeclaredEntries{}
+    if !isCreate {
+        declared = ReadDeclaredEntries(ctx, before)
+    }
+    var isDeclared bool
+    data.Labels, isDeclared = SetEntriesAfterWrite(r.client, isCreate, declared["labels"], config.Labels, plan.Labels, data.Labels)
+    declared["labels"] = isDeclared
+    return declared
+}
+
+// Helper method to convert Terraform map to Go interface{}
+func (r *RunbookResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
+    if terraformMap.IsNull() || terraformMap.IsUnknown() {
+        return nil
+    }
+    
+    result := make(map[string]string)
+    terraformMap.ElementsAs(context.Background(), &result, false)
+    
+    // Convert map[string]string to map[string]interface{}
+    interfaceResult := make(map[string]interface{})
+    for key, value := range result {
+        interfaceResult[key] = value
+    }
+    
+    return interfaceResult
+}
+
+// Helper method to convert Terraform list to Go interface{}
+func (r *RunbookResource) convertTerraformListToInterface(terraformList types.List) interface{} {
+    if terraformList.IsNull() || terraformList.IsUnknown() {
+        return nil
+    }
+
+    var stringList []string
+    terraformList.ElementsAs(context.Background(), &stringList, false)
+
+    // Convert string array to OneUptime format with _id fields
+    var result []interface{}
+    for _, str := range stringList {
+        if str != "" {
+            result = append(result, map[string]interface{}{
+                "_id": str,
+            })
+        }
+    }
+    return result
+}
+
+// Helper method to convert Terraform set to Go interface{}
+func (r *RunbookResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+    if terraformSet.IsNull() || terraformSet.IsUnknown() {
+        return nil
+    }
+
+    var stringList []string
+    terraformSet.ElementsAs(context.Background(), &stringList, false)
+
+    // Convert string array to OneUptime format with _id fields
+    var result []interface{}
+    for _, str := range stringList {
+        if str != "" {
+            result = append(result, map[string]interface{}{
+                "_id": str,
+            })
+        }
+    }
+    return result
+}
+
+
+// Helper method to parse JSON field for complex objects
+func (r *RunbookResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
+    sv, _ := terraformString.ToStringValue(context.Background())
+    if sv.IsNull() || sv.IsUnknown() || sv.ValueString() == "" {
+        return nil
+    }
+
+    var result interface{}
+    if err := json.Unmarshal([]byte(sv.ValueString()), &result); err != nil {
+        // If JSON parsing fails, return the raw string
+        return sv.ValueString()
+    }
+
+    return result
+}
+
+// Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
+func (r *RunbookResource) normalizeURLWrappers(value interface{}) interface{} {
+    switch v := value.(type) {
+    case map[string]interface{}:
+        if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
+            if val, ok := v["value"].(string); ok {
+                v["value"] = r.normalizeURLString(val)
+            }
+        }
+        for key, child := range v {
+            v[key] = r.normalizeURLWrappers(child)
+        }
+        return v
+    case []interface{}:
+        for i, child := range v {
+            v[i] = r.normalizeURLWrappers(child)
+        }
+        return v
+    default:
+        return v
+    }
+}
+
+func (r *RunbookResource) normalizeURLString(value string) string {
+    parsed, err := url.Parse(value)
+    if err != nil {
+        return value
+    }
+    if parsed.Path == "/" && parsed.RawQuery == "" && parsed.Fragment == "" {
+        return strings.TrimSuffix(value, "/")
+    }
+    return value
+}
+
+// Helper method to convert *big.Float to float64 for JSON serialization
+func (r *RunbookResource) bigFloatToFloat64(bf *big.Float) interface{} {
+    if bf == nil {
+        return nil
+    }
+    f, _ := bf.Float64()
+    return f
+}
+
+// Helper method to check if a type string is a valid OneUptime ObjectType.
+// The registry itself lives in objecttypes.go, shared across the package.
+func (r *RunbookResource) isValidOneUptimeObjectType(typeStr string) bool {
+    return ValidOneUptimeObjectTypes[typeStr]
+}

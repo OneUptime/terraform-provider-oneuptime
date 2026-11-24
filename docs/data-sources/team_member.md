@@ -40,5 +40,6 @@ data "oneuptime_team_member" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `invitation_accepted_at` (String) When the person accepted their invitation.
+- `invitee_email` (String) The address the person was invited at, shown in place of their account's own until they accept.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

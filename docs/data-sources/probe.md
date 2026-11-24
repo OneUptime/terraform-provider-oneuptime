@@ -31,6 +31,7 @@ data "oneuptime_probe" "by_id" {
 - `connection_status` (String) Connection Status of the Probe.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User).
 - `description` (String) Friendly description that will help you remember.
+- `egress_ip_address` (String) The IP address this probe last checked in from, as OneUptime saw it. Set by OneUptime from the probe's own requests; the blocklist never blocks it.
 - `icon_file_id` (String) Probe Page Icon File ID. The ID of a `oneuptime_file`.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `name` (String) Any friendly name of this object.

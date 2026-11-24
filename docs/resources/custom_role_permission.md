@@ -14,6 +14,7 @@ The permissions in a custom role, each with the scope and labels a team's own pe
 ```terraform
 resource "oneuptime_custom_role_permission" "example" {
   custom_role_id = oneuptime_custom_role.example.id
+  permission     = "IncidentMember"
 }
 ```
 
@@ -26,7 +27,7 @@ resource "oneuptime_custom_role_permission" "example" {
 ### Optional
 
 - `labels` (Set of String) With the scope Labels: the labels this permission is limited to. A resource carrying at least one of them is reached. IDs of `oneuptime_label` resources.
-- `permission` (String) A built-in role, such as IncidentMember, or a single permission, such as ReadProjectIncident. You can find the list of permissions in the Permission Reference. ProjectOwner cannot be part of a custom role. A JSON value: write it with `jsonencode()`.
+- `permission` (String) A built-in role, such as IncidentMember, or a single permission, such as ReadProjectIncident. You can find the list of permissions in the Permission Reference. ProjectOwner cannot be part of a custom role. A permission's key, such as `"IncidentMember"`. Written with `jsonencode()`, as earlier versions of this provider asked, it is the same permission.
 - `scope` (String) Which resources this permission reaches. One of: All (every resource in the project), Owned (resources the team given the role, or one of its members, owns), Labels (resources carrying one of the labels). Defaults to All. Allowed values: `All`, `Owned`, `Labels`. Defaults to `All`.
 
 ### Read-Only

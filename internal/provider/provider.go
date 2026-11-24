@@ -21,12 +21,18 @@ type OneuptimeProvider struct {
     // provider is built and ran locally, and "test" when running acceptance
     // testing.
     version string
+
+    // What a Crossplane manifest last applied, for the one managed resource
+    // a provider made for its reconcile plans (NewUnderCrossplane,
+    // shared.go). Nil under Terraform.
+    lastApplied *LastApplied
 }
 
 // OneuptimeProviderModel describes the provider data model.
 type OneuptimeProviderModel struct {
-    OneuptimeUrl types.String `tfsdk:"oneuptime_url"`
-    ApiKey       types.String `tfsdk:"api_key"`
+    OneuptimeUrl   types.String `tfsdk:"oneuptime_url"`
+    ApiKey         types.String `tfsdk:"api_key"`
+    ExclusiveLists types.Bool   `tfsdk:"exclusive_lists"`
 }
 
 func (p *OneuptimeProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -47,6 +53,10 @@ func (p *OneuptimeProvider) Schema(ctx context.Context, req provider.SchemaReque
                 MarkdownDescription: "An API key of the project to manage, from its **Settings** > **API Keys**. Falls back to the `ONEUPTIME_API_KEY` environment variable; the provider stops before any plan when neither is set.",
                 Optional:            true,
                 Sensitive:           true,
+            },
+            "exclusive_lists": schema.BoolAttribute{
+                MarkdownDescription: "How a configuration holds a list OneUptime adds to as well, such as a record's `labels`, which label rules add to. Left out or `false`, Terraform adds and takes off the entries the configuration lists and leaves every other entry: one OneUptime or a person adds stays. `true` makes the configuration's list the record's whole list, as earlier versions of the provider did: Terraform takes off every entry the configuration does not list, one a rule added included.",
+                Optional:            true,
             },
         },
     }
@@ -115,6 +125,13 @@ func (p *OneuptimeProvider) Configure(ctx context.Context, req provider.Configur
         return
     }
 
+    client.lastApplied = p.lastApplied
+
+    // A list OneUptime adds to as well is the configuration's whole list
+    // only when the configuration says so (entries.go). Never under
+    // Crossplane, which holds a manifest's own entries.
+    client.exclusiveLists = !data.ExclusiveLists.IsNull() && !data.ExclusiveLists.IsUnknown() && data.ExclusiveLists.ValueBool()
+
     resp.DataSourceData = client
     resp.ResourceData = client
 
@@ -133,6 +150,19 @@ func New(version string) func() provider.Provider {
     return func() provider.Provider {
         return &OneuptimeProvider{
             version: version,
+        }
+    }
+}
+
+// NewUnderCrossplane returns the provider for one Crossplane reconcile of one
+// managed resource: what its manifest last applied reaches the plan of the
+// attributes people and OneUptime both change (shared.go). xpprovider calls
+// it.
+func NewUnderCrossplane(version string, lastApplied LastApplied) func() provider.Provider {
+    return func() provider.Provider {
+        return &OneuptimeProvider{
+            version:     version,
+            lastApplied: &lastApplied,
         }
     }
 }
