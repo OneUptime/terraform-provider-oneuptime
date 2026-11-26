@@ -29,6 +29,8 @@ data "oneuptime_audit_log_export" "by_id" {
 ### Optional
 
 - `consecutive_failure_count` (Number) How many deliveries in a row have failed. It sets how long the next retry waits.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) ID of the user who created this export. The ID of a `oneuptime_user` (see the data source).
 - `cursor_entry_id` (String) The ID of the last entry delivered, which orders the entries recorded in the same second.
 - `destination_type` (String) Where entries are sent: s3, s3-compatible, google-cloud-storage, azure-blob-storage, webhook or syslog. Fixed once created.
@@ -36,6 +38,9 @@ data "oneuptime_audit_log_export" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_enabled` (Boolean) Whether entries are exported. A paused export keeps its place.
 - `last_error` (String) Why the last delivery failed, with credentials redacted. Cleared by the next delivery that succeeds.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `name` (String) A name for this export, such as Compliance archive.
 - `schema_version` (Number) Which version of the record each entry is sent as: 2 also says what changed in a workflow's steps and in JSON, 1 is the record as it was first sent. A new export sends 2 unless it asks for 1; an export saved before version 2 keeps 1.
 
@@ -47,6 +52,7 @@ data "oneuptime_audit_log_export" "by_id" {
 - `failing_since` (String) When deliveries started failing. Cleared by the next delivery that succeeds.
 - `last_attempt_at` (String) When OneUptime last tried to deliver entries.
 - `last_exported_at` (String) When entries were last delivered.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `next_attempt_at` (String) While deliveries fail: when OneUptime tries again. Saving the export's settings tries again at once.
 - `project_id` (String) ID of the project whose audit log is exported. Empty for an export of the whole instance. The ID of a `oneuptime_project`.
 - `starts_at` (String) Entries recorded from this time on are exported. Empty on create means from now; an earlier date also sends the entries kept since then.

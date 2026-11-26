@@ -32,6 +32,8 @@ data "oneuptime_threat_intel_feed" "by_id" {
 - `api_root_url` (String) The TAXII 2.1 API root, e.g. https://taxii.example.com/api1/. Collections are addressed beneath it.
 - `basic_auth_username` (String) Username for basic-auth collections. Leave empty for anonymous or token-authenticated collections.
 - `collection_id` (String) ID of the TAXII collection to poll for indicator objects.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) ID of the user who created this feed. The ID of a `oneuptime_user` (see the data source).
 - `cursor` (String) Poll cursor: for a TAXII feed the added_after timestamp already ingested, for a list feed the hash of the list last written and when, for a Google SecOps feed the end of the window last read.
 - `description` (String) What this feed carries and why it is subscribed.
@@ -42,6 +44,9 @@ data "oneuptime_threat_intel_feed" "by_id" {
 - `is_enabled` (Boolean) Whether this feed is polled and matched.
 - `last_error` (String) The most recent poll error, if any. Cleared on the next successful poll.
 - `last_match_error` (String) The most recent matcher error, if any. Cleared on the next successful evaluation.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `last_poll_summary` (String) What the most recent successful poll did: objects fetched, indicators ingested, unsupported patterns skipped.
 - `list_url` (String) For a list feed: the https address of the list, one IP address, domain, URL or file hash a line.
 - `minimum_confidence` (Number) Skip indicators whose STIX confidence is below this (0-100). 0 ingests everything; indicators that carry no confidence always pass.
@@ -59,6 +64,7 @@ data "oneuptime_threat_intel_feed" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `last_evaluated_at` (String) When the matcher last evaluated security events against this feed's indicators. Null means it has never run.
 - `last_match_at` (String) When this feed's indicators most recently matched security events. Null means they never have.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_polled_at` (String) When this feed was last polled. Null means it has never run.
 - `project_id` (String) ID of the project this feed belongs to. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

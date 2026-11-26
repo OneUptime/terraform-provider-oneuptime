@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_incident" "example" {
-  title = "example-title"
+  created_by_actor_type = "User"
 }
 
 # Or by id:
@@ -29,6 +29,8 @@ data "oneuptime_incident" "by_id" {
 ### Optional
 
 - `change_monitor_status_to_id` (String) Relation to Monitor Status Object ID. All monitors connected to this incident will be changed to this status when the incident is created. The ID of a `oneuptime_monitor_status`.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_probe_id` (String) If this incident was created by a Probe, this is the ID of the probe that created it. The ID of a `oneuptime_probe`.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `created_criteria_id` (String) If this incident was created by a Probe, this is the ID of the criteria that created it.
@@ -47,6 +49,9 @@ data "oneuptime_incident" "by_id" {
 - `is_private` (Boolean) If true, this incident is only visible to its owners (users in 'owner users' and members of 'owner teams'), Project Admins, and Project Owners. Private incidents are hidden from status pages.
 - `is_scoped_to_status_pages` (Boolean) Whether this incident is limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored.
 - `is_visible_on_status_page` (Boolean) Should this incident be visible on the status page?
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `notify_subscribers_on_postmortem_published` (Boolean) Should subscribers be notified when the postmortem is published?
 - `postmortem_note` (String) Document the postmortem summary for this incident.
 - `postmortem_status_id` (String) ID of the incident's postmortem status. Left out on create, the postmortem starts in the project's not started status - or its draft status when the incident is created with a postmortem note, its completed status when that note is published on a status page. The ID of a `oneuptime_postmortem_status`.
@@ -84,6 +89,7 @@ data "oneuptime_incident" "by_id" {
 - `kubernetes_containers` (Set of String) List of Kubernetes containers affected by this incident.
 - `kubernetes_resources` (Set of String) List of Kubernetes resources (pods, deployments, nodes, etc.) affected by this incident.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `monitor_summary` (String) The monitor summary captured at the moment this incident was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out. A JSON value: read it with `jsondecode()`.
 - `monitors` (Set of String) List of monitors affected by this incident. IDs of `oneuptime_monitor` resources.
 - `network_devices` (Set of String) List of network devices affected by this incident. IDs of `oneuptime_network_device` resources.

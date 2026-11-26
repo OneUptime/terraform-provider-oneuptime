@@ -49,6 +49,8 @@ resource "oneuptime_threat_intel_feed" "example" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) ID of the user who created this feed. The ID of a `oneuptime_user` (see the data source).
 - `cursor` (String) Poll cursor: for a TAXII feed the added_after timestamp already ingested, for a list feed the hash of the list last written and when, for a Google SecOps feed the end of the window last read.
 - `id` (String) Unique identifier for the resource.
@@ -56,6 +58,10 @@ resource "oneuptime_threat_intel_feed" "example" {
 - `last_evaluated_at` (String) When the matcher last evaluated security events against this feed's indicators. Null means it has never run.
 - `last_match_at` (String) When this feed's indicators most recently matched security events. Null means they never have.
 - `last_match_error` (String) The most recent matcher error, if any. Cleared on the next successful evaluation.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `last_poll_summary` (String) What the most recent successful poll did: objects fetched, indicators ingested, unsupported patterns skipped.
 - `last_polled_at` (String) When this feed was last polled. Null means it has never run.
 - `next_page_token` (String) Resume token for a poll that ended mid-pagination on a server that sends no X-TAXII-Date-Added-Last header. Cleared once the collection drains or the cursor advances.

@@ -50,12 +50,20 @@ resource "oneuptime_network_device_discovery_scan" "example" {
 - `auto_import_processed_at` (String) When auto-import rules last processed this scan's results. Managed by the server: cleared when new results arrive, stamped by the worker that evaluates the rules. NULL means the current results have not been processed yet.
 - `completed_at` (String) When the scanning probe completed (or failed) this scan. Managed by the scanning probe.
 - `created_at` (String) Date and Time when the object was created.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `discovered_devices` (String) Devices found by this scan: array of {ipAddress, sysName, sysDescr, ...}, as the scanning probe reported them. On a read, each host also carries isAlreadyRegistered, registeredDeviceId and sharedAddress, worked out from the project's devices at that moment and never stored. A JSON value: read it with `jsondecode()`.
 - `id` (String) Unique identifier for the resource.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `next_scan_at` (String) When a recurring scan is next due to run. Managed by the server.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `responded_host_count` (Number) Number of hosts that answered the check this scan performed: SNMP responders on an SNMP scan, hosts that answered the ping sweep on an ICMP scan. Managed by the scanning probe.
+- `run_requested_at` (String) When someone last ran this scan again on demand (Run Again), for the run it is on now or ran last. Empty when that run started by itself: when the scan was created, on its schedule, or after a settings change. Managed by the server.
+- `run_requested_by_user_id` (String) ID of the User who last ran this scan again on demand, for the run it is on now or ran last. Empty when that run started by itself, when an API key asked for it, or once the user is deleted. Managed by the server. The ID of a `oneuptime_user` (see the data source).
 - `scanned_host_count` (Number) Total number of host addresses swept in the subnet. Managed by the scanning probe.
 - `started_at` (String) When the scanning probe started this scan. Managed by the scanning probe.
 - `status` (String) Status of this discovery scan: "Pending", "In Progress", "Completed" or "Failed". Managed by the scanning probe.

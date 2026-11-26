@@ -30,6 +30,8 @@ data "oneuptime_monitor" "by_id" {
 
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `auto_provisioned_network_device_id` (String) ID of the Network Device that caused this monitor to be provisioned automatically. The ID of a `oneuptime_network_device`.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `current_monitor_status_id` (String) Whats the current status ID of this monitor? The ID of a `oneuptime_monitor_status`.
 - `description` (String) Friendly description that will help you remember.
@@ -44,6 +46,9 @@ data "oneuptime_monitor" "by_id" {
 - `is_no_probe_enabled_on_this_monitor` (Boolean) No Probe Enabled On This Monitor. Is this monitor not being monitored?
 - `is_owner_notified_of_resource_creation` (Boolean) Are owners notified of when this resource is created?
 - `keep_response_content` (Boolean) Keep the response part that matched, and the response body and headers, in this monitor's logs and on its incidents and alerts. Secrets are masked either way.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `minimum_probe_agreement` (Number) Minimum number of probes that must agree on a status before the monitor status changes. If null, all enabled and connected probes must agree.
 - `monitor_template_id` (String) ID of the Monitor Template this monitor was created from. Null for monitors not created from a template. The ID of a `oneuptime_monitor_template`.
 - `monitor_type` (String) What is the type of this monitor? Website? API? etc.
@@ -79,6 +84,7 @@ data "oneuptime_monitor" "by_id" {
 - `iot_fleets` (Set of String) IoT fleets this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_iot_fleet` resources.
 - `kubernetes_clusters` (Set of String) Kubernetes clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_kubernetes_cluster` resources.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `monitor_steps` (String) What the monitor checks, and the criteria that judge each result. The Dashboard shows a step's criteria on the monitor's Criteria page.
 - `open_stack_clouds` (Set of String) OpenStack clouds this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_openstack_cloud` resources.
 - `podman_hosts` (Set of String) Podman hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there. IDs of `oneuptime_podman_host` resources.

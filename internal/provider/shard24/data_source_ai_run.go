@@ -46,6 +46,7 @@ type AiRunDataSourceModel struct {
     TriggeredByTelemetryExceptionId types.String `tfsdk:"triggered_by_telemetry_exception_id"`
     TriggeredByAiInsightId types.String `tfsdk:"triggered_by_ai_insight_id"`
     TriggeredBySecurityCaseId types.String `tfsdk:"triggered_by_security_case_id"`
+    TriggeredByDataSecurityIssueId types.String `tfsdk:"triggered_by_data_security_issue_id"`
     TriggeredByAutoRemediationSuggestionId types.String `tfsdk:"triggered_by_auto_remediation_suggestion_id"`
     MonitorId types.String `tfsdk:"monitor_id"`
     AiAgentId types.String `tfsdk:"ai_agent_id"`
@@ -178,7 +179,12 @@ func (d *AiRunDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Computed: true,
             },
             "triggered_by_security_case_id": schema.StringAttribute{
-                MarkdownDescription: "The security case this run triaged (for security case triage runs).",
+                MarkdownDescription: "The security case this run is about: the case a triage run read, or the case a code fix was asked for from.",
+                Optional: true,
+                Computed: true,
+            },
+            "triggered_by_data_security_issue_id": schema.StringAttribute{
+                MarkdownDescription: "The Data Security issue this run is about: a fix asked for it, or work OneUptime AI started on it.",
                 Optional: true,
                 Computed: true,
             },
@@ -427,6 +433,10 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         filters["triggeredBySecurityCaseId"] = data.TriggeredBySecurityCaseId.ValueString()
         filterNames = append(filterNames, "triggered_by_security_case_id = "+fmt.Sprintf("%q", data.TriggeredBySecurityCaseId.ValueString()))
     }
+    if !data.TriggeredByDataSecurityIssueId.IsNull() && !data.TriggeredByDataSecurityIssueId.IsUnknown() {
+        filters["triggeredByDataSecurityIssueId"] = data.TriggeredByDataSecurityIssueId.ValueString()
+        filterNames = append(filterNames, "triggered_by_data_security_issue_id = "+fmt.Sprintf("%q", data.TriggeredByDataSecurityIssueId.ValueString()))
+    }
     if !data.TriggeredByAutoRemediationSuggestionId.IsNull() && !data.TriggeredByAutoRemediationSuggestionId.IsUnknown() {
         filters["triggeredByAutoRemediationSuggestionId"] = data.TriggeredByAutoRemediationSuggestionId.ValueString()
         filterNames = append(filterNames, "triggered_by_auto_remediation_suggestion_id = "+fmt.Sprintf("%q", data.TriggeredByAutoRemediationSuggestionId.ValueString()))
@@ -546,6 +556,7 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         "triggeredByTelemetryExceptionId": true,
         "triggeredByAiInsightId": true,
         "triggeredBySecurityCaseId": true,
+        "triggeredByDataSecurityIssueId": true,
         "triggeredByAutoRemediationSuggestionId": true,
         "monitorId": true,
         "aiAgentId": true,
@@ -1047,6 +1058,30 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.TriggeredBySecurityCaseId = types.StringValue(val)
     } else {
         data.TriggeredBySecurityCaseId = types.StringNull()
+    }
+    if obj, ok := item["triggeredByDataSecurityIssueId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TriggeredByDataSecurityIssueId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TriggeredByDataSecurityIssueId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TriggeredByDataSecurityIssueId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TriggeredByDataSecurityIssueId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TriggeredByDataSecurityIssueId = types.StringNull()
+        }
+    } else if arr, ok := item["triggeredByDataSecurityIssueId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.TriggeredByDataSecurityIssueId = types.StringValue(string(jsonBytes))
+        } else {
+            data.TriggeredByDataSecurityIssueId = types.StringNull()
+        }
+    } else if val, ok := item["triggeredByDataSecurityIssueId"].(string); ok {
+        data.TriggeredByDataSecurityIssueId = types.StringValue(val)
+    } else {
+        data.TriggeredByDataSecurityIssueId = types.StringNull()
     }
     if obj, ok := item["triggeredByAutoRemediationSuggestionId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

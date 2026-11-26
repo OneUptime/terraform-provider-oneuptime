@@ -38,11 +38,16 @@ data "oneuptime_cloud_resource" "by_id" {
 - `cloud_resource_group` (String) For an Azure resource: the resource group it belongs to.
 - `cloud_resource_kind` (String) environment: a managed compute environment discovered from the cloud.platform, cloud.account.id and cloud.region resource attributes of a workload's own telemetry. resource: one IaaS or PaaS resource (a virtual machine, a load balancer, a bucket, a managed database, ...) discovered from the metrics Azure Monitor, Amazon CloudWatch or Google Cloud Monitoring publish about it.
 - `cloud_resource_type` (String) For a resource: the provider's type for it - the Azure Resource Manager type (Microsoft.Compute/virtualMachines), the AWS CloudFormation type (AWS::EC2::Instance) or the Google Cloud Monitoring resource type (gce_instance).
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Friendly description that will help you remember.
 - `health_severity` (String) Whether the resource needed attention when its readings were last written: critical or warning, empty when it did not.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_archived` (Boolean) Is this cloud resource archived? Archived cloud resources are hidden from lists but keep collecting telemetry.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `name` (String) Friendly name for this cloud environment. Ingest names a discovered environment after its platform, region and account.
 - `otel_collector_status` (String) Whether telemetry is currently being received (connected) or has gone stale (disconnected).
 - `provider_resource_id` (String) For a resource: the provider's id for it - its Azure resource id, its AWS ARN or its Google Cloud full resource name. Where the metrics do not name the resource completely (an AWS resource whose ARN needs an id no metric reports), a readable composite of what they do name.
@@ -65,6 +70,7 @@ data "oneuptime_cloud_resource" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `inventoried_at` (String) When a cloud connection's inventory last listed this resource. Empty for a resource only its metrics or telemetry have found.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_seen_at` (String) When telemetry was last received for this resource.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `telemetry_attributes` (String) For a resource: the metric attributes, exactly as stored, that select its metrics - for example azuremonitor.resource_id, or the CloudWatch Namespace and identifying Dimensions with the account and region. The resource's pages and the monitors created from them filter on these. A JSON value: read it with `jsondecode()`.

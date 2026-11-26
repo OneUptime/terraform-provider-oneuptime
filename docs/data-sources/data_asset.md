@@ -31,6 +31,8 @@ data "oneuptime_data_asset" "by_id" {
 - `asset_key` (String) The asset's name with its schema, such as "public.orders": what its metrics and checks name it by.
 - `asset_kind` (String) Whether it is a table, a view, a materialized view, a partitioned table or a foreign table.
 - `column_count` (Number) How many columns the asset has.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) ID of the user who created this asset, if a person did rather than OneUptime. The ID of a `oneuptime_user` (see the data source).
 - `data_store_id` (String) ID of the data store this asset is in. The ID of a `oneuptime_data_store`.
 - `data_store_kind` (String) What kind of store this asset is in, such as PostgreSQL or Snowflake.
@@ -40,6 +42,9 @@ data "oneuptime_data_asset" "by_id" {
 - `freshness_column` (String) A timestamp column that says when a row was written. Its latest value says when the table last changed, where the database's own counters cannot.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_dropped` (Boolean) The asset is gone from its store. It is kept with its history, and comes back if the table does.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `name` (String) The table's or view's own name, such as orders.
 - `row_count` (Number) How many rows the asset holds, from the engine's own statistics at the last collection.
 - `row_count_change_tolerance_percent` (Number) A change in rows this small counts as none here, raised each time such an alert is marked not an issue.
@@ -59,6 +64,7 @@ data "oneuptime_data_asset" "by_id" {
 - `labels` (Set of String) Labels to group and filter tables by. IDs of `oneuptime_label` resources.
 - `last_changed_at` (String) When a row was last inserted, updated or deleted, as near as the engine tells.
 - `last_collected_at` (String) When OneUptime last read the asset's health.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_read_at` (String) When the table was last seen read, to the hour: by the engine's read counters, or by a service's database spans.
 - `late_at` (String) When the table is late if it has not changed by then: twice its usual interval after its last change, and at least fifteen minutes past it. Empty for a view, or a table whose rhythm is not known yet.
 - `project_id` (String) ID of the project this data asset belongs to. The ID of a `oneuptime_project`.

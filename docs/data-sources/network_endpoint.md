@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_network_endpoint" "example" {
-  mac_address = "example-mac-address"
+  created_by_actor_type = "User"
 }
 
 # Or by id:
@@ -33,10 +33,15 @@ data "oneuptime_network_endpoint" "by_id" {
 - `attached_port_name` (String) Name of the switch port this endpoint was last seen on. Managed by the server.
 - `attachment_source` (String) The network controller that reported where this endpoint is attached, such as meraki. Empty when a walk of a switch or router found it. Managed by the server.
 - `classification` (String) User-editable classification of this endpoint (POS, Kiosk, Camera, Printer, ...).
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `hostname` (String) What a network controller calls this endpoint, such as the name in its Meraki client list. Managed by the server.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `ip_address` (String) Last IP address seen for this endpoint in ARP tables. Managed by the server.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `mac_address` (String) MAC address of this endpoint, colon-separated hex. One row per MAC per project.
 - `site_id` (String) ID of the Network Site this endpoint belongs to. The ID of a `oneuptime_network_site`.
 - `vendor` (String) Hardware vendor derived from the MAC OUI prefix. Managed by the server.
@@ -47,6 +52,7 @@ data "oneuptime_network_endpoint" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `edited_at` (String) When a person last added this endpoint or changed its vendor, IP address or site. Managed by the server.
 - `first_seen_at` (String) When this endpoint was first discovered on the network.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_seen_at` (String) When this endpoint was last seen in an ARP or FDB walk, or in a network controller's client list. While a walk keeps seeing it unchanged, this is refreshed every 15 minutes, so it is accurate to within 15 minutes and one poll.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

@@ -28,9 +28,14 @@ data "oneuptime_on_call_user_group" "by_id" {
 
 ### Optional
 
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `handle` (String) Slack only: the handle people type to mention the group, without the @, such as payments-oncall.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `name` (String) The group's name in the workspace, such as Payments on-call. Read from Slack or Microsoft Teams when the group is linked.
 - `workspace_group_id` (String) The group's id in the workspace: a Slack user group id, such as S0604QSJC, or a Microsoft Teams tag id.
 - `workspace_team_id` (String) Microsoft Teams: the team the tag is in (its Microsoft 365 group id). Slack installed for a whole Enterprise organization: the workspace the user group is in (T...). Empty for a Slack user group of a project connected to one workspace.
@@ -39,6 +44,7 @@ data "oneuptime_on_call_user_group" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `next_sync_at` (String) When OneUptime looks at the group again, besides every hand-off: to undo changes made to it by hand, and to try again after the workspace refused a change.
 - `on_call_duty_policy_schedules` (Set of String) The on-call schedules the group follows: it holds whoever is on call in any of them right now. IDs of `oneuptime_on_call_policy_schedule` resources.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

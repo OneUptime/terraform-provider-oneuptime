@@ -32,6 +32,12 @@ type SecurityCaseDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
+    CreatedByActorType types.String `tfsdk:"created_by_actor_type"`
+    CreatedByActorId types.String `tfsdk:"created_by_actor_id"`
+    LastModifiedAt types.String `tfsdk:"last_modified_at"`
+    LastModifiedByActorType types.String `tfsdk:"last_modified_by_actor_type"`
+    LastModifiedByActorId types.String `tfsdk:"last_modified_by_actor_id"`
+    LastModifiedByUserId types.String `tfsdk:"last_modified_by_user_id"`
     ProjectId types.String `tfsdk:"project_id"`
     CaseNumber types.Number `tfsdk:"case_number"`
     CaseNumberWithPrefix types.String `tfsdk:"case_number_with_prefix"`
@@ -53,6 +59,8 @@ type SecurityCaseDataSourceModel struct {
     LastDetectedAt types.String `tfsdk:"last_detected_at"`
     AcknowledgedAt types.String `tfsdk:"acknowledged_at"`
     ContainedAt types.String `tfsdk:"contained_at"`
+    BlockedAt types.String `tfsdk:"blocked_at"`
+    TimeToBlockInSeconds types.Number `tfsdk:"time_to_block_in_seconds"`
     ClosedAt types.String `tfsdk:"closed_at"`
     AcknowledgeDueAt types.String `tfsdk:"acknowledge_due_at"`
     ContainDueAt types.String `tfsdk:"contain_due_at"`
@@ -62,6 +70,7 @@ type SecurityCaseDataSourceModel struct {
     ContainMissedAt types.String `tfsdk:"contain_missed_at"`
     NextDueAt types.String `tfsdk:"next_due_at"`
     NextTargetCheckAt types.String `tfsdk:"next_target_check_at"`
+    NextStepCheckAt types.String `tfsdk:"next_step_check_at"`
     ClosedByUserId types.String `tfsdk:"closed_by_user_id"`
     GroupingKey types.String `tfsdk:"grouping_key"`
     NotifiedSecurityCasePriorityId types.String `tfsdk:"notified_security_case_priority_id"`
@@ -72,6 +81,15 @@ type SecurityCaseDataSourceModel struct {
     AiTriageReport types.String `tfsdk:"ai_triage_report"`
     AiTriagedAt types.String `tfsdk:"ai_triaged_at"`
     AiTriagePromptInjectionSuspected types.Bool `tfsdk:"ai_triage_prompt_injection_suspected"`
+    AiResponseState types.String `tfsdk:"ai_response_state"`
+    AiHandOffReason types.String `tfsdk:"ai_hand_off_reason"`
+    AiNextLookAt types.String `tfsdk:"ai_next_look_at"`
+    AiTookCaseAt types.String `tfsdk:"ai_took_case_at"`
+    AiClosedAt types.String `tfsdk:"ai_closed_at"`
+    AiHoldOutcome types.String `tfsdk:"ai_hold_outcome"`
+    AiHoldUntil types.String `tfsdk:"ai_hold_until"`
+    AiHoldEndedAt types.String `tfsdk:"ai_hold_ended_at"`
+    AiHoldEndedByUserId types.String `tfsdk:"ai_hold_ended_by_user_id"`
     Labels types.Set `tfsdk:"labels"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     AssignedToUserEmail types.String `tfsdk:"assigned_to_user_email"`
@@ -83,7 +101,7 @@ func (d *SecurityCaseDataSource) Metadata(ctx context.Context, req datasource.Me
 
 func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A possible threat to investigate: the detections that point at it, who is on it, its priority and status, and the verdict it closed with. Look up an existing security case by `id`, or by any of its other arguments (`ai_suggested_playbook_id`, `ai_suggested_security_case_priority_id`, `ai_triage_prompt_injection_suspected`, ...): each one set must match, and exactly one security case may match them all.",
+        MarkdownDescription: "A possible threat to investigate: the detections that point at it, who is on it, its priority and status, and the verdict it closed with. Look up an existing security case by `id`, or by any of its other arguments (`ai_hand_off_reason`, `ai_hold_ended_by_user_id`, `ai_hold_outcome`, ...): each one set must match, and exactly one security case may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -98,6 +116,36 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
+            },
+            "created_by_actor_type": schema.StringAttribute{
+                MarkdownDescription: "What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.",
+                Optional: true,
+                Computed: true,
+            },
+            "created_by_actor_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_modified_at": schema.StringAttribute{
+                MarkdownDescription: "When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.",
+                Computed: true,
+            },
+            "last_modified_by_actor_type": schema.StringAttribute{
+                MarkdownDescription: "What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_modified_by_actor_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_modified_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
+                Computed: true,
+                Validators: DataSourceRecordIDValidators("oneuptime_user"),
             },
             "project_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the project this case belongs to. The ID of a `oneuptime_project`.",
@@ -199,6 +247,15 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "When the case first reached Contained. The time to contain is measured to here.",
                 Computed: true,
             },
+            "blocked_at": schema.StringAttribute{
+                MarkdownDescription: "When an automatic response policy's block of one of the case's addresses first took hold at an edge.",
+                Computed: true,
+            },
+            "time_to_block_in_seconds": schema.NumberAttribute{
+                MarkdownDescription: "Seconds from the address's first malicious request to an automatic response policy's block of it taking hold.",
+                Optional: true,
+                Computed: true,
+            },
             "closed_at": schema.StringAttribute{
                 MarkdownDescription: "When the case was closed. Cleared if it is reopened. The time to close is measured to here.",
                 Computed: true,
@@ -233,6 +290,10 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "next_target_check_at": schema.StringAttribute{
                 MarkdownDescription: "When OneUptime next checks the case's response targets: when one is about to be missed, or is missed. Empty when there is nothing left to check.",
+                Computed: true,
+            },
+            "next_step_check_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime next checks the steps of the case's Response Plan itself. Empty once the case is closed.",
                 Computed: true,
             },
             "closed_by_user_id": schema.StringAttribute{
@@ -283,6 +344,46 @@ func (d *SecurityCaseDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "ai_triage_prompt_injection_suspected": schema.BoolAttribute{
                 MarkdownDescription: "Whether OneUptime AI found text in the case's data written to steer an AI when it triaged the case. It then leaves the call to a person.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_response_state": schema.StringAttribute{
+                MarkdownDescription: "Where OneUptime AI stands on the case when it works it: Working, WaitingForPeople, HandedToPeople or Finished. Empty for a case OneUptime AI never worked.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_hand_off_reason": schema.StringAttribute{
+                MarkdownDescription: "Why OneUptime AI last handed the case to people, such as SteeringText, HighestPriority or ProtectedTarget.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_next_look_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime AI next looks at the case while it works it. Empty when it is not working the case.",
+                Computed: true,
+            },
+            "ai_took_case_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime AI took the case to work it. Empty for a case it never took.",
+                Computed: true,
+            },
+            "ai_closed_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime AI closed the case, on its own or once a person approved it. Empty for a case it did not close.",
+                Computed: true,
+            },
+            "ai_hold_outcome": schema.StringAttribute{
+                MarkdownDescription: "Whether OneUptime AI is responding first to the case before anyone is alerted (Holding), and how that ended: Resolved with nobody alerted, handed to people (NeedsApproval, HandedOff, TimeRanOut and the rest), or stopped by a person (PageNow, TakenByPerson) or a priority rise (RoseInPriority). Empty for a case never held.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_hold_until": schema.StringAttribute{
+                MarkdownDescription: "When people are alerted about the case at the latest while OneUptime AI responds first to it. Empty when it is not held.",
+                Computed: true,
+            },
+            "ai_hold_ended_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime AI's hold of the case's alerts ended. Empty while it holds them, and for a case never held.",
+                Computed: true,
+            },
+            "ai_hold_ended_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "The person who ended OneUptime AI's hold of the case's alerts, by pressing Page now or taking the case. Empty when OneUptime ended it.",
                 Optional: true,
                 Computed: true,
             },
@@ -342,6 +443,26 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
     // Every other argument set in configuration narrows the lookup.
     filters := map[string]interface{}{}
     filterNames := []string{}
+    if !data.CreatedByActorType.IsNull() && !data.CreatedByActorType.IsUnknown() {
+        filters["createdByActorType"] = data.CreatedByActorType.ValueString()
+        filterNames = append(filterNames, "created_by_actor_type = "+fmt.Sprintf("%q", data.CreatedByActorType.ValueString()))
+    }
+    if !data.CreatedByActorId.IsNull() && !data.CreatedByActorId.IsUnknown() {
+        filters["createdByActorId"] = data.CreatedByActorId.ValueString()
+        filterNames = append(filterNames, "created_by_actor_id = "+fmt.Sprintf("%q", data.CreatedByActorId.ValueString()))
+    }
+    if !data.LastModifiedByActorType.IsNull() && !data.LastModifiedByActorType.IsUnknown() {
+        filters["lastModifiedByActorType"] = data.LastModifiedByActorType.ValueString()
+        filterNames = append(filterNames, "last_modified_by_actor_type = "+fmt.Sprintf("%q", data.LastModifiedByActorType.ValueString()))
+    }
+    if !data.LastModifiedByActorId.IsNull() && !data.LastModifiedByActorId.IsUnknown() {
+        filters["lastModifiedByActorId"] = data.LastModifiedByActorId.ValueString()
+        filterNames = append(filterNames, "last_modified_by_actor_id = "+fmt.Sprintf("%q", data.LastModifiedByActorId.ValueString()))
+    }
+    if !data.LastModifiedByUserId.IsNull() && !data.LastModifiedByUserId.IsUnknown() {
+        filters["lastModifiedByUserId"] = data.LastModifiedByUserId.ValueString()
+        filterNames = append(filterNames, "last_modified_by_user_id = "+fmt.Sprintf("%q", data.LastModifiedByUserId.ValueString()))
+    }
     if !data.CaseNumber.IsNull() && !data.CaseNumber.IsUnknown() {
         filters["caseNumber"] = LookupNumber(data.CaseNumber)
         filterNames = append(filterNames, "case_number = "+data.CaseNumber.ValueBigFloat().String())
@@ -390,6 +511,10 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         filters["detectionCount"] = LookupNumber(data.DetectionCount)
         filterNames = append(filterNames, "detection_count = "+data.DetectionCount.ValueBigFloat().String())
     }
+    if !data.TimeToBlockInSeconds.IsNull() && !data.TimeToBlockInSeconds.IsUnknown() {
+        filters["timeToBlockInSeconds"] = LookupNumber(data.TimeToBlockInSeconds)
+        filterNames = append(filterNames, "time_to_block_in_seconds = "+data.TimeToBlockInSeconds.ValueBigFloat().String())
+    }
     if !data.ClosedByUserId.IsNull() && !data.ClosedByUserId.IsUnknown() {
         filters["closedByUserId"] = data.ClosedByUserId.ValueString()
         filterNames = append(filterNames, "closed_by_user_id = "+fmt.Sprintf("%q", data.ClosedByUserId.ValueString()))
@@ -426,6 +551,22 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         filters["aiTriagePromptInjectionSuspected"] = data.AiTriagePromptInjectionSuspected.ValueBool()
         filterNames = append(filterNames, "ai_triage_prompt_injection_suspected = "+fmt.Sprintf("%t", data.AiTriagePromptInjectionSuspected.ValueBool()))
     }
+    if !data.AiResponseState.IsNull() && !data.AiResponseState.IsUnknown() {
+        filters["aiResponseState"] = data.AiResponseState.ValueString()
+        filterNames = append(filterNames, "ai_response_state = "+fmt.Sprintf("%q", data.AiResponseState.ValueString()))
+    }
+    if !data.AiHandOffReason.IsNull() && !data.AiHandOffReason.IsUnknown() {
+        filters["aiHandOffReason"] = data.AiHandOffReason.ValueString()
+        filterNames = append(filterNames, "ai_hand_off_reason = "+fmt.Sprintf("%q", data.AiHandOffReason.ValueString()))
+    }
+    if !data.AiHoldOutcome.IsNull() && !data.AiHoldOutcome.IsUnknown() {
+        filters["aiHoldOutcome"] = data.AiHoldOutcome.ValueString()
+        filterNames = append(filterNames, "ai_hold_outcome = "+fmt.Sprintf("%q", data.AiHoldOutcome.ValueString()))
+    }
+    if !data.AiHoldEndedByUserId.IsNull() && !data.AiHoldEndedByUserId.IsUnknown() {
+        filters["aiHoldEndedByUserId"] = data.AiHoldEndedByUserId.ValueString()
+        filterNames = append(filterNames, "ai_hold_ended_by_user_id = "+fmt.Sprintf("%q", data.AiHoldEndedByUserId.ValueString()))
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         filters["createdByUserId"] = data.CreatedByUserId.ValueString()
         filterNames = append(filterNames, "created_by_user_id = "+fmt.Sprintf("%q", data.CreatedByUserId.ValueString()))
@@ -457,6 +598,12 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
     selectParam := map[string]interface{}{
         "createdAt": true,
         "updatedAt": true,
+        "createdByActorType": true,
+        "createdByActorId": true,
+        "lastModifiedAt": true,
+        "lastModifiedByActorType": true,
+        "lastModifiedByActorId": true,
+        "lastModifiedByUserId": true,
         "projectId": true,
         "caseNumber": true,
         "caseNumberWithPrefix": true,
@@ -478,6 +625,8 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         "lastDetectedAt": true,
         "acknowledgedAt": true,
         "containedAt": true,
+        "blockedAt": true,
+        "timeToBlockInSeconds": true,
         "closedAt": true,
         "acknowledgeDueAt": true,
         "containDueAt": true,
@@ -487,6 +636,7 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         "containMissedAt": true,
         "nextDueAt": true,
         "nextTargetCheckAt": true,
+        "nextStepCheckAt": true,
         "closedByUserId": true,
         "groupingKey": true,
         "notifiedSecurityCasePriorityId": true,
@@ -497,6 +647,15 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         "aiTriageReport": true,
         "aiTriagedAt": true,
         "aiTriagePromptInjectionSuspected": true,
+        "aiResponseState": true,
+        "aiHandOffReason": true,
+        "aiNextLookAt": true,
+        "aiTookCaseAt": true,
+        "aiClosedAt": true,
+        "aiHoldOutcome": true,
+        "aiHoldUntil": true,
+        "aiHoldEndedAt": true,
+        "aiHoldEndedByUserId": true,
         "labels": true,
         "createdByUserId": true,
         "_id": true,
@@ -631,6 +790,150 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
+    }
+    if obj, ok := item["createdByActorType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CreatedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CreatedByActorType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorType = types.StringNull()
+        }
+    } else if arr, ok := item["createdByActorType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CreatedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorType = types.StringNull()
+        }
+    } else if val, ok := item["createdByActorType"].(string); ok {
+        data.CreatedByActorType = types.StringValue(val)
+    } else {
+        data.CreatedByActorType = types.StringNull()
+    }
+    if obj, ok := item["createdByActorId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CreatedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CreatedByActorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByActorId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CreatedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorId = types.StringNull()
+        }
+    } else if val, ok := item["createdByActorId"].(string); ok {
+        data.CreatedByActorId = types.StringValue(val)
+    } else {
+        data.CreatedByActorId = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedAt = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedAt = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedAt"].(string); ok {
+        data.LastModifiedAt = types.StringValue(val)
+    } else {
+        data.LastModifiedAt = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedByActorType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedByActorType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorType = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedByActorType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorType = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedByActorType"].(string); ok {
+        data.LastModifiedByActorType = types.StringValue(val)
+    } else {
+        data.LastModifiedByActorType = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedByActorId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedByActorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorId = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedByActorId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorId = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedByActorId"].(string); ok {
+        data.LastModifiedByActorId = types.StringValue(val)
+    } else {
+        data.LastModifiedByActorId = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedByUserId"].(string); ok {
+        data.LastModifiedByUserId = types.StringValue(val)
+    } else {
+        data.LastModifiedByUserId = types.StringNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1090,6 +1393,31 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
     } else {
         data.ContainedAt = types.StringNull()
     }
+    if obj, ok := item["blockedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.BlockedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.BlockedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.BlockedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.BlockedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.BlockedAt = types.StringNull()
+        }
+    } else if arr, ok := item["blockedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.BlockedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.BlockedAt = types.StringNull()
+        }
+    } else if val, ok := item["blockedAt"].(string); ok {
+        data.BlockedAt = types.StringValue(val)
+    } else {
+        data.BlockedAt = types.StringNull()
+    }
+    data.TimeToBlockInSeconds = NumberFromAPI(data.TimeToBlockInSeconds, item["timeToBlockInSeconds"])
     if obj, ok := item["closedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ClosedAt = types.StringValue(val)
@@ -1305,6 +1633,30 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.NextTargetCheckAt = types.StringValue(val)
     } else {
         data.NextTargetCheckAt = types.StringNull()
+    }
+    if obj, ok := item["nextStepCheckAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NextStepCheckAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.NextStepCheckAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.NextStepCheckAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NextStepCheckAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.NextStepCheckAt = types.StringNull()
+        }
+    } else if arr, ok := item["nextStepCheckAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.NextStepCheckAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.NextStepCheckAt = types.StringNull()
+        }
+    } else if val, ok := item["nextStepCheckAt"].(string); ok {
+        data.NextStepCheckAt = types.StringValue(val)
+    } else {
+        data.NextStepCheckAt = types.StringNull()
     }
     if obj, ok := item["closedByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1526,6 +1878,222 @@ func (d *SecurityCaseDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.AiTriagePromptInjectionSuspected = types.BoolValue(val)
     } else {
         data.AiTriagePromptInjectionSuspected = types.BoolNull()
+    }
+    if obj, ok := item["aiResponseState"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiResponseState = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiResponseState = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiResponseState = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiResponseState = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiResponseState = types.StringNull()
+        }
+    } else if arr, ok := item["aiResponseState"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiResponseState = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiResponseState = types.StringNull()
+        }
+    } else if val, ok := item["aiResponseState"].(string); ok {
+        data.AiResponseState = types.StringValue(val)
+    } else {
+        data.AiResponseState = types.StringNull()
+    }
+    if obj, ok := item["aiHandOffReason"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiHandOffReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiHandOffReason = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiHandOffReason = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiHandOffReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiHandOffReason = types.StringNull()
+        }
+    } else if arr, ok := item["aiHandOffReason"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiHandOffReason = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiHandOffReason = types.StringNull()
+        }
+    } else if val, ok := item["aiHandOffReason"].(string); ok {
+        data.AiHandOffReason = types.StringValue(val)
+    } else {
+        data.AiHandOffReason = types.StringNull()
+    }
+    if obj, ok := item["aiNextLookAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiNextLookAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiNextLookAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiNextLookAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiNextLookAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiNextLookAt = types.StringNull()
+        }
+    } else if arr, ok := item["aiNextLookAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiNextLookAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiNextLookAt = types.StringNull()
+        }
+    } else if val, ok := item["aiNextLookAt"].(string); ok {
+        data.AiNextLookAt = types.StringValue(val)
+    } else {
+        data.AiNextLookAt = types.StringNull()
+    }
+    if obj, ok := item["aiTookCaseAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiTookCaseAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiTookCaseAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiTookCaseAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiTookCaseAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiTookCaseAt = types.StringNull()
+        }
+    } else if arr, ok := item["aiTookCaseAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiTookCaseAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiTookCaseAt = types.StringNull()
+        }
+    } else if val, ok := item["aiTookCaseAt"].(string); ok {
+        data.AiTookCaseAt = types.StringValue(val)
+    } else {
+        data.AiTookCaseAt = types.StringNull()
+    }
+    if obj, ok := item["aiClosedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiClosedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiClosedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiClosedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiClosedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiClosedAt = types.StringNull()
+        }
+    } else if arr, ok := item["aiClosedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiClosedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiClosedAt = types.StringNull()
+        }
+    } else if val, ok := item["aiClosedAt"].(string); ok {
+        data.AiClosedAt = types.StringValue(val)
+    } else {
+        data.AiClosedAt = types.StringNull()
+    }
+    if obj, ok := item["aiHoldOutcome"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiHoldOutcome = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiHoldOutcome = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiHoldOutcome = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiHoldOutcome = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiHoldOutcome = types.StringNull()
+        }
+    } else if arr, ok := item["aiHoldOutcome"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiHoldOutcome = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiHoldOutcome = types.StringNull()
+        }
+    } else if val, ok := item["aiHoldOutcome"].(string); ok {
+        data.AiHoldOutcome = types.StringValue(val)
+    } else {
+        data.AiHoldOutcome = types.StringNull()
+    }
+    if obj, ok := item["aiHoldUntil"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiHoldUntil = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiHoldUntil = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiHoldUntil = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiHoldUntil = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiHoldUntil = types.StringNull()
+        }
+    } else if arr, ok := item["aiHoldUntil"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiHoldUntil = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiHoldUntil = types.StringNull()
+        }
+    } else if val, ok := item["aiHoldUntil"].(string); ok {
+        data.AiHoldUntil = types.StringValue(val)
+    } else {
+        data.AiHoldUntil = types.StringNull()
+    }
+    if obj, ok := item["aiHoldEndedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiHoldEndedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiHoldEndedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiHoldEndedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiHoldEndedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiHoldEndedAt = types.StringNull()
+        }
+    } else if arr, ok := item["aiHoldEndedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiHoldEndedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiHoldEndedAt = types.StringNull()
+        }
+    } else if val, ok := item["aiHoldEndedAt"].(string); ok {
+        data.AiHoldEndedAt = types.StringValue(val)
+    } else {
+        data.AiHoldEndedAt = types.StringNull()
+    }
+    if obj, ok := item["aiHoldEndedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiHoldEndedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiHoldEndedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiHoldEndedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiHoldEndedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiHoldEndedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["aiHoldEndedByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiHoldEndedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiHoldEndedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["aiHoldEndedByUserId"].(string); ok {
+        data.AiHoldEndedByUserId = types.StringValue(val)
+    } else {
+        data.AiHoldEndedByUserId = types.StringNull()
     }
     if val, ok := item["labels"].([]interface{}); ok {
         var setItems []attr.Value

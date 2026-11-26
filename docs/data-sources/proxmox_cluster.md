@@ -33,6 +33,8 @@ data "oneuptime_proxmox_cluster" "by_id" {
 - `ai_remediation_mode` (String) Disabled: AI never proposes or runs a change on this Proxmox cluster. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the Proxmox cluster's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). Anyone who may edit the Proxmox cluster can lower the mode; raising it needs Project Owner, Project Admin or Edit AI Rule.
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `ceph_cluster_id` (String) Optional FK to the CephCluster providing storage for this hyperconverged Proxmox cluster (manually linked). The ID of a `oneuptime_ceph_cluster`.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Friendly description for this Proxmox cluster.
 - `guest_count` (Number) Cached count of guests (VMs and containers) in this cluster.
@@ -41,6 +43,9 @@ data "oneuptime_proxmox_cluster" "by_id" {
 - `is_ai_investigation_enabled` (Boolean) When on, OneUptime AI runs read-only commands (pvesh get on cluster, node, VM and container status) on this Proxmox cluster, through its Proxmox AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the Proxmox cluster can turn it on or off.
 - `is_archived` (Boolean) Is this Proxmox cluster archived? Archived Proxmox clusters are hidden from lists but keep collecting telemetry.
 - `is_quorate` (Boolean) True while the cluster reports corosync quorum (pve_up for cluster/<name>). Null until it reports.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `name` (String) Name of this Proxmox cluster. This is the join key — it must match the proxmox.cluster.name OTel resource attribute stamped by the OneUptime Proxmox Agent.
 - `node_count` (Number) Cached count of nodes in this cluster.
 - `online_node_count` (Number) Cached count of nodes currently online (pve_up == 1) in this cluster. Rendered as 'Nodes X/Y online' next to nodeCount.
@@ -60,6 +65,7 @@ data "oneuptime_proxmox_cluster" "by_id" {
 - `archived_at` (String) When was this Proxmox cluster archived?
 - `created_at` (String) Date and Time when the object was created.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_notification_at` (String) When Proxmox VE last sent one of its notifications (backups, replication, fencing, updates) to OneUptime.
 - `last_seen_at` (String) When the cluster was last read: when the agent last read its nodes, guests or storage from the Proxmox VE API, or a node last pushed its own status.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

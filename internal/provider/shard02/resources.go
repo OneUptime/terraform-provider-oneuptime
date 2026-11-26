@@ -9,19 +9,19 @@ import (
 // shards.go).
 func init() {
     RegisterResources("shard02", []OrderedResource{
-        {Order: 58, New: NewPipelineUserOwnerResource},
-        {Order: 92, New: NewUserOverrideResource},
-        {Order: 154, New: NewAlertEpisodeLabelRuleResource},
-        {Order: 220, New: NewCephClusterOwnerRuleResource},
-        {Order: 234, New: NewDomainResource},
-        {Order: 258, New: NewRunbookResource},
-        {Order: 317, New: NewAiAgentResource},
-        {Order: 321, New: NewAiConversationResource},
-        {Order: 357, New: NewVcenterFeedResource},
-        {Order: 381, New: NewNetworkSiteResource},
-        {Order: 423, New: NewHostUserOwnerResource},
-        {Order: 471, New: NewVcenterFeedLegacyResource},
+        {Order: 59, New: NewPipelineUserOwnerResource},
+        {Order: 96, New: NewUserOverrideResource},
+        {Order: 158, New: NewAlertEpisodeLabelRuleResource},
+        {Order: 224, New: NewCephClusterOwnerRuleResource},
+        {Order: 238, New: NewDomainResource},
+        {Order: 262, New: NewRunbookResource},
+        {Order: 321, New: NewAiAgentResource},
+        {Order: 325, New: NewAiConversationResource},
+        {Order: 361, New: NewVcenterFeedResource},
+        {Order: 385, New: NewNetworkSiteResource},
+        {Order: 427, New: NewHostUserOwnerResource},
+        {Order: 475, New: NewVcenterFeedLegacyResource},
     }, []LegacyResourceAlias{
-        {Order: 357, Name: "vcenter_feed", LegacyName: "v_center_feed", New: NewVcenterFeedResource, NewLegacy: NewVcenterFeedLegacyResource},
+        {Order: 361, Name: "vcenter_feed", LegacyName: "v_center_feed", New: NewVcenterFeedResource, NewLegacy: NewVcenterFeedLegacyResource},
     })
 }

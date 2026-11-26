@@ -47,10 +47,16 @@ resource "oneuptime_data_reconciliation" "example" {
 
 - `compared_at` (String) When the later of the two compared values was read.
 - `created_at` (String) Date and Time when the object was created.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `difference` (Number) The target's value less the source's, at the latest comparison.
 - `difference_percent` (Number) The difference as a percentage of the source's value, at the latest comparison.
 - `id` (String) Unique identifier for the resource.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `monitor_id` (String) ID of the Metrics monitor that alerts when the two drift. The ID of a `oneuptime_monitor`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `source_data_check_id` (String) ID of the data check that reads the source, made and kept by the reconciliation. The ID of a `oneuptime_data_check`.

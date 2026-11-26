@@ -45,6 +45,8 @@ resource "oneuptime_alert_episode" "example" {
 - `alert_grouping_rule_id` (String) Alert Grouping Rule ID that created this episode. The ID of a `oneuptime_alert_grouping_rule`.
 - `all_alerts_resolved_at` (String) When all alerts in this episode were first detected as resolved. Used for resolve delay calculation.
 - `created_at` (String) Date and Time when the object was created.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description_template` (String) Template used to generate the episode description. Stored for dynamic variable updates.
 - `episode_number` (Number) Auto-incrementing episode number per project.
@@ -55,6 +57,10 @@ resource "oneuptime_alert_episode" "example" {
 - `is_on_call_policy_executed` (Boolean) Whether the on-call policy has been executed for this episode.
 - `is_owner_notified_of_episode_creation` (Boolean) Are owners notified when this episode is created?
 - `last_alert_added_at` (String) When the last alert was added to this episode.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `post_updates_to_workspace_channels` (String) Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams). A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `resolved_at` (String) When this episode was resolved.

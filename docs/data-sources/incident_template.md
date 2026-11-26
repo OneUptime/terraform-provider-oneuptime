@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_incident_template" "example" {
-  title = "example-title"
+  created_by_actor_type = "User"
 }
 
 # Or by id:
@@ -29,12 +29,17 @@ data "oneuptime_incident_template" "by_id" {
 ### Optional
 
 - `change_monitor_status_to_id` (String) Relation to Monitor Status Object ID. All monitors connected to this incident will be changed to this status when the incident is created. The ID of a `oneuptime_monitor_status`.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Short description of this incident. This is in markdown and will be visible on the status page.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `incident_severity_id` (String) Incident Severity ID. The ID of a `oneuptime_incident_severity`.
 - `initial_incident_state_id` (String) Relation to Incident State Object ID. Incidents created from this template will start in this state. The ID of a `oneuptime_incident_state`.
 - `is_scoped_to_status_pages` (Boolean) Whether incidents declared from this template are limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `slug` (String) Friendly globally unique name for your object.
 - `template_description` (String) Description of the Incident Template.
 - `template_name` (String) Name of the Incident Template.
@@ -49,6 +54,7 @@ data "oneuptime_incident_template" "by_id" {
 - `hosts` (Set of String) List of hosts to pre-populate on incidents created from this template. IDs of `oneuptime_host` resources.
 - `kubernetes_clusters` (Set of String) List of Kubernetes clusters to pre-populate on incidents created from this template. IDs of `oneuptime_kubernetes_cluster` resources.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `monitors` (Set of String) List of monitors affected by this incident. IDs of `oneuptime_monitor` resources.
 - `on_call_duty_policies` (Set of String) List of on-call policies affected by this incident template. IDs of `oneuptime_on_call_policy` resources.
 - `podman_hosts` (Set of String) List of Podman hosts to pre-populate on incidents created from this template. IDs of `oneuptime_podman_host` resources.

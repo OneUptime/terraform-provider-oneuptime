@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_data_pipeline" "example" {
-  job_namespace = "example-job-namespace"
+  created_by_actor_type = "User"
 }
 
 # Or by id:
@@ -29,6 +29,8 @@ data "oneuptime_data_pipeline" "by_id" {
 ### Optional
 
 - `circuit_breaker_stops_on_late_tables` (Boolean) Whether the pipeline's circuit breaker also stops a run when a table it reads is late. A failing check always stops it.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) What the pipeline does and who relies on it, in your own words.
 - `expected_run_interval_in_seconds` (Number) The longest the pipeline goes between runs on its schedule, in seconds: the longest gap between the starts of its last 50 runs, once there are five.
@@ -36,6 +38,9 @@ data "oneuptime_data_pipeline" "by_id" {
 - `job_name` (String) The job's OpenLineage name, such as orders_daily.load_orders.
 - `job_namespace` (String) The job's OpenLineage namespace: where it runs, such as airflow://prod.
 - `last_error_message` (String) The error the latest failed run reported.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `last_run_duration_in_seconds` (Number) How long the latest finished run took, in seconds.
 - `last_run_id` (String) The OpenLineage run id of the pipeline's latest run.
 - `last_run_state` (String) How the latest run stands: Running, Complete, Fail or Abort.
@@ -51,6 +56,7 @@ data "oneuptime_data_pipeline" "by_id" {
 - `first_seen_at` (String) When the pipeline's first event arrived.
 - `inputs` (String) The datasets the pipeline reads, as namespace and name. A JSON value: read it with `jsondecode()`.
 - `last_failure_at` (String) When a run last failed or was aborted.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_run_ended_at` (String) When the latest run ended.
 - `last_run_started_at` (String) When the latest run started.
 - `last_success_at` (String) When a run last completed.

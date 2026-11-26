@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_incoming_call_log" "example" {
-  incoming_call_policy_id = oneuptime_incoming_call_policy.example.id
+  created_by_actor_type = "User"
 }
 
 # Or by id:
@@ -32,10 +32,15 @@ data "oneuptime_incoming_call_log" "by_id" {
 - `call_cost_in_usd_cents` (Number) Total cost for this call in USD cents.
 - `call_duration_in_seconds` (Number) Total call duration in seconds.
 - `call_provider_call_id` (String) Call provider's call identifier.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `current_escalation_rule_order` (Number) The current escalation rule order being processed.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `incoming_call_cost_in_usd_cents` (Number) Cost for incoming leg in USD cents.
 - `incoming_call_policy_id` (String) ID of the Incoming Call Policy. The ID of a `oneuptime_incoming_call_policy`.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `outgoing_call_cost_in_usd_cents` (Number) Cost for all forwarding attempts in USD cents.
 - `repeat_count` (Number) Number of times the policy has been repeated.
 - `status` (String) Current status of the incoming call.
@@ -46,6 +51,7 @@ data "oneuptime_incoming_call_log" "by_id" {
 - `caller_phone_number` (String) Incoming caller's phone number.
 - `created_at` (String) Date and Time when the object was created.
 - `ended_at` (String) When the call ended.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `routing_phone_number` (String) The routing number that was called.
 - `started_at` (String) When the call started.

@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_data_security_identity" "example" {
-  identity_key = "example-identity-key"
+  created_by_actor_type = "User"
 }
 
 # Or by id:
@@ -29,6 +29,8 @@ data "oneuptime_data_security_identity" "by_id" {
 ### Optional
 
 - `can_change_sensitive_data` (Boolean) It may write to, or control, a store holding Confidential or Restricted data.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `estimated_records` (Number) About how many records with sensitive data the stores it reaches hold, where scans could tell.
 - `highest_access_level` (String) The most it may do to any store it reaches: Read, Write or Admin.
 - `highest_sensitivity` (String) How sensitive the most sensitive store it reaches is: Restricted, Confidential, Internal or Public.
@@ -38,6 +40,9 @@ data "oneuptime_data_security_identity" "by_id" {
 - `is_public` (Boolean) The identity is anyone on the internet, or any AWS account.
 - `is_seen_in_traces` (Boolean) OneUptime saw the identity use a store in traces.
 - `is_unused` (Boolean) The identity has not been used in 90 days, as far as its cloud can say.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `principal` (String) Who or what it is, as its cloud names it: *, an account id, an ARN, an email, a service account.
 - `principal_name` (String) The identity's name, for people.
 - `principal_type` (String) What it is: Public, Account, Role, User, Group, Service Principal, Service Account or Service.
@@ -52,6 +57,7 @@ data "oneuptime_data_security_identity" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `data_type_ids` (String) The data types found in the sensitive stores it reaches, by their ids. A JSON value: read it with `jsondecode()`.
 - `first_seen_at` (String) When the identity was first found reaching a store.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_seen_at` (String) When the identity was last found reaching a store.
 - `last_used_at` (String) When the identity was last used, where OneUptime can tell.
 - `project_id` (String) ID of the project this identity belongs to. The ID of a `oneuptime_project`.

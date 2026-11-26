@@ -30,6 +30,8 @@ data "oneuptime_scheduled_maintenance_measurement" "by_id" {
 
 - `aggregation_type` (String) How this measurement's chart sums up many maintenance events by default - Avg (the default), P50, P90, P95, P99, Max or Min. View Chart in the dashboard opens the chart this way. Sum is deliberately absent: adding durations up across maintenance events produces a number with no meaning.
 - `backfill_cursor_id` (String) The ID of the last maintenance event the backfill worked out, which orders the events created at the same moment.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Description of what this measurement means to your team.
 - `end_anchor_type` (String) Where the measurement ends - the moment the event was created, either end of the planned window, the start of its timeline, a specific state, or a state role.
@@ -40,6 +42,9 @@ data "oneuptime_scheduled_maintenance_measurement" "by_id" {
 - `is_enabled` (Boolean) Whether this measurement is computed for maintenance events.
 - `is_system_defined` (Boolean) Whether this measurement was created by OneUptime rather than by your team.
 - `key` (String) Stable, machine readable identifier for this measurement, unique within the project: lowercase letters, numbers and hyphens. Leave it out and it is made from the name - Time to Start becomes time-to-start, with -2, -3 and so on added when another measurement already has it. It is part of the metric name, so it cannot be changed once the measurement is created; to rename a measurement, change the Name instead.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `metric_name` (String) Name of the metric this measurement writes to, derived from the key as oneuptime.scheduled-maintenance.measurement.<key>.
 - `name` (String) Human readable name of this measurement, such as Start Delay. This is what charts call it.
 - `order` (Number) Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number places it there and moves no other one: two at one number are read the older first. In the dashboard, drag the rows to reorder them.
@@ -56,5 +61,6 @@ data "oneuptime_scheduled_maintenance_measurement" "by_id" {
 - `backfill_cursor_created_at` (String) How far the backfill has walked this project, so a restart resumes instead of starting over.
 - `backfill_requested_at` (String) When a backfill of this measurement over existing maintenance events was requested.
 - `created_at` (String) Date and Time when the object was created.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

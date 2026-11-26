@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_data_asset_lineage" "example" {
-  upstream_data_asset_id = oneuptime_data_asset.example.id
+  created_by_actor_type = "User"
 }
 
 # Or by id:
@@ -28,11 +28,16 @@ data "oneuptime_data_asset_lineage" "by_id" {
 
 ### Optional
 
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `data_pipeline_id` (String) ID of the pipeline that moves the data. The ID of a `oneuptime_data_pipeline` (see the data source).
 - `downstream_data_asset_id` (String) ID of the table built from it. The ID of a `oneuptime_data_asset`.
 - `edge_key` (String) The upstream table, the downstream table and the pipeline together: one row each.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `seen_by` (String) For an edge from query history: a login or service account whose queries moved the data.
 - `source` (String) Where the edge was seen: a pipeline's run, the database's query history, or a view's definition. Empty means a pipeline's run.
 - `upstream_data_asset_id` (String) ID of the table the data comes from; empty for a pipeline that writes the table from data OneUptime does not watch. The ID of a `oneuptime_data_asset`.
@@ -42,6 +47,7 @@ data "oneuptime_data_asset_lineage" "by_id" {
 - `column_mappings` (String) Which columns of the upstream table feed which columns of the downstream one, when its source names them. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `first_seen_at` (String) When the edge was first seen.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_seen_at` (String) When a run or query last moved data along the edge, or a view was last seen defined on it.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

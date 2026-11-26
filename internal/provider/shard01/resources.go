@@ -11,17 +11,17 @@ func init() {
     RegisterResources("shard01", []OrderedResource{
         {Order: 2, New: NewTeamResource},
         {Order: 19, New: NewLogDropFilterResource},
-        {Order: 60, New: NewPipelineOwnerRuleResource},
-        {Order: 99, New: NewMonitorStatusResource},
-        {Order: 167, New: NewIncidentOnCallRuleOwningTeamResource},
-        {Order: 202, New: NewHostOwnerRuleResource},
-        {Order: 219, New: NewIotFleetLabelRuleResource},
-        {Order: 264, New: NewPostmortemRuleResource},
-        {Order: 326, New: NewExceptionResource},
-        {Order: 366, New: NewKubernetesClusterUserOwnerResource},
-        {Order: 368, New: NewNetworkDeviceResource},
-        {Order: 462, New: NewIotFleetLabelRuleLegacyResource},
+        {Order: 61, New: NewPipelineOwnerRuleResource},
+        {Order: 103, New: NewMonitorStatusResource},
+        {Order: 171, New: NewIncidentOnCallRuleOwningTeamResource},
+        {Order: 206, New: NewHostOwnerRuleResource},
+        {Order: 223, New: NewIotFleetLabelRuleResource},
+        {Order: 268, New: NewPostmortemRuleResource},
+        {Order: 330, New: NewExceptionResource},
+        {Order: 370, New: NewKubernetesClusterUserOwnerResource},
+        {Order: 372, New: NewNetworkDeviceResource},
+        {Order: 466, New: NewIotFleetLabelRuleLegacyResource},
     }, []LegacyResourceAlias{
-        {Order: 219, Name: "iot_fleet_label_rule", LegacyName: "io_t_fleet_label_rule", New: NewIotFleetLabelRuleResource, NewLegacy: NewIotFleetLabelRuleLegacyResource},
+        {Order: 223, Name: "iot_fleet_label_rule", LegacyName: "io_t_fleet_label_rule", New: NewIotFleetLabelRuleResource, NewLegacy: NewIotFleetLabelRuleLegacyResource},
     })
 }

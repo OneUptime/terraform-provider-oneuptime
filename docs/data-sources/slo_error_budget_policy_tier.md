@@ -35,6 +35,8 @@ data "oneuptime_slo_error_budget_policy_tier" "by_id" {
 - `alert_title_template` (String) Title of the alert raised when the SLO enters this tier. Supports template variables such as {{sloName}} and {{policyTier}}. Leave empty to use the default title.
 - `auto_resolve_alert` (Boolean) Resolve the alert automatically when the error budget recovers out of this tier. Enabled by default. When disabled, the alert stays open until someone resolves it. Entering a more severe tier always resolves it.
 - `auto_resolve_incident` (Boolean) Resolve the incident automatically when the error budget recovers out of this tier. Enabled by default. When disabled, the incident stays open until someone resolves it. Entering a more severe tier always resolves it.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `freezes_deployments` (Boolean) While the SLO is in this tier, its deploymentsAllowed field is false, so CI/CD pipelines that check it hold back releases. Disabled by default.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
@@ -45,6 +47,9 @@ data "oneuptime_slo_error_budget_policy_tier" "by_id" {
 - `is_alert_private` (Boolean) Make the alert raised by this tier private, so only its owners, Project Admins and Project Owners can see it. Disabled by default.
 - `is_enabled` (Boolean) Whether this tier is part of the policy. A disabled tier never applies, and anything it raised is resolved.
 - `is_incident_private` (Boolean) Make the incident declared by this tier private, so only its owners, Project Admins and Project Owners can see it. Disabled by default.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `name` (String) Name of this tier, for example "Reliability first". Shown on the SLO's Overview, in its feed and as {{policyTier}} in alert and incident templates.
 - `service_level_objective_id` (String) ID of the Service Level Objective whose error budget policy this tier belongs to. The ID of a `oneuptime_service_level_objective`.
 - `should_create_alert` (Boolean) Raise an Alert when the SLO enters this tier. Disabled by default.
@@ -66,6 +71,7 @@ data "oneuptime_slo_error_budget_policy_tier" "by_id" {
 - `last_alert_resolved_at` (String) The last time an alert raised by this tier was resolved. Computed by the worker.
 - `last_incident_created_at` (String) The last time an incident was declared by this tier. Computed by the worker.
 - `last_incident_resolved_at` (String) The last time an incident declared by this tier was resolved. Computed by the worker.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `on_call_duty_policies` (Set of String) On-call policies attached to alerts raised by this tier. Incidents have their own list. IDs of `oneuptime_on_call_policy` resources.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

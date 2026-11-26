@@ -29,13 +29,20 @@ data "oneuptime_probe" "by_id" {
 ### Optional
 
 - `connection_status` (String) Connection Status of the Probe.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User).
 - `description` (String) Friendly description that will help you remember.
 - `egress_ip_address` (String) The IP address this probe last checked in from, as OneUptime saw it. Set by OneUptime from the probe's own requests; the blocklist never blocks it.
 - `icon_file_id` (String) Probe Page Icon File ID. The ID of a `oneuptime_file`.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `interface_ip_addresses` (String) The IP addresses on this probe's own network interfaces, as the probe last listed them when it checked in, separated by commas. Set by OneUptime from the probe's own requests; Security Events knows the probe's own polls and checks by them, and the blocklist never blocks them.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
+- `major_version_behind_notified_for` (Number) The major release of OneUptime this probe's owners were last told the probe is behind. Set by OneUptime once a day; empty while the probe runs OneUptime's major release.
 - `name` (String) Any friendly name of this object.
-- `reported_version` (String) The OneUptime release this probe last said it runs. Set by OneUptime from the probe's own requests. Empty until the probe connects, and for a probe older than 17.0.1, which does not say.
+- `reported_version` (String) The OneUptime release this probe last said it runs. Set by OneUptime from the probe's own requests. Empty until the probe connects, and for a probe older than 17.1.0, which does not say.
 - `should_auto_enable_probe_on_new_monitors` (Boolean) Auto Enable Probe on New Monitors.
 - `slug` (String) Friendly globally unique name for your object.
 
@@ -49,6 +56,7 @@ data "oneuptime_probe" "by_id" {
 - `key` (String, Sensitive) The secret the probe connects with, its PROBE_KEY. Leave it out and OneUptime generates one.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_alive` (String) When the probe last checked in. Set by OneUptime.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `packet_capture_capability` (String) What the probe last reported about packet capture: whether it is turned on (PROBE_PACKET_CAPTURE_ENABLED on the probe), whether tcpdump is installed, the network interfaces it can capture on, and the limits its operator set. Managed by the probe. A JSON value: read it with `jsondecode()`.
 - `probe_version` (String) A version label for the probe. Leave it out and it is 1.0.0.
 - `project_id` (String) ID of the project the probe belongs to. A global probe belongs to none.

@@ -46,12 +46,22 @@ resource "oneuptime_security_case" "example" {
 - `acknowledge_missed_at` (String) When the case passed its acknowledge due time without being acknowledged. Empty while it has not.
 - `acknowledge_warned_at` (String) When OneUptime told the people on the case that it was about to miss its acknowledge target.
 - `acknowledged_at` (String) When somebody first took the case on: assigned it to a person, or moved it out of New. The time to acknowledge is measured to here.
+- `ai_closed_at` (String) When OneUptime AI closed the case, on its own or once a person approved it. Empty for a case it did not close.
+- `ai_hand_off_reason` (String) Why OneUptime AI last handed the case to people, such as SteeringText, HighestPriority or ProtectedTarget.
+- `ai_hold_ended_at` (String) When OneUptime AI's hold of the case's alerts ended. Empty while it holds them, and for a case never held.
+- `ai_hold_ended_by_user_id` (String) The person who ended OneUptime AI's hold of the case's alerts, by pressing Page now or taking the case. Empty when OneUptime ended it.
+- `ai_hold_outcome` (String) Whether OneUptime AI is responding first to the case before anyone is alerted (Holding), and how that ended: Resolved with nobody alerted, handed to people (NeedsApproval, HandedOff, TimeRanOut and the rest), or stopped by a person (PageNow, TakenByPerson) or a priority rise (RoseInPriority). Empty for a case never held.
+- `ai_hold_until` (String) When people are alerted about the case at the latest while OneUptime AI responds first to it. Empty when it is not held.
+- `ai_next_look_at` (String) When OneUptime AI next looks at the case while it works it. Empty when it is not working the case.
+- `ai_response_state` (String) Where OneUptime AI stands on the case when it works it: Working, WaitingForPeople, HandedToPeople or Finished. Empty for a case OneUptime AI never worked.
 - `ai_suggested_playbook_id` (String) ID of the project's playbook OneUptime AI suggested running when it triaged the case. It runs only when a person runs it.
 - `ai_suggested_security_case_priority_id` (String) ID of the priority OneUptime AI suggested when it triaged the case. The case's own priority changes only when a person sets it.
+- `ai_took_case_at` (String) When OneUptime AI took the case to work it. Empty for a case it never took.
 - `ai_triage_prompt_injection_suspected` (Boolean) Whether OneUptime AI found text in the case's data written to steer an AI when it triaged the case. It then leaves the call to a person.
 - `ai_triage_report` (String) The report OneUptime AI wrote when it last triaged the case: what happened, its read and the evidence for it, and the next steps.
 - `ai_triaged_at` (String) When OneUptime AI last finished triaging the case.
 - `ai_verdict` (String) What OneUptime AI made of the case when it triaged it: Likely Malicious, Likely Benign, Likely False Positive or Inconclusive. A suggestion; a person sets the case's verdict.
+- `blocked_at` (String) When an automatic response policy's block of one of the case's addresses first took hold at an edge.
 - `case_number` (Number) The case's number in this project, counting up from 1 as cases are opened.
 - `case_number_with_prefix` (String) The case number with the project's case number prefix in front of it, like CASE-42.
 - `closed_at` (String) When the case was closed. Cleared if it is reopened. The time to close is measured to here.
@@ -61,6 +71,8 @@ resource "oneuptime_security_case" "example" {
 - `contain_warned_at` (String) When OneUptime told the people on the case that it was about to miss its contain target.
 - `contained_at` (String) When the case first reached Contained. The time to contain is measured to here.
 - `created_at` (String) Date and Time when the object was created.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) ID of the person who opened the case by hand. The ID of a `oneuptime_user` (see the data source).
 - `detection_count` (Number) How many distinct detections the case holds.
 - `first_detected_at` (String) When the case's earliest detection fired.
@@ -68,11 +80,17 @@ resource "oneuptime_security_case" "example" {
 - `id` (String) Unique identifier for the resource.
 - `incident_id` (String) ID of the OneUptime incident declared for this case. The ID of a `oneuptime_incident`.
 - `last_detected_at` (String) When a detection of the case last fired.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `next_due_at` (String) The earliest due time of a response target the case has not met yet, a missed one included. Empty when every target is met or the case has none.
+- `next_step_check_at` (String) When OneUptime next checks the steps of the case's Response Plan itself. Empty once the case is closed.
 - `next_target_check_at` (String) When OneUptime next checks the case's response targets: when one is about to be missed, or is missed. Empty when there is nothing left to check.
 - `notified_security_case_priority_id` (String) ID of the highest priority people have been told about this case at. They are told again only when it rises above it.
 - `project_id` (String) ID of the project this case belongs to. The ID of a `oneuptime_project`.
 - `source` (String) What opened the case: a Detection Rule, Threat Intel, a Connected Product, Entity Risk, or a person (Manual).
+- `time_to_block_in_seconds` (Number) Seconds from the address's first malicious request to an automatic response policy's block of it taking hold.
 - `updated_at` (String) Date and Time when the object was updated.
 
 ## Import

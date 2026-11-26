@@ -15,8 +15,8 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_exception" "example" {
-  created_by_user_id   = data.oneuptime_user.example.id
-  assign_to_user_email = "alice@example.com"
+  last_modified_by_user_id = data.oneuptime_user.example.id
+  assign_to_user_email     = "alice@example.com"
 }
 
 # Or by id:
@@ -33,6 +33,8 @@ data "oneuptime_exception" "by_id" {
 - `assign_to_team_id` (String) Team ID who this exception is assigned to. The ID of a `oneuptime_team`.
 - `assign_to_user_email` (String) Look it up by the email address of the person in `assign_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
 - `assign_to_user_id` (String) User ID who this exception is assigned to. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `assign_to_user_email`.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `environment` (String) Deployment environment from deployment.environment resource attribute.
 - `error_class` (String) Fault domain of this exception group (code-fault, user-error, expected-denial, infrastructure, unknown). Non-actionable classes are excluded from the Issues list.
@@ -40,9 +42,13 @@ data "oneuptime_exception" "by_id" {
 - `exception_type` (String) Type of the exception that was thrown by the telemetry service.
 - `fingerprint` (String) Finger print of the exception that was thrown by the telemetry service.
 - `first_seen_in_release` (String) The service version / release in which this exception was first observed.
+- `former_fingerprint_of_telemetry_exception_id` (String) ID of the exception whose former fingerprint this row keeps. Empty for an exception of its own. The ID of a `oneuptime_exception`.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_archived` (Boolean) Is this exception archived?
 - `is_resolved` (Boolean) Is this exception resolved?
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `last_seen_in_release` (String) The most recent service version / release in which this exception was observed.
 - `marked_as_archived_by_user_id` (String) User ID who marked this exception as archived. The ID of a `oneuptime_user` (see the data source).
 - `marked_as_resolved_by_user_id` (String) User ID who marked this exception as resolved. The ID of a `oneuptime_user` (see the data source).
@@ -53,6 +59,7 @@ data "oneuptime_exception" "by_id" {
 - `primary_entity_id` (String) ID of the resource this exception belongs to (Service / Host / DockerHost / KubernetesCluster, or the projectId for unattributed telemetry — disambiguated by primaryEntityType).
 - `primary_entity_type` (String) Resource type that produced this exception (e.g. OpenTelemetry service, Host, DockerHost, KubernetesCluster, or Unknown for unattributed telemetry).
 - `resolved_in_release_after` (String) Set when the exception was resolved in the next release: the release it was resolved after. Occurrences from this release do not reopen the exception; an occurrence from any other release does.
+- `split_from_telemetry_exception_id` (String) ID of the exception a scrub rule split this one from. Empty for an exception no rule split. The ID of a `oneuptime_exception`.
 - `stack_trace` (String) Stack trace of the exception that was thrown by the telemetry service.
 - `unhandled` (Boolean) True when at least one occurrence of this exception escaped its span scope (was unhandled, per OTel exception.escaped).
 
@@ -63,6 +70,7 @@ data "oneuptime_exception" "by_id" {
 - `ai_fix_declined_at` (String) Set when an AI-authored fix pull request for this exception was closed without merging; suppresses further automatic fix attempts.
 - `created_at` (String) Date and Time when the object was created.
 - `first_seen_at` (String) When the earliest occurrence of this exception happened.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_seen_at` (String) When the latest occurrence of this exception happened.
 - `marked_as_archived_at` (String) When this exception was last archived. Empty while it is not archived.
 - `marked_as_resolved_at` (String) When this exception was last resolved. Empty while it is unresolved.

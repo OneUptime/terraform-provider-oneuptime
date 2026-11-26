@@ -35,12 +35,17 @@ data "oneuptime_podman_host" "by_id" {
 - `containers_paused` (Number) Cached count of paused containers on this host.
 - `containers_running` (Number) Cached count of running containers on this host.
 - `containers_stopped` (Number) Cached count of stopped containers on this host.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Friendly description for this Podman host.
 - `host_identifier` (String) Unique identifier for this Podman host, sourced from the host.name OTel resource attribute.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_ai_investigation_enabled` (Boolean) When on, OneUptime AI runs read-only commands (docker ps, inspect, logs, stats, events, against the Podman API) on this Podman host, through its Podman AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the Podman host can turn it on or off.
 - `is_archived` (Boolean) Is this Podman host archived? Archived Podman hosts are hidden from lists but keep collecting telemetry.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `name` (String) Friendly name for this Podman host.
 - `os_type` (String) Operating system type of the Podman host.
 - `os_version` (String) Operating system version of the Podman host.
@@ -57,6 +62,7 @@ data "oneuptime_podman_host" "by_id" {
 - `archived_at` (String) When was this Podman host archived?
 - `created_at` (String) Date and Time when the object was created.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_seen_at` (String) When metrics were last received from this host.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `telemetry_retention_config` (String) Per-pillar retention overrides for this Podman host (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the Podman host default, then the project's retention settings. A JSON value: read it with `jsondecode()`.

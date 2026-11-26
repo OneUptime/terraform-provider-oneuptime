@@ -7,5 +7,5 @@ const generatedShards = 32
 
 // The resources written by hand, in their places among the generated ones.
 var handwrittenResources = []OrderedResource{
-    {Order: 456, New: NewOnCallScheduleLayersResource},
+    {Order: 460, New: NewOnCallScheduleLayersResource},
 }

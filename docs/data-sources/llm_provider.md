@@ -30,11 +30,16 @@ data "oneuptime_llm_provider" "by_id" {
 
 - `base_url` (String) The base URL for the LLM API. Required for Azure OpenAI / Microsoft Foundry (the resource's endpoint, such as https://<resource>.openai.azure.com/openai/v1), Ollama and OpenAI-compatible servers, optional for others. The API key and the Additional Parameters are sent to it, so only Project Owners and Project Admins can change it. Everyone who may read the project's settings can read it, so never put a key, a token or a password in it: use the API Key.
 - `cost_per_million_tokens_in_usd_cents` (Number) Cost per million tokens in USD cents. Used for billing when using global LLM providers.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User).
 - `description` (String) Description of this LLM configuration.
 - `has_additional_params` (Boolean) Whether Additional Parameters are saved. Worked out from the parameters on every read.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_default` (Boolean) Is this the default LLM provider for the project? When set, the global LLM provider will not be used.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `llm_type` (String) The type of LLM provider (OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama, OpenAICompatible, etc.).
 - `model_name` (String) The model to use (e.g., gpt-5.1, claude-sonnet-5-5, llama3.1). For Azure OpenAI / Microsoft Foundry, the deployment's name. Optional: left empty, the provider's default model is used, and an OpenAI-compatible server is asked for the first model it lists.
 - `name` (String) A friendly name for this LLM configuration.
@@ -46,5 +51,6 @@ data "oneuptime_llm_provider" "by_id" {
 - `additional_params` (String) Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults. Read only by Project Owners and Project Admins, like the API key. A JSON value: read it with `jsondecode()`.
 - `api_key` (String, Sensitive) The API key for the LLM provider. Required for OpenAI, Azure OpenAI / Microsoft Foundry (one of the resource's keys), Anthropic, Groq, and Mistral.
 - `created_at` (String) Date and Time when the object was created.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `project_id` (String) ID of the project this LLM belongs to. If null, it is a global LLM.
 - `updated_at` (String) Date and Time when the object was updated.

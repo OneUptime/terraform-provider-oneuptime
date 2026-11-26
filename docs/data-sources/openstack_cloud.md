@@ -45,6 +45,8 @@ data "oneuptime_openstack_cloud" "by_id" {
 - `collection_probe_id` (String) ID of the OneUptime probe that collects this cloud. Changing it asks for the credential again. The ID of a `oneuptime_probe`.
 - `collection_settings_version` (Number) Counts changes to the probe collection settings, so a report from a collection that started before a change is not shown as the current status. Written by the server.
 - `collection_status` (String) Where probe collection stands: Pending (the probe has not tried the current settings yet), Succeeded, PartiallySucceeded (some of the cloud could not be read) or Failed. Written by the server and the probe.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `credential_kind` (String) Which kind of credential the probe logs in with: applicationCredential or password. Worked out from what is written with a new secret, so it can be left out.
 - `description` (String) Friendly description for this OpenStack cloud.
@@ -58,6 +60,9 @@ data "oneuptime_openstack_cloud" "by_id" {
 - `is_archived` (Boolean) Is this OpenStack cloud archived? Archived OpenStack clouds are hidden from lists but keep collecting telemetry.
 - `is_credential_set` (Boolean) Whether a credential is saved. Set by the server from the secret itself.
 - `keystone_username` (String) The Keystone user the probe logs in as, when it logs in with a password instead of an application credential. The password goes in Credential Secret. Changing it asks for the password again.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `memory_allocated_bytes` (Number) Memory promised to instances. This is what is promised, not what is in use.
 - `memory_capacity_bytes` (Number) Memory the cloud can promise to instances, as Placement counts it.
 - `name` (String) Name of this OpenStack cloud. This is the join key — it must match the openstack.cloud.name OTel resource attribute stamped by the OneUptime OpenStack Agent.
@@ -94,6 +99,7 @@ data "oneuptime_openstack_cloud" "by_id" {
 - `instance_metrics_options` (String) Whether real per-instance CPU, memory, disk and network series are kept for this cloud, as JSON: mode (automatic, all, selected or off), and for selected, the projectIds and aggregates. Per-instance series multiply fast, so automatic stops keeping them past a stated number of instances. A JSON value: read it with `jsondecode()`.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_collection_at` (String) When the probe last tried to collect this cloud, whether it worked or not. Written by the server.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_seen_at` (String) When metrics were last received from this cloud.
 - `last_successful_collection_at` (String) When a collection of this cloud last worked, in full or in part. Written by the server.
 - `next_collection_at` (String) When the probe collects this cloud next. Written by the server.

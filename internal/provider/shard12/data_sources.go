@@ -10,14 +10,14 @@ import (
 func init() {
     RegisterDataSources("shard12", []OrderedDataSource{
         {Order: 15, New: NewMetricSavedViewDataSource},
-        {Order: 35, New: NewSecurityCasePriorityDataSource},
-        {Order: 70, New: NewDataReconciliationDataSource},
-        {Order: 199, New: NewIncidentEpisodeOnCallRuleDataSource},
-        {Order: 209, New: NewScheduledMaintenanceMeasurementDataSource},
-        {Order: 304, New: NewStatusPageSsoDataSource},
-        {Order: 346, New: NewIncomingCallPolicyTeamOwnerDataSource},
-        {Order: 378, New: NewSourceMapDataSource},
-        {Order: 387, New: NewDashboardSsoDataSource},
-        {Order: 477, New: NewHostUserOwnerDataSource},
+        {Order: 38, New: NewSecurityCasePriorityDataSource},
+        {Order: 75, New: NewDataReconciliationDataSource},
+        {Order: 209, New: NewIncidentEpisodeOnCallRuleDataSource},
+        {Order: 219, New: NewScheduledMaintenanceMeasurementDataSource},
+        {Order: 314, New: NewStatusPageSsoDataSource},
+        {Order: 356, New: NewIncomingCallPolicyTeamOwnerDataSource},
+        {Order: 388, New: NewSourceMapDataSource},
+        {Order: 397, New: NewDashboardSsoDataSource},
+        {Order: 487, New: NewHostUserOwnerDataSource},
     }, nil)
 }

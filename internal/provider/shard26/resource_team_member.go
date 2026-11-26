@@ -241,6 +241,9 @@ func (r *TeamMemberResource) Create(ctx context.Context, req resource.CreateRequ
     // What OneUptime left out because only it writes it, if anything (see entries.go).
     resp.Diagnostics.Append(FieldsLeftOutWarning(httpResp, "team member")...)
 
+    // What the write does that someone should know, if anything (see entries.go).
+    resp.Diagnostics.Append(WriteWarnings(httpResp, "team member")...)
+
     // Extract the new resource id from the create response.
     createdId := ""
     if wrapper, ok := teamMemberResponse["data"].(map[string]interface{}); ok {
@@ -919,6 +922,9 @@ func (r *TeamMemberResource) Update(ctx context.Context, req resource.UpdateRequ
             return
         }
         _ = teamMemberResponse
+
+        // What the write does that someone should know, if anything (see entries.go).
+        resp.Diagnostics.Append(WriteWarnings(httpResp, "team member")...)
     }
 
     // After successful update, fetch the current state by calling Read with select parameter

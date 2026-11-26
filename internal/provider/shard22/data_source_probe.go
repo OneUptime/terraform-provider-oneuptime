@@ -32,13 +32,21 @@ type ProbeDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
+    CreatedByActorType types.String `tfsdk:"created_by_actor_type"`
+    CreatedByActorId types.String `tfsdk:"created_by_actor_id"`
+    LastModifiedAt types.String `tfsdk:"last_modified_at"`
+    LastModifiedByActorType types.String `tfsdk:"last_modified_by_actor_type"`
+    LastModifiedByActorId types.String `tfsdk:"last_modified_by_actor_id"`
+    LastModifiedByUserId types.String `tfsdk:"last_modified_by_user_id"`
     Key types.String `tfsdk:"key"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     Slug types.String `tfsdk:"slug"`
     ProbeVersion types.String `tfsdk:"probe_version"`
     ReportedVersion types.String `tfsdk:"reported_version"`
+    MajorVersionBehindNotifiedFor types.Number `tfsdk:"major_version_behind_notified_for"`
     EgressIpAddress types.String `tfsdk:"egress_ip_address"`
+    InterfaceIpAddresses types.String `tfsdk:"interface_ip_addresses"`
     LastAlive types.String `tfsdk:"last_alive"`
     IconFileId types.String `tfsdk:"icon_file_id"`
     ProjectId types.String `tfsdk:"project_id"`
@@ -59,7 +67,7 @@ func (d *ProbeDataSource) Metadata(ctx context.Context, req datasource.MetadataR
 
 func (d *ProbeDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manages custom probes. Deploy probes anywhere in the world and connect it to your project. Look up an existing probe by `id`, or by any of its other arguments (`name`, `connection_status`, `created_by_user_id`, ...): each one set must match, and exactly one probe may match them all.",
+        MarkdownDescription: "Manages custom probes. Deploy probes anywhere in the world and connect it to your project. Look up an existing probe by `id`, or by any of its other arguments (`name`, `connection_status`, `created_by_actor_id`, ...): each one set must match, and exactly one probe may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -74,6 +82,36 @@ func (d *ProbeDataSource) Schema(ctx context.Context, req datasource.SchemaReque
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
+            },
+            "created_by_actor_type": schema.StringAttribute{
+                MarkdownDescription: "What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.",
+                Optional: true,
+                Computed: true,
+            },
+            "created_by_actor_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_modified_at": schema.StringAttribute{
+                MarkdownDescription: "When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.",
+                Computed: true,
+            },
+            "last_modified_by_actor_type": schema.StringAttribute{
+                MarkdownDescription: "What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_modified_by_actor_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_modified_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
+                Computed: true,
+                Validators: DataSourceRecordIDValidators("oneuptime_user"),
             },
             "key": schema.StringAttribute{
                 MarkdownDescription: "The secret the probe connects with, its PROBE_KEY. Leave it out and OneUptime generates one.",
@@ -100,12 +138,22 @@ func (d *ProbeDataSource) Schema(ctx context.Context, req datasource.SchemaReque
                 Computed: true,
             },
             "reported_version": schema.StringAttribute{
-                MarkdownDescription: "The OneUptime release this probe last said it runs. Set by OneUptime from the probe's own requests. Empty until the probe connects, and for a probe older than 17.0.1, which does not say.",
+                MarkdownDescription: "The OneUptime release this probe last said it runs. Set by OneUptime from the probe's own requests. Empty until the probe connects, and for a probe older than 17.1.0, which does not say.",
+                Optional: true,
+                Computed: true,
+            },
+            "major_version_behind_notified_for": schema.NumberAttribute{
+                MarkdownDescription: "The major release of OneUptime this probe's owners were last told the probe is behind. Set by OneUptime once a day; empty while the probe runs OneUptime's major release.",
                 Optional: true,
                 Computed: true,
             },
             "egress_ip_address": schema.StringAttribute{
                 MarkdownDescription: "The IP address this probe last checked in from, as OneUptime saw it. Set by OneUptime from the probe's own requests; the blocklist never blocks it.",
+                Optional: true,
+                Computed: true,
+            },
+            "interface_ip_addresses": schema.StringAttribute{
+                MarkdownDescription: "The IP addresses on this probe's own network interfaces, as the probe last listed them when it checked in, separated by commas. Set by OneUptime from the probe's own requests; Security Events knows the probe's own polls and checks by them, and the blocklist never blocks them.",
                 Optional: true,
                 Computed: true,
             },
@@ -202,6 +250,26 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
     // Every other argument set in configuration narrows the lookup.
     filters := map[string]interface{}{}
     filterNames := []string{}
+    if !data.CreatedByActorType.IsNull() && !data.CreatedByActorType.IsUnknown() {
+        filters["createdByActorType"] = data.CreatedByActorType.ValueString()
+        filterNames = append(filterNames, "created_by_actor_type = "+fmt.Sprintf("%q", data.CreatedByActorType.ValueString()))
+    }
+    if !data.CreatedByActorId.IsNull() && !data.CreatedByActorId.IsUnknown() {
+        filters["createdByActorId"] = data.CreatedByActorId.ValueString()
+        filterNames = append(filterNames, "created_by_actor_id = "+fmt.Sprintf("%q", data.CreatedByActorId.ValueString()))
+    }
+    if !data.LastModifiedByActorType.IsNull() && !data.LastModifiedByActorType.IsUnknown() {
+        filters["lastModifiedByActorType"] = data.LastModifiedByActorType.ValueString()
+        filterNames = append(filterNames, "last_modified_by_actor_type = "+fmt.Sprintf("%q", data.LastModifiedByActorType.ValueString()))
+    }
+    if !data.LastModifiedByActorId.IsNull() && !data.LastModifiedByActorId.IsUnknown() {
+        filters["lastModifiedByActorId"] = data.LastModifiedByActorId.ValueString()
+        filterNames = append(filterNames, "last_modified_by_actor_id = "+fmt.Sprintf("%q", data.LastModifiedByActorId.ValueString()))
+    }
+    if !data.LastModifiedByUserId.IsNull() && !data.LastModifiedByUserId.IsUnknown() {
+        filters["lastModifiedByUserId"] = data.LastModifiedByUserId.ValueString()
+        filterNames = append(filterNames, "last_modified_by_user_id = "+fmt.Sprintf("%q", data.LastModifiedByUserId.ValueString()))
+    }
     if !data.Name.IsNull() && !data.Name.IsUnknown() {
         filters["name"] = data.Name.ValueString()
         filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
@@ -218,9 +286,17 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         filters["reportedVersion"] = data.ReportedVersion.ValueString()
         filterNames = append(filterNames, "reported_version = "+fmt.Sprintf("%q", data.ReportedVersion.ValueString()))
     }
+    if !data.MajorVersionBehindNotifiedFor.IsNull() && !data.MajorVersionBehindNotifiedFor.IsUnknown() {
+        filters["majorVersionBehindNotifiedFor"] = LookupNumber(data.MajorVersionBehindNotifiedFor)
+        filterNames = append(filterNames, "major_version_behind_notified_for = "+data.MajorVersionBehindNotifiedFor.ValueBigFloat().String())
+    }
     if !data.EgressIpAddress.IsNull() && !data.EgressIpAddress.IsUnknown() {
         filters["egressIpAddress"] = data.EgressIpAddress.ValueString()
         filterNames = append(filterNames, "egress_ip_address = "+fmt.Sprintf("%q", data.EgressIpAddress.ValueString()))
+    }
+    if !data.InterfaceIpAddresses.IsNull() && !data.InterfaceIpAddresses.IsUnknown() {
+        filters["interfaceIpAddresses"] = data.InterfaceIpAddresses.ValueString()
+        filterNames = append(filterNames, "interface_ip_addresses = "+fmt.Sprintf("%q", data.InterfaceIpAddresses.ValueString()))
     }
     if !data.IconFileId.IsNull() && !data.IconFileId.IsUnknown() {
         filters["iconFileId"] = data.IconFileId.ValueString()
@@ -257,13 +333,21 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
     selectParam := map[string]interface{}{
         "createdAt": true,
         "updatedAt": true,
+        "createdByActorType": true,
+        "createdByActorId": true,
+        "lastModifiedAt": true,
+        "lastModifiedByActorType": true,
+        "lastModifiedByActorId": true,
+        "lastModifiedByUserId": true,
         "key": true,
         "name": true,
         "description": true,
         "slug": true,
         "probeVersion": true,
         "reportedVersion": true,
+        "majorVersionBehindNotifiedFor": true,
         "egressIpAddress": true,
+        "interfaceIpAddresses": true,
         "lastAlive": true,
         "iconFileId": true,
         "projectId": true,
@@ -409,6 +493,150 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
     } else {
         data.UpdatedAt = types.StringNull()
     }
+    if obj, ok := item["createdByActorType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CreatedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CreatedByActorType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorType = types.StringNull()
+        }
+    } else if arr, ok := item["createdByActorType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CreatedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorType = types.StringNull()
+        }
+    } else if val, ok := item["createdByActorType"].(string); ok {
+        data.CreatedByActorType = types.StringValue(val)
+    } else {
+        data.CreatedByActorType = types.StringNull()
+    }
+    if obj, ok := item["createdByActorId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CreatedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CreatedByActorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByActorId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CreatedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorId = types.StringNull()
+        }
+    } else if val, ok := item["createdByActorId"].(string); ok {
+        data.CreatedByActorId = types.StringValue(val)
+    } else {
+        data.CreatedByActorId = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedAt = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedAt = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedAt"].(string); ok {
+        data.LastModifiedAt = types.StringValue(val)
+    } else {
+        data.LastModifiedAt = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedByActorType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedByActorType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorType = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedByActorType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorType = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedByActorType"].(string); ok {
+        data.LastModifiedByActorType = types.StringValue(val)
+    } else {
+        data.LastModifiedByActorType = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedByActorId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedByActorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorId = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedByActorId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorId = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedByActorId"].(string); ok {
+        data.LastModifiedByActorId = types.StringValue(val)
+    } else {
+        data.LastModifiedByActorId = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedByUserId"].(string); ok {
+        data.LastModifiedByUserId = types.StringValue(val)
+    } else {
+        data.LastModifiedByUserId = types.StringNull()
+    }
     if obj, ok := item["key"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Key = types.StringValue(val)
@@ -553,6 +781,7 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
     } else {
         data.ReportedVersion = types.StringNull()
     }
+    data.MajorVersionBehindNotifiedFor = NumberFromAPI(data.MajorVersionBehindNotifiedFor, item["majorVersionBehindNotifiedFor"])
     if obj, ok := item["egressIpAddress"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.EgressIpAddress = types.StringValue(val)
@@ -576,6 +805,30 @@ func (d *ProbeDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.EgressIpAddress = types.StringValue(val)
     } else {
         data.EgressIpAddress = types.StringNull()
+    }
+    if obj, ok := item["interfaceIpAddresses"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.InterfaceIpAddresses = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.InterfaceIpAddresses = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.InterfaceIpAddresses = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.InterfaceIpAddresses = types.StringValue(string(jsonBytes))
+        } else {
+            data.InterfaceIpAddresses = types.StringNull()
+        }
+    } else if arr, ok := item["interfaceIpAddresses"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.InterfaceIpAddresses = types.StringValue(string(jsonBytes))
+        } else {
+            data.InterfaceIpAddresses = types.StringNull()
+        }
+    } else if val, ok := item["interfaceIpAddresses"].(string); ok {
+        data.InterfaceIpAddresses = types.StringValue(val)
+    } else {
+        data.InterfaceIpAddresses = types.StringNull()
     }
     if obj, ok := item["lastAlive"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

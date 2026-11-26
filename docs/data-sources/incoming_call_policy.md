@@ -29,11 +29,16 @@ data "oneuptime_incoming_call_policy" "by_id" {
 ### Optional
 
 - `call_provider_phone_number_id` (String) The call provider's ID for the phone number (e.g., Twilio SID).
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Friendly description that will help you remember.
 - `greeting_message` (String) Custom TTS greeting message for incoming calls.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_enabled` (Boolean) Enable or disable this incoming call policy.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `name` (String) Any friendly name of this policy.
 - `no_answer_message` (String) Message when escalation is exhausted and no one answers.
 - `no_one_available_message` (String) Message when no one is on-call or reachable.
@@ -48,6 +53,7 @@ data "oneuptime_incoming_call_policy" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `phone_number_purchased_at` (String) When the phone number was purchased.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `routing_phone_number` (String) The phone number for incoming calls to this policy.

@@ -36,12 +36,18 @@ resource "oneuptime_network_endpoint" "example" {
 - `attached_port_name` (String) Name of the switch port this endpoint was last seen on. Managed by the server.
 - `attachment_source` (String) The network controller that reported where this endpoint is attached, such as meraki. Empty when a walk of a switch or router found it. Managed by the server.
 - `created_at` (String) Date and Time when the object was created.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `edited_at` (String) When a person last added this endpoint or changed its vendor, IP address or site. Managed by the server.
 - `first_seen_at` (String) When this endpoint was first discovered on the network.
 - `hostname` (String) What a network controller calls this endpoint, such as the name in its Meraki client list. Managed by the server.
 - `id` (String) Unique identifier for the resource.
 - `ip_address` (String) Last IP address seen for this endpoint in ARP tables. Managed by the server.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `last_seen_at` (String) When this endpoint was last seen in an ARP or FDB walk, or in a network controller's client list. While a walk keeps seeing it unchanged, this is refreshed every 15 minutes, so it is accurate to within 15 minutes and one poll.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

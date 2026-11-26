@@ -28,16 +28,22 @@ data "oneuptime_workspace_notification_rule" "by_id" {
 
 ### Optional
 
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Description of the Notification Rule.
 - `event_type` (String) Event Type for the Workspace like Incident Created, Monitor Status Updated, etc.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `name` (String) Name of the Notification Rule.
 - `workspace_type` (String) Type of Workspace - slack, microsoft teams etc.
 
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `notification_rule` (String) The rule, as JSON: the events it is for (filters, filterCondition), where it posts, and for incident, alert, incident episode, alert episode, scheduled maintenance, on-call policy and security case rules, updatesToPost: the updates it posts after the record's first message, any of ResolvedAndReopened, StateChanges, SeverityChanges, PublicNotes, PrivateNotes, Owners, Paging, EpisodeMembers, Postmortem, AI, Edits, CustomFields, Reminders and Other - for an on-call policy rule, any of OnCallNow, OnCallNext, NobodyOnCall, Overrides, PolicyChanges and Owners; for a security case rule, any of PriorityReached, Assigned, ApprovalRequested and ResponseTargets - as its kind of rule allows. null posts every update, and so does leaving it out, except on an on-call policy rule: a new one that leaves it out posts the key updates, OnCallNow and NobodyOnCall, as one made in the Dashboard does, and an edit that leaves it out keeps the updates the rule posts. The first message, and a video call's Join button, are posted whatever it lists. An on-call policy rule that posts OnCallNow can set shouldMentionWhoIsOnCall to true: its hand-off line then mentions the person who comes on call, where they connected their chat account. Owner and On-Call Policy conditions in filters name people, teams and policies of this project by ID. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

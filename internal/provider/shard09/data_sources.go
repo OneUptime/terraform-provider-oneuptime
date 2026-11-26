@@ -10,16 +10,16 @@ import (
 func init() {
     RegisterDataSources("shard09", []OrderedDataSource{
         {Order: 23, New: NewWatchlistDataSource},
-        {Order: 95, New: NewAiConnectionDataSource},
-        {Order: 104, New: NewApiKeyCustomRoleDataSource},
-        {Order: 132, New: NewIncidentPublicNoteDataSource},
-        {Order: 200, New: NewIncidentEpisodeOnCallRuleOwningTeamDataSource},
-        {Order: 214, New: NewSloErrorBudgetPolicyTierDataSource},
-        {Order: 301, New: NewTeamTeamOwnerDataSource},
-        {Order: 327, New: NewScheduledMaintenanceNoteTemplateDataSource},
-        {Order: 339, New: NewOnCallDutyPolicyFeedDataSource},
-        {Order: 381, New: NewInventoryItemCustomFieldDataSource},
-        {Order: 445, New: NewNetworkSiteAssignmentRuleDataSource},
-        {Order: 487, New: NewCloudBudgetDataSource},
+        {Order: 105, New: NewAiConnectionDataSource},
+        {Order: 114, New: NewApiKeyCustomRoleDataSource},
+        {Order: 142, New: NewIncidentPublicNoteDataSource},
+        {Order: 210, New: NewIncidentEpisodeOnCallRuleOwningTeamDataSource},
+        {Order: 224, New: NewSloErrorBudgetPolicyTierDataSource},
+        {Order: 311, New: NewTeamTeamOwnerDataSource},
+        {Order: 337, New: NewScheduledMaintenanceNoteTemplateDataSource},
+        {Order: 349, New: NewOnCallDutyPolicyFeedDataSource},
+        {Order: 391, New: NewInventoryItemCustomFieldDataSource},
+        {Order: 455, New: NewNetworkSiteAssignmentRuleDataSource},
+        {Order: 497, New: NewCloudBudgetDataSource},
     }, nil)
 }

@@ -29,12 +29,17 @@ data "oneuptime_external_mcp_server" "by_id" {
 ### Optional
 
 - `auth_type` (String) How OneUptime signs in to the server: None, BearerToken (an API token), Headers (headers of the server's own, such as X-API-Key) or OAuthClientCredentials (a token from an OAuth token URL, with a client ID and secret).
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) ID of the user who added this MCP server. The ID of a `oneuptime_user` (see the data source).
 - `description` (String) What the server is for, such as 'Our production AWS account, read-only'. OneUptime AI reads it to choose the right server.
 - `header_names` (String) The names of the headers the server signs in with, without their values. Worked out from the headers on every read.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_enabled` (Boolean) Whether OneUptime AI may use this server. A server that is off is never used, whatever a rule names.
 - `last_error` (String) Why the last connection failed, with secrets removed. Cleared by the next connection that works.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `name` (String) A name for the server, such as AWS or Azure. OneUptime AI and the people reading what it did see the server by this name.
 - `oauth_audience` (String) For OAuthClientCredentials: the audience to ask for, when the token URL needs one (Auth0 does). Leave empty otherwise.
 - `oauth_client_id` (String) For OAuthClientCredentials: the OAuth client ID.
@@ -51,6 +56,7 @@ data "oneuptime_external_mcp_server" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `last_checked_at` (String) When OneUptime last tried to connect to the server. Empty means never.
 - `last_connected_at` (String) When OneUptime last connected to the server and read its tools.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `project_id` (String) ID of the project this MCP server belongs to. The ID of a `oneuptime_project`.
 - `tools` (String) The tools the server offered when OneUptime last connected: each one's name, description and whether the server marks it read-only. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

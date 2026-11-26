@@ -30,6 +30,12 @@ type ProjectDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
+    CreatedByActorType types.String `tfsdk:"created_by_actor_type"`
+    CreatedByActorId types.String `tfsdk:"created_by_actor_id"`
+    LastModifiedAt types.String `tfsdk:"last_modified_at"`
+    LastModifiedByActorType types.String `tfsdk:"last_modified_by_actor_type"`
+    LastModifiedByActorId types.String `tfsdk:"last_modified_by_actor_id"`
+    LastModifiedByUserId types.String `tfsdk:"last_modified_by_user_id"`
     Name types.String `tfsdk:"name"`
     Slug types.String `tfsdk:"slug"`
     PaymentProviderPlanId types.String `tfsdk:"payment_provider_plan_id"`
@@ -89,8 +95,25 @@ type ProjectDataSourceModel struct {
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
     EnableAutomaticSecurityCaseTriage types.Bool `tfsdk:"enable_automatic_security_case_triage"`
+    EnableAutomaticSecurityCaseResponse types.Bool `tfsdk:"enable_automatic_security_case_response"`
+    SecurityCaseAiCaseMode types.String `tfsdk:"security_case_ai_case_mode"`
+    SecurityCaseAiEdgeMode types.String `tfsdk:"security_case_ai_edge_mode"`
+    SecurityCaseAiAccountsMode types.String `tfsdk:"security_case_ai_accounts_mode"`
+    SecurityCaseAiHostsMode types.String `tfsdk:"security_case_ai_hosts_mode"`
+    SecurityCaseAiCodeMode types.String `tfsdk:"security_case_ai_code_mode"`
+    SecurityCaseAiCloseMode types.String `tfsdk:"security_case_ai_close_mode"`
+    SecurityCaseAiOnItsOwnStamps types.String `tfsdk:"security_case_ai_on_its_own_stamps"`
+    EnableSecurityCaseAiRespondsFirst types.Bool `tfsdk:"enable_security_case_ai_responds_first"`
+    SecurityCaseAiHoldBelowPriorityId types.String `tfsdk:"security_case_ai_hold_below_priority_id"`
+    SecurityCaseAiHoldMinutes types.Number `tfsdk:"security_case_ai_hold_minutes"`
+    EnableAutomaticDataSecurityAi types.Bool `tfsdk:"enable_automatic_data_security_ai"`
     EnableSecurityRiskCases types.Bool `tfsdk:"enable_security_risk_cases"`
     SecurityRiskCaseThreshold types.Number `tfsdk:"security_risk_case_threshold"`
+    MarkSecurityCaseContainedWhenVerified types.Bool `tfsdk:"mark_security_case_contained_when_verified"`
+    SecurityTrustedProxies types.String `tfsdk:"security_trusted_proxies"`
+    SecurityTrustOwnLoadBalancers types.Bool `tfsdk:"security_trust_own_load_balancers"`
+    SecurityReadAccessLogForwardedFor types.Bool `tfsdk:"security_read_access_log_forwarded_for"`
+    SecurityAutomaticResponseMaxBlocksPerHour types.Number `tfsdk:"security_automatic_response_max_blocks_per_hour"`
     EnableAutomaticIncidentRemediation types.Bool `tfsdk:"enable_automatic_incident_remediation"`
     EnableAutomaticAlertRemediation types.Bool `tfsdk:"enable_automatic_alert_remediation"`
     RequireTwoApprovalsForRiskierFixes types.Bool `tfsdk:"require_two_approvals_for_riskier_fixes"`
@@ -140,6 +163,7 @@ type ProjectDataSourceModel struct {
     LetCustomerSupportAccessProject types.Bool `tfsdk:"let_customer_support_access_project"`
     DoNotAddGlobalProbesByDefaultOnNewMonitors types.Bool `tfsdk:"do_not_add_global_probes_by_default_on_new_monitors"`
     RequireIncomingRequestSecret types.Bool `tfsdk:"require_incoming_request_secret"`
+    RequireUniqueNames types.Bool `tfsdk:"require_unique_names"`
     UseGlobalRunners types.Bool `tfsdk:"use_global_runners"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
     DefaultMetricCardinalityBudget types.Number `tfsdk:"default_metric_cardinality_budget"`
@@ -190,6 +214,36 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
+            },
+            "created_by_actor_type": schema.StringAttribute{
+                MarkdownDescription: "What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.",
+                Optional: true,
+                Computed: true,
+            },
+            "created_by_actor_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_modified_at": schema.StringAttribute{
+                MarkdownDescription: "When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.",
+                Computed: true,
+            },
+            "last_modified_by_actor_type": schema.StringAttribute{
+                MarkdownDescription: "What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_modified_by_actor_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_modified_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
+                Computed: true,
+                Validators: DataSourceRecordIDValidators("oneuptime_user"),
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Any friendly name of this object.",
@@ -272,7 +326,7 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "workflow_runs_in_last30_days": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Billing Admin, Billing Member, Billing Viewer, Security Admin], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
             },
@@ -485,6 +539,65 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Optional: true,
                 Computed: true,
             },
+            "enable_automatic_security_case_response": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime AI works each case its triage reads as Likely Malicious, and any case a person asks it to: it takes the case, contains it, checks that each step holds, asks for the fix and closes the case with a report, within what the project's Security Case AI settings allow. Everything it does is on the case's timeline as OneUptime AI's, and can be undone. On for new projects created in OneUptime; projects that existed before keep it off until someone turns it on. Requires AI to be enabled and an LLM provider to be configured.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_case_ai_case_mode": schema.StringAttribute{
+                MarkdownDescription: "What OneUptime AI may do to the case itself - take it, set its priority, mark steps done with their evidence, and move it to Contained once every containment step is verified: Off, Ask or OnItsOwn.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_case_ai_edge_mode": schema.StringAttribute{
+                MarkdownDescription: "Whether OneUptime AI may block a case's address at the edge, for at most 24 hours: Off, Ask or OnItsOwn. OnItsOwn takes effect only once a Security Admin confirms it; until then OneUptime AI asks.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_case_ai_accounts_mode": schema.StringAttribute{
+                MarkdownDescription: "Whether OneUptime AI may suspend a case's user or end their sessions, through the project's identity provider connection: Off, Ask or OnItsOwn.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_case_ai_hosts_mode": schema.StringAttribute{
+                MarkdownDescription: "Whether OneUptime AI may contain or isolate a case's host, through the project's EDR connection: Off, Ask or OnItsOwn.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_case_ai_code_mode": schema.StringAttribute{
+                MarkdownDescription: "Whether OneUptime AI may ask Fix With AI for a pull request that fixes the route a case's attack reached: Off, Ask or OnItsOwn. A person always merges the pull request.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_case_ai_close_mode": schema.StringAttribute{
+                MarkdownDescription: "Whether OneUptime AI may close a case with a verdict and a closing report once every step is done and its detection has been quiet for 24 hours: Off, Ask or OnItsOwn.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_case_ai_on_its_own_stamps": schema.StringAttribute{
+                MarkdownDescription: "Who set each kind of containment OneUptime AI does on security cases (Edge, Accounts, Hosts) to On its own, and when. Written by OneUptime. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "enable_security_case_ai_responds_first": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, a security case a detection opens below the priority in securityCaseAiHoldBelowPriorityId waits, for at most securityCaseAiHoldMinutes, before anyone is alerted, while OneUptime AI works it. If it contains the case, nobody is alerted and the case's Slack and Microsoft Teams rules get one summary; if it needs a person, everyone is alerted at once with why. Takes effect only while OneUptime AI triages new cases and works them end to end.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_case_ai_hold_below_priority_id": schema.StringAttribute{
+                MarkdownDescription: "The security case priority OneUptime AI responds first below: cases at it or above alert people at once. Empty for the project's built-in High priority.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_case_ai_hold_minutes": schema.NumberAttribute{
+                MarkdownDescription: "How many minutes a security case OneUptime AI responds first to waits at most before people are alerted: a whole number from 1 to 30, 10 unless changed.",
+                Optional: true,
+                Computed: true,
+            },
+            "enable_automatic_data_security_ai": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime AI works on every new and reopened Data Security issue the way the project's Data Security AI rules say: with no rule, it analyzes Critical and High issues and proposes the rest for one-click approval. Everything it does is on the issue's timeline and can be undone. Off, nothing runs on its own, and Explain with AI, Fix with AI and Scrub It still work. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured.",
+                Optional: true,
+                Computed: true,
+            },
             "enable_security_risk_cases": schema.BoolAttribute{
                 MarkdownDescription: "When on, a security case opens about a user, host or IP address whose risk reaches the threshold. On for new projects.",
                 Optional: true,
@@ -492,6 +605,31 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "security_risk_case_threshold": schema.NumberAttribute{
                 MarkdownDescription: "The risk score at which a case opens about a user, host or IP address: a whole number from 10 to 10000, 100 unless changed.",
+                Optional: true,
+                Computed: true,
+            },
+            "mark_security_case_contained_when_verified": schema.BoolAttribute{
+                MarkdownDescription: "When on, a security case moves to Contained once OneUptime has verified every step that contains it, and its time to contain is recorded. On unless changed.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_trusted_proxies": schema.StringAttribute{
+                MarkdownDescription: "The proxies your apps sit behind, such as a CDN or a load balancer: Security Events trusts the client address they forward in X-Forwarded-For. One IP address or range a line. Private addresses are trusted without being listed.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_trust_own_load_balancers": schema.BoolAttribute{
+                MarkdownDescription: "Whether Security Events trusts the client address your own application load balancers forward. On unless turned off.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_read_access_log_forwarded_for": schema.BoolAttribute{
+                MarkdownDescription: "Whether your access logs end with X-Forwarded-For, as nginx's main format does, so the client a trusted proxy forwarded is read. Off unless turned on.",
+                Optional: true,
+                Computed: true,
+            },
+            "security_automatic_response_max_blocks_per_hour": schema.NumberAttribute{
+                MarkdownDescription: "The most automatic blocks the project's automatic response policies make in an hour: a whole number from 1 to 500, 50 unless changed. Past it, they stop blocking and page the project's security owners.",
                 Optional: true,
                 Computed: true,
             },
@@ -740,6 +878,11 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Optional: true,
                 Computed: true,
             },
+            "require_unique_names": schema.BoolAttribute{
+                MarkdownDescription: "When on, two monitors, templates or other records of one kind cannot share a name in this project, case and spacing aside. On for new projects.",
+                Optional: true,
+                Computed: true,
+            },
             "use_global_runners": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, runbook steps that do not pick a Runner of their own run on OneUptime's global Runners, in a sandbox that can reach the internet but not your network. Turn it off to keep every step on the Runners you install. On by default.",
                 Optional: true,
@@ -910,6 +1053,26 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     // Every other argument set in configuration narrows the lookup.
     filters := map[string]interface{}{}
     filterNames := []string{}
+    if !data.CreatedByActorType.IsNull() && !data.CreatedByActorType.IsUnknown() {
+        filters["createdByActorType"] = data.CreatedByActorType.ValueString()
+        filterNames = append(filterNames, "created_by_actor_type = "+fmt.Sprintf("%q", data.CreatedByActorType.ValueString()))
+    }
+    if !data.CreatedByActorId.IsNull() && !data.CreatedByActorId.IsUnknown() {
+        filters["createdByActorId"] = data.CreatedByActorId.ValueString()
+        filterNames = append(filterNames, "created_by_actor_id = "+fmt.Sprintf("%q", data.CreatedByActorId.ValueString()))
+    }
+    if !data.LastModifiedByActorType.IsNull() && !data.LastModifiedByActorType.IsUnknown() {
+        filters["lastModifiedByActorType"] = data.LastModifiedByActorType.ValueString()
+        filterNames = append(filterNames, "last_modified_by_actor_type = "+fmt.Sprintf("%q", data.LastModifiedByActorType.ValueString()))
+    }
+    if !data.LastModifiedByActorId.IsNull() && !data.LastModifiedByActorId.IsUnknown() {
+        filters["lastModifiedByActorId"] = data.LastModifiedByActorId.ValueString()
+        filterNames = append(filterNames, "last_modified_by_actor_id = "+fmt.Sprintf("%q", data.LastModifiedByActorId.ValueString()))
+    }
+    if !data.LastModifiedByUserId.IsNull() && !data.LastModifiedByUserId.IsUnknown() {
+        filters["lastModifiedByUserId"] = data.LastModifiedByUserId.ValueString()
+        filterNames = append(filterNames, "last_modified_by_user_id = "+fmt.Sprintf("%q", data.LastModifiedByUserId.ValueString()))
+    }
     if !data.Name.IsNull() && !data.Name.IsUnknown() {
         filters["name"] = data.Name.ValueString()
         filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
@@ -1138,6 +1301,50 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["enableAutomaticSecurityCaseTriage"] = data.EnableAutomaticSecurityCaseTriage.ValueBool()
         filterNames = append(filterNames, "enable_automatic_security_case_triage = "+fmt.Sprintf("%t", data.EnableAutomaticSecurityCaseTriage.ValueBool()))
     }
+    if !data.EnableAutomaticSecurityCaseResponse.IsNull() && !data.EnableAutomaticSecurityCaseResponse.IsUnknown() {
+        filters["enableAutomaticSecurityCaseResponse"] = data.EnableAutomaticSecurityCaseResponse.ValueBool()
+        filterNames = append(filterNames, "enable_automatic_security_case_response = "+fmt.Sprintf("%t", data.EnableAutomaticSecurityCaseResponse.ValueBool()))
+    }
+    if !data.SecurityCaseAiCaseMode.IsNull() && !data.SecurityCaseAiCaseMode.IsUnknown() {
+        filters["securityCaseAiCaseMode"] = data.SecurityCaseAiCaseMode.ValueString()
+        filterNames = append(filterNames, "security_case_ai_case_mode = "+fmt.Sprintf("%q", data.SecurityCaseAiCaseMode.ValueString()))
+    }
+    if !data.SecurityCaseAiEdgeMode.IsNull() && !data.SecurityCaseAiEdgeMode.IsUnknown() {
+        filters["securityCaseAiEdgeMode"] = data.SecurityCaseAiEdgeMode.ValueString()
+        filterNames = append(filterNames, "security_case_ai_edge_mode = "+fmt.Sprintf("%q", data.SecurityCaseAiEdgeMode.ValueString()))
+    }
+    if !data.SecurityCaseAiAccountsMode.IsNull() && !data.SecurityCaseAiAccountsMode.IsUnknown() {
+        filters["securityCaseAiAccountsMode"] = data.SecurityCaseAiAccountsMode.ValueString()
+        filterNames = append(filterNames, "security_case_ai_accounts_mode = "+fmt.Sprintf("%q", data.SecurityCaseAiAccountsMode.ValueString()))
+    }
+    if !data.SecurityCaseAiHostsMode.IsNull() && !data.SecurityCaseAiHostsMode.IsUnknown() {
+        filters["securityCaseAiHostsMode"] = data.SecurityCaseAiHostsMode.ValueString()
+        filterNames = append(filterNames, "security_case_ai_hosts_mode = "+fmt.Sprintf("%q", data.SecurityCaseAiHostsMode.ValueString()))
+    }
+    if !data.SecurityCaseAiCodeMode.IsNull() && !data.SecurityCaseAiCodeMode.IsUnknown() {
+        filters["securityCaseAiCodeMode"] = data.SecurityCaseAiCodeMode.ValueString()
+        filterNames = append(filterNames, "security_case_ai_code_mode = "+fmt.Sprintf("%q", data.SecurityCaseAiCodeMode.ValueString()))
+    }
+    if !data.SecurityCaseAiCloseMode.IsNull() && !data.SecurityCaseAiCloseMode.IsUnknown() {
+        filters["securityCaseAiCloseMode"] = data.SecurityCaseAiCloseMode.ValueString()
+        filterNames = append(filterNames, "security_case_ai_close_mode = "+fmt.Sprintf("%q", data.SecurityCaseAiCloseMode.ValueString()))
+    }
+    if !data.EnableSecurityCaseAiRespondsFirst.IsNull() && !data.EnableSecurityCaseAiRespondsFirst.IsUnknown() {
+        filters["enableSecurityCaseAiRespondsFirst"] = data.EnableSecurityCaseAiRespondsFirst.ValueBool()
+        filterNames = append(filterNames, "enable_security_case_ai_responds_first = "+fmt.Sprintf("%t", data.EnableSecurityCaseAiRespondsFirst.ValueBool()))
+    }
+    if !data.SecurityCaseAiHoldBelowPriorityId.IsNull() && !data.SecurityCaseAiHoldBelowPriorityId.IsUnknown() {
+        filters["securityCaseAiHoldBelowPriorityId"] = data.SecurityCaseAiHoldBelowPriorityId.ValueString()
+        filterNames = append(filterNames, "security_case_ai_hold_below_priority_id = "+fmt.Sprintf("%q", data.SecurityCaseAiHoldBelowPriorityId.ValueString()))
+    }
+    if !data.SecurityCaseAiHoldMinutes.IsNull() && !data.SecurityCaseAiHoldMinutes.IsUnknown() {
+        filters["securityCaseAiHoldMinutes"] = LookupNumber(data.SecurityCaseAiHoldMinutes)
+        filterNames = append(filterNames, "security_case_ai_hold_minutes = "+data.SecurityCaseAiHoldMinutes.ValueBigFloat().String())
+    }
+    if !data.EnableAutomaticDataSecurityAi.IsNull() && !data.EnableAutomaticDataSecurityAi.IsUnknown() {
+        filters["enableAutomaticDataSecurityAi"] = data.EnableAutomaticDataSecurityAi.ValueBool()
+        filterNames = append(filterNames, "enable_automatic_data_security_ai = "+fmt.Sprintf("%t", data.EnableAutomaticDataSecurityAi.ValueBool()))
+    }
     if !data.EnableSecurityRiskCases.IsNull() && !data.EnableSecurityRiskCases.IsUnknown() {
         filters["enableSecurityRiskCases"] = data.EnableSecurityRiskCases.ValueBool()
         filterNames = append(filterNames, "enable_security_risk_cases = "+fmt.Sprintf("%t", data.EnableSecurityRiskCases.ValueBool()))
@@ -1145,6 +1352,26 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     if !data.SecurityRiskCaseThreshold.IsNull() && !data.SecurityRiskCaseThreshold.IsUnknown() {
         filters["securityRiskCaseThreshold"] = LookupNumber(data.SecurityRiskCaseThreshold)
         filterNames = append(filterNames, "security_risk_case_threshold = "+data.SecurityRiskCaseThreshold.ValueBigFloat().String())
+    }
+    if !data.MarkSecurityCaseContainedWhenVerified.IsNull() && !data.MarkSecurityCaseContainedWhenVerified.IsUnknown() {
+        filters["markSecurityCaseContainedWhenVerified"] = data.MarkSecurityCaseContainedWhenVerified.ValueBool()
+        filterNames = append(filterNames, "mark_security_case_contained_when_verified = "+fmt.Sprintf("%t", data.MarkSecurityCaseContainedWhenVerified.ValueBool()))
+    }
+    if !data.SecurityTrustedProxies.IsNull() && !data.SecurityTrustedProxies.IsUnknown() {
+        filters["securityTrustedProxies"] = data.SecurityTrustedProxies.ValueString()
+        filterNames = append(filterNames, "security_trusted_proxies = "+fmt.Sprintf("%q", data.SecurityTrustedProxies.ValueString()))
+    }
+    if !data.SecurityTrustOwnLoadBalancers.IsNull() && !data.SecurityTrustOwnLoadBalancers.IsUnknown() {
+        filters["securityTrustOwnLoadBalancers"] = data.SecurityTrustOwnLoadBalancers.ValueBool()
+        filterNames = append(filterNames, "security_trust_own_load_balancers = "+fmt.Sprintf("%t", data.SecurityTrustOwnLoadBalancers.ValueBool()))
+    }
+    if !data.SecurityReadAccessLogForwardedFor.IsNull() && !data.SecurityReadAccessLogForwardedFor.IsUnknown() {
+        filters["securityReadAccessLogForwardedFor"] = data.SecurityReadAccessLogForwardedFor.ValueBool()
+        filterNames = append(filterNames, "security_read_access_log_forwarded_for = "+fmt.Sprintf("%t", data.SecurityReadAccessLogForwardedFor.ValueBool()))
+    }
+    if !data.SecurityAutomaticResponseMaxBlocksPerHour.IsNull() && !data.SecurityAutomaticResponseMaxBlocksPerHour.IsUnknown() {
+        filters["securityAutomaticResponseMaxBlocksPerHour"] = LookupNumber(data.SecurityAutomaticResponseMaxBlocksPerHour)
+        filterNames = append(filterNames, "security_automatic_response_max_blocks_per_hour = "+data.SecurityAutomaticResponseMaxBlocksPerHour.ValueBigFloat().String())
     }
     if !data.EnableAutomaticIncidentRemediation.IsNull() && !data.EnableAutomaticIncidentRemediation.IsUnknown() {
         filters["enableAutomaticIncidentRemediation"] = data.EnableAutomaticIncidentRemediation.ValueBool()
@@ -1334,6 +1561,10 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         filters["requireIncomingRequestSecret"] = data.RequireIncomingRequestSecret.ValueBool()
         filterNames = append(filterNames, "require_incoming_request_secret = "+fmt.Sprintf("%t", data.RequireIncomingRequestSecret.ValueBool()))
     }
+    if !data.RequireUniqueNames.IsNull() && !data.RequireUniqueNames.IsUnknown() {
+        filters["requireUniqueNames"] = data.RequireUniqueNames.ValueBool()
+        filterNames = append(filterNames, "require_unique_names = "+fmt.Sprintf("%t", data.RequireUniqueNames.ValueBool()))
+    }
     if !data.UseGlobalRunners.IsNull() && !data.UseGlobalRunners.IsUnknown() {
         filters["useGlobalRunners"] = data.UseGlobalRunners.ValueBool()
         filterNames = append(filterNames, "use_global_runners = "+fmt.Sprintf("%t", data.UseGlobalRunners.ValueBool()))
@@ -1445,6 +1676,12 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     selectParam := map[string]interface{}{
         "createdAt": true,
         "updatedAt": true,
+        "createdByActorType": true,
+        "createdByActorId": true,
+        "lastModifiedAt": true,
+        "lastModifiedByActorType": true,
+        "lastModifiedByActorId": true,
+        "lastModifiedByUserId": true,
         "name": true,
         "slug": true,
         "paymentProviderPlanId": true,
@@ -1504,8 +1741,25 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
         "enableAutomaticSecurityCaseTriage": true,
+        "enableAutomaticSecurityCaseResponse": true,
+        "securityCaseAiCaseMode": true,
+        "securityCaseAiEdgeMode": true,
+        "securityCaseAiAccountsMode": true,
+        "securityCaseAiHostsMode": true,
+        "securityCaseAiCodeMode": true,
+        "securityCaseAiCloseMode": true,
+        "securityCaseAiOnItsOwnStamps": true,
+        "enableSecurityCaseAiRespondsFirst": true,
+        "securityCaseAiHoldBelowPriorityId": true,
+        "securityCaseAiHoldMinutes": true,
+        "enableAutomaticDataSecurityAi": true,
         "enableSecurityRiskCases": true,
         "securityRiskCaseThreshold": true,
+        "markSecurityCaseContainedWhenVerified": true,
+        "securityTrustedProxies": true,
+        "securityTrustOwnLoadBalancers": true,
+        "securityReadAccessLogForwardedFor": true,
+        "securityAutomaticResponseMaxBlocksPerHour": true,
         "enableAutomaticIncidentRemediation": true,
         "enableAutomaticAlertRemediation": true,
         "requireTwoApprovalsForRiskierFixes": true,
@@ -1555,6 +1809,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "letCustomerSupportAccessProject": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
         "requireIncomingRequestSecret": true,
+        "requireUniqueNames": true,
         "useGlobalRunners": true,
         "gitHubAppInstallationId": true,
         "defaultMetricCardinalityBudget": true,
@@ -1714,6 +1969,150 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
+    }
+    if obj, ok := item["createdByActorType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CreatedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CreatedByActorType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorType = types.StringNull()
+        }
+    } else if arr, ok := item["createdByActorType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CreatedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorType = types.StringNull()
+        }
+    } else if val, ok := item["createdByActorType"].(string); ok {
+        data.CreatedByActorType = types.StringValue(val)
+    } else {
+        data.CreatedByActorType = types.StringNull()
+    }
+    if obj, ok := item["createdByActorId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CreatedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CreatedByActorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByActorId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CreatedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorId = types.StringNull()
+        }
+    } else if val, ok := item["createdByActorId"].(string); ok {
+        data.CreatedByActorId = types.StringValue(val)
+    } else {
+        data.CreatedByActorId = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedAt = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedAt = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedAt"].(string); ok {
+        data.LastModifiedAt = types.StringValue(val)
+    } else {
+        data.LastModifiedAt = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedByActorType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedByActorType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorType = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedByActorType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorType = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedByActorType"].(string); ok {
+        data.LastModifiedByActorType = types.StringValue(val)
+    } else {
+        data.LastModifiedByActorType = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedByActorId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedByActorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorId = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedByActorId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorId = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedByActorId"].(string); ok {
+        data.LastModifiedByActorId = types.StringValue(val)
+    } else {
+        data.LastModifiedByActorId = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedByUserId"].(string); ok {
+        data.LastModifiedByUserId = types.StringValue(val)
+    } else {
+        data.LastModifiedByUserId = types.StringNull()
     }
     if obj, ok := item["name"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2363,12 +2762,260 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
     } else {
         data.EnableAutomaticSecurityCaseTriage = types.BoolNull()
     }
+    if val, ok := item["enableAutomaticSecurityCaseResponse"].(bool); ok {
+        data.EnableAutomaticSecurityCaseResponse = types.BoolValue(val)
+    } else {
+        data.EnableAutomaticSecurityCaseResponse = types.BoolNull()
+    }
+    if obj, ok := item["securityCaseAiCaseMode"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecurityCaseAiCaseMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SecurityCaseAiCaseMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SecurityCaseAiCaseMode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SecurityCaseAiCaseMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseAiCaseMode = types.StringNull()
+        }
+    } else if arr, ok := item["securityCaseAiCaseMode"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SecurityCaseAiCaseMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseAiCaseMode = types.StringNull()
+        }
+    } else if val, ok := item["securityCaseAiCaseMode"].(string); ok {
+        data.SecurityCaseAiCaseMode = types.StringValue(val)
+    } else {
+        data.SecurityCaseAiCaseMode = types.StringNull()
+    }
+    if obj, ok := item["securityCaseAiEdgeMode"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecurityCaseAiEdgeMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SecurityCaseAiEdgeMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SecurityCaseAiEdgeMode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SecurityCaseAiEdgeMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseAiEdgeMode = types.StringNull()
+        }
+    } else if arr, ok := item["securityCaseAiEdgeMode"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SecurityCaseAiEdgeMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseAiEdgeMode = types.StringNull()
+        }
+    } else if val, ok := item["securityCaseAiEdgeMode"].(string); ok {
+        data.SecurityCaseAiEdgeMode = types.StringValue(val)
+    } else {
+        data.SecurityCaseAiEdgeMode = types.StringNull()
+    }
+    if obj, ok := item["securityCaseAiAccountsMode"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecurityCaseAiAccountsMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SecurityCaseAiAccountsMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SecurityCaseAiAccountsMode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SecurityCaseAiAccountsMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseAiAccountsMode = types.StringNull()
+        }
+    } else if arr, ok := item["securityCaseAiAccountsMode"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SecurityCaseAiAccountsMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseAiAccountsMode = types.StringNull()
+        }
+    } else if val, ok := item["securityCaseAiAccountsMode"].(string); ok {
+        data.SecurityCaseAiAccountsMode = types.StringValue(val)
+    } else {
+        data.SecurityCaseAiAccountsMode = types.StringNull()
+    }
+    if obj, ok := item["securityCaseAiHostsMode"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecurityCaseAiHostsMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SecurityCaseAiHostsMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SecurityCaseAiHostsMode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SecurityCaseAiHostsMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseAiHostsMode = types.StringNull()
+        }
+    } else if arr, ok := item["securityCaseAiHostsMode"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SecurityCaseAiHostsMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseAiHostsMode = types.StringNull()
+        }
+    } else if val, ok := item["securityCaseAiHostsMode"].(string); ok {
+        data.SecurityCaseAiHostsMode = types.StringValue(val)
+    } else {
+        data.SecurityCaseAiHostsMode = types.StringNull()
+    }
+    if obj, ok := item["securityCaseAiCodeMode"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecurityCaseAiCodeMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SecurityCaseAiCodeMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SecurityCaseAiCodeMode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SecurityCaseAiCodeMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseAiCodeMode = types.StringNull()
+        }
+    } else if arr, ok := item["securityCaseAiCodeMode"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SecurityCaseAiCodeMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseAiCodeMode = types.StringNull()
+        }
+    } else if val, ok := item["securityCaseAiCodeMode"].(string); ok {
+        data.SecurityCaseAiCodeMode = types.StringValue(val)
+    } else {
+        data.SecurityCaseAiCodeMode = types.StringNull()
+    }
+    if obj, ok := item["securityCaseAiCloseMode"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecurityCaseAiCloseMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SecurityCaseAiCloseMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SecurityCaseAiCloseMode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SecurityCaseAiCloseMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseAiCloseMode = types.StringNull()
+        }
+    } else if arr, ok := item["securityCaseAiCloseMode"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SecurityCaseAiCloseMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseAiCloseMode = types.StringNull()
+        }
+    } else if val, ok := item["securityCaseAiCloseMode"].(string); ok {
+        data.SecurityCaseAiCloseMode = types.StringValue(val)
+    } else {
+        data.SecurityCaseAiCloseMode = types.StringNull()
+    }
+    if obj, ok := item["securityCaseAiOnItsOwnStamps"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecurityCaseAiOnItsOwnStamps = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SecurityCaseAiOnItsOwnStamps = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SecurityCaseAiOnItsOwnStamps = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SecurityCaseAiOnItsOwnStamps = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseAiOnItsOwnStamps = types.StringNull()
+        }
+    } else if arr, ok := item["securityCaseAiOnItsOwnStamps"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SecurityCaseAiOnItsOwnStamps = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseAiOnItsOwnStamps = types.StringNull()
+        }
+    } else if val, ok := item["securityCaseAiOnItsOwnStamps"].(string); ok {
+        data.SecurityCaseAiOnItsOwnStamps = types.StringValue(val)
+    } else {
+        data.SecurityCaseAiOnItsOwnStamps = types.StringNull()
+    }
+    if val, ok := item["enableSecurityCaseAiRespondsFirst"].(bool); ok {
+        data.EnableSecurityCaseAiRespondsFirst = types.BoolValue(val)
+    } else {
+        data.EnableSecurityCaseAiRespondsFirst = types.BoolNull()
+    }
+    if obj, ok := item["securityCaseAiHoldBelowPriorityId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecurityCaseAiHoldBelowPriorityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SecurityCaseAiHoldBelowPriorityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SecurityCaseAiHoldBelowPriorityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SecurityCaseAiHoldBelowPriorityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseAiHoldBelowPriorityId = types.StringNull()
+        }
+    } else if arr, ok := item["securityCaseAiHoldBelowPriorityId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SecurityCaseAiHoldBelowPriorityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityCaseAiHoldBelowPriorityId = types.StringNull()
+        }
+    } else if val, ok := item["securityCaseAiHoldBelowPriorityId"].(string); ok {
+        data.SecurityCaseAiHoldBelowPriorityId = types.StringValue(val)
+    } else {
+        data.SecurityCaseAiHoldBelowPriorityId = types.StringNull()
+    }
+    data.SecurityCaseAiHoldMinutes = NumberFromAPI(data.SecurityCaseAiHoldMinutes, item["securityCaseAiHoldMinutes"])
+    if val, ok := item["enableAutomaticDataSecurityAi"].(bool); ok {
+        data.EnableAutomaticDataSecurityAi = types.BoolValue(val)
+    } else {
+        data.EnableAutomaticDataSecurityAi = types.BoolNull()
+    }
     if val, ok := item["enableSecurityRiskCases"].(bool); ok {
         data.EnableSecurityRiskCases = types.BoolValue(val)
     } else {
         data.EnableSecurityRiskCases = types.BoolNull()
     }
     data.SecurityRiskCaseThreshold = NumberFromAPI(data.SecurityRiskCaseThreshold, item["securityRiskCaseThreshold"])
+    if val, ok := item["markSecurityCaseContainedWhenVerified"].(bool); ok {
+        data.MarkSecurityCaseContainedWhenVerified = types.BoolValue(val)
+    } else {
+        data.MarkSecurityCaseContainedWhenVerified = types.BoolNull()
+    }
+    if obj, ok := item["securityTrustedProxies"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SecurityTrustedProxies = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SecurityTrustedProxies = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SecurityTrustedProxies = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SecurityTrustedProxies = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityTrustedProxies = types.StringNull()
+        }
+    } else if arr, ok := item["securityTrustedProxies"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.SecurityTrustedProxies = types.StringValue(string(jsonBytes))
+        } else {
+            data.SecurityTrustedProxies = types.StringNull()
+        }
+    } else if val, ok := item["securityTrustedProxies"].(string); ok {
+        data.SecurityTrustedProxies = types.StringValue(val)
+    } else {
+        data.SecurityTrustedProxies = types.StringNull()
+    }
+    if val, ok := item["securityTrustOwnLoadBalancers"].(bool); ok {
+        data.SecurityTrustOwnLoadBalancers = types.BoolValue(val)
+    } else {
+        data.SecurityTrustOwnLoadBalancers = types.BoolNull()
+    }
+    if val, ok := item["securityReadAccessLogForwardedFor"].(bool); ok {
+        data.SecurityReadAccessLogForwardedFor = types.BoolValue(val)
+    } else {
+        data.SecurityReadAccessLogForwardedFor = types.BoolNull()
+    }
+    data.SecurityAutomaticResponseMaxBlocksPerHour = NumberFromAPI(data.SecurityAutomaticResponseMaxBlocksPerHour, item["securityAutomaticResponseMaxBlocksPerHour"])
     if val, ok := item["enableAutomaticIncidentRemediation"].(bool); ok {
         data.EnableAutomaticIncidentRemediation = types.BoolValue(val)
     } else {
@@ -2739,6 +3386,11 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.RequireIncomingRequestSecret = types.BoolValue(val)
     } else {
         data.RequireIncomingRequestSecret = types.BoolNull()
+    }
+    if val, ok := item["requireUniqueNames"].(bool); ok {
+        data.RequireUniqueNames = types.BoolValue(val)
+    } else {
+        data.RequireUniqueNames = types.BoolNull()
     }
     if val, ok := item["useGlobalRunners"].(bool); ok {
         data.UseGlobalRunners = types.BoolValue(val)

@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_data_observability_setting" "example" {
-  max_gigabytes_scanned_per_check = 1
+  created_by_actor_type = "User"
 }
 
 # Or by id:
@@ -28,13 +28,19 @@ data "oneuptime_data_observability_setting" "by_id" {
 
 ### Optional
 
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `keep_failing_rows` (Boolean) A failing check keeps up to 20 of the rows that broke it, with sensitive columns masked. They are stored in OneUptime. Turning this off deletes them.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `max_gigabytes_scanned_per_check` (Number) BigQuery and Athena bill by bytes read. A check that would read more is stopped, and says so.
 - `wait_when_database_is_busy` (Boolean) Checks wait for the next collection when a database is close to its connection limit or has many statements running.
 
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `project_id` (String) ID of the project these settings belong to. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

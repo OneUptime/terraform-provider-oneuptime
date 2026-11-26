@@ -66,6 +66,8 @@ resource "oneuptime_network_device" "example" {
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
 - `cdp_neighbors` (String) CDP neighbors discovered on the last SNMP walk, complementing LLDP for the topology graph. Managed by the probe. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `current_monitor_status_id` (String) Whats the current status ID of this network device? Stamped from the monitor that polls it. The ID of a `oneuptime_monitor_status`.
 - `device_model` (String) Hardware model from ENTITY-MIB (entPhysicalModelName). Managed by the probe.
@@ -80,6 +82,10 @@ resource "oneuptime_network_device" "example" {
 - `is_mac_address_learned` (Boolean) True when the MAC Address was filled in from a walked device's ARP table rather than typed. A learned MAC is corrected when a later walk binds the device's address to a different MAC; a typed one is never touched.
 - `is_reachable` (Boolean) Whether the most recent SNMP walk reached this device. NULL means it has never been polled. This — not the age of lastSeenAt — is what the device list, the topology graph and the site rollup read, so a device whose last poll succeeded is never shown as down just because the probe is behind schedule. Managed by the probe.
 - `is_snmp_reachable` (Boolean) Whether the most recent SNMP walk of this device succeeded. Separate from isReachable, which is the ping verdict: a device that answers ping but not SNMP is Up with a failing SNMP walk, which almost always means wrong credentials or SNMP disabled on the device. NULL means no walk was attempted — the device has no usable SNMP credentials (it is pinged only) or has never been polled. Managed by the probe.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `last_poll_received_at` (String) When OneUptime received the poll whose result this device shows (isReachable, isSnmpReachable, the interface counts, the SNMP table and transceiver snapshots). A poll received earlier never overwrites that result: a retried poll, or one that waited longer in the queue than the poll after it. Managed by OneUptime.
 - `last_polled_at` (String) When the assigned probe last ATTEMPTED an SNMP walk of this device, whether or not the device answered. Paired with lastSeenAt (which only moves on a successful walk) this is what separates "the device did not answer" from "we have not asked recently". Managed by the probe.
 - `last_rebooted_at` (String) Device boot time computed from sysUpTime on each walk. Managed by the probe.

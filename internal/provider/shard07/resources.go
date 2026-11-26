@@ -9,17 +9,17 @@ import (
 // shards.go).
 func init() {
     RegisterResources("shard07", []OrderedResource{
-        {Order: 50, New: NewDataCheckResource},
-        {Order: 94, New: NewIncomingCallPolicyEscalationRuleResource},
-        {Order: 100, New: NewMonitorCustomFieldResource},
-        {Order: 152, New: NewAlertEpisodeOwnerRuleResource},
-        {Order: 156, New: NewIncidentEpisodeMemberResource},
-        {Order: 175, New: NewIncidentEpisodeOnCallRuleOwningTeamResource},
-        {Order: 311, New: NewServiceResource},
-        {Order: 313, New: NewServiceUserOwnerResource},
-        {Order: 340, New: NewDashboardPlaylistResource},
-        {Order: 358, New: NewHostFeedResource},
-        {Order: 451, New: NewRumApplicationTeamOwnerResource},
-        {Order: 453, New: NewRumApplicationLabelRuleResource},
+        {Order: 51, New: NewDataCheckResource},
+        {Order: 98, New: NewIncomingCallPolicyEscalationRuleResource},
+        {Order: 104, New: NewMonitorCustomFieldResource},
+        {Order: 156, New: NewAlertEpisodeOwnerRuleResource},
+        {Order: 160, New: NewIncidentEpisodeMemberResource},
+        {Order: 179, New: NewIncidentEpisodeOnCallRuleOwningTeamResource},
+        {Order: 315, New: NewServiceResource},
+        {Order: 317, New: NewServiceUserOwnerResource},
+        {Order: 344, New: NewDashboardPlaylistResource},
+        {Order: 362, New: NewHostFeedResource},
+        {Order: 455, New: NewRumApplicationTeamOwnerResource},
+        {Order: 457, New: NewRumApplicationLabelRuleResource},
     }, nil)
 }

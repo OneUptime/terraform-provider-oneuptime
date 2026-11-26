@@ -198,6 +198,9 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
     // What OneUptime left out because only it writes it, if anything (see entries.go).
     resp.Diagnostics.Append(FieldsLeftOutWarning(httpResp, "file")...)
 
+    // What the write does that someone should know, if anything (see entries.go).
+    resp.Diagnostics.Append(WriteWarnings(httpResp, "file")...)
+
     // No read endpoint for this resource: map the create response directly.
     // Update the model with response data
     // Extract data from response wrapper

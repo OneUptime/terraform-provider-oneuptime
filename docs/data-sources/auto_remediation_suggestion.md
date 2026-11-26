@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_auto_remediation_suggestion" "example" {
-  auto_remediation_rule_id = oneuptime_ai_rule.example.id
+  created_by_actor_type = "User"
 }
 
 # Or by id:
@@ -34,6 +34,8 @@ data "oneuptime_auto_remediation_suggestion" "by_id" {
 - `approved_from` (String) Where this suggestion was approved: Dashboard (the AI card), Slack or MicrosoftTeams. Empty until approved.
 - `auto_remediation_rule_id` (String) ID of the AI rule that produced this suggestion. The ID of a `oneuptime_ai_rule`.
 - `auto_resolve_on_recovery` (Boolean) Snapshot of the rule's auto-resolve-on-verified-recovery setting when this suggestion was created.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `dismissed_by_user_id` (String) ID of the user who dismissed this suggestion. The ID of a `oneuptime_user` (see the data source).
 - `execution_mode` (String) The rule's execution mode when this suggestion was created (Suggest or FullAuto).
 - `first_approved_by_user_id` (String) ID of the user who gave the first of the two approvals a riskier fix needs. The ID of a `oneuptime_user` (see the data source).
@@ -42,6 +44,9 @@ data "oneuptime_auto_remediation_suggestion" "by_id" {
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `incident_id` (String) ID of the incident this suggestion remediates. The ID of a `oneuptime_incident`.
 - `kubernetes_cluster_id` (String) ID of the cluster whose AI remediation mode produced this suggestion. The ID of a `oneuptime_kubernetes_cluster`.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `rationale_markdown` (String) Why this runbook was proposed — the AI planning run's reasoning for AI rules, or a short note for deterministic rules.
 - `resource_id` (String) ID of the resource whose AI remediation mode produced this suggestion, in the table its resource type names.
 - `resource_type` (String) The kind of resource whose AI remediation mode produced this suggestion (DockerHost, PodmanHost, DockerSwarmCluster, ProxmoxCluster, VMwareVCenter, CephCluster, DatabaseServer or Host; resource-level remediation, no rule).
@@ -63,6 +68,7 @@ data "oneuptime_auto_remediation_suggestion" "by_id" {
 - `created_at` (String) Date and Time when the object was created.
 - `dismissed_at` (String) When this suggestion was dismissed.
 - `first_approved_at` (String) When the first of the two approvals a riskier fix needs was given.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `mcp_tool_call_plan` (String) For McpToolCalls suggestions: the tool calls OneUptime AI made, or proposes, through the project's external MCP servers, with what each server answered once called. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `runbook_track_record` (String) How the proposed runbook went the last times OneUptime AI ran it for other incidents and alerts, when it was proposed. A JSON value: read it with `jsondecode()`.

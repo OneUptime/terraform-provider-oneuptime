@@ -33,6 +33,8 @@ data "oneuptime_data_store" "by_id" {
 - `cloud_connection_id` (String) The cloud connection that reads the store's configuration, if any. The ID of a `oneuptime_cloud_connection`.
 - `cloud_resource_id` (String) The cloud resource the store was discovered from, if any. The ID of a `oneuptime_cloud_resource`.
 - `content_scan_status` (String) How the last content scan ended, or why it could not run.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) ID of the user who created this data store. The ID of a `oneuptime_user` (see the data source).
 - `database_server_id` (String) The Database product server the store is, for a self-managed database. The ID of a `oneuptime_database`.
 - `description` (String) What the store is for, in your team's words.
@@ -50,6 +52,10 @@ data "oneuptime_data_store" "by_id" {
 - `is_public_by_design` (Boolean) The store is meant to be public, such as a website's assets. Public access checks pass for it.
 - `is_table_health_enabled` (Boolean) Data Observability collects the store's tables every few minutes: their columns, row counts, sizes and when they last changed. Only the catalog is read, never a row.
 - `kind` (String) What kind of store it is: an S3 bucket, an RDS instance, a PostgreSQL database, a service's logs.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
+- `legal_basis` (String) The store's lawful basis under GDPR Article 6, for the record of processing: Consent, Contract, Legal obligation, Vital interests, Public task or Legitimate interests.
 - `name` (String) The store's name: a bucket, database, dataset or service name.
 - `object_count` (Number) How many objects, rows or documents the store holds, when known.
 - `open_issue_count` (Number) How many of the store's issues are open.
@@ -78,10 +84,12 @@ data "oneuptime_data_store" "by_id" {
 - `content_scanned_at` (String) When the store's content was last sampled.
 - `created_at` (String) Date and Time when the object was created.
 - `data_categories` (String) The categories of those data types. A JSON value: read it with `jsondecode()`.
+- `data_subjects` (String) The categories of people the store's data is about, for the record of processing: Customers, Users, Prospects, Website visitors, Employees, Job applicants, Contractors, Business contacts, Patients, Students, Children or Members of the public. A JSON value: read it with `jsondecode()`.
 - `data_type_ids` (String) The data types found in the store with at least Medium confidence. A JSON value: read it with `jsondecode()`.
 - `first_seen_at` (String) When OneUptime first found the store.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_activity_at` (String) When the store was last read or written, when its metrics or traces say.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_seen_at` (String) When OneUptime last found the store.
 - `new_personal_data_columns` (String) Columns added lately whose names say they hold personal data, as a collection saw them appear. A JSON value: read it with `jsondecode()`.
 - `next_content_scan_at` (String) When the store's content is next sampled.

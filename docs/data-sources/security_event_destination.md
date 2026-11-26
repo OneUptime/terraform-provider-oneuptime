@@ -28,12 +28,17 @@ data "oneuptime_security_event_destination" "by_id" {
 
 ### Optional
 
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) ID of the user who created this destination. The ID of a `oneuptime_user` (see the data source).
 - `cursor` (String) The time up to which events have been sent, as an ISO string: the end of the last window delivered.
 - `description` (String) What this destination is for.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_enabled` (Boolean) Whether events are sent to this destination.
 - `last_error` (String) Why the last attempt failed, with credentials redacted, if it did. Cleared by the next attempt that succeeds.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `name` (String) Friendly name for this destination.
 - `provider_value` (String) Which SIEM this destination sends to, e.g. 'google-secops'. Fixed once created.
 - `send_scope` (String) 'detections' sends what OneUptime found (its detection rules' and threat intel's matches and imported alerts); 'all-events' sends every security event.
@@ -43,6 +48,7 @@ data "oneuptime_security_event_destination" "by_id" {
 - `config` (String) Provider-specific settings that are not secret, such as the region and the instance. Keys are defined by the provider catalog. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `last_attempt_at` (String) When OneUptime last tried to send to this destination.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_send_result` (String) What the last attempt sent: events delivered, events the SIEM refused, and the window they came from. A JSON value: read it with `jsondecode()`.
 - `last_sent_at` (String) When events were last delivered to this destination.
 - `project_id` (String) ID of the project whose events are sent. The ID of a `oneuptime_project`.

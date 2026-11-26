@@ -52,6 +52,8 @@ resource "oneuptime_database" "example" {
 - `automatic_assignments` (String) Label and owner ids that label rules, owner rules or telemetry attached automatically. Maintained by OneUptime. A JSON value: read it with `jsondecode()`.
 - `collector_last_seen_at` (String) When engine telemetry from a collector / agent was last received for this database.
 - `created_at` (String) Date and Time when the object was created.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `database_identifier` (String) Stable identity of this database within the project: the engine family and its canonical endpoint joined with '|' (e.g. postgresql|orders-db.internal:5432), or the workload form for databases discovered on Kubernetes / Docker / Podman (e.g. postgresql|kubernetes:prod-cluster/data/statefulset/orders-db). A fork keys like the engine it forks (a MariaDB database is mysql|..., a Valkey one redis|...), so learning which of the two a database is never changes its identity. Computed by the server for manually added databases.
 - `db_system_source` (String) What the database engine was last determined from: manual, collector, container or client-spans. Stronger evidence may correct the engine; weaker evidence never changes it.
@@ -65,6 +67,10 @@ resource "oneuptime_database" "example" {
 - `instance_count` (Number) Number of running instances (pods / containers) last seen for this database's workload.
 - `kubernetes_cluster_id` (String) ID of the Kubernetes cluster this database runs on, when it was discovered as a workload on a monitored cluster. The ID of a `oneuptime_kubernetes_cluster`.
 - `kubernetes_namespace` (String) Kubernetes namespace of the workload this database runs as.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `last_seen_at` (String) When this database was last seen by any discovery source - engine telemetry, application database calls or the workload inventory.
 - `manually_restored_at` (String) When a person last restored this database from the archive. Automatic archiving leaves it alone until it is seen again or a grace period passes.
 - `member_entity_keys` (String) Telemetry entity keys of the pods / containers this database runs as, each with the time it was last seen. Maintained by discovery. A JSON value: read it with `jsondecode()`.

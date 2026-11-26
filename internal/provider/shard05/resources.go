@@ -9,18 +9,18 @@ import (
 // shards.go).
 func init() {
     RegisterResources("shard05", []OrderedResource{
-        {Order: 41, New: NewDataStoreOwnerRuleResource},
-        {Order: 43, New: NewCustomDataTypeResource},
-        {Order: 109, New: NewIncidentTemplateResource},
-        {Order: 147, New: NewAlertOwnerRuleResource},
-        {Order: 225, New: NewVcenterLabelRuleResource},
-        {Order: 303, New: NewOnCallScheduleOwnerRuleResource},
-        {Order: 331, New: NewInventoryItemRelationshipResource},
-        {Order: 412, New: NewCephClusterResource},
-        {Order: 416, New: NewStorageArrayTeamOwnerResource},
-        {Order: 452, New: NewRumApplicationUserOwnerResource},
-        {Order: 464, New: NewVcenterLabelRuleLegacyResource},
+        {Order: 42, New: NewDataStoreOwnerRuleResource},
+        {Order: 44, New: NewCustomDataTypeResource},
+        {Order: 113, New: NewIncidentTemplateResource},
+        {Order: 151, New: NewAlertOwnerRuleResource},
+        {Order: 229, New: NewVcenterLabelRuleResource},
+        {Order: 307, New: NewOnCallScheduleOwnerRuleResource},
+        {Order: 335, New: NewInventoryItemRelationshipResource},
+        {Order: 416, New: NewCephClusterResource},
+        {Order: 420, New: NewStorageArrayTeamOwnerResource},
+        {Order: 456, New: NewRumApplicationUserOwnerResource},
+        {Order: 468, New: NewVcenterLabelRuleLegacyResource},
     }, []LegacyResourceAlias{
-        {Order: 225, Name: "vcenter_label_rule", LegacyName: "v_center_label_rule", New: NewVcenterLabelRuleResource, NewLegacy: NewVcenterLabelRuleLegacyResource},
+        {Order: 229, Name: "vcenter_label_rule", LegacyName: "v_center_label_rule", New: NewVcenterLabelRuleResource, NewLegacy: NewVcenterLabelRuleLegacyResource},
     })
 }

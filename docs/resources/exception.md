@@ -50,10 +50,17 @@ resource "oneuptime_exception" "example" {
 - `ai_explanation_generated_at` (String) When OneUptime AI last wrote its explanation of this exception.
 - `ai_fix_declined_at` (String) Set when an AI-authored fix pull request for this exception was closed without merging; suppresses further automatic fix attempts.
 - `created_at` (String) Date and Time when the object was created.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `error_class` (String) Fault domain of this exception group (code-fault, user-error, expected-denial, infrastructure, unknown). Non-actionable classes are excluded from the Issues list.
 - `error_class_source` (String) Where the error class came from: default (unclassified), declared (by the emitting code), ai (triage verdict) or manual (a human).
+- `former_fingerprint_of_telemetry_exception_id` (String) ID of the exception whose former fingerprint this row keeps. Empty for an exception of its own. The ID of a `oneuptime_exception`.
 - `id` (String) Unique identifier for the resource.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `marked_as_archived_at` (String) When this exception was last archived. Empty while it is not archived.
 - `marked_as_archived_by_user_id` (String) User ID who marked this exception as archived. The ID of a `oneuptime_user` (see the data source).
 - `marked_as_resolved_at` (String) When this exception was last resolved. Empty while it is unresolved.
@@ -63,6 +70,7 @@ resource "oneuptime_exception" "example" {
 - `merged_into_telemetry_exception_id` (String) ID of the exception this one was merged into as the same bug. Empty for an exception that was not merged. The ID of a `oneuptime_exception`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `regressed_at` (String) When this exception last came back after it was resolved. Empty when it has not come back since someone last resolved or reopened it.
+- `split_from_telemetry_exception_id` (String) ID of the exception a scrub rule split this one from. Empty for an exception no rule split. The ID of a `oneuptime_exception`.
 - `unhandled` (Boolean) True when at least one occurrence of this exception escaped its span scope (was unhandled, per OTel exception.escaped).
 - `updated_at` (String) Date and Time when the object was updated.
 

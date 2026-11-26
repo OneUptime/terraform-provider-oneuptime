@@ -15,8 +15,8 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_incident_episode" "example" {
-  current_incident_state_id = oneuptime_incident_state.example.id
-  assigned_to_user_email    = "alice@example.com"
+  last_modified_by_user_id = data.oneuptime_user.example.id
+  assigned_to_user_email   = "alice@example.com"
 }
 
 # Or by id:
@@ -32,6 +32,8 @@ data "oneuptime_incident_episode" "by_id" {
 - `assigned_to_team_id` (String) Team ID that is assigned to this episode. The ID of a `oneuptime_team`.
 - `assigned_to_user_email` (String) Look it up by the email address of the person in `assigned_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
 - `assigned_to_user_id` (String) User ID who is assigned to this episode. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `assigned_to_user_email`.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `current_incident_state_id` (String) Current Incident State ID. The ID of a `oneuptime_incident_state`.
 - `description` (String) Description of this incident episode. This is in markdown format.
@@ -48,6 +50,9 @@ data "oneuptime_incident_episode" "by_id" {
 - `is_owner_notified_of_episode_creation` (Boolean) Are owners notified when this episode is created?
 - `is_private` (Boolean) If true, this incident episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), Project Admins, and Project Owners.
 - `is_visible_on_status_page` (Boolean) Should this episode be visible on the status page?
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `postmortem_note` (String) User-documented postmortem summary for this episode.
 - `remediation_notes` (String) User-documented remediation steps and notes for this episode.
 - `root_cause` (String) User-documented root cause of this episode.
@@ -65,6 +70,7 @@ data "oneuptime_incident_episode" "by_id" {
 - `first_paged_at` (String) When an on-call policy or a direct page first notified someone about this episode. Empty until someone is paged. Set by OneUptime.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `last_incident_added_at` (String) When the last incident was added to this episode.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `on_call_duty_policies` (Set of String) List of on-call policies to execute for this episode. IDs of `oneuptime_on_call_policy` resources.
 - `post_updates_to_workspace_channels` (String) Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams). A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

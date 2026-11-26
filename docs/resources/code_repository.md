@@ -38,6 +38,7 @@ resource "oneuptime_code_repository" "example" {
 - `is_git_hub_commands_enabled` (Boolean) Whether the OneUptime GitHub App acts on mentions, assignments and trigger labels in this repository. Only people with write access to the repository can command it, and it never merges anything. On by default. Defaults to `true`.
 - `is_global_runner_picked` (Boolean) Whether this repository runs on a global Runner, one OneUptime runs for every project, even when the project has a default Runner. Read only when the repository picks no Runner of its own. Unset, a repository that picks no Runner follows the project's default Runner, and runs on a global Runner while there is none.
 - `is_production_review_enabled` (Boolean) Whether OneUptime comments on this repository's pull requests with what production says about the code they change: the exceptions thrown in it, how busy and slow the operations it runs are, and the incidents and deploys around it. Only pull requests from people who can write to the repository are reviewed on their own.
+- `is_production_review_fail_on_leak_enabled` (Boolean) Whether a production review fails its check when a pull request writes a secret or Restricted data to telemetry, makes a store that may hold sensitive data public, or adds a column for a password or a card security code stored as it is. Off: the check stays neutral.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
 - `main_branch_name` (String) The name of the main/default branch.
 - `max_open_fix_pull_requests` (Number) Maximum AI-authored fix pull requests that may be open on this repository at the same time. At the cap, new AI fix runs are refused a repository token, so they cannot push branches or open pull requests. Unset means no cap; 0 blocks AI fix pull requests for this repository entirely.
@@ -52,10 +53,16 @@ resource "oneuptime_code_repository" "example" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `git_hub_app_installation_id` (String) The GitHub App installation ID used to authenticate with this repository.
 - `git_lab_project_id` (String) The GitLab project ID OneUptime reads this repository by. Set when the repository is connected.
 - `id` (String) Unique identifier for the resource.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `minted_token_refused_at` (String) When the repository's host last refused to make the short-lived access token an AI code fix pushes with. Empty while it makes one. Set by OneUptime, and cleared when the connection's token is replaced.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `slug` (String) Friendly globally unique name for your object.

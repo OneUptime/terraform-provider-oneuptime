@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_alert_measurement_value" "example" {
-  alert_id = oneuptime_alert.example.id
+  created_by_actor_type = "User"
 }
 
 # Or by id:
@@ -30,8 +30,13 @@ data "oneuptime_alert_measurement_value" "by_id" {
 
 - `alert_id` (String) ID of the alert this measurement value was computed for. The ID of a `oneuptime_alert`.
 - `alert_measurement_id` (String) ID of the measurement definition this value was computed from. The ID of a `oneuptime_alert_measurement`.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `end_alert_state_timeline_id` (String) The alert state timeline entry the end anchor resolved to. Recorded for provenance only - it carries no foreign key, so deleting a timeline entry never blocks or rewrites this row; the next recompute simply produces the right answer.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `start_alert_state_timeline_id` (String) The alert state timeline entry the start anchor resolved to. Recorded for provenance only - it carries no foreign key, so deleting a timeline entry never blocks or rewrites this row; the next recompute simply produces the right answer.
 - `status` (String) The outcome of evaluating this measurement: Recorded, Pending, Not Applicable or Invalid.
 - `status_message` (String) Why this measurement has the status it has, in plain words - for example which anchor has not been reached yet, or by how much the end precedes the start.
@@ -42,6 +47,7 @@ data "oneuptime_alert_measurement_value" "by_id" {
 - `computed_at` (String) When this value was last recomputed.
 - `created_at` (String) Date and Time when the object was created.
 - `ended_at` (String) When this measurement's end anchor resolved to. Blank while the end anchor has not resolved.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `started_at` (String) When this measurement's start anchor resolved to. Blank while the start anchor has not resolved.
 - `updated_at` (String) Date and Time when the object was updated.

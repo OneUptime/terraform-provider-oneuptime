@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_incident_video_call" "example" {
-  incident_id = oneuptime_incident.example.id
+  created_by_actor_type = "User"
 }
 
 # Or by id:
@@ -30,12 +30,17 @@ data "oneuptime_incident_video_call" "by_id" {
 
 - `call_summary_status` (String) Where OneUptime AI's reading of the transcript stands: Pending while it reads, Ready, Failed (Call Summary Status Message says why), or Skipped when AI is off for the project.
 - `call_summary_status_message` (String) Why OneUptime AI did not read the transcript, or could not finish reading it.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `external_calendar_event_id` (String) The calendar event the meeting belongs to: a Microsoft Teams meeting OneUptime put on its organizer's calendar, as it does while Record and transcribe incident calls is on, so that it can read the meeting's transcript. Empty for every other call.
 - `external_meeting_id` (String) The provider's own id for the meeting: a Zoom meeting id, a Google Meet space name, a Microsoft Teams online meeting id or a Slack channel id.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `incident_id` (String) ID of the incident this call is for. The ID of a `oneuptime_incident`.
 - `join_url` (String) The link responders open to join the call. Set by OneUptime for a call started with a connection or a Slack huddle; required, as an https link, when you add a link of your own.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `provider_value` (String) Where the call is held: Zoom, GoogleMeet, MicrosoftTeams, SlackHuddle, or CustomLink for a link a person provided. Taken from the connection when one is given.
 - `root_cause_suggestion_reviewed_by_user_id` (String) ID of the person who accepted or dismissed the root cause suggested from the call. The ID of a `oneuptime_user` (see the data source).
 - `root_cause_suggestion_status` (String) What a person did with the root cause OneUptime AI suggested from the call: Suggested while it waits, Accepted once used as the incident's root cause, Dismissed. Empty when nothing was suggested.
@@ -53,6 +58,7 @@ data "oneuptime_incident_video_call" "by_id" {
 - `call_summary` (String) What OneUptime AI read in the transcript: the root cause the call points at (a suggestion, or that the call did not discuss it enough), what was found, tried, decided and left to do, and open questions - each with the transcript lines it rests on. A JSON value: read it with `jsondecode()`.
 - `call_summary_updated_at` (String) When the Call Summary Status last changed: when OneUptime AI started reading the transcript, or finished.
 - `created_at` (String) Date and Time when the object was created.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `root_cause_suggestion_reviewed_at` (String) When a person accepted or dismissed the root cause suggested from the call.
 - `transcript_added_at` (String) When the transcript was added to the call.

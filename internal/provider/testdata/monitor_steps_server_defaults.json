@@ -1,0 +1,1255 @@
+{
+  "about": "Written by Scripts/TerraformProvider/Core/MonitorStepsServerDefaultsCases.ts from the server's own MonitorSteps, MonitorStepsIdentityUtil and MetricQueryCloudAggregation (OneUptime/oneuptime#10907). Do not edit.",
+  "cases": [
+    {
+      "name": "a page checked for being online, every setting but its destination and criteria left out",
+      "sent": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "monitorDestination": {
+                  "_type": "URL",
+                  "value": "https://example.com"
+                },
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "name": "Online",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "True"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "answered": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "id": "faac522f-4b6a-430a-8314-e29564539645",
+                "monitorDestination": {
+                  "_type": "URL",
+                  "value": "https://example.com/"
+                },
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "id": "9b10b706-6a96-4827-adfa-f928fd52606d",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "True"
+                            }
+                          ],
+                          "incidents": [],
+                          "alerts": [],
+                          "createAlerts": false,
+                          "changeMonitorStatus": false,
+                          "createIncidents": false,
+                          "isEnabled": true,
+                          "name": "Online",
+                          "description": ""
+                        }
+                      }
+                    ]
+                  }
+                },
+                "requestType": "GET"
+              }
+            }
+          ],
+          "defaultMonitorStatusId": "a1000000-0000-4000-8000-0000000109b1"
+        }
+      }
+    },
+    {
+      "name": "an API request with a method, headers and a body, its body's format and redirects left out",
+      "sent": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "monitorDestination": {
+                  "_type": "URL",
+                  "value": "https://api.example.com/health"
+                },
+                "requestType": "POST",
+                "requestHeaders": {
+                  "Authorization": "Bearer token"
+                },
+                "requestBody": "{\"ping\":true}",
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "name": "Offline",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "False"
+                            }
+                          ],
+                          "monitorStatusId": "a1000000-0000-4000-8000-0000000109b2",
+                          "changeMonitorStatus": true
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "answered": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "id": "7ceee5d2-beab-4482-a98e-d7dab8f5344c",
+                "monitorDestination": {
+                  "_type": "URL",
+                  "value": "https://api.example.com/health"
+                },
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "id": "2fc70629-17f9-475e-9621-eea5a16b33fe",
+                          "monitorStatusId": "a1000000-0000-4000-8000-0000000109b2",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "False"
+                            }
+                          ],
+                          "incidents": [],
+                          "alerts": [],
+                          "createAlerts": false,
+                          "changeMonitorStatus": true,
+                          "createIncidents": false,
+                          "isEnabled": true,
+                          "name": "Offline",
+                          "description": ""
+                        }
+                      }
+                    ]
+                  }
+                },
+                "requestType": "POST",
+                "requestHeaders": {
+                  "Authorization": "Bearer token"
+                },
+                "requestBody": "{\"ping\":true}"
+              }
+            }
+          ],
+          "defaultMonitorStatusId": "a1000000-0000-4000-8000-0000000109b1"
+        }
+      }
+    },
+    {
+      "name": "a criteria that opens an incident and an alert, the templates' flags left out",
+      "sent": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "monitorDestination": {
+                  "_type": "URL",
+                  "value": "https://example.com"
+                },
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "name": "Offline",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "False"
+                            }
+                          ],
+                          "monitorStatusId": "a1000000-0000-4000-8000-0000000109b2",
+                          "changeMonitorStatus": true,
+                          "createIncidents": true,
+                          "createAlerts": true,
+                          "incidents": [
+                            {
+                              "title": "The shop is down",
+                              "description": "The shop does not answer.",
+                              "incidentSeverityId": "a1000000-0000-4000-8000-0000000109b3",
+                              "onCallPolicyIds": [
+                                "a1000000-0000-4000-8000-0000000109b4"
+                              ]
+                            }
+                          ],
+                          "alerts": [
+                            {
+                              "title": "The shop is down",
+                              "description": "The shop does not answer.",
+                              "alertSeverityId": "a1000000-0000-4000-8000-0000000109b3"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "answered": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "id": "2d118883-8d6b-4a2a-b3f1-b11e67469c70",
+                "monitorDestination": {
+                  "_type": "URL",
+                  "value": "https://example.com/"
+                },
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "id": "b6a3a956-b03d-4df7-b059-6d2b187d6bc1",
+                          "monitorStatusId": "a1000000-0000-4000-8000-0000000109b2",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "False"
+                            }
+                          ],
+                          "incidents": [
+                            {
+                              "title": "The shop is down",
+                              "description": "The shop does not answer.",
+                              "incidentSeverityId": "a1000000-0000-4000-8000-0000000109b3",
+                              "onCallPolicyIds": [
+                                "a1000000-0000-4000-8000-0000000109b4"
+                              ],
+                              "id": "27142200-e83c-47f4-863f-c469971b6d9f"
+                            }
+                          ],
+                          "alerts": [
+                            {
+                              "title": "The shop is down",
+                              "description": "The shop does not answer.",
+                              "alertSeverityId": "a1000000-0000-4000-8000-0000000109b3",
+                              "id": "d57721db-da58-4372-b216-d2dbed5815c1"
+                            }
+                          ],
+                          "createAlerts": true,
+                          "changeMonitorStatus": true,
+                          "createIncidents": true,
+                          "isEnabled": true,
+                          "name": "Offline",
+                          "description": ""
+                        }
+                      }
+                    ]
+                  }
+                },
+                "requestType": "GET"
+              }
+            }
+          ],
+          "defaultMonitorStatusId": "a1000000-0000-4000-8000-0000000109b1"
+        }
+      }
+    },
+    {
+      "name": "a recovery condition written without its condition",
+      "sent": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "monitorDestination": {
+                  "_type": "URL",
+                  "value": "https://example.com"
+                },
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "name": "Offline",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "False"
+                            }
+                          ],
+                          "monitorStatusId": "a1000000-0000-4000-8000-0000000109b2",
+                          "changeMonitorStatus": true,
+                          "recoveryFilters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "True",
+                              "evaluateOverTime": true,
+                              "evaluateOverTimeOptions": {
+                                "timeValueInMinutes": 10,
+                                "evaluateOverTimeType": "All Values"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "answered": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "id": "552cdd0f-f4a6-4fc2-a09a-4b0f0ce28024",
+                "monitorDestination": {
+                  "_type": "URL",
+                  "value": "https://example.com/"
+                },
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "id": "d72efd00-ba57-4b35-8303-65b483038a74",
+                          "monitorStatusId": "a1000000-0000-4000-8000-0000000109b2",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "False"
+                            }
+                          ],
+                          "incidents": [],
+                          "alerts": [],
+                          "createAlerts": false,
+                          "changeMonitorStatus": true,
+                          "createIncidents": false,
+                          "isEnabled": true,
+                          "recoveryFilters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "True",
+                              "evaluateOverTime": true,
+                              "evaluateOverTimeOptions": {
+                                "timeValueInMinutes": 10,
+                                "evaluateOverTimeType": "All Values"
+                              }
+                            }
+                          ],
+                          "recoveryFilterCondition": "All",
+                          "name": "Offline",
+                          "description": ""
+                        }
+                      }
+                    ]
+                  }
+                },
+                "requestType": "GET"
+              }
+            }
+          ],
+          "defaultMonitorStatusId": "a1000000-0000-4000-8000-0000000109b1"
+        }
+      }
+    },
+    {
+      "name": "active hours on weekdays in Oslo",
+      "sent": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "monitorDestination": {
+                  "_type": "URL",
+                  "value": "https://example.com"
+                },
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "name": "Offline",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "False"
+                            }
+                          ],
+                          "monitorStatusId": "a1000000-0000-4000-8000-0000000109b2",
+                          "changeMonitorStatus": true,
+                          "activeHours": {
+                            "_type": "RestrictionTimes",
+                            "value": {
+                              "restictionType": "Weekly",
+                              "dayRestrictionTimes": null,
+                              "weeklyRestrictionTimes": [
+                                {
+                                  "startDay": "Monday",
+                                  "endDay": "Monday",
+                                  "startTime": {
+                                    "_type": "DateTime",
+                                    "value": "2026-01-12T07:00:00.000Z"
+                                  },
+                                  "endTime": {
+                                    "_type": "DateTime",
+                                    "value": "2026-01-12T17:00:00.000Z"
+                                  }
+                                },
+                                {
+                                  "startDay": "Tuesday",
+                                  "endDay": "Tuesday",
+                                  "startTime": {
+                                    "_type": "DateTime",
+                                    "value": "2026-01-13T07:00:00.000Z"
+                                  },
+                                  "endTime": {
+                                    "_type": "DateTime",
+                                    "value": "2026-01-13T17:00:00.000Z"
+                                  }
+                                },
+                                {
+                                  "startDay": "Wednesday",
+                                  "endDay": "Wednesday",
+                                  "startTime": {
+                                    "_type": "DateTime",
+                                    "value": "2026-01-14T07:00:00.000Z"
+                                  },
+                                  "endTime": {
+                                    "_type": "DateTime",
+                                    "value": "2026-01-14T17:00:00.000Z"
+                                  }
+                                },
+                                {
+                                  "startDay": "Thursday",
+                                  "endDay": "Thursday",
+                                  "startTime": {
+                                    "_type": "DateTime",
+                                    "value": "2026-01-15T07:00:00.000Z"
+                                  },
+                                  "endTime": {
+                                    "_type": "DateTime",
+                                    "value": "2026-01-15T17:00:00.000Z"
+                                  }
+                                },
+                                {
+                                  "startDay": "Friday",
+                                  "endDay": "Friday",
+                                  "startTime": {
+                                    "_type": "DateTime",
+                                    "value": "2026-01-16T07:00:00.000Z"
+                                  },
+                                  "endTime": {
+                                    "_type": "DateTime",
+                                    "value": "2026-01-16T17:00:00.000Z"
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "activeHoursTimezone": "Europe/Oslo"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "answered": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "id": "e3662115-4a05-4675-8ebe-6f63b86f2466",
+                "monitorDestination": {
+                  "_type": "URL",
+                  "value": "https://example.com/"
+                },
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "id": "ae5d0b2a-b523-40c6-ade5-f83dc45ca397",
+                          "monitorStatusId": "a1000000-0000-4000-8000-0000000109b2",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "False"
+                            }
+                          ],
+                          "incidents": [],
+                          "alerts": [],
+                          "createAlerts": false,
+                          "changeMonitorStatus": true,
+                          "createIncidents": false,
+                          "isEnabled": true,
+                          "activeHours": {
+                            "_type": "RestrictionTimes",
+                            "value": {
+                              "restictionType": "Weekly",
+                              "dayRestrictionTimes": null,
+                              "weeklyRestrictionTimes": [
+                                {
+                                  "startDay": "Monday",
+                                  "endDay": "Monday",
+                                  "startTime": "2026-01-12T07:00:00.000Z",
+                                  "endTime": "2026-01-12T17:00:00.000Z"
+                                },
+                                {
+                                  "startDay": "Tuesday",
+                                  "endDay": "Tuesday",
+                                  "startTime": "2026-01-13T07:00:00.000Z",
+                                  "endTime": "2026-01-13T17:00:00.000Z"
+                                },
+                                {
+                                  "startDay": "Wednesday",
+                                  "endDay": "Wednesday",
+                                  "startTime": "2026-01-14T07:00:00.000Z",
+                                  "endTime": "2026-01-14T17:00:00.000Z"
+                                },
+                                {
+                                  "startDay": "Thursday",
+                                  "endDay": "Thursday",
+                                  "startTime": "2026-01-15T07:00:00.000Z",
+                                  "endTime": "2026-01-15T17:00:00.000Z"
+                                },
+                                {
+                                  "startDay": "Friday",
+                                  "endDay": "Friday",
+                                  "startTime": "2026-01-16T07:00:00.000Z",
+                                  "endTime": "2026-01-16T17:00:00.000Z"
+                                }
+                              ]
+                            }
+                          },
+                          "activeHoursTimezone": "Europe/Oslo",
+                          "name": "Offline",
+                          "description": ""
+                        }
+                      }
+                    ]
+                  }
+                },
+                "requestType": "GET"
+              }
+            }
+          ],
+          "defaultMonitorStatusId": "a1000000-0000-4000-8000-0000000109b1"
+        }
+      }
+    },
+    {
+      "name": "windows that count, a percentile and a previous check, each one's no-data setting left out",
+      "sent": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "monitorDestination": {
+                  "_type": "URL",
+                  "value": "https://example.com"
+                },
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "name": "Flapping",
+                          "filterCondition": "Any",
+                          "filters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "False",
+                              "evaluateOverTime": true,
+                              "evaluateOverTimeOptions": {
+                                "timeValueInMinutes": 60,
+                                "evaluateOverTimeType": "Status Changes",
+                                "countFilterType": "Greater Than",
+                                "countValue": 4
+                              }
+                            },
+                            {
+                              "checkOn": "Response Time (in ms)",
+                              "filterType": "Greater Than",
+                              "value": 500,
+                              "evaluateOverTime": true,
+                              "evaluateOverTimeOptions": {
+                                "timeValueInMinutes": 15,
+                                "evaluateOverTimeType": "Percentile",
+                                "percentile": 90
+                              }
+                            },
+                            {
+                              "checkOn": "Response Time (in ms)",
+                              "filterType": "Greater Than",
+                              "evaluateOverTime": true,
+                              "evaluateOverTimeOptions": {
+                                "timeValueInMinutes": 5,
+                                "evaluateOverTimeType": "Previous Check",
+                                "changeType": "Percentage",
+                                "changeValue": 50
+                              }
+                            }
+                          ],
+                          "monitorStatusId": "a1000000-0000-4000-8000-0000000109b2",
+                          "changeMonitorStatus": true
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "answered": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "id": "c639263a-fdb9-4994-9bc4-d95c003d877a",
+                "monitorDestination": {
+                  "_type": "URL",
+                  "value": "https://example.com/"
+                },
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "id": "7bfe0b1b-88c5-4960-9afe-f6608111b621",
+                          "monitorStatusId": "a1000000-0000-4000-8000-0000000109b2",
+                          "filterCondition": "Any",
+                          "filters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "False",
+                              "evaluateOverTime": true,
+                              "evaluateOverTimeOptions": {
+                                "timeValueInMinutes": 60,
+                                "evaluateOverTimeType": "Status Changes",
+                                "countFilterType": "Greater Than",
+                                "countValue": 4
+                              }
+                            },
+                            {
+                              "checkOn": "Response Time (in ms)",
+                              "filterType": "Greater Than",
+                              "value": 500,
+                              "evaluateOverTime": true,
+                              "evaluateOverTimeOptions": {
+                                "timeValueInMinutes": 15,
+                                "evaluateOverTimeType": "Percentile",
+                                "percentile": 90
+                              }
+                            },
+                            {
+                              "checkOn": "Response Time (in ms)",
+                              "filterType": "Greater Than",
+                              "evaluateOverTime": true,
+                              "evaluateOverTimeOptions": {
+                                "timeValueInMinutes": 5,
+                                "evaluateOverTimeType": "Previous Check",
+                                "changeType": "Percentage",
+                                "changeValue": 50
+                              }
+                            }
+                          ],
+                          "incidents": [],
+                          "alerts": [],
+                          "createAlerts": false,
+                          "changeMonitorStatus": true,
+                          "createIncidents": false,
+                          "isEnabled": true,
+                          "name": "Flapping",
+                          "description": ""
+                        }
+                      }
+                    ]
+                  }
+                },
+                "requestType": "GET"
+              }
+            }
+          ],
+          "defaultMonitorStatusId": "a1000000-0000-4000-8000-0000000109b1"
+        }
+      }
+    },
+    {
+      "name": "a server's disk and a criteria that is turned off",
+      "sent": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "name": "Disk full",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Disk Usage (in %)",
+                              "filterType": "Greater Than",
+                              "value": 90,
+                              "serverMonitorOptions": {
+                                "diskPath": "*"
+                              }
+                            }
+                          ],
+                          "isEnabled": false
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "answered": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "id": "eabbed6c-5b75-411c-99d0-496fbc7130ee",
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "id": "c4c39b50-0e01-4b72-9f88-67ea9234ad69",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Disk Usage (in %)",
+                              "filterType": "Greater Than",
+                              "value": 90,
+                              "serverMonitorOptions": {
+                                "diskPath": "*"
+                              }
+                            }
+                          ],
+                          "incidents": [],
+                          "alerts": [],
+                          "createAlerts": false,
+                          "changeMonitorStatus": false,
+                          "createIncidents": false,
+                          "isEnabled": false,
+                          "name": "Disk full",
+                          "description": ""
+                        }
+                      }
+                    ]
+                  }
+                },
+                "requestType": "GET"
+              }
+            }
+          ],
+          "defaultMonitorStatusId": "a1000000-0000-4000-8000-0000000109b1"
+        }
+      }
+    },
+    {
+      "name": "a synthetic step: browsers, screen sizes, its code, retries and a timeout",
+      "sent": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "customCode": "await page.goto('https://example.com');",
+                "browserTypes": [
+                  "Chromium",
+                  "Firefox"
+                ],
+                "screenSizeTypes": [
+                  "Desktop",
+                  "Mobile"
+                ],
+                "retryCountOnError": 2,
+                "requestTimeoutInMs": 30000,
+                "retryCount": 1,
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "name": "Script failed",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Error",
+                              "filterType": "Is Not Empty"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "answered": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "id": "c7709909-c2b9-4cd3-9816-4f1060a41abf",
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "id": "b0674324-ebbb-4ae5-ba62-40d0bc2db8df",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Error",
+                              "filterType": "Is Not Empty"
+                            }
+                          ],
+                          "incidents": [],
+                          "alerts": [],
+                          "createAlerts": false,
+                          "changeMonitorStatus": false,
+                          "createIncidents": false,
+                          "isEnabled": true,
+                          "name": "Script failed",
+                          "description": ""
+                        }
+                      }
+                    ]
+                  }
+                },
+                "requestType": "GET",
+                "customCode": "await page.goto('https://example.com');",
+                "screenSizeTypes": [
+                  "Desktop",
+                  "Mobile"
+                ],
+                "browserTypes": [
+                  "Chromium",
+                  "Firefox"
+                ],
+                "retryCountOnError": 2,
+                "requestTimeoutInMs": 30000,
+                "retryCount": 1
+              }
+            }
+          ],
+          "defaultMonitorStatusId": "a1000000-0000-4000-8000-0000000109b1"
+        }
+      }
+    },
+    {
+      "name": "a metrics step whose query names no aggregation, and a filter's metric options",
+      "sent": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "metricMonitor": {
+                  "metricViewConfig": {
+                    "queryConfigs": [
+                      {
+                        "metricAliasData": {
+                          "metricVariable": "a",
+                          "title": "Errors"
+                        },
+                        "metricQueryData": {
+                          "filterData": {
+                            "metricName": "http_errors_total"
+                          }
+                        }
+                      }
+                    ],
+                    "formulaConfigs": []
+                  },
+                  "rollingTime": "Past 5 Minutes"
+                },
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "name": "Errors",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Metric Value",
+                              "filterType": "Greater Than",
+                              "value": 10,
+                              "metricMonitorOptions": {
+                                "metricAlias": "a",
+                                "metricAggregationType": "Average"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "answered": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "id": "cb2a70ad-0cca-4a0e-baae-d58ec276b9e9",
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "id": "8f7d938e-0ae0-4570-8f90-61eb17f1fba6",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Metric Value",
+                              "filterType": "Greater Than",
+                              "value": 10,
+                              "metricMonitorOptions": {
+                                "metricAlias": "a",
+                                "metricAggregationType": "Average"
+                              }
+                            }
+                          ],
+                          "incidents": [],
+                          "alerts": [],
+                          "createAlerts": false,
+                          "changeMonitorStatus": false,
+                          "createIncidents": false,
+                          "isEnabled": true,
+                          "name": "Errors",
+                          "description": ""
+                        }
+                      }
+                    ]
+                  }
+                },
+                "requestType": "GET",
+                "metricMonitor": {
+                  "metricViewConfig": {
+                    "queryConfigs": [
+                      {
+                        "metricAliasData": {
+                          "metricVariable": "a",
+                          "title": "Errors"
+                        },
+                        "metricQueryData": {
+                          "filterData": {
+                            "metricName": "http_errors_total"
+                          }
+                        }
+                      }
+                    ],
+                    "formulaConfigs": []
+                  },
+                  "rollingTime": "Past 5 Minutes"
+                }
+              }
+            }
+          ],
+          "defaultMonitorStatusId": "a1000000-0000-4000-8000-0000000109b1"
+        }
+      }
+    },
+    {
+      "name": "two steps, the second a port",
+      "sent": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "monitorDestination": {
+                  "_type": "URL",
+                  "value": "https://example.com"
+                },
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "name": "Offline",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "False"
+                            }
+                          ],
+                          "monitorStatusId": "a1000000-0000-4000-8000-0000000109b2",
+                          "changeMonitorStatus": true
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "monitorDestination": {
+                  "_type": "Hostname",
+                  "value": "db.example.com"
+                },
+                "monitorDestinationPort": {
+                  "_type": "Port",
+                  "value": 5432
+                },
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "name": "Offline",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "False"
+                            }
+                          ],
+                          "monitorStatusId": "a1000000-0000-4000-8000-0000000109b2",
+                          "changeMonitorStatus": true
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "answered": {
+        "_type": "MonitorSteps",
+        "value": {
+          "monitorStepsInstanceArray": [
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "id": "8d004ef5-8d47-4c53-860b-9024132ff844",
+                "monitorDestination": {
+                  "_type": "URL",
+                  "value": "https://example.com/"
+                },
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "id": "f44c1dfb-3f24-4c1c-9666-1ffa97a81193",
+                          "monitorStatusId": "a1000000-0000-4000-8000-0000000109b2",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "False"
+                            }
+                          ],
+                          "incidents": [],
+                          "alerts": [],
+                          "createAlerts": false,
+                          "changeMonitorStatus": true,
+                          "createIncidents": false,
+                          "isEnabled": true,
+                          "name": "Offline",
+                          "description": ""
+                        }
+                      }
+                    ]
+                  }
+                },
+                "requestType": "GET"
+              }
+            },
+            {
+              "_type": "MonitorStep",
+              "value": {
+                "id": "f3a539ed-2b59-4d33-8bb8-f7757df54df6",
+                "monitorDestination": {
+                  "_type": "Hostname",
+                  "value": "db.example.com"
+                },
+                "monitorDestinationPort": {
+                  "_type": "Port",
+                  "value": 5432
+                },
+                "monitorCriteria": {
+                  "_type": "MonitorCriteria",
+                  "value": {
+                    "monitorCriteriaInstanceArray": [
+                      {
+                        "_type": "MonitorCriteriaInstance",
+                        "value": {
+                          "id": "de5ea866-6ce3-43cf-bcd6-d9b3b678b1aa",
+                          "monitorStatusId": "a1000000-0000-4000-8000-0000000109b2",
+                          "filterCondition": "All",
+                          "filters": [
+                            {
+                              "checkOn": "Is Online",
+                              "filterType": "False"
+                            }
+                          ],
+                          "incidents": [],
+                          "alerts": [],
+                          "createAlerts": false,
+                          "changeMonitorStatus": true,
+                          "createIncidents": false,
+                          "isEnabled": true,
+                          "name": "Offline",
+                          "description": ""
+                        }
+                      }
+                    ]
+                  }
+                },
+                "requestType": "GET"
+              }
+            }
+          ],
+          "defaultMonitorStatusId": "a1000000-0000-4000-8000-0000000109b1"
+        }
+      }
+    }
+  ]
+}

@@ -9,15 +9,15 @@ import (
 // shards.go).
 func init() {
     RegisterResources("shard31", []OrderedResource{
-        {Order: 46, New: NewResidencyRuleResource},
-        {Order: 72, New: NewLlmCostBudgetResource},
-        {Order: 73, New: NewLlmModelPriceResource},
-        {Order: 98, New: NewIncomingRequestSecretResource},
-        {Order: 105, New: NewIncidentCustomFieldResource},
-        {Order: 196, New: NewPublicNoteApprovalStepResource},
-        {Order: 342, New: NewWorkspaceNotificationRuleOwningTeamResource},
-        {Order: 359, New: NewCloudResourceFeedResource},
-        {Order: 363, New: NewOnCallTimeLogResource},
-        {Order: 427, New: NewServerlessFunctionUserOwnerResource},
+        {Order: 47, New: NewResidencyRuleResource},
+        {Order: 76, New: NewLlmCostBudgetResource},
+        {Order: 77, New: NewLlmModelPriceResource},
+        {Order: 102, New: NewIncomingRequestSecretResource},
+        {Order: 109, New: NewIncidentCustomFieldResource},
+        {Order: 200, New: NewPublicNoteApprovalStepResource},
+        {Order: 346, New: NewWorkspaceNotificationRuleOwningTeamResource},
+        {Order: 363, New: NewCloudResourceFeedResource},
+        {Order: 367, New: NewOnCallTimeLogResource},
+        {Order: 431, New: NewServerlessFunctionUserOwnerResource},
     }, nil)
 }

@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_workspace_notification_log" "example" {
-  workspace_type = "Slack"
+  created_by_actor_type = "User"
 }
 
 # Or by id:
@@ -33,9 +33,14 @@ data "oneuptime_workspace_notification_log" "by_id" {
 - `alert_id` (String) ID of Alert associated with this message (if any). The ID of a `oneuptime_alert`.
 - `channel_id` (String) Channel ID where the message was sent.
 - `channel_name` (String) Channel Name where the message was sent.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `incident_episode_id` (String) ID of Incident Episode associated with this message (if any). The ID of a `oneuptime_incident_episode`.
 - `incident_id` (String) ID of Incident associated with this message (if any). The ID of a `oneuptime_incident`.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `message` (String) Content of the message.
 - `monitor_id` (String) ID of Monitor associated with this message (if any). The ID of a `oneuptime_monitor`.
 - `on_call_duty_policy_escalation_rule_id` (String) ID of On-Call Policy Escalation Rule associated with this message (if any). The ID of a `oneuptime_escalation_rule`.
@@ -54,5 +59,6 @@ data "oneuptime_workspace_notification_log" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

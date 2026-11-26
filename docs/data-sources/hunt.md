@@ -28,10 +28,15 @@ data "oneuptime_hunt" "by_id" {
 
 ### Optional
 
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) ID of the person who saved the hunt. The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Why the hunt matters and what to do when it finds something, for whoever opens it later.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `last_found_event_count` (Number) How many events the last run that found something found.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `last_run_error` (String) Why the hunt's last scheduled run could not be made. Empty when it ran.
 - `last_run_event_count` (Number) How many events the hunt's last scheduled run found.
 - `library_hunt_id` (String) The Hunt Library starter this hunt was added from, such as encoded-powershell. Empty for a hunt saved from a search of your own.
@@ -47,6 +52,7 @@ data "oneuptime_hunt" "by_id" {
 - `filters` (String) The Events sidebar's filters kept beside the search: each field's values, or with ! before the field the values it leaves out. At most 50 values. A JSON value: read it with `jsondecode()`.
 - `last_found_at` (String) The end of the events the last run that found something searched: what it found arrived before this.
 - `last_found_since_at` (String) The start of the events the last run that found something searched: what it found arrived after this.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_run_at` (String) When the hunt last ran on its schedule, whether it found anything or not.
 - `next_run_at` (String) When the hunt next runs on its schedule. Empty for a hunt that is not scheduled.
 - `notify_teams` (Set of String) The teams whose members are told when a scheduled run finds events, each as their notification settings say. Only members who can read security events are told. IDs of `oneuptime_team` resources.

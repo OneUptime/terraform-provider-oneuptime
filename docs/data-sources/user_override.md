@@ -15,8 +15,8 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_user_override" "example" {
-  on_call_duty_policy_id = oneuptime_on_call_policy.example.id
-  override_user_email    = "alice@example.com"
+  last_modified_by_user_id = data.oneuptime_user.example.id
+  override_user_email      = "alice@example.com"
 }
 
 # Or by id:
@@ -29,8 +29,13 @@ data "oneuptime_user_override" "by_id" {
 
 ### Optional
 
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `on_call_duty_policy_id` (String) ID of the on-call policy this override applies to. Leave it empty for a global override, which applies to every on-call policy. The ID of a `oneuptime_on_call_policy`.
 - `override_user_email` (String) Look it up by the email address of the person in `override_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
 - `override_user_id` (String) ID of the user who is away. While the override is in force, alerts that would page this user go to the user in Route Alerts To User ID instead. With no Route Alerts To User ID, they are skipped: each of their turns in an on-call schedule goes to the next person in the rotation who is not away. The ID of a `oneuptime_user` (see the data source). Or look them up by email address, in `override_user_email`.
@@ -41,6 +46,7 @@ data "oneuptime_user_override" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `ends_at` (String) When the override ends, which has to be after it starts. From then on, alerts page the Override User again, and their turns in each rotation are theirs again. It can be changed until the override ends, to a time from now on: an end of now ends it now.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `starts_at` (String) When the override starts sending the Override User's alerts to the Route Alerts To User - or, with none, skipping their turns. It can be changed until the override starts, to a time from now on.
 - `updated_at` (String) Date and Time when the object was updated.

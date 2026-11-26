@@ -34,11 +34,16 @@ data "oneuptime_smtp_config" "by_id" {
 - `amazon_ses_role_arn` (String) The ARN of the IAM role in your AWS account that OneUptime signs in to, when Amazon SES Authentication Type is 'IAM Role'. Its trust policy must let OneUptime's AWS account in with this project's external ID, and the role must be allowed ses:SendEmail.
 - `auth_type` (String) The type of authentication to use for this SMTP server. Options: Username and Password, OAuth, or None.
 - `client_id` (String) The Client ID from your OAuth application registration. Required for OAuth authentication.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Friendly description that will help you remember.
 - `from_name` (String) Permissions - Create: [Project Owner, Project Admin, Create SMTP Config], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read SMTP Config], Update: [Project Owner, Project Admin, Edit SMTP Config]
 - `hostname` (String) SMTP server hostname. Required when Transport is SMTP. Not used by HTTP-API transports like Microsoft Graph.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `mailgun_domain` (String) The Mailgun sending domain mail goes out from, such as mg.example.com. Required when Transport is Mailgun.
 - `mailgun_region` (String) The region the Mailgun domain was created in: US or EU. US when not set.
 - `name` (String) Permissions - Create: [Project Owner, Project Admin, Create SMTP Config], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read SMTP Config], Update: [Project Owner, Project Admin, Edit SMTP Config]
@@ -55,5 +60,6 @@ data "oneuptime_smtp_config" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `from_email` (String) Permissions - Create: [Project Owner, Project Admin, Create SMTP Config], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read SMTP Config], Update: [Project Owner, Project Admin, Edit SMTP Config]
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

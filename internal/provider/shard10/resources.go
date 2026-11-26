@@ -11,13 +11,13 @@ func init() {
     RegisterResources("shard10", []OrderedResource{
         {Order: 14, New: NewMetricSavedViewResource},
         {Order: 26, New: NewThreatIntelFeedResource},
-        {Order: 47, New: NewDataSecuritySettingResource},
-        {Order: 53, New: NewDataReconciliationResource},
-        {Order: 140, New: NewAlertEpisodeTeamOwnerResource},
-        {Order: 146, New: NewAlertIncidentRuleResource},
-        {Order: 201, New: NewStatusPageMonitorRuleResource},
-        {Order: 209, New: NewPodmanHostLabelRuleResource},
-        {Order: 435, New: NewCloudResourceUserOwnerResource},
-        {Order: 444, New: NewDatabaseOwnerRuleResource},
+        {Order: 48, New: NewDataSecuritySettingResource},
+        {Order: 54, New: NewDataReconciliationResource},
+        {Order: 144, New: NewAlertEpisodeTeamOwnerResource},
+        {Order: 150, New: NewAlertIncidentRuleResource},
+        {Order: 205, New: NewStatusPageMonitorRuleResource},
+        {Order: 213, New: NewPodmanHostLabelRuleResource},
+        {Order: 439, New: NewCloudResourceUserOwnerResource},
+        {Order: 448, New: NewDatabaseOwnerRuleResource},
     }, nil)
 }

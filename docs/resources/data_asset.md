@@ -41,6 +41,8 @@ resource "oneuptime_data_asset" "example" {
 - `column_count` (Number) How many columns the asset has.
 - `columns` (String) The asset's columns at its last collection: each one's name, type, whether it allows empty values, and its position. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) ID of the user who created this asset, if a person did rather than OneUptime. The ID of a `oneuptime_user` (see the data source).
 - `data_store_kind` (String) What kind of store this asset is in, such as PostgreSQL or Snowflake.
 - `data_store_name` (String) The name of the data store this asset is in.
@@ -52,6 +54,10 @@ resource "oneuptime_data_asset" "example" {
 - `is_dropped` (Boolean) The asset is gone from its store. It is kept with its history, and comes back if the table does.
 - `last_changed_at` (String) When a row was last inserted, updated or deleted, as near as the engine tells.
 - `last_collected_at` (String) When OneUptime last read the asset's health.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `last_read_at` (String) When the table was last seen read, to the hour: by the engine's read counters, or by a service's database spans.
 - `late_at` (String) When the table is late if it has not changed by then: twice its usual interval after its last change, and at least fifteen minutes past it. Empty for a view, or a table whose rhythm is not known yet.
 - `project_id` (String) ID of the project this data asset belongs to. The ID of a `oneuptime_project`.

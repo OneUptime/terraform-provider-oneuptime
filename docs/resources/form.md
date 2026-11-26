@@ -2,12 +2,12 @@
 page_title: "oneuptime_form Resource - oneuptime"
 subcategory: "Forms"
 description: |-
-  Forms anyone with the link can fill in, without a OneUptime account. Each submission creates an incident or a maintenance event in this project.
+  Forms anyone with the link can fill in, without a OneUptime account. Each submission creates an incident, an alert or a maintenance event in this project.
 ---
 
 # oneuptime_form (Resource)
 
-Forms anyone with the link can fill in, without a OneUptime account. Each submission creates an incident or a maintenance event in this project.
+Forms anyone with the link can fill in, without a OneUptime account. Each submission creates an incident, an alert or a maintenance event in this project.
 
 ## Example Usage
 
@@ -36,15 +36,21 @@ resource "oneuptime_form" "example" {
 - `require_sign_in` (Boolean) Only this form's private users can open and submit it on its public link, once they sign in with a password or single sign-on. Defaults to `false`.
 - `require_sso_for_login` (Boolean) While the form asks its visitors to sign in, only its single sign-on lets them in: private users' passwords no longer do. Defaults to `false`.
 - `success_message` (String) Shown after the form is submitted, together with the number of what the submission created. Markdown.
-- `target_settings` (String) What every submission starts with besides the answers. For incidents: defaultTitle, incidentSeverityId, incidentTemplateId, monitorIds, labelIds, onCallDutyPolicyIds, ownerUserIds and ownerTeamIds. For maintenance events: defaultTitle, monitorIds, statusPageIds, labelIds, ownerUserIds, ownerTeamIds, showOnStatusPages and notifySubscribers. A JSON value: write it with `jsonencode()`.
-- `target_type` (String) What each submission creates: Incident, or ScheduledMaintenance (a maintenance event). Allowed values: `Incident`, `ScheduledMaintenance`. Defaults to `Incident`.
+- `target_settings` (String) What every submission starts with besides the answers. For incidents: defaultTitle, incidentSeverityId, incidentTemplateId, monitorIds, labelIds, onCallDutyPolicyIds, ownerUserIds and ownerTeamIds. For alerts: defaultTitle, alertSeverityId, alertStateId, monitorId, labelIds, onCallDutyPolicyIds, ownerUserIds and ownerTeamIds. For maintenance events: defaultTitle, monitorIds, statusPageIds, labelIds, ownerUserIds, ownerTeamIds, showOnStatusPages and notifySubscribers. A JSON value: write it with `jsonencode()`.
+- `target_type` (String) What each submission creates: Incident, Alert, or ScheduledMaintenance (a maintenance event). A form that creates alerts takes permission to create alerts to set up. Allowed values: `Incident`, `ScheduledMaintenance`, `Alert`. Defaults to `Incident`.
 - `templates` (String) Named sets of answers a submission can start from, in the order the form lists them. Each has an id, a name (unique within the form), isDefault (the form opens with it; at most one template), answers: an object keyed by question id, each answer as a submission sends it - text, a number, true or false, an option's value, or a list of values for a multi-select - and fieldSettings: an object keyed by question id that makes a question Required, Optional or Hidden when a submission starts from the template; a question it does not list is asked as the form asks it, and a question the form cannot create its record without is always asked and required. The public form lists the templates above its questions and fills in a template's answers when one is chosen, or when its link names one (?template=<id>). A question the submission was not asked - hidden by the form or by the template - is answered only from the template a submission started from. A JSON value: write it with `jsonencode()`.
 
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Unique identifier for the resource.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `share_key` (String) The key in the form's public link, /accounts/form/<shareKey>. Generated when the form is created. Resetting the link in the dashboard replaces it, and the old link stops working.
 - `updated_at` (String) Date and Time when the object was updated.

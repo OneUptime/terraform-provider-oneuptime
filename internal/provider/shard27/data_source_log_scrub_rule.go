@@ -30,6 +30,12 @@ type LogScrubRuleDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
+    CreatedByActorType types.String `tfsdk:"created_by_actor_type"`
+    CreatedByActorId types.String `tfsdk:"created_by_actor_id"`
+    LastModifiedAt types.String `tfsdk:"last_modified_at"`
+    LastModifiedByActorType types.String `tfsdk:"last_modified_by_actor_type"`
+    LastModifiedByActorId types.String `tfsdk:"last_modified_by_actor_id"`
+    LastModifiedByUserId types.String `tfsdk:"last_modified_by_user_id"`
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
@@ -37,6 +43,9 @@ type LogScrubRuleDataSourceModel struct {
     CustomRegex types.String `tfsdk:"custom_regex"`
     ScrubAction types.String `tfsdk:"scrub_action"`
     FieldsToScrub types.String `tfsdk:"fields_to_scrub"`
+    AttributeKeys types.String `tfsdk:"attribute_keys"`
+    Proof types.String `tfsdk:"proof"`
+    ServiceId types.String `tfsdk:"service_id"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     SortOrder types.Number `tfsdk:"sort_order"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -48,7 +57,7 @@ func (d *LogScrubRuleDataSource) Metadata(ctx context.Context, req datasource.Me
 
 func (d *LogScrubRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Configure rules to automatically detect and scrub sensitive data (PII) from logs at ingest time. Look up an existing log scrub rule by `id`, or by any of its other arguments (`name`, `created_by_user_id`, `custom_regex`, ...): each one set must match, and exactly one log scrub rule may match them all.",
+        MarkdownDescription: "Configure rules to automatically detect and scrub sensitive data (PII) from logs at ingest time. Look up an existing log scrub rule by `id`, or by any of its other arguments (`name`, `created_by_actor_id`, `created_by_actor_type`, ...): each one set must match, and exactly one log scrub rule may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -63,6 +72,36 @@ func (d *LogScrubRuleDataSource) Schema(ctx context.Context, req datasource.Sche
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
+            },
+            "created_by_actor_type": schema.StringAttribute{
+                MarkdownDescription: "What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.",
+                Optional: true,
+                Computed: true,
+            },
+            "created_by_actor_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_modified_at": schema.StringAttribute{
+                MarkdownDescription: "When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.",
+                Computed: true,
+            },
+            "last_modified_by_actor_type": schema.StringAttribute{
+                MarkdownDescription: "What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_modified_by_actor_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_modified_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
+                Computed: true,
+                Validators: DataSourceRecordIDValidators("oneuptime_user"),
             },
             "project_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the project this log scrub rule belongs to. The ID of a `oneuptime_project`.",
@@ -97,6 +136,20 @@ func (d *LogScrubRuleDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "Which log fields to scrub: 'body' (the log message), 'attributes' (attribute values), or 'both', the default. A sensitiveKeys rule always scrubs attribute values, whatever this says.",
                 Optional: true,
                 Computed: true,
+            },
+            "attribute_keys": schema.StringAttribute{
+                MarkdownDescription: "The attributes this rule reads, each by its key or a dotted prefix of it (customer_name, request.headers). A Named Attributes rule hides the whole value of each; any other pattern looks for its matches only in their values. Empty for every attribute. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "proof": schema.StringAttribute{
+                MarkdownDescription: "Written by OneUptime: how this rule was proven to hide what Data Security found, on the very logs it was found in - the records read, the values that held the data and the share of other values it changed. It counts only while the rule is unchanged. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "service_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the service whose logs this rule scrubs: a rule that names a service scrubs only the logs that service sends. Null scrubs the logs of every service in the project. The ID of a `oneuptime_service`.",
+                Optional: true,
+                Computed: true,
+                Validators: RecordIDValidators("oneuptime_service"),
             },
             "is_enabled": schema.BoolAttribute{
                 MarkdownDescription: "Whether this scrub rule is active.",
@@ -153,6 +206,26 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
     // Every other argument set in configuration narrows the lookup.
     filters := map[string]interface{}{}
     filterNames := []string{}
+    if !data.CreatedByActorType.IsNull() && !data.CreatedByActorType.IsUnknown() {
+        filters["createdByActorType"] = data.CreatedByActorType.ValueString()
+        filterNames = append(filterNames, "created_by_actor_type = "+fmt.Sprintf("%q", data.CreatedByActorType.ValueString()))
+    }
+    if !data.CreatedByActorId.IsNull() && !data.CreatedByActorId.IsUnknown() {
+        filters["createdByActorId"] = data.CreatedByActorId.ValueString()
+        filterNames = append(filterNames, "created_by_actor_id = "+fmt.Sprintf("%q", data.CreatedByActorId.ValueString()))
+    }
+    if !data.LastModifiedByActorType.IsNull() && !data.LastModifiedByActorType.IsUnknown() {
+        filters["lastModifiedByActorType"] = data.LastModifiedByActorType.ValueString()
+        filterNames = append(filterNames, "last_modified_by_actor_type = "+fmt.Sprintf("%q", data.LastModifiedByActorType.ValueString()))
+    }
+    if !data.LastModifiedByActorId.IsNull() && !data.LastModifiedByActorId.IsUnknown() {
+        filters["lastModifiedByActorId"] = data.LastModifiedByActorId.ValueString()
+        filterNames = append(filterNames, "last_modified_by_actor_id = "+fmt.Sprintf("%q", data.LastModifiedByActorId.ValueString()))
+    }
+    if !data.LastModifiedByUserId.IsNull() && !data.LastModifiedByUserId.IsUnknown() {
+        filters["lastModifiedByUserId"] = data.LastModifiedByUserId.ValueString()
+        filterNames = append(filterNames, "last_modified_by_user_id = "+fmt.Sprintf("%q", data.LastModifiedByUserId.ValueString()))
+    }
     if !data.Name.IsNull() && !data.Name.IsUnknown() {
         filters["name"] = data.Name.ValueString()
         filterNames = append(filterNames, "name = "+fmt.Sprintf("%q", data.Name.ValueString()))
@@ -176,6 +249,10 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
     if !data.FieldsToScrub.IsNull() && !data.FieldsToScrub.IsUnknown() {
         filters["fieldsToScrub"] = data.FieldsToScrub.ValueString()
         filterNames = append(filterNames, "fields_to_scrub = "+fmt.Sprintf("%q", data.FieldsToScrub.ValueString()))
+    }
+    if !data.ServiceId.IsNull() && !data.ServiceId.IsUnknown() {
+        filters["serviceId"] = data.ServiceId.ValueString()
+        filterNames = append(filterNames, "service_id = "+fmt.Sprintf("%q", data.ServiceId.ValueString()))
     }
     if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
         filters["isEnabled"] = data.IsEnabled.ValueBool()
@@ -208,6 +285,12 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
     selectParam := map[string]interface{}{
         "createdAt": true,
         "updatedAt": true,
+        "createdByActorType": true,
+        "createdByActorId": true,
+        "lastModifiedAt": true,
+        "lastModifiedByActorType": true,
+        "lastModifiedByActorId": true,
+        "lastModifiedByUserId": true,
         "projectId": true,
         "name": true,
         "description": true,
@@ -215,6 +298,9 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         "customRegex": true,
         "scrubAction": true,
         "fieldsToScrub": true,
+        "attributeKeys": true,
+        "proof": true,
+        "serviceId": true,
         "isEnabled": true,
         "sortOrder": true,
         "createdByUserId": true,
@@ -350,6 +436,150 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
+    }
+    if obj, ok := item["createdByActorType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CreatedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CreatedByActorType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorType = types.StringNull()
+        }
+    } else if arr, ok := item["createdByActorType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CreatedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorType = types.StringNull()
+        }
+    } else if val, ok := item["createdByActorType"].(string); ok {
+        data.CreatedByActorType = types.StringValue(val)
+    } else {
+        data.CreatedByActorType = types.StringNull()
+    }
+    if obj, ok := item["createdByActorId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CreatedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CreatedByActorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByActorId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CreatedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorId = types.StringNull()
+        }
+    } else if val, ok := item["createdByActorId"].(string); ok {
+        data.CreatedByActorId = types.StringValue(val)
+    } else {
+        data.CreatedByActorId = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedAt = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedAt = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedAt"].(string); ok {
+        data.LastModifiedAt = types.StringValue(val)
+    } else {
+        data.LastModifiedAt = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedByActorType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedByActorType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorType = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedByActorType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorType = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedByActorType"].(string); ok {
+        data.LastModifiedByActorType = types.StringValue(val)
+    } else {
+        data.LastModifiedByActorType = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedByActorId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedByActorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorId = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedByActorId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorId = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedByActorId"].(string); ok {
+        data.LastModifiedByActorId = types.StringValue(val)
+    } else {
+        data.LastModifiedByActorId = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedByUserId"].(string); ok {
+        data.LastModifiedByUserId = types.StringValue(val)
+    } else {
+        data.LastModifiedByUserId = types.StringNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -518,6 +748,78 @@ func (d *LogScrubRuleDataSource) Read(ctx context.Context, req datasource.ReadRe
         data.FieldsToScrub = types.StringValue(val)
     } else {
         data.FieldsToScrub = types.StringNull()
+    }
+    if obj, ok := item["attributeKeys"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AttributeKeys = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AttributeKeys = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AttributeKeys = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AttributeKeys = types.StringValue(string(jsonBytes))
+        } else {
+            data.AttributeKeys = types.StringNull()
+        }
+    } else if arr, ok := item["attributeKeys"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AttributeKeys = types.StringValue(string(jsonBytes))
+        } else {
+            data.AttributeKeys = types.StringNull()
+        }
+    } else if val, ok := item["attributeKeys"].(string); ok {
+        data.AttributeKeys = types.StringValue(val)
+    } else {
+        data.AttributeKeys = types.StringNull()
+    }
+    if obj, ok := item["proof"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Proof = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Proof = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Proof = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Proof = types.StringValue(string(jsonBytes))
+        } else {
+            data.Proof = types.StringNull()
+        }
+    } else if arr, ok := item["proof"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.Proof = types.StringValue(string(jsonBytes))
+        } else {
+            data.Proof = types.StringNull()
+        }
+    } else if val, ok := item["proof"].(string); ok {
+        data.Proof = types.StringValue(val)
+    } else {
+        data.Proof = types.StringNull()
+    }
+    if obj, ok := item["serviceId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ServiceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ServiceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ServiceId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ServiceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServiceId = types.StringNull()
+        }
+    } else if arr, ok := item["serviceId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.ServiceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServiceId = types.StringNull()
+        }
+    } else if val, ok := item["serviceId"].(string); ok {
+        data.ServiceId = types.StringValue(val)
+    } else {
+        data.ServiceId = types.StringNull()
     }
     if val, ok := item["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)

@@ -28,11 +28,16 @@ data "oneuptime_workspace_notification_summary" "by_id" {
 
 ### Optional
 
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Description of the Summary Rule.
 - `filter_condition` (String) How to combine filters - Any or All.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_enabled` (Boolean) Is this summary rule enabled?
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `name` (String) Name of the Summary Rule.
 - `number_of_days_of_data` (Number) How many days of data to include in the summary.
 - `summary_type` (String) Type of summary - Incident, Alert, Incident Episode, or Alert Episode.
@@ -45,6 +50,7 @@ data "oneuptime_workspace_notification_summary" "by_id" {
 - `channel_names` (String) List of channel names to post the summary to. A JSON value: read it with `jsondecode()`.
 - `created_at` (String) Date and Time when the object was created.
 - `filters` (String) Which items the summary includes. An owner condition, such as Incident Owner, names people and teams of this project by ID. A JSON value: read it with `jsondecode()`.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_sent_at` (String) When the last summary was sent.
 - `next_send_at` (String) When the next summary should be sent.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

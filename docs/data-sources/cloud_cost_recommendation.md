@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_cloud_cost_recommendation" "example" {
-  cloud_account_id = oneuptime_cloud_account.example.id
+  created_by_actor_type = "User"
 }
 
 # Or by id:
@@ -31,12 +31,17 @@ data "oneuptime_cloud_cost_recommendation" "by_id" {
 - `action` (String) What to do, in the recommender's words: 'Rightsize', 'Delete the unattached disk'.
 - `cloud_account_id` (String) ID of the account the recommendation is for. The ID of a `oneuptime_cloud_account`.
 - `cloud_resource_id` (String) ID of the resource the recommendation is about, when OneUptime holds it. The ID of a `oneuptime_cloud_resource`.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) ID of the user who created this row (the connection writes as root).
 - `currency` (String) The currency the figures are in.
 - `current_configuration` (String) What the resource is now, in the recommender's words.
 - `effort` (String) How much work it is, in the recommender's words: 'Low', 'Medium', 'High'.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `kind` (String) What it asks: rightsize, stop or delete something idle, upgrade to a newer generation, commit to use, or other.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `monthly_cost` (Number) What the resource costs a month now, when the recommender says.
 - `monthly_savings` (Number) What doing it saves a month, as the recommender estimates it, in the recommendation's currency.
 - `provider_value` (String) Which cloud the account is in: 'aws', 'azure' or 'gcp'.
@@ -52,6 +57,7 @@ data "oneuptime_cloud_cost_recommendation" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `evidence` (String) For a right-sizing OneUptime worked out from its own readings: the CPU and memory readings and the days it was judged from. A JSON value: read it with `jsondecode()`.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_seen_at` (String) When the account's connection last read the recommendation.
 - `project_id` (String) ID of the project this recommendation belongs to. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

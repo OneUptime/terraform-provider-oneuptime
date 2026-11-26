@@ -29,6 +29,8 @@ data "oneuptime_detection_rule" "by_id" {
 ### Optional
 
 - `alert_severity_id` (String) ID of the alert severity for alerts opened by this rule. The ID of a `oneuptime_alert_severity`.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) ID of the user who created this detection rule. The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Description of what this detection rule looks for.
 - `distinct_count_field` (String) Optional security-event field (e.g. principalUser, principalIp) whose distinct values are counted instead of raw matching events. The match count threshold then applies to that distinct count. Empty values are not counted. Names that are not typed event columns are looked up in the event's attributes map.
@@ -39,6 +41,9 @@ data "oneuptime_detection_rule" "by_id" {
 - `is_enabled` (Boolean) Whether this detection rule is evaluated.
 - `is_real_time` (Boolean) Whether events are checked against this rule as they arrive, within seconds, instead of every evaluation interval. A rule that counts, and a correlation, count in windows as long as the evaluation interval and fire at most once in each. Not for a rule with a regular expression.
 - `last_error` (String) The most recent evaluation error, if any. Cleared on the next successful evaluation.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `match_count_threshold` (Number) Fire only when a group's count — distinct values when a distinct count field is set, matching events otherwise — reaches this number within one evaluation window. 1 fires on any match.
 - `name` (String) Friendly name for this detection rule.
 - `risk_score` (Number) What a match adds to the risk of the user, host or address it is about, from 0 to 100. Empty: by the rule's level.
@@ -51,8 +56,11 @@ data "oneuptime_detection_rule" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
+- `evaluating_until` (String) While the detection engine records what a run found: the end of the events that run judged. Null when no run is recording.
 - `last_evaluated_at` (String) When the detection engine last evaluated this rule. Null means it has never run.
+- `last_failed_at` (String) When the rule's last scheduled run failed. Null when its last run worked.
 - `last_match_at` (String) When this rule most recently matched security events. Null means it has never matched.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `project_id` (String) ID of the project this detection rule belongs to. The ID of a `oneuptime_project`.
 - `response_steps` (String) What to do when the rule fires: up to 10 steps, each { id, phase, text }, where phase is Confirm, Contain or Fix. A case's Response Plan shows them ahead of its general steps. A JSON value: read it with `jsondecode()`.
 - `updated_at` (String) Date and Time when the object was updated.

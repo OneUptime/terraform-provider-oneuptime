@@ -9,18 +9,18 @@ import (
 // shards.go).
 func init() {
     RegisterResources("shard14", []OrderedResource{
-        {Order: 56, New: NewTableTeamOwnerResource},
-        {Order: 80, New: NewTraceRecordingRuleResource},
-        {Order: 85, New: NewStatusPageResource},
-        {Order: 93, New: NewIncomingCallPolicyResource},
-        {Order: 161, New: NewIncidentEpisodeTeamOwnerResource},
-        {Order: 182, New: NewScheduledMaintenanceMeasurementResource},
-        {Order: 189, New: NewSloMonitorRuleResource},
-        {Order: 227, New: NewRunbookLabelRuleResource},
-        {Order: 249, New: NewScheduledMaintenanceEventResource},
-        {Order: 333, New: NewDashboardResource},
-        {Order: 347, New: NewOnCallUserGroupResource},
-        {Order: 405, New: NewProxmoxClusterUserOwnerResource},
-        {Order: 454, New: NewRumApplicationOwnerRuleResource},
+        {Order: 57, New: NewTableTeamOwnerResource},
+        {Order: 84, New: NewTraceRecordingRuleResource},
+        {Order: 89, New: NewStatusPageResource},
+        {Order: 97, New: NewIncomingCallPolicyResource},
+        {Order: 165, New: NewIncidentEpisodeTeamOwnerResource},
+        {Order: 186, New: NewScheduledMaintenanceMeasurementResource},
+        {Order: 193, New: NewSloMonitorRuleResource},
+        {Order: 231, New: NewRunbookLabelRuleResource},
+        {Order: 253, New: NewScheduledMaintenanceEventResource},
+        {Order: 337, New: NewDashboardResource},
+        {Order: 351, New: NewOnCallUserGroupResource},
+        {Order: 409, New: NewProxmoxClusterUserOwnerResource},
+        {Order: 458, New: NewRumApplicationOwnerRuleResource},
     }, nil)
 }

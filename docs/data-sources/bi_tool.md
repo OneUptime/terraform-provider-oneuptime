@@ -30,10 +30,15 @@ data "oneuptime_bi_tool" "by_id" {
 
 - `alert_on_failed_refreshes` (Boolean) Whether OneUptime keeps a monitor that opens an alert for each dataset whose refresh failed (Power BI), resolved once a later refresh completes.
 - `base_url` (String) The tool's own address, such as https://metabase.acme.com or https://acme.cloud.looker.com. Power BI needs none.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `dashboard_count` (Number) How many dashboards the last read found.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_enabled` (Boolean) Whether its dashboards are read every hour.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `last_sync_error` (String) Why the last read failed; empty when it did not.
 - `last_sync_warning` (String) What the last read could not read while it read the dashboards - views or refreshes - and why; empty when it read everything.
 - `matched_table_count` (Number) How many watched tables the last read found behind its dashboards.
@@ -45,6 +50,7 @@ data "oneuptime_bi_tool" "by_id" {
 
 - `created_at` (String) Date and Time when the object was created.
 - `failed_refreshes` (String) The datasets whose last refresh failed or was cancelled (Power BI), each with its error, until a later refresh completes - and for an hour after that, marked recovered. A JSON value: read it with `jsondecode()`.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_synced_at` (String) When its dashboards were last read.
 - `lineage_summary` (String) Why the last read's dashboards are, or are not, tied to watched tables: the tables they read and how many matched, the data sources behind them and whether OneUptime watches each, and what keeps the rest from matching, such as a Power BI tenant setting that is off. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

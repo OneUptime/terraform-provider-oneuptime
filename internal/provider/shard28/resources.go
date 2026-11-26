@@ -9,13 +9,13 @@ import (
 // shards.go).
 func init() {
     RegisterResources("shard28", []OrderedResource{
-        {Order: 169, New: NewIncidentOwnerRuleOwningTeamResource},
-        {Order: 217, New: NewDockerSwarmClusterLabelRuleResource},
-        {Order: 282, New: NewScheduledMaintenanceTemplateResource},
-        {Order: 293, New: NewOnCallScheduleLayerUserResource},
-        {Order: 296, New: NewScheduledMaintenanceExternalCalendarResource},
-        {Order: 401, New: NewDockerSwarmClusterResource},
-        {Order: 402, New: NewProxmoxClusterTeamOwnerResource},
-        {Order: 429, New: NewServerlessFunctionOwnerRuleResource},
+        {Order: 173, New: NewIncidentOwnerRuleOwningTeamResource},
+        {Order: 221, New: NewDockerSwarmClusterLabelRuleResource},
+        {Order: 286, New: NewScheduledMaintenanceTemplateResource},
+        {Order: 297, New: NewOnCallScheduleLayerUserResource},
+        {Order: 300, New: NewScheduledMaintenanceExternalCalendarResource},
+        {Order: 405, New: NewDockerSwarmClusterResource},
+        {Order: 406, New: NewProxmoxClusterTeamOwnerResource},
+        {Order: 433, New: NewServerlessFunctionOwnerRuleResource},
     }, nil)
 }

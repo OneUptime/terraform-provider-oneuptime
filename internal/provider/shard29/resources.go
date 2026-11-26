@@ -10,15 +10,15 @@ import (
 func init() {
     RegisterResources("shard29", []OrderedResource{
         {Order: 5, New: NewTeamMemberCustomFieldResource},
-        {Order: 67, New: NewAuditLogExportResource},
-        {Order: 81, New: NewLogRecordingRuleResource},
-        {Order: 101, New: NewMonitorTemplateResource},
-        {Order: 145, New: NewAlertOnCallRuleOwningTeamResource},
-        {Order: 173, New: NewScheduledMaintenanceLabelRuleResource},
-        {Order: 207, New: NewDockerHostLabelRuleResource},
-        {Order: 240, New: NewStatusPageAnnouncementTemplateResource},
-        {Order: 257, New: NewWorkflowUserOwnerResource},
-        {Order: 380, New: NewPacketCaptureResource},
-        {Order: 448, New: NewQueueLabelRuleResource},
+        {Order: 71, New: NewAuditLogExportResource},
+        {Order: 85, New: NewLogRecordingRuleResource},
+        {Order: 105, New: NewMonitorTemplateResource},
+        {Order: 149, New: NewAlertOnCallRuleOwningTeamResource},
+        {Order: 177, New: NewScheduledMaintenanceLabelRuleResource},
+        {Order: 211, New: NewDockerHostLabelRuleResource},
+        {Order: 244, New: NewStatusPageAnnouncementTemplateResource},
+        {Order: 261, New: NewWorkflowUserOwnerResource},
+        {Order: 384, New: NewPacketCaptureResource},
+        {Order: 452, New: NewQueueLabelRuleResource},
     }, nil)
 }

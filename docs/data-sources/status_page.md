@@ -36,6 +36,8 @@ data "oneuptime_status_page" "by_id" {
 - `copyright_text` (String) Copyright Text.
 - `cover_image_alt_text` (String) Alternative text for the cover image, read by screen readers for accessibility. Leave blank if the cover image is purely decorative.
 - `cover_image_file_id` (String) Status Page Cover Image ID. The ID of a `oneuptime_file`.
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `custom_css` (String) Status Page Custom CSS. Served only from a verified custom domain.
 - `custom_java_script` (String) Status Page Custom JavaScript. This runs when the status page is loaded from a verified custom domain.
@@ -55,6 +57,7 @@ data "oneuptime_status_page" "by_id" {
 - `enable_webhook_subscribers` (Boolean) Can Webhook subscribers subscribe to this Status Page?
 - `favicon_file_id` (String) Status Page Favicon File ID. The ID of a `oneuptime_file`.
 - `footer_html` (String) Status Page Custom HTML Footer. Served only from a verified custom domain.
+- `group_incidents_by_episode` (Boolean) When on, an episode shows on the status page as one card that lists its incidents and the resources they affect, instead of a card for each of its incidents.
 - `header_html` (String) Status Page Custom HTML Header. Served only from a verified custom domain.
 - `hide_powered_by_one_uptime_branding` (Boolean) Hide Powered By OneUptime Branding?
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
@@ -63,6 +66,9 @@ data "oneuptime_status_page" "by_id" {
 - `is_owner_notified_of_resource_creation` (Boolean) Are owners notified of when this resource is created?
 - `is_public_status_page` (Boolean) Is this status page public?
 - `is_report_enabled` (Boolean) Whether this status page's email subscribers get reports. Turned on without a schedule, reports go out on the 1st of every month at 09:00 in the report timezone, each covering the calendar month before it.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `limit_subscribers_to_private_users` (Boolean) Only people who can sign in to this status page can be its subscribers, each with the email address they sign in with: no other address, and no phone, Slack, Microsoft Teams or webhook. A subscriber whose address is not a private user of this page - one removed since, by SCIM or by hand - is sent nothing.
 - `logo_alt_text` (String) Alternative text for the logo image, read by screen readers for accessibility.
 - `logo_file_id` (String) Status Page Logo File ID. The ID of a `oneuptime_file`.
@@ -107,6 +113,7 @@ data "oneuptime_status_page" "by_id" {
 - `embedded_overall_status_token` (String, Sensitive) Security token required to access the embedded overall status badge. This token must be provided in the URL.
 - `enabled_languages` (String) Languages offered in the footer language switcher. Leave empty to offer all supported languages. A JSON value: read it with `jsondecode()`.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `master_password` (String, Sensitive) Password required to unlock a private status page. This value is stored as a secure hash.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `report_recurring_interval` (String) How often a report goes out. Left out when reports are turned on, it is every month. A JSON value: read it with `jsondecode()`.

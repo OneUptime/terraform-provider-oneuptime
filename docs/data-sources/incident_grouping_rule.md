@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_incident_grouping_rule" "example" {
-  default_assign_to_team_id    = oneuptime_team.example.id
+  last_modified_by_user_id     = data.oneuptime_user.example.id
   default_assign_to_user_email = "alice@example.com"
 }
 
@@ -29,6 +29,8 @@ data "oneuptime_incident_grouping_rule" "by_id" {
 
 ### Optional
 
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `default_assign_to_team_id` (String) ID of defaultAssignToTeam. Kept for API compatibility: OneUptime does not show it anywhere. To make a team responsible for the episodes this rule opens, use episodeOwnerTeams. The ID of a `oneuptime_team`.
 - `default_assign_to_user_email` (String) Look it up by the email address of the person in `default_assign_to_user_id`, instead of their ID: someone in this project, or invited to it. Give one of the two.
@@ -52,6 +54,9 @@ data "oneuptime_incident_grouping_rule" "by_id" {
 - `incident_description_pattern` (String) Regular expression pattern to match incident descriptions. Leave empty to match any description.
 - `incident_title_pattern` (String) Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.
 - `is_enabled` (Boolean) Whether this rule is enabled.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `minimum_incident_count` (Number) How many matching incidents of the same group must be ongoing before the rule opens an episode for them, while Enable Minimum Incident Count is on. A whole number from 1 to 100; 1 opens an episode for the first matching incident.
 - `monitor_description_pattern` (String) Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.
 - `monitor_name_pattern` (String) Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.
@@ -75,6 +80,7 @@ data "oneuptime_incident_grouping_rule" "by_id" {
 - `group_by_fields` (String) JSON object defining the fields to group incidents by (e.g., monitorId, severity). A JSON value: read it with `jsondecode()`.
 - `incident_labels` (Set of String) Only group incidents that have at least one of these labels. Leave empty to match incidents regardless of incident labels. IDs of `oneuptime_label` resources.
 - `incident_severities` (Set of String) Only group incidents with these severities. Leave empty to match incidents of any severity. IDs of `oneuptime_incident_severity` resources.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `match_criteria` (String) JSON object defining the criteria for matching incidents to this rule. A JSON value: read it with `jsondecode()`.
 - `monitor_labels` (Set of String) Only group incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels. IDs of `oneuptime_label` resources.
 - `monitors` (Set of String) Only group incidents from these monitors. Leave empty to match incidents from any monitor. IDs of `oneuptime_monitor` resources.

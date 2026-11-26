@@ -61,8 +61,9 @@ data "oneuptime_ai_run" "by_id" {
 - `triggered_by_ai_insight_id` (String) The preventive AI insight that triggered this run (for insight triage and insight-created fix runs).
 - `triggered_by_alert_id` (String) The alert that triggered this run (for autonomous investigations).
 - `triggered_by_auto_remediation_suggestion_id` (String) The auto-remediation suggestion this planning run picks a runbook for.
+- `triggered_by_data_security_issue_id` (String) The Data Security issue this run is about: a fix asked for it, or work OneUptime AI started on it.
 - `triggered_by_incident_id` (String) The incident that triggered this run (for autonomous investigations).
-- `triggered_by_security_case_id` (String) The security case this run triaged (for security case triage runs).
+- `triggered_by_security_case_id` (String) The security case this run is about: the case a triage run read, or the case a code fix was asked for from.
 - `triggered_by_telemetry_exception_id` (String) The telemetry exception that triggered this run (for code-fix runs).
 - `user_id` (String) ID of the user who triggered this run. The ID of a `oneuptime_user` (see the data source).
 

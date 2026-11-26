@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_status_page_subscriber" "example" {
-  status_page_id = oneuptime_status_page.example.id
+  created_by_actor_type = "User"
 }
 
 # Or by id:
@@ -28,6 +28,8 @@ data "oneuptime_status_page_subscriber" "by_id" {
 
 ### Optional
 
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `internal_note` (String) Any notes or text you would like to add to this subscriber object. This is for internal use only.
@@ -37,6 +39,9 @@ data "oneuptime_status_page_subscriber" "by_id" {
 - `is_subscription_confirmed` (Boolean) Has subscriber confirmed their subscription? (for example, by clicking on a confirmation link in an email).
 - `is_unsubscribed` (Boolean) Is Subscriber Unsubscribed?
 - `language` (String) The language this subscriber is notified in. Empty means the status page's default language.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `microsoft_teams_workspace_name` (String) Name of the Microsoft Teams workspace for validation and identification.
 - `send_you_have_subscribed_message` (Boolean) Send You Have Subscribed Message when subscriber is created?
 - `slack_workspace_name` (String) Name of the Slack workspace for validation and identification.
@@ -45,6 +50,7 @@ data "oneuptime_status_page_subscriber" "by_id" {
 ### Read-Only
 
 - `created_at` (String) Date and Time when the object was created.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `status_page_event_types` (String) Which event types is the subscriber subscribed to (like Incidents, Maintenance Events, Announcements). A JSON value: read it with `jsondecode()`.
 - `status_page_resources` (Set of String) Relation to Status Page Resources where this subscriber is subscribed to. IDs of `oneuptime_status_page_resource` resources.

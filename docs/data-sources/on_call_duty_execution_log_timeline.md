@@ -15,7 +15,7 @@ Look one up by `id`, or by any of its other arguments: every argument you set mu
 
 ```terraform
 data "oneuptime_on_call_duty_execution_log_timeline" "example" {
-  on_call_duty_policy_id = oneuptime_on_call_policy.example.id
+  created_by_actor_type = "User"
 }
 
 # Or by id:
@@ -29,12 +29,17 @@ data "oneuptime_on_call_duty_execution_log_timeline" "by_id" {
 ### Optional
 
 - `alert_sent_to_user_id` (String) ID of the user who we sent alert to. The ID of a `oneuptime_user` (see the data source).
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `escalation_rule_name` (String) The name of the escalation rule this timeline event belongs to, as it was when the event was written. Kept when the rule is deleted later. Empty for a step of a direct page.
 - `escalation_rule_order` (Number) The level of the escalation rule this timeline event belongs to (1 for the first), as it was when the event was written. Kept when the rule is deleted later. Empty for a step of a direct page.
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_acknowledged` (Boolean) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]
 - `is_next_in_rotation` (Boolean) True when this step paged the person because they are next in the schedule's rotation - after whoever is on call - rather than on call themselves. Paired with the step's schedule. A step with this set and nobody paged means nobody was next in the rotation.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `on_call_duty_policy_escalation_rule_id` (String) ID of your On-Call Policy Escalation Rule where this timeline event belongs. Empty for a step of a direct page, which has no escalation rules. The ID of a `oneuptime_escalation_rule`.
 - `on_call_duty_policy_execution_log_id` (String) ID of your On-Call Policy Execution Log where this timeline event belongs. The ID of a `oneuptime_on_call_duty_execution_log`.
 - `on_call_duty_policy_id` (String) ID of your OneUptime on-call policy in which this object belongs. Empty for a step of a direct page, which has no on-call policy. The ID of a `oneuptime_on_call_policy`.
@@ -53,6 +58,7 @@ data "oneuptime_on_call_duty_execution_log_timeline" "by_id" {
 
 - `acknowledged_at` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]
 - `created_at` (String) Date and Time when the object was created.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `notification_channels` (String) The channels this step's page went out to its person by - phone call, SMS, email, push notification and so on - as the person's own notifications say. Kept by OneUptime as the notifications go out, so a notification that could not be sent is not listed. Empty when the page reached nobody, and not set on steps written before OneUptime kept it. A JSON value: read it with `jsondecode()`.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
 - `updated_at` (String) Date and Time when the object was updated.

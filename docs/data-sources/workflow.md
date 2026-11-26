@@ -29,6 +29,8 @@ data "oneuptime_workflow" "by_id" {
 ### Optional
 
 - `archived_by_user_id` (String) User ID who archived this object (if this object was archived by a User). The ID of a `oneuptime_user` (see the data source).
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `description` (String) Friendly description that will help you remember.
 - `graph_revision` (Number) How many times the workflow's graph has been saved. To save a graph only if nobody has saved one since you read the workflow, send this number as miscDataProps.graphRevision with the graph: a save made to an older graph is refused with 409 Conflict. Set by the server.
@@ -36,6 +38,9 @@ data "oneuptime_workflow" "by_id" {
 - `is_archived` (Boolean) Archived workflows are hidden from the Workflows list and never run, from any trigger. Unarchiving restores them as they were.
 - `is_enabled` (Boolean) Is this workflow enabled?
 - `is_webhook_signing_secret_set` (Boolean) Whether a webhook signing secret is saved. A trigger that checks signatures refuses every request until it is. Set by the server from the signing secret itself.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `last_webhook_error` (String) Why the last request to a trigger that checks signatures was refused, if it was. Cleared by the next request that is accepted, and by saving a new signing secret.
 - `name` (String) Any friendly name of this object.
 - `run_as` (String) What the workflow's steps can do in the project. Default: what a Project Admin can, except change who has access. ProjectOwner: what a Project Owner can. CustomRole: exactly what the custom role in runAsCustomRoleId allows. Only a person or a project API key that has those permissions can choose anything but Default, and only such a person or key can then change the workflow or run it by hand.
@@ -51,6 +56,7 @@ data "oneuptime_workflow" "by_id" {
 - `graph` (String) Workflow Graph in JSON. Ideally, create this via UI and not via API. A JSON value: read it with `jsondecode()`.
 - `incoming_email_secret_key` (String, Sensitive) The secret part of the Incoming Email trigger's address (workflow-<key>@<inbound email domain>). Anyone who has the address can start the workflow, so only people who can edit the workflow can read the key. Given to the workflow when its graph first has an Incoming Email trigger; set a new UUID to reset the address. Unique across all workflows.
 - `labels` (Set of String) Labels to group and filter by. IDs of `oneuptime_label` resources.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `last_webhook_error_at` (String) When the last webhook error happened.
 - `last_webhook_request_at` (String) When a request signed with the webhook signing secret last arrived. Empty until the sender's first one.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.

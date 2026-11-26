@@ -30,6 +30,12 @@ type DataStoreFindingDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
+    CreatedByActorType types.String `tfsdk:"created_by_actor_type"`
+    CreatedByActorId types.String `tfsdk:"created_by_actor_id"`
+    LastModifiedAt types.String `tfsdk:"last_modified_at"`
+    LastModifiedByActorType types.String `tfsdk:"last_modified_by_actor_type"`
+    LastModifiedByActorId types.String `tfsdk:"last_modified_by_actor_id"`
+    LastModifiedByUserId types.String `tfsdk:"last_modified_by_user_id"`
     ProjectId types.String `tfsdk:"project_id"`
     DataStoreId types.String `tfsdk:"data_store_id"`
     FindingKey types.String `tfsdk:"finding_key"`
@@ -50,15 +56,22 @@ type DataStoreFindingDataSourceModel struct {
     IsFreeText types.Bool `tfsdk:"is_free_text"`
     IsNameHinted types.Bool `tfsdk:"is_name_hinted"`
     IsFoundByName types.Bool `tfsdk:"is_found_by_name"`
+    IsFoundByModel types.Bool `tfsdk:"is_found_by_model"`
     IsScrubbed types.Bool `tfsdk:"is_scrubbed"`
     IsSuppressed types.Bool `tfsdk:"is_suppressed"`
     SuppressedReason types.String `tfsdk:"suppressed_reason"`
     IsConfirmed types.Bool `tfsdk:"is_confirmed"`
     IsAiSuggested types.Bool `tfsdk:"is_ai_suggested"`
     AiReason types.String `tfsdk:"ai_reason"`
+    AiVerdict types.String `tfsdk:"ai_verdict"`
+    AiVerdictAnalysis types.String `tfsdk:"ai_verdict_analysis"`
+    AiVerdictAt types.String `tfsdk:"ai_verdict_at"`
+    IsConfirmedByAi types.Bool `tfsdk:"is_confirmed_by_ai"`
+    DecidedAt types.String `tfsdk:"decided_at"`
     LastScanId types.String `tfsdk:"last_scan_id"`
     FirstSeenAt types.String `tfsdk:"first_seen_at"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
+    FixedAt types.String `tfsdk:"fixed_at"`
 }
 
 func (d *DataStoreFindingDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -67,7 +80,7 @@ func (d *DataStoreFindingDataSource) Metadata(ctx context.Context, req datasourc
 
 func (d *DataStoreFindingDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "What Data Security found in a store: one data type at one location, with its confidence, counts and masked samples. Look up an existing data store finding by `id`, or by any of its other arguments (`ai_reason`, `confidence`, `data_category`, ...): each one set must match, and exactly one data store finding may match them all.",
+        MarkdownDescription: "What Data Security found in a store: one data type at one location, with its confidence, counts and masked samples. Look up an existing data store finding by `id`, or by any of its other arguments (`ai_reason`, `ai_verdict`, `confidence`, ...): each one set must match, and exactly one data store finding may match them all.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -82,6 +95,36 @@ func (d *DataStoreFindingDataSource) Schema(ctx context.Context, req datasource.
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "Date and Time when the object was updated.",
                 Computed: true,
+            },
+            "created_by_actor_type": schema.StringAttribute{
+                MarkdownDescription: "What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.",
+                Optional: true,
+                Computed: true,
+            },
+            "created_by_actor_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_modified_at": schema.StringAttribute{
+                MarkdownDescription: "When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.",
+                Computed: true,
+            },
+            "last_modified_by_actor_type": schema.StringAttribute{
+                MarkdownDescription: "What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_modified_by_actor_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.",
+                Optional: true,
+                Computed: true,
+            },
+            "last_modified_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).",
+                Optional: true,
+                Computed: true,
+                Validators: DataSourceRecordIDValidators("oneuptime_user"),
             },
             "project_id": schema.StringAttribute{
                 MarkdownDescription: "ID of the project this finding belongs to. The ID of a `oneuptime_project`.",
@@ -181,6 +224,11 @@ func (d *DataStoreFindingDataSource) Schema(ctx context.Context, req datasource.
                 Optional: true,
                 Computed: true,
             },
+            "is_found_by_model": schema.BoolAttribute{
+                MarkdownDescription: "Found in free text by the names-and-addresses model that runs inside the scanner, not by a pattern.",
+                Optional: true,
+                Computed: true,
+            },
             "is_scrubbed": schema.BoolAttribute{
                 MarkdownDescription: "For telemetry: a scrub rule already masks this data at ingest.",
                 Optional: true,
@@ -211,6 +259,28 @@ func (d *DataStoreFindingDataSource) Schema(ctx context.Context, req datasource.
                 Optional: true,
                 Computed: true,
             },
+            "ai_verdict": schema.StringAttribute{
+                MarkdownDescription: "OneUptime AI's verdict on a finding that waits for a person: Confirm, NotSensitive or CannotTell. A person decides.",
+                Optional: true,
+                Computed: true,
+            },
+            "ai_verdict_analysis": schema.StringAttribute{
+                MarkdownDescription: "OneUptime AI's reason for its verdict, a reason a person could give, and the earlier decisions on findings like it that it cites. A JSON value: read it with `jsondecode()`.",
+                Computed: true,
+            },
+            "ai_verdict_at": schema.StringAttribute{
+                MarkdownDescription: "When OneUptime AI last gave its verdict on the finding.",
+                Computed: true,
+            },
+            "is_confirmed_by_ai": schema.BoolAttribute{
+                MarkdownDescription: "OneUptime AI confirmed the finding without asking, as one of the project's AI rules allows. Undo it from Data Security > AI.",
+                Optional: true,
+                Computed: true,
+            },
+            "decided_at": schema.StringAttribute{
+                MarkdownDescription: "When the finding was last confirmed or marked not sensitive.",
+                Computed: true,
+            },
             "last_scan_id": schema.StringAttribute{
                 MarkdownDescription: "The scan that last saw the finding. The ID of a `oneuptime_data_security_scan` (see the data source).",
                 Optional: true,
@@ -223,6 +293,10 @@ func (d *DataStoreFindingDataSource) Schema(ctx context.Context, req datasource.
             },
             "last_seen_at": schema.StringAttribute{
                 MarkdownDescription: "When a scan last found it.",
+                Computed: true,
+            },
+            "fixed_at": schema.StringAttribute{
+                MarkdownDescription: "For telemetry: when a code fix was verified to have stopped this finding in production. It no longer counts toward its issue unless a scan finds it again.",
                 Computed: true,
             },
         },
@@ -264,6 +338,26 @@ func (d *DataStoreFindingDataSource) Read(ctx context.Context, req datasource.Re
     // Every other argument set in configuration narrows the lookup.
     filters := map[string]interface{}{}
     filterNames := []string{}
+    if !data.CreatedByActorType.IsNull() && !data.CreatedByActorType.IsUnknown() {
+        filters["createdByActorType"] = data.CreatedByActorType.ValueString()
+        filterNames = append(filterNames, "created_by_actor_type = "+fmt.Sprintf("%q", data.CreatedByActorType.ValueString()))
+    }
+    if !data.CreatedByActorId.IsNull() && !data.CreatedByActorId.IsUnknown() {
+        filters["createdByActorId"] = data.CreatedByActorId.ValueString()
+        filterNames = append(filterNames, "created_by_actor_id = "+fmt.Sprintf("%q", data.CreatedByActorId.ValueString()))
+    }
+    if !data.LastModifiedByActorType.IsNull() && !data.LastModifiedByActorType.IsUnknown() {
+        filters["lastModifiedByActorType"] = data.LastModifiedByActorType.ValueString()
+        filterNames = append(filterNames, "last_modified_by_actor_type = "+fmt.Sprintf("%q", data.LastModifiedByActorType.ValueString()))
+    }
+    if !data.LastModifiedByActorId.IsNull() && !data.LastModifiedByActorId.IsUnknown() {
+        filters["lastModifiedByActorId"] = data.LastModifiedByActorId.ValueString()
+        filterNames = append(filterNames, "last_modified_by_actor_id = "+fmt.Sprintf("%q", data.LastModifiedByActorId.ValueString()))
+    }
+    if !data.LastModifiedByUserId.IsNull() && !data.LastModifiedByUserId.IsUnknown() {
+        filters["lastModifiedByUserId"] = data.LastModifiedByUserId.ValueString()
+        filterNames = append(filterNames, "last_modified_by_user_id = "+fmt.Sprintf("%q", data.LastModifiedByUserId.ValueString()))
+    }
     if !data.DataStoreId.IsNull() && !data.DataStoreId.IsUnknown() {
         filters["dataStoreId"] = data.DataStoreId.ValueString()
         filterNames = append(filterNames, "data_store_id = "+fmt.Sprintf("%q", data.DataStoreId.ValueString()))
@@ -332,6 +426,10 @@ func (d *DataStoreFindingDataSource) Read(ctx context.Context, req datasource.Re
         filters["isFoundByName"] = data.IsFoundByName.ValueBool()
         filterNames = append(filterNames, "is_found_by_name = "+fmt.Sprintf("%t", data.IsFoundByName.ValueBool()))
     }
+    if !data.IsFoundByModel.IsNull() && !data.IsFoundByModel.IsUnknown() {
+        filters["isFoundByModel"] = data.IsFoundByModel.ValueBool()
+        filterNames = append(filterNames, "is_found_by_model = "+fmt.Sprintf("%t", data.IsFoundByModel.ValueBool()))
+    }
     if !data.IsScrubbed.IsNull() && !data.IsScrubbed.IsUnknown() {
         filters["isScrubbed"] = data.IsScrubbed.ValueBool()
         filterNames = append(filterNames, "is_scrubbed = "+fmt.Sprintf("%t", data.IsScrubbed.ValueBool()))
@@ -356,6 +454,14 @@ func (d *DataStoreFindingDataSource) Read(ctx context.Context, req datasource.Re
         filters["aiReason"] = data.AiReason.ValueString()
         filterNames = append(filterNames, "ai_reason = "+fmt.Sprintf("%q", data.AiReason.ValueString()))
     }
+    if !data.AiVerdict.IsNull() && !data.AiVerdict.IsUnknown() {
+        filters["aiVerdict"] = data.AiVerdict.ValueString()
+        filterNames = append(filterNames, "ai_verdict = "+fmt.Sprintf("%q", data.AiVerdict.ValueString()))
+    }
+    if !data.IsConfirmedByAi.IsNull() && !data.IsConfirmedByAi.IsUnknown() {
+        filters["isConfirmedByAi"] = data.IsConfirmedByAi.ValueBool()
+        filterNames = append(filterNames, "is_confirmed_by_ai = "+fmt.Sprintf("%t", data.IsConfirmedByAi.ValueBool()))
+    }
     if !data.LastScanId.IsNull() && !data.LastScanId.IsUnknown() {
         filters["lastScanId"] = data.LastScanId.ValueString()
         filterNames = append(filterNames, "last_scan_id = "+fmt.Sprintf("%q", data.LastScanId.ValueString()))
@@ -379,6 +485,12 @@ func (d *DataStoreFindingDataSource) Read(ctx context.Context, req datasource.Re
     selectParam := map[string]interface{}{
         "createdAt": true,
         "updatedAt": true,
+        "createdByActorType": true,
+        "createdByActorId": true,
+        "lastModifiedAt": true,
+        "lastModifiedByActorType": true,
+        "lastModifiedByActorId": true,
+        "lastModifiedByUserId": true,
         "projectId": true,
         "dataStoreId": true,
         "findingKey": true,
@@ -399,15 +511,22 @@ func (d *DataStoreFindingDataSource) Read(ctx context.Context, req datasource.Re
         "isFreeText": true,
         "isNameHinted": true,
         "isFoundByName": true,
+        "isFoundByModel": true,
         "isScrubbed": true,
         "isSuppressed": true,
         "suppressedReason": true,
         "isConfirmed": true,
         "isAiSuggested": true,
         "aiReason": true,
+        "aiVerdict": true,
+        "aiVerdictAnalysis": true,
+        "aiVerdictAt": true,
+        "isConfirmedByAi": true,
+        "decidedAt": true,
         "lastScanId": true,
         "firstSeenAt": true,
         "lastSeenAt": true,
+        "fixedAt": true,
         "_id": true,
     }
 
@@ -540,6 +659,150 @@ func (d *DataStoreFindingDataSource) Read(ctx context.Context, req datasource.Re
         data.UpdatedAt = types.StringValue(val)
     } else {
         data.UpdatedAt = types.StringNull()
+    }
+    if obj, ok := item["createdByActorType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CreatedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CreatedByActorType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorType = types.StringNull()
+        }
+    } else if arr, ok := item["createdByActorType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CreatedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorType = types.StringNull()
+        }
+    } else if val, ok := item["createdByActorType"].(string); ok {
+        data.CreatedByActorType = types.StringValue(val)
+    } else {
+        data.CreatedByActorType = types.StringNull()
+    }
+    if obj, ok := item["createdByActorId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CreatedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CreatedByActorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorId = types.StringNull()
+        }
+    } else if arr, ok := item["createdByActorId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.CreatedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByActorId = types.StringNull()
+        }
+    } else if val, ok := item["createdByActorId"].(string); ok {
+        data.CreatedByActorId = types.StringValue(val)
+    } else {
+        data.CreatedByActorId = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedAt = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedAt = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedAt"].(string); ok {
+        data.LastModifiedAt = types.StringValue(val)
+    } else {
+        data.LastModifiedAt = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedByActorType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedByActorType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedByActorType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorType = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedByActorType"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedByActorType = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorType = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedByActorType"].(string); ok {
+        data.LastModifiedByActorType = types.StringValue(val)
+    } else {
+        data.LastModifiedByActorType = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedByActorId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedByActorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedByActorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorId = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedByActorId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedByActorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByActorId = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedByActorId"].(string); ok {
+        data.LastModifiedByActorId = types.StringValue(val)
+    } else {
+        data.LastModifiedByActorId = types.StringNull()
+    }
+    if obj, ok := item["lastModifiedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastModifiedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastModifiedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastModifiedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastModifiedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByUserId = types.StringNull()
+        }
+    } else if arr, ok := item["lastModifiedByUserId"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.LastModifiedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastModifiedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["lastModifiedByUserId"].(string); ok {
+        data.LastModifiedByUserId = types.StringValue(val)
+    } else {
+        data.LastModifiedByUserId = types.StringNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -849,6 +1112,11 @@ func (d *DataStoreFindingDataSource) Read(ctx context.Context, req datasource.Re
     } else {
         data.IsFoundByName = types.BoolNull()
     }
+    if val, ok := item["isFoundByModel"].(bool); ok {
+        data.IsFoundByModel = types.BoolValue(val)
+    } else {
+        data.IsFoundByModel = types.BoolNull()
+    }
     if val, ok := item["isScrubbed"].(bool); ok {
         data.IsScrubbed = types.BoolValue(val)
     } else {
@@ -916,6 +1184,107 @@ func (d *DataStoreFindingDataSource) Read(ctx context.Context, req datasource.Re
         data.AiReason = types.StringValue(val)
     } else {
         data.AiReason = types.StringNull()
+    }
+    if obj, ok := item["aiVerdict"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiVerdict = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiVerdict = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiVerdict = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiVerdict = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiVerdict = types.StringNull()
+        }
+    } else if arr, ok := item["aiVerdict"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiVerdict = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiVerdict = types.StringNull()
+        }
+    } else if val, ok := item["aiVerdict"].(string); ok {
+        data.AiVerdict = types.StringValue(val)
+    } else {
+        data.AiVerdict = types.StringNull()
+    }
+    if obj, ok := item["aiVerdictAnalysis"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiVerdictAnalysis = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiVerdictAnalysis = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiVerdictAnalysis = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiVerdictAnalysis = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiVerdictAnalysis = types.StringNull()
+        }
+    } else if arr, ok := item["aiVerdictAnalysis"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiVerdictAnalysis = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiVerdictAnalysis = types.StringNull()
+        }
+    } else if val, ok := item["aiVerdictAnalysis"].(string); ok {
+        data.AiVerdictAnalysis = types.StringValue(val)
+    } else {
+        data.AiVerdictAnalysis = types.StringNull()
+    }
+    if obj, ok := item["aiVerdictAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiVerdictAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiVerdictAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiVerdictAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiVerdictAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiVerdictAt = types.StringNull()
+        }
+    } else if arr, ok := item["aiVerdictAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.AiVerdictAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiVerdictAt = types.StringNull()
+        }
+    } else if val, ok := item["aiVerdictAt"].(string); ok {
+        data.AiVerdictAt = types.StringValue(val)
+    } else {
+        data.AiVerdictAt = types.StringNull()
+    }
+    if val, ok := item["isConfirmedByAi"].(bool); ok {
+        data.IsConfirmedByAi = types.BoolValue(val)
+    } else {
+        data.IsConfirmedByAi = types.BoolNull()
+    }
+    if obj, ok := item["decidedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DecidedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DecidedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DecidedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DecidedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.DecidedAt = types.StringNull()
+        }
+    } else if arr, ok := item["decidedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.DecidedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.DecidedAt = types.StringNull()
+        }
+    } else if val, ok := item["decidedAt"].(string); ok {
+        data.DecidedAt = types.StringValue(val)
+    } else {
+        data.DecidedAt = types.StringNull()
     }
     if obj, ok := item["lastScanId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -988,6 +1357,30 @@ func (d *DataStoreFindingDataSource) Read(ctx context.Context, req datasource.Re
         data.LastSeenAt = types.StringValue(val)
     } else {
         data.LastSeenAt = types.StringNull()
+    }
+    if obj, ok := item["fixedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FixedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.FixedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.FixedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FixedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.FixedAt = types.StringNull()
+        }
+    } else if arr, ok := item["fixedAt"].([]interface{}); ok {
+        // A JSON array column, such as a runbook's steps: the array, as JSON
+        if jsonBytes, err := json.Marshal(arr); err == nil {
+            data.FixedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.FixedAt = types.StringNull()
+        }
+    } else if val, ok := item["fixedAt"].(string); ok {
+        data.FixedAt = types.StringValue(val)
+    } else {
+        data.FixedAt = types.StringNull()
     }
 
     // Write logs using the tflog package

@@ -29,15 +29,21 @@ data "oneuptime_network_device_discovery_scan" "by_id" {
 ### Optional
 
 - `cidr` (String) Address space to scan, either in CIDR notation (192.168.1.0/24) or octet-range notation where any octet may be an inclusive low-high range (10.16-22.0-255.51-66).
+- `created_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that created this object. Empty when a person or OneUptime itself created it.
+- `created_by_actor_type` (String) What created this object: User, ApiKey, Workflow, McpClient (for a person), MasterAdmin or System (OneUptime). Empty if made before it was recorded.
 - `created_by_user_id` (String) User ID who created this object (if this object was created by a User). The ID of a `oneuptime_user` (see the data source).
 - `id` (String) Look up by unique identifier. Leave unset to look up by the other arguments instead.
 - `is_netbios_lookup_enabled` (Boolean) Whether hosts with no SNMP name are asked for their NetBIOS name over UDP 137, including hosts reverse DNS already named. A NetBIOS name is the name the host reports for itself, so it names the device ahead of its reverse DNS name. Best-effort: Windows/Samba hosts that allow UDP 137 from the probe. Private addresses only; never done by global probes.
 - `is_recurring` (Boolean) Re-run this scan automatically every Rescan Interval minutes to keep discovery continuous.
 - `is_snmp_enabled` (Boolean) The scan method: true for an SNMP scan (the default), which also asks each host that answers ping for its name and vendor over SNMP; false for an ICMP scan, which only pings.
+- `last_modified_by_actor_id` (String) ID of the API key, workflow or MCP client authorization that last changed this object. Empty when a person last changed it.
+- `last_modified_by_actor_type` (String) What last changed this object: User, ApiKey, Workflow, McpClient (for a person) or MasterAdmin. Empty until it is changed after it is created.
+- `last_modified_by_user_id` (String) ID of the person who last changed this object, or the member an MCP client changed it for. Empty when an API key or a workflow last changed it. The ID of a `oneuptime_user` (see the data source).
 - `name` (String) Optional name for this scan, so it can be told apart from other scans at a glance. Falls back to the scan target when empty.
 - `probe_id` (String) ID of the Probe that runs this discovery scan. The ID of a `oneuptime_probe`.
 - `rescan_interval_in_minutes` (Number) How often a recurring scan re-runs, in minutes. Ignored unless Is Recurring is on.
 - `responded_host_count` (Number) Number of hosts that answered the check this scan performed: SNMP responders on an SNMP scan, hosts that answered the ping sweep on an ICMP scan. Managed by the scanning probe.
+- `run_requested_by_user_id` (String) ID of the User who last ran this scan again on demand, for the run it is on now or ran last. Empty when that run started by itself, when an API key asked for it, or once the user is deleted. Managed by the server. The ID of a `oneuptime_user` (see the data source).
 - `scanned_host_count` (Number) Total number of host addresses swept in the subnet. Managed by the scanning probe.
 - `snmp_port` (Number) UDP port tried against every host in the subnet. Ignored on an ICMP scan.
 - `snmp_v3_auth_protocol` (String) SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512. Ignored on an ICMP scan.
@@ -55,8 +61,10 @@ data "oneuptime_network_device_discovery_scan" "by_id" {
 - `completed_at` (String) When the scanning probe completed (or failed) this scan. Managed by the scanning probe.
 - `created_at` (String) Date and Time when the object was created.
 - `discovered_devices` (String) Devices found by this scan: array of {ipAddress, sysName, sysDescr, ...}, as the scanning probe reported them. On a read, each host also carries isAlreadyRegistered, registeredDeviceId and sharedAddress, worked out from the project's devices at that moment and never stored. A JSON value: read it with `jsondecode()`.
+- `last_modified_at` (String) When a person, an API key, a workflow or an MCP client last changed this object. OneUptime's own updates do not count. Empty until it is changed.
 - `next_scan_at` (String) When a recurring scan is next due to run. Managed by the server.
 - `project_id` (String) ID of your OneUptime Project in which this object belongs. The ID of a `oneuptime_project`.
+- `run_requested_at` (String) When someone last ran this scan again on demand (Run Again), for the run it is on now or ran last. Empty when that run started by itself: when the scan was created, on its schedule, or after a settings change. Managed by the server.
 - `snmp_community_string` (String, Sensitive) Community string tried against every host in the subnet (SNMP v1/v2c). Ignored on an ICMP scan. Kept encrypted at rest.
 - `snmp_configs` (String, Sensitive) Ordered list of SNMP credential sets tried against every host in the subnet, first match wins. Each entry carries an id, an optional name, a version, a community string or the v3 credentials, and a port. When empty, the scan uses the single flattened SNMP configuration on this row. Each entry's community string and v3 keys are kept encrypted at rest. A JSON value: read it with `jsondecode()`.
 - `snmp_v3_auth_key` (String, Sensitive) SNMP v3 authentication passphrase tried against every host. Ignored on an ICMP scan. Kept encrypted at rest.
